@@ -279,7 +279,14 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     public function overloadVariable(Event $event)
 
     {
-        $items = $event->getTarget()->vars()->items;
+        $items = null;
+        $event->setParam('items', $items);
+        echo 'you are here';
+        echo $event->getTarget()->partial(
+            'teams/partial/team-selector'
+        );
+
+
 
 
     }
@@ -427,6 +434,12 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
             'Omeka\Controller\Admin\Item',
             'view.add.section_nav',
             [$this, 'addTab']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.browse.before',
+            [$this, 'overloadVariable']
         );
 
 
