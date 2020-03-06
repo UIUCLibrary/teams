@@ -61,6 +61,36 @@ class Team extends AbstractEntity
      */
     protected $users;
 
+    /* *
+     *
+     * @var ArrayCollection|Site[]
+     * @ManyToMany(
+     *     targetEntity="Omeka\Entity\Site",
+     *     mappedBy="team",
+     *     inversedBy="site"
+     * )
+     * @JoinTable(
+     *     name="team_site",
+     *     joinColumns={
+     *         @JoinColumn(
+     *             name="site_id",
+     *             referencedColumnName="id",
+     *             onDelete="cascade",
+     *             nullable=false
+     *         )
+     *     },
+     *     inverseJoinColumns={
+     *         @JoinColumn(
+     *             name="site_id",
+     *             referencedColumnName="id",
+     *             onDelete="cascade",
+     *             nullable=false
+     *         )
+     *     }
+     * )
+     */
+    protected $sites;
+
     /**
      * @var ArrayCollection|TeamUser[]
      * @OneToMany(
@@ -70,6 +100,17 @@ class Team extends AbstractEntity
      * )
      */
     protected $team_users;
+
+
+    /**
+     * @var ArrayCollection|TeamSite[]
+     * @OneToMany(
+     *     targetEntity="Teams\Entity\TeamSite",
+     *     mappedBy="team",
+     *     cascade={"persist", "remove"}
+     * )
+     */
+    protected $team_sites;
 
     /* *
      *
@@ -165,4 +206,16 @@ class Team extends AbstractEntity
     {
         return $this->team_resources;
     }
+
+    public function getTeamSites()
+    {
+        return $this->team_sites;
+    }
+
+    public function getSites()
+    {
+        return $this->sites;
+    }
+
+
 }
