@@ -88,7 +88,6 @@ class ItemSetController extends AbstractActionController
                 $this->entityManager->remove($e);
             endforeach;
             $this->entityManager->flush();
-
             foreach ($data['team'] as $team_id):
 
 

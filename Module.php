@@ -235,7 +235,6 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     }
 
 
-
     /**
      * Add the tab to section navigation.
      *
@@ -243,9 +242,47 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
      */
     public function addTab(Event $event)
     {
+
+
+        $params = $event->getParam('section_nav');
+        foreach ($params as $p):
+            echo $p;
+//            foreach ($p as $ar):
+//                echo $ar . "<br>";
+//                foreach ($ar as $what):
+//                    echo gettype($what);
+//                endforeach;
+//            endforeach;
+        endforeach;
+        $value = null;
+
+        $values = $event->getParam('Values');
+        echo $values;
+
+        $event->setParam('Metadata', $value);
+
+
         $sectionNav = $event->getParam('section_nav');
         $sectionNav['teams'] = 'TeamTest10'; // @translate
         $event->setParam('section_nav', $sectionNav);
+
+
+    }
+
+    public function overloadVariable(Event $event)
+    {
+        $params = $event->getParams();
+        foreach ($params as $p):
+            foreach ($p as $ar):
+                echo $ar . "<br>";
+//                foreach ($ar as $what):
+//                    echo gettype($what);
+//                endforeach;
+            endforeach;
+        endforeach;
+        $value = null;
+
+        $event->setParam('Metadata', $value);
     }
 
     public function viewShowAfterResource(Event $event)
@@ -279,8 +316,10 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     public function teamSelectorBrowse(Event $event)
 
     {
-        $items = null;
-        $event->setParam('items', $items);
+        $params = $event->getParams();
+        foreach ($params as $p):
+            echo 'one';
+        endforeach;
         echo 'you are here';
         echo $event->getTarget()->partial(
             'teams/partial/team-selector'
@@ -417,7 +456,12 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         $user_id = $identity->getId();
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id])->getTeam()->getName();
+        $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+        if($ct){
+            $ct = $ct->getTeam()->getName();
+        } else {
+            $ct = 'None';
+        }
         echo $event->getTarget()->partial(
             'teams/partial/team-nav-selector',
             ['current_team' => $ct]
