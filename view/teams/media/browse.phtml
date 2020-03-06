@@ -39,20 +39,6 @@ $sortHeadings = [
 </div>
 
 <?php $this->trigger('view.browse.before'); ?>
-<div>
-    <form id="change_team">
-
-        <label for="team_options">Showing items for your current team: </label><select id="team_options" name="team_id" form="change_team">
-            <? foreach ($this->user_teams as $team):
-                ?><option <? if ($team->getTeam()->getName() == $this->current_team->getName()){?>selected <?}?>value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
-            endforeach;
-
-            ?>
-
-        </select>
-        <button form="change_team"  formmethod="post">Change Team</button>
-    </form>
-</div>
 <?php if ($medias): ?>
 <form method="post" id="batch-form" class="disable-unsaved-warning">
     <?php if ($userIsAllowedBatchUpdate || $userIsAllowedBatchDelete): ?>

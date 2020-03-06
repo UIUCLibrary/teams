@@ -276,7 +276,7 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     }
 
 
-    public function overloadVariable(Event $event)
+    public function teamSelectorBrowse(Event $event)
 
     {
         $items = null;
@@ -410,7 +410,7 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         );
     }
 
-    public function teamSelector(Event $event)
+    public function teamSelectorNav(Event $event)
     {
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
@@ -439,8 +439,28 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.browse.before',
-            [$this, 'overloadVariable']
+            [$this, 'teamSelectorBrowse']
         );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ItemSet',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Media',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
+        //on this one, which should be a model for further refactorying out the manual controller edits, need to add
+        //vars used by the partial
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\ResourceTemplate',
+//            'view.browse.before',
+//            [$this, 'teamSelectorBrowse']
+//        );
 
 
 
@@ -448,7 +468,7 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         $sharedEventManager->attach(
             '*',
             'view.layout',
-            [$this, 'teamSelector']
+            [$this, 'teamSelectorNav']
         );
 
 
