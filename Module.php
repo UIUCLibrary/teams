@@ -405,9 +405,12 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
 
     public function teamSelector(Event $event)
     {
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        $user_id = $identity->getId();
+
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $teams = $entityManager->getRepository('Teams\Entity\Team')->findAll();
-        $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['is_current'=>true]);
+        $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id])->getTeam()->getName();
         echo $event->getTarget()->partial(
             'teams/partial/team-nav-selector',
             ['current_team' => $ct]
