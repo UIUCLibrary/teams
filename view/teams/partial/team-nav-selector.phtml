@@ -1,0 +1,42 @@
+
+<?php
+//TODO this is a super bad way to do this, instead should just find with a single query in the controller but need to find out how to get the current user id into the controller which is right now a funciton in the module.php file
+$user_id = $this->identity()->getId();
+
+
+foreach ($this->current_team as $team):
+
+    if ($user_id == $team->getUser()->getId()){
+        $current = $this->api()->read('team', $team->getTeam()->getId())->getContent()->name();
+        break;
+
+    }else{
+        $current = "You are not part of any teams";
+    }
+endforeach;
+?>
+<script>
+    window.onload = function examplefunction() {
+        let newP = document.createElement('p');
+        let newAnchor = document.createElement('a');
+        let href = '<?php echo $current?>';
+
+        newAnchor.setAttribute('href', href);
+        newAnchor.innerText = href;
+
+
+
+
+        newP.innerText = 'Current Team';
+        newP.setAttribute('class','user-id');
+        newP.setAttribute('id', 'team');
+        newAnchor.setAttribute('id', 'team-link')
+
+                newP.appendChild(newAnchor);
+
+
+        document.getElementById("user").appendChild(newP);
+        let newButton = "<p class='logout'><a href='<? echo $this->url('admin/teams')?>'> Switch </a></p>"
+        $(newButton).insertAfter( "#team" );
+    }
+</script>

@@ -1,0 +1,163 @@
+<?php
+$role = $this->response->getContent();
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$resourceSortHeadings = [
+    [
+        'label' => $translate('Title'),
+        'value' => 'dcterms:title'
+    ],
+    [
+        'label' => $translate('Identifier'),
+        'value' => 'dcterms:identifier'
+    ],
+    [
+        'label' => $translate('Class'),
+        'value' => 'resource_class_label'
+    ],
+    [
+        'label' => $translate('Owner'),
+        'value' => 'owner_name'
+    ],
+    [
+        'label' => $translate('Created'),
+        'value' => 'created'
+    ],
+];
+
+
+$sectionNavs = [
+    'item-metadata' => $translate('Info'),
+    'item-linked' => $translate('Permissions'),
+    'role-users' => $translate('Users'),
+];
+?>
+<?php echo $this->pageTitle("Team Role: " . $role->name()); ?>
+
+<?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $role); ?>
+
+
+
+
+<div id="page-actions">
+    <!--    --><?php //if ($item->userIsAllowed('update')): ?>
+    <a class="button" href="<? echo $this->url('admin/teams/roles/detail/update', ['id' => $role->id()])?>"> Edit Role </a>
+    <!--    --><?php //endif; ?>
+</div>
+
+
+
+<div id="item-metadata" class="active section">
+    <div class="meta-group">
+        <h4><?php echo $translate('Name'); ?></h4>
+        <div class="value"><?php echo $escape($role->name()); ?></div>
+    </div>
+    <div class="meta-group">
+        <h4><?php echo $translate('Comment'); ?></h4>
+        <div class="value"><?php echo $escape($role->getComment()); ?></div>
+    </div>
+
+
+
+</div>
+
+
+<div id="item-linked" class="section">
+
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+        <tr>
+            <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
+            <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+            <th><?php echo $translate('Add Team Members?'); ?></th>
+            <th><?php echo $translate('Add Items?'); ?></th>
+            <th><?php echo $translate('Add Item Sets?'); ?></th>
+            <th><?php echo $translate('Modify Site?'); ?></th>
+            <th><?php echo $translate('Modify Team Resources?'); ?></th>
+            <th><?php echo $translate('Delete Team Resources?'); ?></th>
+
+        </tr>
+        </thead>
+        <tbody>
+
+            <tr>
+
+
+
+                <td><input type="checkbox" disabled <?php if($role->canAddUsers()){?> checked <?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddItems()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddItemsets()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddSitePages()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canModifyResources()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canDeleteResources()){?> checked<?}; ?>></td>
+
+
+
+
+            </tr>
+        </tbody>
+    </table>
+
+
+
+</div>
+
+<div id="role-users" class="section">
+    <? $teams = $this->api()->search('team')->getContent();
+
+    ?>
+    <table class="tablesaw" data-tablesaw-mode="stack">
+        <thead>
+        <tr>
+            <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
+            <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+            <th><?php echo $translate('Team'); ?></th>
+            <th><?php echo $translate('Users with '. $role->name() . ' role'); ?></th>
+
+        </tr>
+        </thead>
+        <tbody>
+
+
+
+
+<?
+foreach ($teams as $team):
+?>
+    <tr>
+    <td><? echo $team->name()?></td>
+    <td><ul>
+        <?$team_users = $team->users();
+        $key = array_search($role->name(), array_column(array($team_users), 'role'));
+        foreach ($team_users as $team_user):
+            if ($team_user->getRole()->getName() == $role->name()){
+
+        ?><li>
+                <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
+                    <? echo $team_user->getUser()->getName(); ?></a> <?
+            };
+        ?></li><?
+        endforeach;
+
+        ?>
+        </ul>
+    </td>
+    </tr>
+
+<?
+            endforeach;
+            ?>
+
+
+
+
+
+
+
+
+
+        </tbody>
+    </table>
+
+
+</div>

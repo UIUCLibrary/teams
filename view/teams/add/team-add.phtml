@@ -1,0 +1,15 @@
+<h1>Add New Team</h1>
+
+<?php
+echo $this->user;
+$omekaUser =  $this->user_id->getContent();
+echo $omekaUser->getJsonLd()['o:name'];
+$form = $this->form;
+$form->setAttribute('action', $this->url());
+$form->prepare();
+
+echo $this->form()->openTag($form);
+echo $this->formCollection($form);
+echo $this->form()->closeTag();
+
+

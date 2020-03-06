@@ -1,0 +1,320 @@
+<?php
+$team = $this->response->getContent();
+$items = $this->items;
+
+?>
+
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$this->htmlElement('body')->appendAttribute('class', 'items browse');
+$resourceSortHeadings = [
+    [
+        'label' => $translate('Title'),
+        'value' => 'dcterms:title'
+    ],
+    [
+        'label' => $translate('Identifier'),
+        'value' => 'dcterms:identifier'
+    ],
+    [
+        'label' => $translate('Class'),
+        'value' => 'resource_class_label'
+    ],
+    [
+        'label' => $translate('Owner'),
+        'value' => 'owner_name'
+    ],
+    [
+        'label' => $translate('Created'),
+        'value' => 'created'
+    ],
+];
+
+
+$sectionNavs = [
+    'item-metadata' => $translate('Info'),
+    'item-linked' => $translate('Users'),
+    'team-resources' => $translate('Resources'),
+];
+?>
+
+<?php echo $this->pageTitle("Team: " . $team->name()); ?>
+
+<?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $team); ?>
+<div id="page-actions">
+<!--    --><?php //if ($item->userIsAllowed('update')): ?>
+        <a class="button" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
+<!--    --><?php //endif; ?>
+</div>
+
+<div id="item-metadata" class="active section">
+        <div class="meta-group">
+            <h4><?php echo $translate('Name'); ?></h4>
+            <div class="value"><?php echo $escape($team->name()); ?></div>
+        </div>
+    <div class="meta-group">
+        <h4><?php echo $translate('Description'); ?></h4>
+        <div class="value"><?php echo $escape($team->description()); ?></div>
+    </div>
+
+    <div class="meta-group">
+        <h4><?php echo $translate('Linked Site(s)'); ?></h4>
+        <div class="value">TODO: make linked sites in data model</div>
+    </div>
+
+</div>
+
+<div id="item-linked" class="section">
+
+    <?php if (count($team->users())> 0): ?>
+                   <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
+                <thead>
+                    <tr>
+                        <th>
+                            <?php echo $translate('Name'); ?>
+                        </th>
+                        <th><?php echo $translate('Role'); ?></th>
+                        <th><?php echo $translate('Created'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+
+        <?php foreach ($team->users() as $team_user):
+
+            ?>
+                    <tr>
+                        <td>
+                           <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
+                               <?php echo $team_user->getUser()->getName() ?>
+                           </a>
+                        </td>
+                        <td><?php echo $team_user->getRole()->getName(); ?></td>
+                        <td><?php echo 'need to make this or put some info that makes more sense here'; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+    <?php else: ?>
+        <div class="no-resources o-icon-users">
+            <p><?php echo $translate('No users currently belong to this team.'); ?></p>
+                        <a href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>">Add a User</a>
+        </div>
+    <?php endif; ?>
+
+
+</div>
+
+<div id="team-resources" class="section">
+    <?php if (count($this->items)> 0): ?>
+        <p><?php echo $translate('These resources belong to this team:'); ?></p>
+        <?php
+
+
+
+
+
+        ?>
+
+
+        <?php echo $this->searchFilters(); ?>
+
+        <div class="browse-controls">
+            <?php echo $this->pagination(); ?>
+            <?php echo $this->hyperlink($translate('Advanced search'), $this->url(null, ['action' => 'search'], ['query' => $this->params()->fromQuery()], true), ['class' => 'advanced-search']); ?>
+            <?php echo $this->sortSelector($resourceSortHeadings); ?>
+        </div>
+
+
+    <?php $this->trigger('view.browse.before'); ?>
+    <?php if ($items): ?>
+        <form method="post" id="batch-form" class="disable-unsaved-warning">
+            <?php if ($this->userIsAllowed('Omeka\Api\Adapter\ItemAdapter', 'batch_update')): ?>
+                <div class="batch-inputs">
+                    <select class="batch-actions-select" aria-label="<?php echo $translate('Batch actions'); ?>">
+                        <option value="default"><?php echo $translate('Batch actions'); ?></option>
+                        <option value="update-selected" disabled="true"><?php echo $translate('Edit selected'); ?></option>
+                        <option value="update-all"><?php echo $translate('Edit all'); ?></option>
+                        <option value="delete-selected" disabled="true"><?php echo $translate('Delete selected'); ?></option>
+                        <option value="delete-all"><?php echo $translate('Delete all'); ?></option>
+                    </select>
+                    <div class="batch-actions">
+                        <button type="button" class="default active" disabled="true"><?php echo $translate('Go'); ?></button>
+                        <input type="submit" class="update-selected" name="update_selected" value="<?php echo $translate('Go'); ?>" formaction="<?php echo $escape($this->url(null, ['action' => 'batch-edit'], true)); ?>">
+                        <input type="submit" class="update-all" name="update_all" value="<?php echo $translate('Go'); ?>" formaction="<?php echo $escape($this->url(null, ['action' => 'batch-edit-all'], true)); ?>">
+                        <input type="hidden" name="query" class="batch-query" value="<?php echo $escape(json_encode($this->params()->fromQuery())); ?>">
+                        <a class="delete button sidebar-content delete-selected" data-sidebar-selector="#sidebar-delete-selected"><?php echo $translate('Go'); ?></a>
+                        <a class="delete button sidebar-content delete-all" data-sidebar-selector="#sidebar-delete-all"><?php echo $translate('Go'); ?></a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+
+            <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
+                <thead>
+                <tr>
+<!--                    to allow batch editing but the following in the th next to title-->
+<!--                    <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+                    <th><?php echo $translate('Title'); ?></th>
+                    <th><?php echo $translate('Class'); ?></th>
+                    <th><?php echo $translate('Owner'); ?></th>
+                    <th><?php echo $translate('Created'); ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($items as $item): ?>
+                    <?php
+                    if ($owner = $item->owner()) {
+                        $ownerText = $this->hyperlink(
+                            $owner->name(),
+                            $this->url('admin/id', [
+                                    'controller' => 'user',
+                                    'action' => 'show',
+                                    'id' => $owner->id()]
+                            )
+                        );
+                    } else {
+                        $ownerText = $translate('[no owner]');
+                    }
+                    ?>
+                    <tr>
+                        <td>
+<!--                            for batch edit-->
+<!--                            --><?php //if ($item->userIsAllowed('update') || $item->userIsAllowed('delete')): ?>
+<!--                                <input type="checkbox" name="resource_ids[]" value="--><?php //echo $item->id(); ?><!--" aria-label="--><?php //echo $translate('Select item'); ?><!--">-->
+<!--                            --><?php //endif; ?>
+                            <?php echo $item->linkPretty(); ?>
+                            <?php if (!$item->isPublic()): ?>
+                                <span class="o-icon-private" aria-label="<?php echo $translate('Private'); ?>"></span>
+                            <?php endif; ?>
+                            <ul class="actions">
+
+<!--                                need to replace with Teams ACL-->
+                                <?php if ($item->userIsAllowed('update')): ?>
+                                    <li><?php echo $item->link('', 'edit', [
+                                            'class' => 'o-icon-edit',
+                                            'title' => $translate('Edit'),
+                                        ]); ?></li>
+                                <?php endif; ?>
+                                <?php if ($item->userIsAllowed('delete')): ?>
+                                    <li><?php echo $this->hyperlink('', '#', [
+                                            'data-sidebar-selector' => '#sidebar',
+                                            'data-sidebar-content-url' => $item->url('delete-confirm'),
+                                            'class' => 'o-icon-delete sidebar-content',
+                                            'title' => $translate('Delete'),
+                                        ]); ?></li>
+                                <?php endif; ?>
+                                <li><?php echo $this->hyperlink('', '#', [
+                                        'data-sidebar-selector' => '#sidebar',
+                                        'data-sidebar-content-url' => $item->url('show-details'),
+                                        'class' => 'o-icon-more sidebar-content',
+                                        'title' => $translate('Details'),
+                                    ]); ?></li>
+                            </ul>
+                        </td>
+                        <td><?php echo $escape($translate($item->displayResourceClassLabel())); ?></td>
+                        <td><?php echo $ownerText; ?></td>
+                        <td><?php echo $escape($this->i18n()->dateFormat($item->created())); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+
+        </form>
+
+    <?php $this->trigger('view.browse.after'); ?>
+        <div class="browse-controls">
+            <?php echo $this->pagination(); ?>
+        </div>
+
+        <div id="sidebar" class="sidebar">
+            <?php echo $this->hyperlink('', '#', [
+                'class' => 'sidebar-close o-icon-close',
+                'title' => $translate('Close'),
+            ]); ?>
+            <div class="sidebar-content"></div>
+        </div>
+        <div id="sidebar-delete-selected" class="sidebar">
+            <?php echo $this->hyperlink('', '#', [
+                'class' => 'sidebar-close o-icon-close',
+                'title' => $translate('Close'),
+            ]); ?>
+            <div class="sidebar-content">
+                <div id="sidebar-confirm">
+                    <h3><?php echo $translate('Delete items'); ?></h3>
+                    <p><?php echo $translate('Are you sure you would like to delete the selected items?'); ?></p>
+                    <p class="error"><?php echo sprintf(
+                            $translate('%s: this action will permanently delete %s items and cannot be undone.'),
+                            sprintf('<strong>%s</strong>', $translate('Warning')),
+                            '<strong><span id="delete-selected-count"></span></strong>'
+                        ); ?></p>
+                </div>
+            </div>
+        </div>
+        <div id="sidebar-delete-all" class="sidebar">
+            <?php echo $this->hyperlink('', '#', [
+                'class' => 'sidebar-close o-icon-close',
+                'title' => $translate('Close'),
+            ]); ?>
+            <div class="sidebar-content">
+                <div id="sidebar-confirm">
+                    <h3><?php echo $translate('Delete items'); ?></h3>
+                    <p><?php echo $translate('Are you sure you would like to delete all items on all pages of this result?'); ?></p>
+                    <p class="error"><?php echo sprintf(
+                            $translate('%s: this action will permanently delete %s items and cannot be undone.'),
+                            sprintf('<strong>%s</strong>', $translate('Warning')),
+                            sprintf('<strong>%s</strong>', number_format($this->pagination()->getPaginator()->getTotalCount()))
+                        ); ?></p>
+                    <label><input type="checkbox" name="confirm-delete-all-check"> <?php echo $translate('Are you sure?'); ?></label>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Complete the batch delete form after confirmation.
+            $('#confirm-delete-selected, #confirm-delete-all').on('submit', function(e) {
+                var confirmForm = $(this);
+                if ('confirm-delete-all' === this.id) {
+                    confirmForm.append($('.batch-query').clone());
+                } else {
+                    $('#batch-form').find('input[name="resource_ids[]"]:checked').each(function() {
+                        confirmForm.append($(this).clone().prop('disabled', false).attr('type', 'hidden'));
+                    });
+                }
+            });
+            $('.delete-all').on('click', function(e) {
+                Omeka.closeSidebar($('#sidebar-delete-selected'));
+            });
+            $('.delete-selected').on('click', function(e) {
+                Omeka.closeSidebar($('#sidebar-delete-all'));
+                var inputs = $('input[name="resource_ids[]"]');
+                $('#delete-selected-count').text(inputs.filter(':checked').length);
+            });
+            $('#sidebar-delete-all').on('click', 'input[name="confirm-delete-all-check"]', function(e) {
+                $('#confirm-delete-all input[type="submit"]').prop('disabled', this.checked ? false : true);
+            });
+        </script>
+
+    <?php else: ?>
+
+        <div class="no-resources">
+            <p><?php echo $translate('Omeka could not find any items.'); ?></p>
+        </div>
+
+    <?php endif; ?>
+
+    <?php else: ?>
+        <div class="no-resources">
+            <p><?php echo $translate('No resources currently belong to this team.'); ?></p>
+<!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
+        </div>
+    <?php endif; ?>
+</div>
+
+
+
+
+
+
+
+

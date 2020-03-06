@@ -1,0 +1,168 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+
+$this->htmlElement('body')->appendAttribute('class', 'items edit');
+
+
+$sectionNavs = [
+'team-info' => $translate('Info'),
+'team-members' => $translate('Users'),
+'team-resources' => $translate('Resources'),
+];
+?>
+
+<?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
+
+<h1>Update Team for <? echo $this->api()->read('users', $this->ident)->getContent()->name()?></h1>
+<div id="page-actions">
+    <!--    --><?php //if ($item->userIsAllowed('update')): ?>
+    <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
+    <!--    --><?php //endif; ?>
+</div>
+<?php
+$form = $this->form;
+
+$form->prepare();
+
+echo $this->form()->openTag($form);?>
+
+<div id="team-info" class="active section">
+    <div class="meta-group"><?php
+
+        echo $this->formCollection($form);
+
+
+        ?>
+    </div>
+
+
+</div>
+<?php
+
+echo $this->form()->openTag($form);?>
+
+<div id="team-members" class="section">
+    <div class="meta-group">
+        <div class="field">
+            <div class="field-meta">
+                <label for="add-member-choice">Add a User to the Team:</label>
+            </div>
+            <div class="input">
+                <input list="add-member-options" id="new-member-choice" name="add-member-choice" />
+            </div>
+
+
+            <datalist id="add-member-options">
+                <? foreach ($this->available_u_array as $member):
+                    echo '<option value="' .  $member .'"> ';
+                endforeach;
+                ?>
+            </datalist>
+
+
+
+            <div >
+                <label for="add-member-role">Role:</label>
+            </div>
+            <div class="input">
+                <input list="add-member-role" id="new-member-role" name="add-member-role" />
+            </div>
+
+
+            <datalist id="add-member-role">
+                <? foreach ($this->roles as $role):
+                    echo '<option value="' .  $role->getName() .'"> ';
+                endforeach;
+                ?>
+            </datalist>
+            <div style="margin-left: 20px; ">
+                <input class="btn btn-default" type="submit" name="chooseRole" value="Add User" />
+            </div>
+        </div>
+        <div class="field">
+            <div class="field-meta">
+                <label for="remove-member-choice">Remove user from the Team:</label>
+            </div>
+            <div class="input">
+                <input list="remove-member-options" id="remove-member-choice" name="remove-member-choice" />
+            </div>
+
+
+            <datalist id="remove-member-options">
+                <? foreach ($this->team_u_array as $member):
+                    echo '<option value="' .  $member .'"> ';
+                endforeach;
+                ?>
+            </datalist>
+            <br>
+            <br>
+            <div style="margin-left: 20px; ">
+                <input class="btn btn-default" type="submit" name="removeUser" value="Remove User " />
+
+            </div>
+        </div>
+        <div class="field">
+            <div class="field-meta">
+                Current Users:
+            </div>
+            <?php if (count($this->team_u_collection)> 0): ?>
+                <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
+                    <thead>
+                    <tr>
+                        <th>
+                            <?php echo $translate('Name'); ?>
+                        </th>
+                        <th><?php echo $translate('Role'); ?></th>
+                        <th><?php echo $translate('Created'); ?></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($this->team_u_collection as $team_user):
+
+                        ?>
+                        <tr>
+                            <td>
+                                <a class="o-icon-delete" href="update.phtml"></a>
+                                <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' => $team_user->getUser()->getId()]) ?>">
+                                    <?php echo $team_user->getUser()->getName() ?>
+
+                                </a>
+                            </td>
+                            <td>
+                                <fieldset name="user-roles" id="user-roles">
+                                    <a class="o-icon-edit"></a>
+                                    <select  id="<?php echo $team_user->getUser()->getId()?>" name="<?php echo $team_user->getUser()->getId()?>">
+                                        <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
+                                        <?php foreach ($this->roles as $role):
+                                            if ($role->getId() !== $team_user->getRole()->getId())
+                                            {
+                                                ?> <option value="<?php echo $role->getId();?>"><?php echo $role->getName();?></option> <?php
+                                            }
+                                        endforeach; ?>
+
+
+                                    </select>
+                                </fieldset>
+
+
+                            </td>
+                            <td><?php echo 'need to make this or put some info that makes more sense here'; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <div class="no-resources">
+                    <p><?php echo $translate('No users currently belong to this team.'); ?></p>
+                    <!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
+                </div>
+            <?php endif; ?>
+        </div>
+
+    </div>
+</div>
+<?php
+echo $this->form()->closeTag();
+?>
+

@@ -1,0 +1,203 @@
+@media screen {
+    header nav .groups:before,
+    .groups .subhead::before,
+    #groups .no-resources:before,
+    .groups .no-resources:before {
+        content:"";
+    }
+    #groups .property {
+        display: inherit;
+    }
+    .groups .group .actions,
+    #group-resources .actions {
+        float: right;
+    }
+    #group-resources.empty,
+    #group-resources+.no-resources {
+        display:none;
+    }
+    #group-resources.empty+.no-resources {
+        display:block;
+        padding:0 24px;
+    }
+    #group-resources.empty+.no-resources:before {
+        content:"";
+    }
+    #group-resources tr.delete {
+        background-color:#fcc;
+    }
+    .groups .resource-details .group-internal-id {
+        font-size: 0.7em;
+    }
+
+    .group .group-list {
+        margin: 0;
+    }
+
+    .group .group-comment.no-comment,
+    .groups .group-comment.no-comment {
+        font-style: italic;
+    }
+    .resource-details .internal-id {
+        font-size: small;
+        font-style: italic;
+    }
+
+    @media (min-width:641px) {
+        .groups.browse table th:nth-child(1n+2),
+        .groups.browse table td:nth-child(1n+2) {
+            text-align: right;
+        }
+        .groups.browse table th:nth-child(1n+2) *,
+        .groups.browse table td:nth-child(1n+2) * {
+            text-align: right;
+            float: right;
+        }
+        .groups.browse table th:first-child,
+        .groups.browse table td:first-child {
+            max-width: 40%;
+        }
+        .groups.browse table th:last-child,
+        .groups.browse table td:last-child {
+            min-width: 10%;
+        }
+    }
+
+    .groups table .resource-name {
+        display: inline-block;
+        vertical-align: bottom;
+        margin-left: .5em;
+        opacity: .5;
+    }
+
+    .groups .single.actions {
+        float: right;
+    }
+    .groups .single.actions a::before {
+        text-align: inherit;
+    }
+    .groups .single.actions .o-icon-transmit::before {
+        background: url('../img/waiting-mini.gif') no-repeat scroll 3px 3px transparent !important;
+    }
+    .groups .group-name[contenteditable=true].o-icon-transmit::before,
+    .groups .no-action::before {
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        vertical-align: top;
+        border: 0;
+        box-shadow: none;
+        opacity: .5;
+        text-align: inherit;
+    }
+    .groups.meta-group .single.actions,
+    .groups.meta-group .no-action::before {
+        float: right;
+    }
+
+    .groups.meta-group span,
+    .groups .meta-group span {
+        display: inline;
+        hyphens: auto;
+        word-wrap: break-word;
+    }
+
+    .groups.meta-group::before,
+    .groups .status-toggle::before,
+    .groups .resource-name::before {
+        display: inline-block;
+        font-family: "Font Awesome 5 Free";
+        padding-left: 3px;
+        padding-right: 3px;
+        width: 24px;
+    }
+    .groups .resource-name.resource::before {
+        content: "";
+    }
+    .groups .resource-name.no-resource::before {
+        content: "❌";
+    }
+    .groups .resource-name.item-set::before {
+        content: "";
+    }
+    .groups .resource-name.item::before {
+        content: "";
+    }
+    .groups .resource-name.media::before {
+        content: "";
+    }
+    .groups .o-icon-proposed::before {
+        color: #FFA500;
+        content: "";
+    }
+    .groups .o-icon-allowed::before {
+        color: #FFA500;
+        content: "";
+    }
+    .groups .o-icon-approved::before {
+        color: #00FF00;
+        content: "";
+    }
+    .groups .o-icon-rejected::before {
+        color: #FF0000;
+        content: "";
+    }
+    .groups .o-icon-undefined::before {
+        color: #FF0000;
+        content: "";
+    }
+    .groups .o-icon-none::before {
+        color: #FFFFFF;
+        content: "";
+    }
+    .groups .o-icon-transmit::before {
+        background: url('../img/waiting-mini.gif') no-repeat scroll 12px 3px transparent !important;
+        color: #000000;
+        content: "";
+        cursor: progress;
+    }
+
+    .groups .group-name[contenteditable="true"] {
+        background: inherit;
+        border: hidden;
+        display: inline-block;
+        min-height: unset;
+        max-height: 3em;
+        padding: inherit;
+        width: 84%;
+    }
+    .groups .group-name[contenteditable=true]:hover,
+    .groups .group-name[contenteditable=true]:focus {
+        outline: 1px dotted rgba(0,0,0,0.15);
+    }
+    .groups .group-name[contenteditable="true"]:active {
+        display: inline;
+        outline: 1px dashed rgba(0,0,0,0.15);
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .groups .group-name[contenteditable="true"]:active br {
+        display:none;
+    }
+    .groups .group-name[contenteditable="true"]:active * {
+        display:inline;
+        white-space:nowrap;
+    }
+    .groups .group-name[contenteditable=true].o-icon-transmit::before {
+        background: url('../img/waiting-mini.gif') no-repeat scroll 3px 3px transparent !important;
+    }
+
+    form fieldset#groups td {
+        display: block;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    fieldset.section>#group-resources.empty+.no-resources {
+        display:none;
+    }
+    fieldset.section.mobile-active>#group-resources.empty+.no-resources {
+        display:block;
+        margin-top:48px;
+    }
+}

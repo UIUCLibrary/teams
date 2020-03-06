@@ -1,0 +1,50 @@
+<style>
+    .team-no-teams {
+        text-align: center;
+        position: relative;
+        margin-top:96px
+    }
+
+    .team-no-teams:before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 96px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        opacity:.08
+    }
+
+    .team-no-teams p {
+        font-size: 24px;
+        line-height: 48px;
+        margin-top:48px}
+
+    .team-no-teams:before{
+        content: "\f0c0"
+                     }
+
+
+</style>
+
+<?php
+$org_unit = 'teams';
+$resource_type = $this->resource_type;
+
+
+if ($this->teams){
+    ?><p><? echo $this->translate(sprintf('The following %s are linked to this %s', $org_unit, $resource_type)); ?></p><?php
+    ?><ul><?
+    foreach ($this->teams as $team):
+        ?>
+   <li><a href="<? $this->url('admin/teams/detail', ['id'=> $team->getId()])?>">
+
+    <?php echo $team->getName();?>
+    </a></li>
+    <?php endforeach;
+    ?></ul><?}else{ ?>
+<div class="team-no-teams">
+<p><? echo $this->translate('No teams linked to this item set')?></p>
+</div>
+<?php }

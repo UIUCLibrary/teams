@@ -1,0 +1,37 @@
+
+<div id='item-data' class='sidebar flags'>
+    <a href='#' class='sidebar-close o-icon-close'><span class='screen-reader-text'><?php echo $this->translate("Close"); ?></span></a>
+    <h3><?php echo $this->translate("Item data: "); ?></h3>
+
+    <p><?php echo $this->translate("Data from this column applies to the entire item being imported."); ?></p>
+    <p><?php echo $this->translate("Settings here will override any corresponding settings in Basic import settings."); ?></p>
+    <ul>
+        <li data-flag='column-itemset-id' data-flag-type='item-data'>
+            <a href='#' class='button'><span><?php echo $this->translate("Item set ID"); ?></span></a>
+        </li>
+        <li data-flag='column-resourcetemplate' data-flag-type='item-data'>
+            <a href='#' class='button'><span><?php echo $this->translate("Resource template name"); ?></span></a>
+        </li>
+        <li data-flag='column-resourceclass' data-flag-type='item-data'>
+            <a href='#' class='button'><span><?php echo $this->translate("Resource class term"); ?></span></a>
+        </li>
+        
+       <?php if( ($userRole == 'global_admin') || ($userRole == 'site_admin')): ?>
+
+            <li data-flag='column-owneremail'>
+                <a href='#' class='button'><span><?php echo $this->translate("Owner email address"); ?></span></a>
+            </li>
+       <?php endif; ?>
+       
+    </ul>
+        
+    <div class='item-mapping options'>
+        <h4><?php echo $this->translate("Options"); ?></h4>
+        <ul>
+            <li class="column-multivalue">
+                <a href='#' class='button column-multivalue'><span><?php echo $this->translate("Use multivalue separator"); ?></span></a>
+                <p><?php echo $this->translate("(Only applies to Item set ID)"); ?></p>
+            </li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,35 @@
+<?php
+$escape = $this->plugin('escapeHtml');
+ ?>
+<div class="resource-details" data-resource-values="<?php echo $escape($values); ?>">
+    <?php if ($linkTitle): ?>
+    <h3 class="o-title"><?php echo $resource->link($resource->displayTitle()); ?></h3>
+    <?php else: ?>
+    <h3 class="o-title"><?php echo $escape($resource->displayTitle()); ?></h3>
+    <?php endif; ?>
+    <div class="o-description"><?php echo $escape($resource->displayDescription()); ?></div>
+    <div class="meta-group">
+        <h4><?php echo $escape($this->translate('Visibility')); ?></h4>
+        <div class="value"><?php echo ($resource->isPublic()) ? $this->translate('Public') : $this->translate('Private'); ?></div>
+    </div>
+    <?php $itemsets = $resource->itemSets(); ?>
+    <?php if (count($itemsets) > 0): ?>
+    <div class="meta-group">
+        <h4><?php echo $this->translate('Item sets'); ?></h4>
+        <?php foreach ($itemsets as $itemset): ?>
+        <div class="value item-sets"><?php echo $itemset->link($itemset->displayTitle()); ?></div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <?php if ($resource->media()): ?>
+    <div class="meta-group">
+        <h4><?php echo $this->translate('Media'); ?></h4>
+        <?php foreach ($resource->media() as $media): ?>
+        <div class="value">
+            <?php echo $media->linkPretty(); ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <?php $this->trigger('view.details', array('entity' => $resource)); ?>
+</div>

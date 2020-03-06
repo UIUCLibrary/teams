@@ -1,0 +1,28 @@
+<h1>Delete Team</h1>
+
+<p><b>Are you sure you want to delete the following Team?</b></p>
+   <p> Team members will still be able to login, and items
+    will still exist, but all users associated with this
+    team will no longer have access to its items, and
+    those items will no longer be associated together
+    through this team.
+</p>
+
+<?php
+$team = $this->api()->read('team', ['id'=> $this->params()->fromRoute('id')])->getContent();
+?>
+
+
+
+
+
+
+
+<ul class="list-group">
+    <li class="list-group-item"><?= $team->name() ?></li>
+</ul>
+
+<form action="<?php $this->url('admin/teams/detail/delete', ['id'=>$this->params()->fromRoute('id')])?>" method="post">
+    <input class="btn btn-default" type="submit" name="confirm" value="Cancel" />
+    <input class="btn btn-danger" type="submit" name="confirm" value="Delete" />
+</form>

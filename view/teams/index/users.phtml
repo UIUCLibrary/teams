@@ -1,0 +1,30 @@
+<h1>test</h1>
+
+<?php
+//$response = $this->response->getContent();
+
+//$response = $response->getContent();
+foreach ($this->users->getContent() as $team):
+    $team_id = $team->id();
+    ?>
+    <h4>Id: <?php echo $team_id ?></h4>
+
+
+<?php endforeach; ?>
+
+
+
+<?php
+
+foreach ($this->team_users->getContent() as $user):
+    $user_id = $user->userId();
+    $user_name = $this->api()->read('users', $user_id)->getContent();
+
+    ?>
+    <h4>Id: <?php echo $team_id ?></h4>
+    <h5>Name: <?php echo $user_name->name() ?></h5>
+
+
+<?php endforeach; ?>
+
+

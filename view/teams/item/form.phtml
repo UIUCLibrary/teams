@@ -1,0 +1,63 @@
+<?php
+$this->headScript()->appendFile($this->assetUrl('js/resource-form.js', 'Omeka'));
+$form->prepare();
+$escape = $this->plugin('escapeHtml');
+$formLabel = $this->plugin('formLabel');
+$formElement = $this->plugin('formElement');
+?>
+
+<?php echo $this->form()->openTag($form); ?>
+
+<?php echo $this->sectionNav([
+    'resource-values' => $this->translate('Values'),
+    'item-media' => $this->translate('Media'),
+    'item-sets' => $this->translate('Item sets'),
+    'thumbnail' => $this->translate('Thumbnail'),
+], $sectionNavEvent); ?>
+
+<?php $this->trigger("view.$action.form.before", ['form' => $form]); ?>
+
+<?php echo $this->partial('common/resource-fields.phtml', [
+    'form' => $form,
+    'resource' => $item,
+]); ?>
+
+<fieldset id="item-media" class="section" aria-labelledby="media-label">
+    <?php echo $this->partial('omeka/admin/item/manage-media', [
+        'mediaForms' => $mediaForms,
+        'resource' => $item,
+    ]); ?>
+</fieldset>
+
+<fieldset id="item-sets" class="section" aria-labelledby="item-sets-label">
+    <?php echo $this->partial('omeka/admin/item/manage-item-sets', [
+        'item' => $item,
+    ]); ?>
+</fieldset>
+
+<div id="page-actions">
+    <?php if ($item && $item->isPublic() || !isset($item)): ?>
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'o-icon-public button',
+        'title' => $this->translate('Make private'),
+    ]); ?>
+    <input type="hidden" name="o:is_public" value="1">
+    <?php else: ?>
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'o-icon-private button',
+        'title' => $this->translate('Make public'),
+    ]); ?>
+    <input type="hidden" name="o:is_public" value="0">
+    <?php endif; ?>
+    <?php echo (isset($deleteButton)) ? $deleteButton : ''; ?>
+    <?php echo $this->cancelButton(); ?>
+    <button type="submit" name="add-item-submit"><?php echo $escape($submitLabel); ?></button>
+</div>
+
+<?php $this->trigger("view.$action.form.after", ['form' => $form]); ?>
+
+<?php echo $formElement($form->get('csrf')); ?>
+
+<?php echo $this->form()->closeTag(); ?>
+
+<?php echo $this->partial('common/resource-form-templates.phtml'); ?>

@@ -1,0 +1,75 @@
+<?php
+$this->htmlElement('body')->appendAttribute('class', 'edit media');
+$escape = $this->plugin('escapeHtml');
+$this->headScript()->appendFile($this->assetUrl('js/resource-form.js', 'Omeka'));
+$form->prepare();
+$formLabel = $this->plugin('formLabel');
+$formElement = $this->plugin('formElement');
+$mediaForm = $this->media()->updateForm($media);
+
+$sectionNavs = [
+    'resource-values' => $this->translate('Values'),
+    'thumbnail' => $this->translate('Thumbnail'),
+];
+if ($mediaForm) {
+    $sectionNavs['media'] = $this->translate('Media');
+}
+?>
+
+<script type='text/javascript'>
+var valuesJson = <?php echo json_encode($media->values()); ?>;
+</script>
+
+<?php echo $this->pageTitle($media->displayTitle(), 1, $this->translate('Media')); ?>
+<?php $this->trigger('view.edit.before'); ?>
+<form method='post' id='edit-media'>
+
+<?php echo $this->sectionNav($sectionNavs, 'view.edit.section_nav'); ?>
+<?php $this->trigger('view.edit.form.before', ['form' => $form]); ?>
+    <?php
+        //produces a <fieldset> with the id and class atts passed in.
+        //on, e.g., the item add/edit pages, the id will work with the classes on
+        //the nav lis above. (see globals.js)
+        echo $this->partial(
+                'common/resource-fields.phtml',
+                [
+                    'id' => 'resource-values',
+                    'class' => 'section active',
+                    'form' => $form,
+                    'resource' => $media
+                ]);
+    ?>
+
+    <fieldset id="media" class="section">
+        <?php echo $mediaForm; ?>
+    </fieldset>
+
+    <div id="page-actions">
+        <?php if ($media->isPublic()): ?>
+        <?php echo $this->hyperlink('', '#', [
+            'class' => 'o-icon-public button',
+            'title' => $this->translate('Make private'),
+        ]); ?>
+        <input type="hidden" name="o:is_public" value="1">
+        <?php else: ?>
+        <?php echo $this->hyperlink('', '#', [
+            'class' => 'o-icon-private button',
+            'title' => $this->translate('Make public'),
+        ]); ?>
+        <input type="hidden" name="o:is_public" value="0">
+        <?php endif; ?>
+        <?php if ($media->userIsAllowed('delete')): ?>
+        <a href="#" class="delete button"><?php echo $this->translate('Delete'); ?></a>
+        <?php endif; ?>
+        <?php echo $this->cancelButton(); ?>
+        <input type="submit" name="add-item-submit" value=" <?php echo $escape($this->translate('Save')); ?>">
+    </div>
+    <?php $this->trigger('view.edit.form.after', ['form' => $form]); ?>
+    <?php echo $this->formElement($form->get('csrf')); ?>
+</form>
+
+<?php echo $this->partial('common/resource-form-templates.phtml'); ?>
+
+<?php echo $this->deleteConfirm($media, 'media'); ?>
+
+<?php $this->trigger('view.edit.after'); ?>

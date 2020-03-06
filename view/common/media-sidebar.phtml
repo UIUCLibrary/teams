@@ -1,0 +1,24 @@
+
+<div id='media-import' class='sidebar flags'>
+    <a href='#' class='sidebar-close o-icon-close'><span class='screen-reader-text'><?php echo $this->translate("Close"); ?></span></a>
+    <h3><?php echo $this->translate("Media import: "); ?></h3>
+    <ul>
+
+    <?php foreach($mediaForms as $type=>$mediaForm): ?>
+        <li data-flag='<?php echo $type; ?>' data-flag-type='media'>
+            <a href='#' class='button'><span><?php echo $mediaForm['label']; ?></span></a>
+        </li>
+    <?php endforeach; ?>
+
+    </ul>
+    
+    <div class='media-mapping options'>
+        <h4><?php echo $this->translate("Options"); ?></h4>
+            <ul>
+                <li class='column-multivalue'>
+                    <a href='#' class='button column-multivalue'><span><?php echo $this->translate("Use multivalue separator"); ?></span></a>
+                </li>
+            </ul>
+    </div>
+
+</div>
