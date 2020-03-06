@@ -171,9 +171,10 @@ class ItemSetController extends AbstractActionController
             $team_user = $em->getRepository('Teams\Entity\TeamUser');
             $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
             $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
+            if ($old_current){
             $old_current->setCurrent(null);
             //no idea why, but this function fails in this controller only unless the action is flushed first
-            $em->flush();
+            $em->flush();}
             $new_current->setCurrent(true);
             $em->flush();
 
@@ -189,7 +190,10 @@ class ItemSetController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
         $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
+        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        if ($current_team){
+            $current_team = $current_team->getTeam()->getName();
+        }else $current_team = null;
 
 
         $response = $this->teamResources('item_sets', $this->params()->fromQuery(),$user_id);

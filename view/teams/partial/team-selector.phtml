@@ -2,11 +2,22 @@
     <form id="change_team">
 
         <label for="team_options">Showing items for your current team: </label><select id="team_options" name="team_id" form="change_team">
-            <? foreach ($this->user_teams as $team):
-                ?><option <? if ($team->getTeam()->getName() == $this->current_team->getName()){?>selected <?}?>value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
-            endforeach;
 
-            ?>
+            <? if ($this->current_team == null){
+                echo 'Current Team is Null';
+                foreach ($this->user_teams as $team):
+                    ?><option value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
+                endforeach;
+                ?> <option value="null" selected>None</option><?
+            } else {
+
+                foreach ($this->user_teams as $team):
+                    ?>
+                    <option <? if ($team->getTeam()->getName() == $this->current_team){ ?>selected <?
+                } ?>value="<? echo $team->getTeam()->getId(); ?>"><? echo $team->getTeam()->getName(); ?></option><?
+                endforeach;
+
+            }?>
 
         </select>
         <button form="change_team"  formmethod="post">Change Team</button>
