@@ -38,9 +38,6 @@ class Module extends AbstractModule
     {
         parent::onBootstrap($event);
         $this->addAclRules();
-
-        // Allows to manage batch processes.
-
     }
 
 
