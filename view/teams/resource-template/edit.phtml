@@ -1,0 +1,18 @@
+<?php $this->htmlElement('body')->appendAttribute('class', 'edit resource-templates'); ?>
+
+<?php echo $this->pageTitle($resourceTemplate->label(), 1, $this->translate('Resource templates')); ?>
+
+<?php
+echo $this->partial(
+    'omeka/admin/resource-template/form.phtml',
+    [
+        'form' => $form,
+        'resourceTemplate' => $resourceTemplate,
+        'propertyRows' => $propertyRows,
+        'submitLabel' => $this->translate('Save'),
+        'action' => 'edit',
+    ]
+);
+?>
+
+<?php $this->trigger('view.edit.after'); ?>

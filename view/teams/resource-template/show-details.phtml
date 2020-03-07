@@ -1,0 +1,16 @@
+<?php
+$escape = $this->plugin('escapeHtml');
+?>
+<h3><?php echo $this->translate($resource->link($resource->label())); ?></h3>
+<?php foreach ($resource->resourceTemplateProperties() as $resourceTemplateProperty): ?>
+<?php
+$property = $resourceTemplateProperty->property();
+$propertyAltLabel = $escape($resourceTemplateProperty->alternateLabel());
+$propertyAltComment = $escape($resourceTemplateProperty->alternateComment());
+?>
+<div class="meta-group">
+    <h4><?php echo ($propertyAltLabel) ? $propertyAltLabel : $escape($this->translate($property->label())); ?></h4>
+    <div class="comment"><?php echo ($propertyAltComment) ? $propertyAltComment : $escape($this->translate($property->comment())); ?></div>
+</div>
+<?php endforeach; ?>
+<?php $this->trigger('view.details', array('entity' => $resource)); ?>
