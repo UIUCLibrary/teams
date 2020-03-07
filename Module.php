@@ -633,6 +633,12 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
         );
+            //ResourceTemplate//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
 
 
 

@@ -90,7 +90,9 @@ return [
             //and route it to a different factory that invokes a controller of my design
             'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
             'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
-            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory'
+            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
+            'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory'
+
 
 //            'Teams\Controller\TeamResourceFilter' => 'Teams\Module\TeamResourceFilterFilter'
 
@@ -256,6 +258,18 @@ return [
                             ]
                         ],
                     ],
+//                    'resource-template' => [
+//                        'type' => Literal::class,
+//                        'options' => [
+//                            'route' => 'resource-template',
+//                            'defaults' => [
+//                                '__NAMESPACE__' => 'Teams\Controller',
+//                                'controller' => 'Index',
+//                                'action' => 'index',
+//                            ],
+//                        ]
+//
+//                    ]
                 ],
             ],
         ],
