@@ -24,7 +24,7 @@ class TeamResourceTemplate
      * @Id
      * @ManyToOne(
      *     targetEntity="Teams\Entity\Team",
-     *     inversedBy="team_resources",
+     *     inversedBy="team_resource_templates",
      *     cascade={"persist"}
      * )
      * @JoinColumn(

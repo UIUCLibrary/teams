@@ -143,6 +143,47 @@ class Team extends AbstractEntity
      */
     protected $resources;
 
+    /* *
+ *
+ * Many Teams have Many Resources Templates.
+ * @var Collection|ResourceTemplate[]
+ * @ManyToMany(
+ *     targetEntity="Omeka\Entity\ResourceTemplate",
+ *     mappedBy="team",
+ *     inversedBy="resource_template"
+ * )
+ * @JoinTable(
+ *     name="team_resource_template",
+ *     joinColumns={
+ *         @JoinColumn(
+ *             name="team_id",
+ *             referencedColumnName="id",
+ *             onDelete="cascade",
+ *             nullable=false
+ *         )
+ *     },
+ *     inverseJoinColumns={
+ *         @JoinColumn(
+ *             name="resource_template_id",
+ *             referencedColumnName="id",
+ *             onDelete="cascade",
+ *             nullable=false
+ *         )
+ *     }
+ * )
+ */
+    protected $resource_templates;
+
+    /**
+     * @var Collection|TeamResourceTemplate[]
+     * @OneToMany(
+     *     targetEntity="Teams\Entity\TeamResourceTemplate",
+     *     mappedBy="team",
+     *     cascade={"persist", "remove"}
+     * )
+     */
+    protected $team_resource_templates;
+
     /**
      * @var Collection|TeamResource[]
      * @OneToMany(
@@ -205,6 +246,16 @@ class Team extends AbstractEntity
     public function getTeamResources()
     {
         return $this->team_resources;
+    }
+
+    public function getResourceTemplates()
+    {
+        return $this->resource_templates;
+    }
+
+    public function getTeamResourceTemplates()
+    {
+        return $this->team_resource_templates;
     }
 
     public function getTeamSites()

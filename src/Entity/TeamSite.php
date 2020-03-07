@@ -17,8 +17,7 @@ use Omeka\Entity\User;
  *
  *
  * @Entity
- * @Table(uniqueConstraints={@UniqueConstraint(name="active_team", columns={"is_current", "user_id"})})
-
+ * @Table(uniqueConstraints={@UniqueConstraint(name="active_team", columns={"is_current", "site_id"})})
  */
 class TeamSite
 {
@@ -52,6 +51,11 @@ class TeamSite
      */
     protected $site;
 
+    /**
+     * @Column(type="boolean", nullable=true)
+     */
+    protected $is_current = null;
+
 
     public function __construct( Team $team,  Site $site)
     {
@@ -79,12 +83,20 @@ class TeamSite
         $this->team = $team;
     }
 
+    public function getCurrent(){
+        return $this->is_current;
+    }
+
+    public function setCurrent($bool){
+        $this->is_current = $bool;
+    }
+
 
     public function __toString()
     {
         return json_encode([
             'team' => $this->getTeam()->getId(),
-            'user' => $this->getUser()->getId(),
+            'site' => $this->getSite()->getId(),
         ]);
     }
 
