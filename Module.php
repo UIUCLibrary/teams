@@ -5,6 +5,7 @@ use Doctrine\ORM\Events;
 use Omeka\Entity\Resource;
 use Omeka\Permissions\Acl;
 use Teams\Api\Adapter\TeamAdapter;
+use Teams\Controller\TestController;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\Element\TeamSelect;
@@ -19,6 +20,7 @@ use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
+use Teams\Model\TestControllerFactory;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\MvcEvent;
@@ -316,14 +318,23 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     public function teamSelectorBrowse(Event $event)
 
     {
-        $params = $event->getParams();
-        foreach ($params as $p):
-            echo 'one';
-        endforeach;
-        echo 'you are here';
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        $user_id = $identity->getId();
+
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
+        $user_teams = $team_user->findBy(['user'=>$user_id]);
+        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        if ($current_team){
+            $current_team = $current_team->getTeam()->getName();
+        }else $current_team = null;
+
         echo $event->getTarget()->partial(
-            'teams/partial/team-selector'
+            'teams/partial/team-selector',
+            ['user_teams'=>$user_teams, 'current_team' => $current_team]
         );
+
 
 
 
@@ -474,29 +485,10 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         $services = $this->getServiceLocator();
 
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.add.section_nav',
-            [$this, 'addTab']
-        );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.browse.before',
-            [$this, 'teamSelectorBrowse']
-        );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\ItemSet',
-            'view.browse.before',
-            [$this, 'teamSelectorBrowse']
-        );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Media',
-            'view.browse.before',
-            [$this, 'teamSelectorBrowse']
-        );
+
 
         //on this one, which should be a model for further refactorying out the manual controller edits, need to add
         //vars used by the partial
@@ -516,80 +508,161 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         );
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Add the show groups to the show admin pages.
+
+
+        //Edit pages//
+            //Item//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
-            'view.show.after',
-            [$this, 'adminShowTeams']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\ItemSet',
-            'view.show.section_nav',
-            [$this, 'addTab']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\ItemSet',
             'view.edit.section_nav',
             [$this, 'addTab']
         );
-
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.edit.form.after',
+            [$this, 'displayTeamForm']
+        );
+            //ItemSet//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
             'view.edit.form.after',
             [$this, 'displayTeamForm']
         );
-
         $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Media',
-            'view.show.section_nav',
+            'Omeka\Controller\Admin\ItemSet',
+            'view.edit.section_nav',
             [$this, 'addTab']
         );
 
+            //Media//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Media',
+            'view.edit.form.after',
+            [$this, 'displayTeamForm']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Media',
+            'view.edit.section_nav',
+            [$this, 'addTab']
+        );
+
+
+
+        // Show pages //
+            //Item//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.show.section_nav',
+            [$this, 'addTab']
+        );
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\Item',
+//            'view.show.sidebar',
+//            [$this, 'addViewAfter']
+//
+//        );
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\Item',
+//            'view.show.after',
+//            [$this, 'viewShowAfterResource']
+//        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
             'view.show.after',
             [$this, 'adminShowTeams']
         );
 
+            //ItemSet//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ItemSet',
+            'view.show.section_nav',
+            [$this, 'addTab']
+        );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
             'view.show.after',
             [$this, 'adminShowTeams']
         );
 
-
-
-        // Add the show groups to the show admin pages.
+            //Media//
         $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.show.after',
-            [$this, 'viewShowAfterResource']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.show.sidebar',
-            [$this, 'addViewAfter']
-
-        );
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.edit.section_nav',
-            [$this, 'addTab']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
+            'Omeka\Controller\Admin\Media',
             'view.show.section_nav',
             [$this, 'addTab']
         );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Media',
+            'view.show.after',
+            [$this, 'adminShowTeams']
+        );
 
+
+        //Browse pages//
+            //Item//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.browse.before',
-            [$this, 'addBrowseBefore']
+            [$this, 'teamSelectorBrowse']
         );
+            //ItemSet//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ItemSet',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+            //Media//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Media',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
+
+
+        //Add pages//
+            //ItemSet//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ItemSet',
+            'view.add.form.after',
+            [$this, 'displayTeamForm']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ItemSet',
+            'view.add.section_nav',
+            [$this, 'addTab']
+        );
+            //ItemSet//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.add.section_nav',
+            [$this, 'addTab']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.add.form.after',
+            [$this, 'displayTeamForm']
+        );
+
+
+
+
 
 //        $sharedEventManager->attach(
 //            'Omeka\Controller\Admin\Item',

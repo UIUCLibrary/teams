@@ -10,7 +10,7 @@ use Teams\Entity\TeamResource;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
-class ItemSetController extends AbstractActionController
+class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
 {
     //begin edits: adding in the entity manager
     /**
@@ -225,9 +225,14 @@ class ItemSetController extends AbstractActionController
         $view->setVariable('resources', $itemSets);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('user_teams', $user_teams);
-        $view->setVariable('current_team', $current_team);
+//        $view->setVariable('user_teams', $user_teams);
+//        $view->setVariable('current_team', $current_team);
         return $view;
+
+        //here is a model for getting at the variable and changing it that is closer to what I need
+//        $orig = \Omeka\Controller\Admin\ItemSetController::browseAction();
+//        $orig->setVariable('itemSets', null);
+//        return $orig;
     }
 
     public function showAction()
