@@ -1,7 +1,7 @@
 <div>
     <form id="change_team">
 
-        <label for="team_options">Showing items for your current team: </label><select id="team_options" name="team_id" form="change_team">
+        <label for="team_options"> <? echo sprintf('Showing %s for your current team: ', $this->resource_type) ?></label><select id="team_options" name="team_id" form="change_team">
 
             <? if ($this->current_team == null){
                 echo 'Current Team is Null';

@@ -319,9 +319,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     public function teamSelectorBrowse(Event $event)
 
     {
+//        $resource = $event->getTarget()->vars()->user;
+
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
         $user_id = $identity->getId();
+
+        $resources = $event->getTarget()->vars()->resources;
+        if (count($resources)>0){
+        $resource_type = $resources[0]->getControllerName();}else $resource_type = 'nothing';
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -333,7 +339,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
         echo $event->getTarget()->partial(
             'teams/partial/team-selector',
-            ['user_teams'=>$user_teams, 'current_team' => $current_team]
+            ['user_teams'=>$user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
         );
 
 
@@ -551,7 +557,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.edit.section_nav',
             [$this, 'addTab']
         );
-
             //Media//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Media',
@@ -573,23 +578,11 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.show.section_nav',
             [$this, 'addTab']
         );
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.show.sidebar',
-//            [$this, 'addViewAfter']
-//
-//        );
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.show.after',
-//            [$this, 'viewShowAfterResource']
-//        );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.show.after',
             [$this, 'adminShowTeams']
         );
-
             //ItemSet//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
@@ -601,7 +594,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.show.after',
             [$this, 'adminShowTeams']
         );
-
             //Media//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Media',
@@ -613,7 +605,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.show.after',
             [$this, 'adminShowTeams']
         );
-
 
         //Browse pages//
             //Item//
