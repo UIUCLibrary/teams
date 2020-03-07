@@ -186,28 +186,15 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
-//        $response = $this->api()->search('item_sets', $this->params()->fromQuery());
         $user_id = $this->identity()->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
-        if ($current_team){
-            $current_team = $current_team->getTeam()->getName();
-        }else $current_team = null;
-
-
         $response = $this->teamResources('item_sets', $this->params()->fromQuery(),$user_id);
         $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-
-
-
         $request = $this->getRequest();
         if ($request->isPost()){
             $this->changeCurrentTeamAction($user_id);
             return $this->redirect()->toRoute('admin/default',['controller'=>'item-set', 'action'=>'browse']);
 
         }
-
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -225,8 +212,6 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
         $view->setVariable('resources', $itemSets);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-//        $view->setVariable('user_teams', $user_teams);
-//        $view->setVariable('current_team', $current_team);
         return $view;
 
         //here is a model for getting at the variable and changing it that is closer to what I need

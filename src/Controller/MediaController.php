@@ -112,10 +112,6 @@ class MediaController extends AbstractActionController
         $response = $this->teamResources('media', $this->params()->fromQuery(),$user_id);
 
         $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-        $user_id = $this->identity()->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
 
         $request = $this->getRequest();
         if ($request->isPost()){
@@ -141,8 +137,6 @@ class MediaController extends AbstractActionController
         $view->setVariable('resources', $medias);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('user_teams', $user_teams);
-        $view->setVariable('current_team', $current_team);
         return $view;
     }
 

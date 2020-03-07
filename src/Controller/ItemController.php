@@ -98,21 +98,12 @@ class ItemController extends AbstractActionController
     {
         $this->setBrowseDefaults('created');
 
-
-        //start edits: pulling the items from the users currently selected team
-
         //get the user's id
         $user_id = $this->identity()->getId();
 
         $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
         $items = $team_items['page_resources'];
         $total_team_resources = $team_items['team_resources'];
-
-
-
-
-
-
         $request = $this->getRequest();
         if ($request->isPost()){
             $this->changeCurrentTeamAction($user_id);
@@ -120,14 +111,8 @@ class ItemController extends AbstractActionController
 
 
         }
-
         $this->paginator(count($total_team_resources), $this->params()->fromQuery('page'));
         $this->setBrowseDefaults('created');
-        $user_id = $this->identity()->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
-
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -140,13 +125,11 @@ class ItemController extends AbstractActionController
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
         $view = new ViewModel;
-//        $items = $response->getContent();
         $view->setVariable('items', $items);
         $view->setVariable('resources', $items);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('user_teams', $user_teams);
-        $view->setVariable('current_team', $current_team);
+
 
 
 
