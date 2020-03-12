@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManager;
 use Omeka\Form\ConfirmForm;
 use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Form\ResourceForm;
+use Teams\Entity\TeamResource;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
@@ -151,6 +152,23 @@ class MediaController extends AbstractActionController
             $form->setData($data);
             if ($form->isValid()) {
                 $response = $this->api($form)->update('media', $this->params('id'), $data);
+
+                $em = $this->entityManager;
+                $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $response->getContent()->id()]);
+                foreach ($entity as $e):
+
+                    $this->entityManager->remove($e);
+                endforeach;
+                $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+
+                foreach ($data['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                    $team_res = new TeamResource($team, $resource);
+                    $em = $this->entityManager;
+                    $em->persist($team_res);
+                endforeach;
+                $em->flush();
+
                 if ($response) {
                     $this->messenger()->addSuccess('Media successfully updated'); // @translate
                     return $this->redirect()->toUrl($response->getContent()->url());
