@@ -3,6 +3,7 @@ namespace Teams;
 
 use Doctrine\ORM\Events;
 use Omeka\Entity\Resource;
+use Omeka\Form\ResourceTemplateForm;
 use Omeka\Permissions\Acl;
 use Teams\Api\Adapter\TeamAdapter;
 use Teams\Controller\TestController;
@@ -329,8 +330,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     public function teamSelectorBrowse(Event $event)
 
     {
-        $resource = $event->getParam('site');
-        $event->setParam('sites', null);
+
 
 
 
@@ -548,6 +548,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.edit.section_nav',
             [$this, 'addTab']
         );
+            //ResourceTemplate//
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\ResourceTemplate',
+//            'view.edit.form.after',
+//            [$this, 'displayTeamForm']
+//        );
 
 
 
@@ -654,11 +660,19 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
 
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\User',
-            'view.edit.form.before',
-            [$this, 'addUserFormValue']
-        );
+//        $sharedEventManager->attach(
+//            '*',
+//            'view.edit.form.after',
+//            [$this, 'addResourceTemplateFormElement']
+//        );
+
+
+
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\User',
+//            'view.edit.form.before',
+//            [$this, 'addUserFormValue']
+//        );
 
 
 

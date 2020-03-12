@@ -6,6 +6,11 @@ namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\DataType\Manager as DataTypeManager;
+use Omeka\Form\ResourceTemplateForm;
+use Omeka\Stdlib\Message;
+use Teams\Form\TeamFieldset;
+use Teams\Form\TeamSelect;
+use Teams\Form\TeamUpdateForm;
 use Zend\View\Model\ViewModel;
 
 class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplateController
@@ -126,4 +131,106 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
 
 
     }
+
+    protected function getAddEditView()
+    {
+        $action = $this->params('action');
+        $form = $this->getForm(ResourceTemplateForm::class);
+        $em = $this->entityManager;
+        $current_team = $em->getRepository('Teams\Entity\TeamResource');
+        $user_id = $this->identity()->getId();
+        $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $teams = array();
+        foreach ($team_users as $tu):
+            $teams[$tu->getTeam()->getId()] = $tu->getTeam()->getName();
+        endforeach;
+
+
+
+        $form->add([
+            //extremely important  that this match what is in the API adapter: Teams\Api\Representation getJsonLd()
+            'name' => 'team',
+            'type' => 'Select',
+            'value' => 6,
+            'options' => [
+                'label' => 'Team', // @translate
+                'value_options' => $teams,
+            ],
+            'attributes' => [
+                'id' => 'team',
+                'required' => true,
+                'value' => 6
+            ],
+        ]);
+
+        $form->add([
+            'name' => 'o-module-teams:Team',
+            'type' => \Teams\Form\Element\TeamSelect::class,
+            'options' => [
+                'label' => 'Teams', // @translate
+                'chosen' => true,
+            ],
+            'attributes' => [
+                'multiple' => true,
+            ],
+        ]);
+
+
+
+
+        if ('edit' == $action) {
+            $resourceTemplate = $this->api()
+                ->read('resource_templates', $this->params('id'))
+                ->getContent();
+            $data = $resourceTemplate->jsonSerialize();
+            if ($data['o:resource_class']) {
+                $data['o:resource_class[o:id]'] = $data['o:resource_class']->id();
+            }
+            $form->setData($data);
+        }
+
+        if ($this->getRequest()->isPost()) {
+            $data = $this->params()->fromPost();
+            $form->setData($data);
+            if ($form->isValid()) {
+                $response = ('edit' === $action)
+                    ? $this->api($form)->update('resource_templates', $resourceTemplate->id(), $data)
+                    : $this->api($form)->create('resource_templates', $data);
+                if ($response) {
+                    if ('edit' === $action) {
+                        $successMessage = 'Resource template successfully updated'; // @translate
+                    } else {
+                        $successMessage = new Message(
+                            'Resource template successfully created. %s', // @translate
+                            sprintf(
+                                '<a href="%s">%s</a>',
+                                htmlspecialchars($this->url()->fromRoute(null, [], true)),
+                                $this->translate('Add another resource template?')
+                            )
+                        );
+                        $successMessage->setEscapeHtml(false);
+                    }
+                    $this->messenger()->addSuccess($successMessage);
+                    return $this->redirect()->toUrl($response->getContent()->url());
+                }
+            } else {
+                $this->messenger()->addFormErrors($form);
+            }
+        }
+
+        $view = new ViewModel;
+        if ('edit' === $action) {
+            $view->setVariable('resourceTemplate', $resourceTemplate);
+        }
+        $view->setVariable('propertyRows', $this->getPropertyRows());
+        $view->setVariable('form', $form);
+        return $view;
+    }
+
+    public function editAction()
+    {
+        return $this->getAddEditView();
+    }
+
+
 }
