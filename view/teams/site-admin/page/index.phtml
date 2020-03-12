@@ -1,0 +1,68 @@
+<?php
+$this->htmlElement('body')->appendAttribute('class', 'sites pages browse');
+$escape = $this->plugin('escapeHtml');
+?>
+
+<?php echo $this->pageTitle($this->translate('Pages'), 1, $this->translate('Sites')); ?>
+
+<div id="page-actions">
+    <?php if ($site->userIsAllowed('add-page')): ?>
+    <?php echo $site->link($this->translate('Add new page'), 'add-page', ['class' => 'button']); ?>
+    <?php endif; ?>
+</div>
+<?php if ($pages): ?>
+<table id="page-list" class="tablesaw" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th><?php echo $this->translate('Title'); ?></th>
+            <th><?php echo $this->translate('Slug'); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($pages as $page): ?>
+    <tr class="page">
+        <td>
+            <?php if (array_key_exists($page->id(), $indents)): ?>
+            <?php echo str_repeat('<span class="indent"></span>', intval($indents[$page->id()])); ?>
+            <?php endif; ?>
+            <?php if ($page->userIsAllowed('update')): ?>
+            <?php echo $page->link($page->title(), 'edit'); ?>
+            <?php else: ?>
+            <?php echo $page->title(); ?>
+            <?php endif; ?>
+            <input type="hidden" name="o:page[][o:id]" value="<?php echo $escape($page->id()); ?>">
+            <ul class="actions">
+                <li><?php echo $this->hyperlink('', $page->siteUrl(), [
+                    'target' => '_blank',
+                    'class' => 'o-icon-external public',
+                    'title' => $this->translate('View public page'),
+                ]); ?></li>
+                <?php if ($page->userIsAllowed('update')): ?>
+                <li><?php echo $page->link('', 'edit', [
+                    'class' => 'o-icon-edit',
+                    'title' => $this->translate('Edit'),
+                ]); ?></li>
+                <?php endif; ?>
+                <?php if ($page->userIsAllowed('delete')): ?>
+                <li><?php echo $this->hyperlink('', '#', [
+                    'class' => 'o-icon-delete sidebar-content',
+                    'title' => $this->translate('Delete page'),
+                    'data-sidebar-content-url' => $page->url('delete-confirm'),
+                ]); ?></li>
+                <?php endif; ?>
+            </ul>
+        </td>
+        <td><?php echo $page->slug(); ?></td>
+    </tr>
+<?php endforeach; ?>
+    </tbody>
+</table>
+
+<div class="sidebar">
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'sidebar-close o-icon-close',
+        'title' => $this->translate('Close'),
+    ]); ?>
+    <div class="sidebar-content"></div>
+</div>
+<?php endif; ?>

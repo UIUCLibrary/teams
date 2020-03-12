@@ -44,8 +44,9 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
 
 
 
-
+        //this logic looks at which page they requested, how many items per page, and collects the appropriate results.
         $per_page = 10;
+
             $page = $query['page'];
             $start_i = ($per_page * $page) - $per_page;
             $max_i = count($team_rts);
@@ -53,7 +54,7 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                 $end_i = $max_i;
             }else{$end_i = $start_i + $per_page;}
 
-
+            $page_resources = array();
             for ($i = $start_i; $i < $end_i; $i++) {
 
                 $page_resources[] = $team_rts[$i];

@@ -1,0 +1,35 @@
+<?php
+$this->htmlElement('body')->appendAttribute('class', 'sites edit');
+$escape = $this->plugin('escapeHtml');
+$form->prepare();
+?>
+<?php echo $this->pageTitle($site->title(), 1, $this->translate('Sites')); ?>
+<?php $this->trigger('view.edit.before'); ?>
+<?php echo $this->form()->openTag($form); ?>
+
+<div id="page-actions">
+    <?php if ($site->isPublic()): ?>
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'o-icon-public button',
+        'title' => $this->translate('Make private'),
+    ]); ?>
+    <input type="hidden" name="o:is_public" value="1">
+    <?php else: ?>
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'o-icon-private button',
+        'title' => $this->translate('Make public'),
+    ]); ?>
+    <input type="hidden" name="o:is_public" value="0">
+    <?php endif; ?>
+    <?php if ($site->userIsAllowed('delete')): ?>
+    <?php echo $this->hyperlink($this->translate('Delete'), '#', ['class' => 'delete button']); ?>
+    <?php endif; ?>
+    <?php echo $this->cancelButton(); ?>
+    <button><?php echo $this->translate('Save'); ?></button>
+</div>
+<?php $this->trigger('view.edit.form.before', ['form' => $form, 'site' => $site]); ?>
+<?php echo $this->formCollection($form, false); ?>
+<?php $this->trigger('view.edit.form.after', ['form' => $form, 'site' => $site]); ?>
+<?php echo $this->form()->closeTag(); ?>
+<?php $this->trigger('view.edit.after'); ?>
+<?php echo $this->deleteConfirm($site, 'site'); ?>

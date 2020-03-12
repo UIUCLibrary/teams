@@ -1,0 +1,42 @@
+<?php
+$this->htmlElement('body')->appendAttribute('class', 'sites show');
+$escape = $this->plugin('escapeHtml');
+$roles = [
+    'viewer' => $this->translate('Viewer'),
+    'editor' => $this->translate('Editor')
+];
+?>
+
+<?php echo $this->pageTitle($site->title(), 1, $this->translate('Sites')); ?>
+
+<div id="page-actions">
+    <?php if ($site->userIsAllowed('update')): ?>
+        <?php echo $site->link($this->translate('Edit'), null, ['class' => 'button']); ?>
+    <?php endif; ?>
+    <?php echo $this->hyperlink($this->translate('View'), $site->siteUrl(), ['class' => 'button']); ?>
+</div>
+<div class="breadcrumbs">
+    <?php echo $this->hyperlink($this->translate('Back to site list'), $this->url('admin/site'), ['class' => 'o-icon-left']); ?>
+</div>
+
+<div class="property">
+    <h4><?php echo $escape($this->translate('URL slug')); ?></h4>
+    <div class="value"><?php echo $escape($site->slug()); ?></div>
+</div>
+<div class="property">
+    <h4><?php echo $escape($this->translate('Title')); ?></h4>
+    <div class="value"><?php echo $escape($site->title()); ?></div>
+</div>
+<div class="property">
+    <h4><?php echo $escape($this->translate('Theme')); ?></h4>
+    <div class="value"><?php echo $escape($site->theme()); ?></div>
+</div>
+<?php
+$summary = $site->summary();
+if ($summary):
+?>
+<div class="property">
+    <h4><?php echo $escape($this->translate('Summary')); ?></h4>
+    <div class="value"><?php echo nl2br($escape($summary)); ?></div>
+</div>
+<?php endif; ?>
