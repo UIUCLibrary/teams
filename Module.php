@@ -296,12 +296,22 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         echo '</div>';
     }
 
+    public function filterResource(Event $event)
+    {
+        $resource = $event->getTarget()->vars()->sites;
+    }
     public function adminShowTeams(Event $event)
     {
 
         $resource = $event->getTarget()->vars()->resource;
+
+        $new_item = null;
+
         $resource_type = $resource->getControllerName();
         $associated_teams = $this->listTeams($resource);
+//        $event->setTarget(\Omeka\Controller\Admin\ItemSetController::class);
+//        $event->setParam('item', null);
+
         echo '<div id="teams" class="section"><p>';
             //get the partial and pass it whatever variables it needs
         echo $event->getTarget()->partial(
@@ -319,7 +329,11 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     public function teamSelectorBrowse(Event $event)
 
     {
-//        $resource = $event->getTarget()->vars()->user;
+        $resource = $event->getParam('site');
+        $event->setParam('sites', null);
+
+
+
 
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
@@ -467,6 +481,8 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
     }
 
+
+
     public function teamSelectorNav(Event $event)
     {
         $identity = $this->getServiceLocator()
@@ -491,47 +507,11 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     {
         $services = $this->getServiceLocator();
 
-
-
-
-
-
-
-        //on this one, which should be a model for further refactorying out the manual controller edits, need to add
-        //vars used by the partial
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\ResourceTemplate',
-//            'view.browse.before',
-//            [$this, 'teamSelectorBrowse']
-//        );
-
-
-
-
         $sharedEventManager->attach(
             '*',
             'view.layout',
             [$this, 'teamSelectorNav']
         );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Add the show groups to the show admin pages.
 
 
         //Edit pages//
@@ -631,6 +611,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
         );
+        //Site//
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
 
 
 
@@ -646,7 +632,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.add.section_nav',
             [$this, 'addTab']
         );
-            //ItemSet//
+            //Item//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.add.section_nav',
@@ -654,122 +640,18 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
-            'view.add.form.after',
+            'view.add.after',
             [$this, 'displayTeamForm']
         );
 
 
-
-
-
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.edit.form.after',
-//            [$this, 'displayGroupResourceForm']
-//        );
-
-        // Bypass the core filter for media (detach two events of Omeka\Module).
-        // The listeners can't be cleared without a module weighting system.
-//        $listeners = $sharedEventManager->getListeners([MediaAdapter::class], 'api.search.query');
-//        $sharedEventManager->detach(
-//            [$listeners[1][0][0], 'filterMedia'],
-//            MediaAdapter::class
-//        );
-//        $sharedEventManager->attach(
-//            MediaAdapter::class,
-//            'api.search.query',
-//            [$this, 'filterMedia'],
-//            100
-//        );
-//        $sharedEventManager->attach(
-//            MediaAdapter::class,
-//            'api.find.query',
-//            [$this, 'filterMedia'],
-//            100
-//        );
-//
-        // Add the group part to the representation.
-        $representations = [
-            UserRepresentation::class,
-            ItemSetRepresentation::class,
-            ItemRepresentation::class,
-            MediaRepresentation::class,
-        ];
-//        foreach ($representations as $representation) {
-//            $sharedEventManager->attach(
-//                $representation,
-//                'rep.resource.json',
-//                [$this, 'filterEntityJsonLd']
-//            );
-//        }
-
-        $adapters = [
-            UserAdapter::class,
-            ItemSetAdapter::class,
-            ItemAdapter::class,
-            MediaAdapter::class,
-        ];
-        foreach ($adapters as $adapter) {
-            // Add the group filter to the search.
-//            $sharedEventManager->attach(
-//                $adapter,
-//                'api.search.query',
-//                [$this, 'searchQuery']
-//            );
-
-            // The event "api.*.post" is used to avoid some flush issues.
-//            $sharedEventManager->attach(
-//                $adapter,
-//                'api.create.post',
-//                [$this, 'handleCreatePost']
-//            );
-//            $sharedEventManager->attach(
-//                $adapter,
-//                'api.update.post',
-//                [$this, 'handleUpdatePost']
-//            );
-            // Required for partial batch, since requests are filtered by core.
-//            $sharedEventManager->attach(
-//                $adapter,
-//                'api.batch_update.post',
-//                [$this, 'handleBatchUpdatePost']
-//            );
-        }
-//         The deletion is managed automatically when not recursive.
-//        if ($recursiveItemSets) {
-//            $sharedEventManager->attach(
-//                ItemSetAdapter::class,
-//                'api.delete.pre',
-//                [$this, 'handleRecursiveDeleteItemSetPre']
-//            );
-//        }
-
-//         Add headers to group views.
-//        $sharedEventManager->attach(
-//            GroupController::class,
-//            'view.show.before',
-//            [$this, 'addHeadersAdmin']
-//        );
-//        $sharedEventManager->attach(
-//            GroupController::class,
-//            'view.browse.before',
-//            [$this, 'addHeadersAdmin']
-//        );
-
-        // Add the group element form to the user form.
+        // Add the team element form to the user form.
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
             'form.add_elements',
             [$this, 'addUserFormElement']
         );
-//        $sharedEventManager->attach(
-//            \Omeka\Form\UserForm::class,
-//            'form.add_input_filters',
-//            [$this, 'addUserFormFilter']
-//        );
-        // FIXME Use the autoset of the values (in a fieldset) and remove this.
-        //This is breaking authors from editing themselves, and is not required for admin
-        //to assign user to a group so commenting out for now
+
 
 
         $sharedEventManager->attach(
@@ -778,150 +660,19 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             [$this, 'addUserFormValue']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\User',
-//            'view.edit.response',
-//            [$this, 'addTeamUpdate']
-//
-//        );
-
-//        public function addTeamUpdate($response)
-//    {
-//        $response = $this->api($form)->update('users', $id, $values['user-information']);
-//    }
 
 
 
 
-        // Add the show groups to the show admin pages.
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\User',
-//            'view.show.after',
-//            [$this, 'viewShowAfterUser']
-//        );
-//
-//        // Add the groups form to the resource batch edit form.
-//        $sharedEventManager->attach(
-//            \Omeka\Form\UserBatchUpdateForm::class,
-//            'form.add_elements',
-//            [$this, 'addBatchUpdateFormElement']
-//        );
-//        $sharedEventManager->attach(
-//            \Omeka\Form\UserBatchUpdateForm::class,
-//            'form.add_input_filters',
-//            [$this, 'addBatchUpdateFormFilter']
-//        );
-//        $sharedEventManager->attach(
-//            \Omeka\Form\ResourceBatchUpdateForm::class,
-//            'form.add_elements',
-//            [$this, 'addBatchUpdateFormElement']
-//        );
-//        $sharedEventManager->attach(
-//            \Omeka\Form\ResourceBatchUpdateForm::class,
-//            'form.add_input_filters',
-//            [$this, 'addBatchUpdateFormFilter']
-//        );
-//
-//        if ($recursiveItemSets) {
-//            $controllers = [
-//                'Omeka\Controller\Admin\ItemSet',
-//            ];
-//        } elseif ($recursiveItems) {
-//            $controllers = [
-//                'Omeka\Controller\Admin\ItemSet',
-//                'Omeka\Controller\Admin\Item',
-//            ];
-//        } else {
-//            $controllers = [
-//                'Omeka\Controller\Admin\ItemSet',
-//                'Omeka\Controller\Admin\Item',
-//                'Omeka\Controller\Admin\Media',
-//            ];
-//        }
-//        foreach ($controllers as $controller) {
-//            // Add the group element form to the resource form.
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.add.section_nav',
-//                [$this, 'addTab']
-//            );
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.edit.section_nav',
-//                [$this, 'addTab']
-//            );
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.add.form.after',
-//                [$this, 'displayGroupResourceForm']
-//            );
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.edit.form.after',
-//                [$this, 'displayGroupResourceForm']
-//            );
-//        }
-//
-//        $controllers = [
-//            'Omeka\Controller\Admin\ItemSet',
-//            'Omeka\Controller\Admin\Item',
-//            'Omeka\Controller\Admin\Media',
-//        ];
-//        foreach ($controllers as $controller) {
-//            // Add the show groups to the resource show admin pages.
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.show.section_nav',
-//                [$this, 'addTab']
-//            );
-//
-//            // Add the show groups to the show admin pages.
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.show.after',
-//                [$this, 'viewShowAfterResource']
-//            );
-//        }
-//
-//        $controllers = [
-//            'Omeka\Controller\Admin\User',
-//            'Omeka\Controller\Admin\ItemSet',
-//            'Omeka\Controller\Admin\Item',
-//            'Omeka\Controller\Admin\Media',
-//        ];
-//        foreach ($controllers as $controller) {
-//            // Add the show groups to the browse admin pages (details).
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.details',
-//                [$this, 'viewDetails']
-//            );
-//
-//            // Filter the search filters for the advanced search pages.
-//            $sharedEventManager->attach(
-//                $controller,
-//                'view.search.filters',
-//                [$this, 'filterSearchFilters']
-//            );
-//        }
+
+
+
+
     }
-
-
-
-
-    /**
-     * Add the tab to section navigation.
-     *
-     * @param Event $event
-     */
-
-
 
 
     public function addUserFormElement(Event $event)
     {
-
-
         $form = $event->getTarget();
         $form->get('user-information')->add([
             'name' => 'o-module-teams:Team',
@@ -936,8 +687,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         ]);
     }
 
-
-
     public function addUserFormValue(Event $event)
     {
         $user = $event->getTarget()->vars()->user;
@@ -947,90 +696,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             ->setAttribute('value', array_keys($values));
     }
 
-//    protected function listTeams(AbstractEntityRepresentation $resource = null, $contentType = null)
-//    {
-//        if (is_null($resource) || empty($resource->id())) {
-//            return [];
-//        }
-//        $resourceJson = $resource->jsonSerialize();
-//        $list = empty($resourceJson['o-module-teams:Team'])
-//            ? []
-//            : $resourceJson['o-module-team:Team'];
-//
-//        $result = [];
-//        switch ($contentType) {
-//            case 'reference':
-//                foreach ($list as $entity) {
-//                    $result[$entity->name()] = $entity;
-//                }
-//                break;
-//            case 'representation':
-//                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-//                foreach ($list as $entity) {
-//                    $result[$entity->name()] = $api->read('team', $entity->id())->getContent();
-//                }
-//                break;
-//            case 'json':
-//            default:
-//                $result = $list;
-//                break;
-//        }
-//        return  $result;
-//    }
-
-//    public function addUserFormFilter(Event $event)
-//    {
-//
-//
-//        // TODO Add a validator for the groups of user.
-//        $inputFilter = $event->getParam('inputFilter');
-//        $inputFilter->get('user-information')->add([
-//            'name' => 'o-module-teams:Team',
-//            'required' => false,
-//        ]);
-//    }
-
-//    /**
-//     * Helper to get the column id of a representation.
-//     *
-//     * Note: Resource representation have method resourceName(), but site page
-//     * and user don't. Site page has no getControllerName().
-//     *
-//     * @param AbstractEntityRepresentation $representation
-//     * @return string
-//     */
-//    protected function columnNameOfRepresentation(AbstractEntityRepresentation $representation)
-//    {
-//        $entityColumnNames = [
-//            'item-set' => 'item_set_id',
-//            'item' => 'item_id',
-//            'media' => 'media_id',
-//            'user' => 'user_id',
-//        ];
-//        $entityColumnName = $entityColumnNames[$representation->getControllerName()];
-//        return $entityColumnName;
-//    }
-
-//    public function filterEntityJsonLd(Event $event)
-//    {
-//        // The groups are not shown to public.
-//        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-//        if (!$acl->userIsAllowed(TeamAdapter::class, 'search')
-//            && !$acl->userIsAllowed(TeamAdapter::class, 'read')
-//        ) {
-//            return;
-//        }
-//
-//        $resource = $event->getTarget();
-//        $columnName = $this->columnNameOfRepresentation($resource);
-//        $jsonLd = $event->getParam('jsonLd');
-//        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-//        $groups = $api
-//            ->search('groups', [$columnName => $resource->id()], ['responseContent' => 'reference'])
-//            ->getContent();
-//        $jsonLd['o-module-group:group'] = $groups;
-//        $event->setParam('jsonLd', $jsonLd);
-//    }
     public function teamItems($resource_type, $query, $user_id, $active = true, $team_id = null)
     {
 

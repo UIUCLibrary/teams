@@ -7,6 +7,7 @@ use Omeka\Form\ResourceForm;
 use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
+use Teams\Entity\TeamResource;
 use Teams\Module;
 use Zend\Filter\Boolean;
 use Zend\Mvc\Controller\AbstractActionController;
@@ -327,6 +328,20 @@ class ItemController extends AbstractActionController
             if ($form->isValid()) {
                 $fileData = $this->getRequest()->getFiles()->toArray();
                 $response = $this->api($form)->create('items', $data, $fileData);
+                $user_id = $this->identity()->getId();
+
+                //right now this doesn't care about the input it just add it to the users current team
+                //get the get the user's team_user with the is_current identifier
+                $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
+
+                //get their current team
+                $team = $team_user->getTeam();
+//                $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$data['team']]);
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+                $team_res = new TeamResource($team, $resource);
+                $em = $this->entityManager;
+                $em->persist($team_res);
+                $em->flush();
                 if ($response) {
                     $message = new Message(
                         'Item successfully created. %s', // @translate
@@ -364,6 +379,25 @@ class ItemController extends AbstractActionController
             if ($form->isValid()) {
                 $fileData = $this->getRequest()->getFiles()->toArray();
                 $response = $this->api($form)->update('items', $this->params('id'), $data, $fileData);
+
+
+                    $em = $this->entityManager;
+                    $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $response->getContent()->id()]);
+                    foreach ($entity as $e):
+
+                        $this->entityManager->remove($e);
+                    endforeach;
+                    $em->flush();
+                    $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+
+                    foreach ($data['team'] as $team_id):
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                        $team_res = new TeamResource($team, $resource);
+                        $em = $this->entityManager;
+                        $em->persist($team_res);
+                        $em->flush();
+                        endforeach;
+                    $em->flush();
                 if ($response) {
                     $this->messenger()->addSuccess('Item successfully updated'); // @translate
                     return $this->redirect()->toUrl($response->getContent()->url());
