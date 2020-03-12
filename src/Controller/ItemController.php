@@ -395,7 +395,6 @@ class ItemController extends AbstractActionController
                         $team_res = new TeamResource($team, $resource);
                         $em = $this->entityManager;
                         $em->persist($team_res);
-                        $em->flush();
                         endforeach;
                     $em->flush();
                 if ($response) {
