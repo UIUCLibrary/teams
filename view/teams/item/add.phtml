@@ -5,7 +5,7 @@ $this->htmlElement('body')->appendAttribute('class', 'add items');
 <?php echo $this->pageTitle($this->translate('New item'), 1, $this->translate('Items')); ?>
 <?php $this->trigger('view.add.before'); ?>
 <?php
-echo $this->partial('omeka/admin/item/form.phtml', [
+echo $this->partial('teams/item/form.phtml', [
     'form' => $form,
     'item' => null,
     'mediaForms' => $mediaForms,

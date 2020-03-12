@@ -36,7 +36,7 @@
 
             var removeLink = $(this);
             var teamRow = $(this).closest('tr');
-            var teamInput = removeLink.closest('td').find('input');
+            var teamInput = removeLink.closest('tr').find('input');
             teamInput.prop('disabled', true);
 
             // Undo remove team link.
@@ -46,7 +46,7 @@
                 title: Omeka.jsTranslate('Undo remove team'),
                 click: function(event) {
                     event.preventDefault();
-                    teamRow.toggleClass('delete');
+                    teamRow.toggleClass('deletetest');
                     teamInput.prop('disabled', false);
                     removeLink.show();
                     $(this).remove();
