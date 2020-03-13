@@ -6,7 +6,7 @@ use Zend\View\Helper\AbstractHelper;
 class AddTeam extends AbstractHelper
 {
     /**
-     * Return the group selector form control.
+     * Return the team selector form control.
      *
      * @return string
      */
@@ -20,7 +20,6 @@ class AddTeam extends AbstractHelper
             foreach ($team->users() as $user):
                 if ($user->getUser()->getId() == $user_id){
                     $teams[] = $team;
-
                 }
 
             endforeach;
