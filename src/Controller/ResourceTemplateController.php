@@ -169,27 +169,46 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
             if ($form->isValid()) {
                 $response = ('edit' === $action)
                     ? $this->api($form)->update('resource_templates', $resourceTemplate->id(), $data)
-                    : $this->api($form)->create('resource_templates', $data);
-                $teams_rt = $em->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template'=>$this->params('id')]);
-                foreach ($teams_rt as $team_rt):
-                    $em->remove($team_rt);
-                endforeach;
-                $em->flush();
-                $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $this->params('id')]);
-                foreach ($data['team'] as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                    $trt = new TeamResourceTemplate($team, $resource_template);
-                    $em->persist($trt);
-                endforeach;
+                    : $new_rt = $this->api($form)->create('resource_templates', $data);
 
-                //to add back in the teams that the resource belongs to but not the user doesn't
-                foreach (array_diff(array_keys($rt_teams), array_keys($user_teams)) as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                    $trt = new TeamResourceTemplate($team, $resource_template);
-                    $em->persist($trt);
-                endforeach;
+                if ('edit' == $action) {
 
-                $em->flush();
+
+                    $teams_rt = $em->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template' => $this->params('id')]);
+                    foreach ($teams_rt as $team_rt):
+                        $em->remove($team_rt);
+                    endforeach;
+                    $em->flush();
+                    $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $this->params('id')]);
+                    foreach ($data['team'] as $team_id):
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                        $trt = new TeamResourceTemplate($team, $resource_template);
+                        $em->persist($trt);
+                    endforeach;
+
+                    //to add back in the teams that the resource belongs to but not the user doesn't
+                    foreach (array_diff(array_keys($rt_teams), array_keys($user_teams)) as $team_id):
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                        $trt = new TeamResourceTemplate($team, $resource_template);
+                        $em->persist($trt);
+                    endforeach;
+
+                    $em->flush();
+
+                } else {
+
+                    $rt_id = $new_rt->getContent()->id();
+
+                    $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $rt_id ]);
+                    foreach ($data['team'] as $team_id):
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                        $trt = new TeamResourceTemplate($team, $resource_template);
+                        $em->persist($trt);
+                    endforeach;
+                    $em->flush();
+
+                }
+
                 if ($response) {
                     if ('edit' === $action) {
                         $successMessage = 'Resource template successfully updated'; // @translate
@@ -233,6 +252,12 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
     {
         return $this->getAddEditView();
     }
+
+    public function addAction()
+    {
+        return $this->getAddEditView();
+    }
+
 
 
 }

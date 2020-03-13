@@ -4,12 +4,14 @@
 
 <?php
 echo $this->partial(
-    'omeka/admin/resource-template/form.phtml',
+    'teams/resource-template/form.phtml',
     [
         'form' => $form,
         'propertyRows' => $propertyRows,
         'submitLabel' => $this->translate('Add'),
         'action' => 'add',
+        'user_teams' => $this->user_teams,
+        'rt_teams' => $this->rt_teams,
     ]
 );
 ?>
