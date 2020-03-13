@@ -14,8 +14,10 @@ class TeamUserAdapter extends AbstractEntityAdapter
     use QueryBuilderTrait;
 
         protected $sortFields = [
+            'id' => 'team'.'user',
         'team' => 'team',
         'user' => 'user',
+
         // For info.
         // 'count' => 'count',
         // 'users' => 'users',

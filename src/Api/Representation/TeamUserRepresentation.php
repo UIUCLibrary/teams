@@ -5,6 +5,7 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
+use Teams\Api\Representation\TeamUserReference;
 
 /**
  * TeamUserRepresentation representation.
@@ -30,7 +31,7 @@ class TeamUserRepresentation extends AbstractEntityRepresentation
 
     public function getReference()
     {
-        return new TeamReference($this->resource, $this->getAdapter());
+        return new TeamUserReference($this->resource, $this->adapter);
     }
 
     public function team()

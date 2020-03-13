@@ -14,6 +14,7 @@ class TeamSelectFactory
         $element = new TeamSelect(null, $options);
         $element->setApiManager($services->get('Omeka\ApiManager'));
         $element->setUrlHelper($services->get('ViewHelperManager')->get('Url'));
+        $element->setEntityManager($services->get('Omeka\EntityManager'));
         return $element;
     }
 }
