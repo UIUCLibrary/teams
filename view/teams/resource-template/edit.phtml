@@ -3,21 +3,7 @@
 <?php echo $this->pageTitle($resourceTemplate->label(), 1, $this->translate('Resource templates')); ?>
 
 <?php
-echo 'is it there:' . in_array(5, array_keys($this->rt_teams)) . '<br>';
-foreach ( array_keys($this->rt_teams) as $keys):
-echo $keys;
-endforeach;
-if ($this->data){
-    foreach (array_keys($this->data) as $key):
-        echo $key;
-        echo '<br>';
-    endforeach;
-}
-//echo $this->sectionNav([
-//    'orig' => $this->translate('Before'),
-//    'teams' => $this->translate('Teams')
-//]);
-echo count($this->rt_teams);
+
 
 echo $this->partial(
     'teams/resource-template/form.phtml',

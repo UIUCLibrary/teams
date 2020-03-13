@@ -38,7 +38,6 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
             endforeach;
 
             ?>
-<!--                <option value="3" disabled>Option 3</option>-->
         </select>
 
     </div>
@@ -66,44 +65,7 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
     <?php echo $this->deleteConfirm($resourceTemplate, 'resource template'); ?>
 <?php endif; ?>
 </div>
-<div >
-<div id="properties" form="resourcetemplateform">
-<!--    --><?//echo $this->partial('teams/partial/team-form-no-id')?>
-        <legend id="teams-legend"><?php echo $this->translate('Teams'); ?></legend>
-        <table id="team-resources" data-tablesaw-mode="stack" class="tablesaw tablesaw-stack <?php echo ( $teams) ? '' : 'empty'; ?>">
-            <thead>
-            <tr>
-                <th><?php echo $this->translate('Team Name'); ?></th>
-                <th style="float: right"><?php echo $this->translate('Remove'); ?> </th>
-            </tr>
-            </thead>
-            <?php foreach ($this->rt_teams as $id=>$team): ?>
-                <tr>
-                    <td>
-                        <span><?php echo $team?></span>
 
-                        <input type="hidden" name="teamtest" value="<?php echo $id ?>">
-                    </td>
-                    <td>
-                        <ul class="actions" style="float:right">
-                            <li>
-
-                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
-                            </li>
-                        </ul>
-                    </td>
-                </tr>
-                <tr>
-
-                </tr>
-
-
-            <?php endforeach; ?>
-
-        </table>
-
-</div>
-</div>
 <?php echo $this->form()->closeTag(); ?>
 
 <div id="details" class="sidebar">
