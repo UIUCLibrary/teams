@@ -4,6 +4,7 @@ namespace Teams\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
@@ -61,6 +62,14 @@ class TeamUser
      */
     protected $is_current = null;
 
+
+    /**
+     * @Column(type="integer", unique=true)
+     *
+     */
+    protected $id;
+
+
     public function __construct( Team $team,  User $user,  TeamRole $role)
     {
         $this->team = $team;
@@ -109,4 +118,9 @@ class TeamUser
     public function setCurrent($bool){
         $this->is_current = $bool;
     }
+
+    public function getId (){
+        return $this->id;
+    }
+
 }

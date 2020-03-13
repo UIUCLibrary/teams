@@ -64,10 +64,10 @@ class TeamUser extends \Teams\Entity\TeamUser implements \Doctrine\ORM\Proxy\Pro
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'team', 'user', 'role', 'is_current'];
+            return ['__isInitialized__', 'team', 'user', 'role', 'is_current', 'id'];
         }
 
-        return ['__isInitialized__', 'team', 'user', 'role', 'is_current'];
+        return ['__isInitialized__', 'team', 'user', 'role', 'is_current', 'id'];
     }
 
     /**
@@ -259,6 +259,17 @@ class TeamUser extends \Teams\Entity\TeamUser implements \Doctrine\ORM\Proxy\Pro
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'setCurrent', [$bool]);
 
         return parent::setCurrent($bool);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getId()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getId', []);
+
+        return parent::getId();
     }
 
 }
