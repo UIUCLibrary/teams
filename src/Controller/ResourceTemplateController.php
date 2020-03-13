@@ -205,7 +205,7 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                         $successMessage->setEscapeHtml(false);
                     }
                     $this->messenger()->addSuccess($successMessage);
-//                    return $this->redirect()->toUrl($response->getContent()->url());
+                    return $this->redirect()->toUrl($response->getContent()->url());
 
                 }
             } else {
