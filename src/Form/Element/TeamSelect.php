@@ -1,7 +1,9 @@
 <?php
 namespace Teams\Form\Element;
 
+use Doctrine\ORM\EntityManager;
 use Omeka\Api\Manager as ApiManager;
+use phpDocumentor\Reflection\Types\This;
 use Zend\Form\Element\Select;
 use Zend\View\Helper\Url;
 
@@ -13,25 +15,30 @@ class TeamSelect extends Select
      */
     protected $apiManager;
 
+    /**
+     * @var EntityManager
+     */
+    protected $entityManager;
+
+//TODO remove any value as name options
     public function getValueOptions()
     {
-        $query = $this->getOption('query');
-        if (!is_array($query)) {
-            $query = [];
-        }
-        if (!isset($query['sort_by'])) {
-            $query['sort_by'] = 'name';
-        }
 
-        $nameAsValue = $this->getOption('name_as_value', false);
 
         $valueOptions = [];
-        $response = $this->getApiManager()->search('team', $query);
-        foreach ($response->getContent() as $representation) {
-            $name = $representation->name();
-            $key = $nameAsValue ? $name : $representation->id();
-            $valueOptions[$key] = $name;
-        }
+
+        //TODO get user id         $identity = $this->getServiceLocator()
+        //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
+        $user_id = 1;
+        $em = $this->getEntityManager();
+        $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+
+        foreach ($team_users as $team_user):
+            $team_name = $team_user->getTeam()->getName();
+            $team_id = $team_user->getTeam()->getId();
+            $valueOptions[$team_id] = $team_name;
+        endforeach;
+
 
         $prependValueOptions = $this->getOption('prepend_value_options');
         if (is_array($prependValueOptions)) {
@@ -46,10 +53,7 @@ class TeamSelect extends Select
             $defaultOptions = [
                 'resource_value_options' => [
                     'resource' => 'team',
-                    'query' => [],
-                    'option_text_callback' => function ($v) {
-                        return $v->name();
-                    },
+
                 ],
                 'name_as_value' => true,
             ];
@@ -88,6 +92,22 @@ class TeamSelect extends Select
     public function getApiManager()
     {
         return $this->apiManager;
+    }
+
+    /**
+     * @return EntityManager
+     */
+    public function getEntityManager()
+    {
+        return $this->entityManager;
+    }
+
+    /**
+     * @param EntityManager $entityManager
+     */
+    public function setEntityManager(EntityManager $entityManager)
+    {
+        $this->entityManager = $entityManager;
     }
 
     /**

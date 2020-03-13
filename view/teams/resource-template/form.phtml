@@ -5,6 +5,8 @@ $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.
 $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 'Omeka'));
 ?>
 
+
+
 <?php echo $this->form()->openTag($form); ?>
 
 <div id="page-actions">
@@ -14,19 +16,47 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
     <?php echo $this->cancelButton(); ?>
     <button><?php echo $escape($submitLabel); ?></button>
 </div>
+<div>
 <?php $this->trigger("view.$action.form.before", ['form' => $form]); ?>
+
 <?php echo $this->formCollection($form, false); ?>
+<div class="field">
+    <div class="field-meta">
+        <label for="team">Team</label>
+    </div>
+
+    <div class="inputs">
+        <select name="team[]" class="chosen-select" data-placeholder="Add to team" multiple="multiple">
+            <? foreach ($this->user_teams as $id => $team):?>
+
+                <option value="<? echo $id;?>" <?if (in_array($id, array_keys($this->rt_teams))){?>selected<?}?>><? echo $team?></option>
+            <?endforeach;?>
+            <?
+            foreach (array_diff(array_keys($this->rt_teams), array_keys($this->user_teams)) as $id):?>
+                                <option value="<? echo $id ?>" selected disabled><? echo $this->rt_teams[$id] ?></option>
+            <?
+            endforeach;
+
+            ?>
+<!--                <option value="3" disabled>Option 3</option>-->
+        </select>
+
+    </div>
+
+
+</div>
 
 <ul id="properties" data-add-new-property-row-url="<?php echo $escape($this->url(null, ['action' => 'add-new-property-row'], true)); ?>">
+
     <?php foreach ($propertyRows as $propertyRow): ?>
     <?php echo $this->partial(
-        'omeka/admin/resource-template/show-property-row',
+        'teams/resource-template/show-property-row',
         ['propertyRow' => $propertyRow]
     ) ?>
     <?php endforeach; ?>
+
 </ul>
 <?php $this->trigger("view.$action.form.after", ['form' => $form]); ?>
-<?php echo $this->form()->closeTag(); ?>
 
 <button id="property-selector-button" class="mobile-only"><?php echo $this->translate('Add property'); ?></button>
 
@@ -35,6 +65,46 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
 <?php if (isset($resourceTemplate)): ?>
     <?php echo $this->deleteConfirm($resourceTemplate, 'resource template'); ?>
 <?php endif; ?>
+</div>
+<div >
+<div id="properties" form="resourcetemplateform">
+<!--    --><?//echo $this->partial('teams/partial/team-form-no-id')?>
+        <legend id="teams-legend"><?php echo $this->translate('Teams'); ?></legend>
+        <table id="team-resources" data-tablesaw-mode="stack" class="tablesaw tablesaw-stack <?php echo ( $teams) ? '' : 'empty'; ?>">
+            <thead>
+            <tr>
+                <th><?php echo $this->translate('Team Name'); ?></th>
+                <th style="float: right"><?php echo $this->translate('Remove'); ?> </th>
+            </tr>
+            </thead>
+            <?php foreach ($this->rt_teams as $id=>$team): ?>
+                <tr>
+                    <td>
+                        <span><?php echo $team?></span>
+
+                        <input type="hidden" name="teamtest" value="<?php echo $id ?>">
+                    </td>
+                    <td>
+                        <ul class="actions" style="float:right">
+                            <li>
+
+                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+
+                </tr>
+
+
+            <?php endforeach; ?>
+
+        </table>
+
+</div>
+</div>
+<?php echo $this->form()->closeTag(); ?>
 
 <div id="details" class="sidebar">
     <?php echo $this->hyperlink('', '#', [

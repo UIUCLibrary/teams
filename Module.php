@@ -248,46 +248,46 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     {
 
 
-        $params = $event->getParam('section_nav');
-        foreach ($params as $p):
-            echo $p;
-//            foreach ($p as $ar):
-//                echo $ar . "<br>";
-//                foreach ($ar as $what):
-//                    echo gettype($what);
-//                endforeach;
-//            endforeach;
-        endforeach;
-        $value = null;
-
-        $values = $event->getParam('Values');
-        echo $values;
-
-        $event->setParam('Metadata', $value);
+//        $params = $event->getParam('section_nav');
+//        foreach ($params as $p):
+//            echo $p;
+////            foreach ($p as $ar):
+////                echo $ar . "<br>";
+////                foreach ($ar as $what):
+////                    echo gettype($what);
+////                endforeach;
+////            endforeach;
+//        endforeach;
+//        $value = null;
+//
+//        $values = $event->getParam('Values');
+//        echo $values;
+//
+//        $event->setParam('Metadata', $value);
 
 
         $sectionNav = $event->getParam('section_nav');
-        $sectionNav['teams'] = 'TeamTest10'; // @translate
+        $sectionNav['teams'] = 'Teams'; // @translate
         $event->setParam('section_nav', $sectionNav);
 
 
     }
 
-    public function overloadVariable(Event $event)
-    {
-        $params = $event->getParams();
-        foreach ($params as $p):
-            foreach ($p as $ar):
-                echo $ar . "<br>";
-//                foreach ($ar as $what):
-//                    echo gettype($what);
-//                endforeach;
-            endforeach;
-        endforeach;
-        $value = null;
-
-        $event->setParam('Metadata', $value);
-    }
+//    public function overloadVariable(Event $event)
+//    {
+//        $params = $event->getParams();
+//        foreach ($params as $p):
+//            foreach ($p as $ar):
+//                echo $ar . "<br>";
+////                foreach ($ar as $what):
+////                    echo gettype($what);
+////                endforeach;
+//            endforeach;
+//        endforeach;
+//        $value = null;
+//
+//        $event->setParam('Metadata', $value);
+//    }
 
     public function viewShowAfterResource(Event $event)
     {
@@ -526,6 +526,13 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.edit.form.after',
             [$this, 'displayTeamForm']
         );
+
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\ResourceTemplate',
+//            'view.edit.form.after',
+//            [$this, 'displayTeamForm']
+//        );
+
             //ItemSet//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',

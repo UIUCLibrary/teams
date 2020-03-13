@@ -8,6 +8,8 @@ use Doctrine\ORM\EntityManager;
 use Omeka\DataType\Manager as DataTypeManager;
 use Omeka\Form\ResourceTemplateForm;
 use Omeka\Stdlib\Message;
+use phpDocumentor\Reflection\Types\This;
+use Teams\Entity\TeamResourceTemplate;
 use Teams\Form\TeamFieldset;
 use Teams\Form\TeamSelect;
 use Teams\Form\TeamUpdateForm;
@@ -137,45 +139,17 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
         $action = $this->params('action');
         $form = $this->getForm(ResourceTemplateForm::class);
         $em = $this->entityManager;
-        $current_team = $em->getRepository('Teams\Entity\TeamResource');
         $user_id = $this->identity()->getId();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
-        $teams = array();
+        $user_teams = array();
         foreach ($team_users as $tu):
-            $teams[$tu->getTeam()->getId()] = $tu->getTeam()->getName();
+            $user_teams[$tu->getTeam()->getId()] = $tu->getTeam()->getName();
         endforeach;
-
-
-
-        $form->add([
-            //extremely important  that this match what is in the API adapter: Teams\Api\Representation getJsonLd()
-            'name' => 'team',
-            'type' => 'Select',
-            'value' => 6,
-            'options' => [
-                'label' => 'Team', // @translate
-                'value_options' => $teams,
-            ],
-            'attributes' => [
-                'id' => 'team',
-                'required' => true,
-                'value' => 6
-            ],
-        ]);
-
-        $form->add([
-            'name' => 'o-module-teams:Team',
-            'type' => \Teams\Form\Element\TeamSelect::class,
-            'options' => [
-                'label' => 'Teams', // @translate
-                'chosen' => true,
-            ],
-            'attributes' => [
-                'multiple' => true,
-            ],
-        ]);
-
-
+        $teams_rt = $em->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template'=>$this->params('id')]);
+        $rt_teams = array();
+        foreach ($teams_rt as $team_rt):
+            $rt_teams[$team_rt->getTeam()->getId()] = $team_rt->getTeam()->getName();
+        endforeach;
 
 
         if ('edit' == $action) {
@@ -196,6 +170,26 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                 $response = ('edit' === $action)
                     ? $this->api($form)->update('resource_templates', $resourceTemplate->id(), $data)
                     : $this->api($form)->create('resource_templates', $data);
+                $teams_rt = $em->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template'=>$this->params('id')]);
+                foreach ($teams_rt as $team_rt):
+                    $em->remove($team_rt);
+                endforeach;
+                $em->flush();
+                $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $this->params('id')]);
+                foreach ($data['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    $trt = new TeamResourceTemplate($team, $resource_template);
+                    $em->persist($trt);
+                endforeach;
+
+                //to add back in the teams that the resource belongs to but not the user doesn't
+                foreach (array_diff(array_keys($rt_teams), array_keys($user_teams)) as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    $trt = new TeamResourceTemplate($team, $resource_template);
+                    $em->persist($trt);
+                endforeach;
+
+                $em->flush();
                 if ($response) {
                     if ('edit' === $action) {
                         $successMessage = 'Resource template successfully updated'; // @translate
@@ -211,19 +205,27 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                         $successMessage->setEscapeHtml(false);
                     }
                     $this->messenger()->addSuccess($successMessage);
-                    return $this->redirect()->toUrl($response->getContent()->url());
+//                    return $this->redirect()->toUrl($response->getContent()->url());
+
                 }
             } else {
                 $this->messenger()->addFormErrors($form);
             }
         }
 
+
         $view = new ViewModel;
+        if ($this->getRequest()->isPost()){
+            $view->setVariable('data', $data);
+        }
         if ('edit' === $action) {
             $view->setVariable('resourceTemplate', $resourceTemplate);
         }
         $view->setVariable('propertyRows', $this->getPropertyRows());
         $view->setVariable('form', $form);
+        $view->setVariable('rt_teams', $rt_teams);
+        $view->setVariable('user_teams', $user_teams);
+
         return $view;
     }
 
