@@ -1,7 +1,25 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
+$response = $this->api()->search('team')->getContent();
+$response = $this->api()->search('team', ['sort_by' => 'name'])->getContent();
+$user_id = $this->identity()->getId();
+$teams = array();
+foreach ($response as $team):
+    echo 'team: ' . $team->name() . '<br>';
+    foreach ($team->users() as $user):
 
+        if ($user->getUser()->getId() == $user_id){
+            $teams[] = $team;
+            echo 'ding ding!! :' . $team->name() . '<br>';
+
+        }else{
+            echo $user->getId() . '!=' . $user_id;
+            echo '<br>';
+        }
+
+    endforeach;
+endforeach;
 ?>
 
 <?php echo $this->pageTitle($translate('Teams'));

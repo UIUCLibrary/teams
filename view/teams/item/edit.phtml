@@ -13,7 +13,7 @@ var valuesJson = <?php echo json_encode($item->values()); ?>;
 <?php echo $this->pageTitle($item->displayTitle(), 1, $this->translate('Items'), $this->translate('Edit')); ?>
 <?php $this->trigger('view.edit.before'); ?>
 <?php
-echo $this->partial('omeka/admin/item/form.phtml', [
+echo $this->partial('teams/item/form.phtml', [
     'form' => $form,
     'item' => $item,
     'resource' => $resource,
