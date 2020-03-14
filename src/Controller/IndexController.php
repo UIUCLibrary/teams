@@ -84,10 +84,36 @@ class IndexController extends AbstractActionController
         $id = $this->params()->fromRoute('id');
         $response = $this->api()->read('team', ['id' => $id]);
         $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$id]);
+        $items_te = $team_entity->getResources();
         $items = array();
-        foreach ($team_entity->getTeamResources() as $tr):
-            $items[] = $this->api()->read('items', $tr->getResource()->getId())->getContent();
+        $em = $this->entityManager;
+        $qb = $em->createQueryBuilder();
+        $q = $qb->select('tr')
+            ->from('Teams\Entity\TeamResource', 'tr')
+            ->join('Omeka\Entity\Resource', 'r')
+//            ->where('r INSTANCE of Omeka\Entity\Item')
+            ->where('tr.team = 5')
+        ;
+        $q = $this->entityManager->createQuery("SELECT resource FROM Teams\Entity\TeamResource resource WHERE resource.team = 6");
+        $team_resources = $q->getResult();
+
+        $items = array();
+        $item_sets = array();
+        $media = array();
+
+
+        foreach ($team_resources as $tr):
+            $tr = $tr->getResource();
+            if ($tr->getResourceName() == 'items') {
+                $items[] = $this->api()->read('items', $tr->getId())->getContent();
+
+            } elseif ($tr->getResourceName() == 'item_sets'){
+                $item_sets[] = $this->api()->read('item_sets', $tr->getId())->getContent();
+            } elseif ($tr->getResourceName() == 'media'){
+                $media[] = $this->api()->read('media', $tr->getId())->getContent();
+            } else {}
         endforeach;
+        $this->paginator(count($items), $this->params()->fromQuery('page'));
         $view->setVariable('response', $response);
         $view->setVariable('items', $items);
 
