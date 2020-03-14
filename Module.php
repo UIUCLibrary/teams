@@ -481,6 +481,30 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
     }
 
+    public function displayTeamFormNoId(Event $event)
+    {
+
+
+        $vars = $event->getTarget()->vars();
+        // Manage add/edit form.
+        if (isset($vars->item)) {
+            $vars->offsetSet('resource', $vars->item);
+        } elseif (isset($vars->itemSet)) {
+            $vars->offsetSet('resource', $vars->itemSet);
+        } elseif (isset($vars->media)) {
+            $vars->offsetSet('resource', $vars->media);
+        } else {
+            $vars->offsetSet('resource', null);
+            $vars->offsetSet('teams', []);
+        }
+        if ($vars->resource) {
+            $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
+        }
+
+        echo $event->getTarget()->partial(
+            'teams/partial/team-form-no-id'
+        );
+    }
 
 
     public function teamSelectorNav(Event $event)
@@ -654,7 +678,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.add.after',
-            [$this, 'displayTeamForm']
+            [$this, 'displayTeamFormNoId']
         );
 
 

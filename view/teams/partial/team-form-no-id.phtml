@@ -135,9 +135,7 @@
 </script>
 
 <?php
-//$this->headLink()->appendStylesheet($this->assetUrl('css/teams.css'));
-//$this->headScript()->appendFile($this->assetUrl('js/teams.js'));
-//$this->headScript()->prependFile($this->assetUrl('js/teams.js'));
+
 
 $escape = $this->plugin('escapeHtml');
 $removeStr = $escape($this->translate('Remove team'));
@@ -154,60 +152,64 @@ $teamTemplate = '
     </td>
 </tr>';
 ?>
-<fieldset>
+
+
+<fieldset id="teams" class="section">
     <legend id="teams-legend"><?php echo $this->translate('Teams'); ?></legend>
-    <table id="team-resources" data-tablesaw-mode="stack" class="tablesaw tablesaw-stack <?php echo ($resource && $teams) ? '' : 'empty'; ?>">
+    <table id="team-resources" data-tablesaw-mode="stack" class="tablesaw tablesaw-stack">
         <thead>
         <tr>
-            <th><?php echo $this->translate('Team Name'); ?></th>
-            <th style="float: right"><?php echo $this->translate('Remove'); ?> </th>
+            <th><?php echo $this->translate('Team'); ?></th>
+            <th></th>
         </tr>
         </thead>
         <tbody>
+        <!--        --><?php
+        //        if (count($this->teams)>0):
+
+        //            $updateRight = $team->userIsAllowed('update');
+        ?>
+
         <?php
-        if (count($this->teams)>0):
-//        $resourceName = $resource->getControllerName();
-        $team = reset($teams);
-//        ?>
-        <?php foreach ($teams as $id=>$team): ?>
-            <tr>
-                <td>
-                    <span><?php echo $team?></span>
+        if ($this->teams){
+            foreach ($this->teams as $team): ?>
+                <tr>
+                    <td>
+                        <span><?php echo $team->getName()?></span>
 
-                    <input type="hidden" name="team[]" value="<?php echo $id ?>">
-                </td>
-                <td>
-                    <ul class="actions" style="float:right">
-                        <li>
+                        <input type="hidden" name="team[]" value="<?php echo $escape($team->getId()) ?>">
+                    </td>
+                    <td>
+                        <ul class="actions" style="float:right">
+                            <li>
 
-                            <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
-                        </li>
-                    </ul>
-                </td>
-            </tr>
-            <tr>
+                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
 
-            </tr>
+                </tr>
 
 
-        <?php endforeach; ?>
+            <?php endforeach; }?>
 
         </tbody>
     </table>
-    <? else:
-        ?>
-        <div class="no-resources">
-            <p>
-                <?php echo $this->translate('There are no teams for this resource.'); ?>
-                <br />
-                <?php echo $this->translate('Add existing teams using the interface to the right.'); ?>
-            </p>
-        </div>
-
-
-
-    <?php endif; ?>
-
+    <!--    --><?// else:
+    //        ?>
+    <!--        <div class="no-resources">-->
+    <!--            <p>-->
+    <!--                --><?php //echo $this->translate('There are no teams for this resource.'); ?>
+    <!--                <br />-->
+    <!--                --><?php //echo $this->translate('Add existing teams using the interface to the right.'); ?>
+    <!--            </p>-->
+    <!--        </div>-->
+    <!---->
+    <!---->
+    <!---->
+    <!--    --><?php //endif; ?>
 
 
     <button id="team-selector-button" class="mobile-only"><?php echo $this->translate('Add a team'); ?></button>
