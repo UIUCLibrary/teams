@@ -662,7 +662,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
             'view.add.form.after',
-            [$this, 'displayTeamForm']
+            [$this, 'displayTeamFormNoId']
         );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
