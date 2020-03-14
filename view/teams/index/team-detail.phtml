@@ -34,7 +34,7 @@ $resourceSortHeadings = [
 
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
-    'item-linked' => $translate('Users'),
+    'users' => $translate('Users'),
     'team-resources' => $translate('Resources'),
 ];
 ?>
@@ -65,7 +65,7 @@ $sectionNavs = [
 
 </div>
 
-<div id="item-linked" class="section">
+<div id="users" class="section">
 
     <?php if (count($team->users())> 0): ?>
                    <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
