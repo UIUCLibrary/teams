@@ -1,5 +1,5 @@
 <?php
-namespace Omeka\Controller\SiteAdmin;
+namespace Teams\Controller\SiteAdmin;
 
 use Omeka\Form\ConfirmForm;
 use Omeka\Form\SitePageForm;

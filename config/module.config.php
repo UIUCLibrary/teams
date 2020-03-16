@@ -75,7 +75,7 @@ return [
     ],
     'controllers' => [
         'invokables' => [
-//            'Omeka\Controller\Admin\ItemSet' => Controller\ItemSetController::class,
+            'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
 
         ],
         'factories' => [
