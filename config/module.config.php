@@ -73,9 +73,6 @@ return [
             'addTeam' => 'Teams\View\Helper\AddTeam'
         ]
     ],
-
-
-
     'controllers' => [
         'invokables' => [
 //            'Omeka\Controller\Admin\ItemSet' => Controller\ItemSetController::class,
