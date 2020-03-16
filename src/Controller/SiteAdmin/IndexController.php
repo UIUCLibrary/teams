@@ -11,6 +11,7 @@ use Omeka\Mvc\Exception;
 use Omeka\Site\Navigation\Link\Manager as LinkManager;
 use Omeka\Site\Navigation\Translator;
 use Omeka\Site\Theme\Manager as ThemeManager;
+use Teams\Entity\TeamSite;
 use Zend\Form\Form;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
@@ -160,6 +161,19 @@ class IndexController extends AbstractActionController
             $form->setData($formData);
             if ($form->isValid()) {
                 $response = $this->api($form)->create('sites', $formData);
+                $em  = $this->entityManager;
+
+                $site_id = $response->getContent()->id();
+                $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site_id]);
+
+                foreach ($formData['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    $trt = new TeamSite($team, $site);
+                    $em->persist($trt);
+                endforeach;
+                $em->flush();
+
+
                 if ($response) {
                     $this->messenger()->addSuccess('Site successfully created'); // @translate
                     return $this->redirect()->toUrl($response->getContent()->url());

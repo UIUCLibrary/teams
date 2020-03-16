@@ -714,6 +714,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             [$this, 'addUserFormElement']
         );
 
+        $sharedEventManager->attach(
+            \Omeka\Form\SiteForm::class,
+            'form.add_elements',
+            [$this, 'addSiteFormElement']
+        );
+
 
 
 //        $sharedEventManager->attach(
@@ -757,6 +763,21 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         ]);
     }
 
+    public function addSiteFormElement(Event $event){
+        $form = $event->getTarget();
+        $form->add([
+            'name' => 'team',
+            'type' => TeamSelect::class,
+            'options' => [
+                'label' => 'Teams', // @translate
+                'chosen' => true,
+            ],
+            'attributes' => [
+                'multiple' => true,
+            ],
+        ]);
+
+    }
     public function addUserFormValue(Event $event)
     {
         $user = $event->getTarget()->vars()->user;
