@@ -211,7 +211,8 @@ class IndexController extends AbstractActionController
             }
         }
         $em = $this->entityManager;
-        $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$this->params('id')]);
+        $site_id = $this->currentSite()->id();
+        $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
         $current_teams = array();
         foreach ($team_sites as $team_site):
             $current_teams[] = $team_site->getTeam()->getId();

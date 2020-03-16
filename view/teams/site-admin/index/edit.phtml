@@ -41,8 +41,6 @@ $form->prepare();
 
     window.onload = function populateForm() {
         let select = document.getElementById('team');
-        let option = select.options[1];
-        option.setAttribute('selected', true);
 
         for (let i=0; i < select.options.length; i++){
             for (let j=0; j<current_team.length; j++)
