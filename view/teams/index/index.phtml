@@ -23,16 +23,9 @@ $escape = $this->plugin('escapeHtml');
 <!--    --><?php //endif; ?>
 </div>
 
-
-
-
-
-
-
-
 <?php
-$response = $this->response->getContent();
-?>
+//$response = $this->response->getContent();
+//?>
 
 <!--<h1>Teams</h1>-->
 <h2> Current Team: <?echo $this->current_team->getName() ?></h2>
@@ -43,33 +36,13 @@ $response = $this->response->getContent();
 
 <?php
 //$this->response = false;
-if ($this->response): ?>
-<!--    <form method="post" id="batch-form" class="disable-unsaved-warning">-->
-<!--        --><?php //if ($this->userIsAllowed('Omeka\Api\Adapter\ItemAdapter', 'batch_update')): ?>
-<!--            <div class="batch-inputs">-->
-<!--                <select class="batch-actions-select" aria-label="--><?php //echo $translate('Batch actions'); ?><!--">-->
-<!--                    <option value="default">--><?php //echo $translate('Batch actions'); ?><!--</option>-->
-<!--                    <option value="update-selected" disabled="true">--><?php //echo $translate('Edit selected'); ?><!--</option>-->
-<!--                    <option value="update-all">--><?php //echo $translate('Edit all'); ?><!--</option>-->
-<!--                    <option value="delete-selected" disabled="true">--><?php //echo $translate('Delete selected'); ?><!--</option>-->
-<!--                    <option value="delete-all">--><?php //echo $translate('Delete all'); ?><!--</option>-->
-<!--                </select>-->
-<!--                <div class="batch-actions">-->
-<!--                    <button type="button" class="default active" disabled="true">--><?php //echo $translate('Go'); ?><!--</button>-->
-<!--                    <input type="submit" class="update-selected" name="update_selected" value="--><?php //echo $translate('Go'); ?><!--" formaction="--><?php //echo $escape($this->url(null, ['action' => 'batch-edit'], true)); ?><!--">-->
-<!--                    <input type="submit" class="update-all" name="update_all" value="--><?php //echo $translate('Go'); ?><!--" formaction="--><?php //echo $escape($this->url(null, ['action' => 'batch-edit-all'], true)); ?><!--">-->
-<!--                    <input type="hidden" name="query" class="batch-query" value="--><?php //echo $escape(json_encode($this->params()->fromQuery())); ?><!--">-->
-<!--                    <a class="delete button sidebar-content delete-selected" data-sidebar-selector="#sidebar-delete-selected">--><?php //echo $translate('Go'); ?><!--</a>-->
-<!--                    <a class="delete button sidebar-content delete-all" data-sidebar-selector="#sidebar-delete-all">--><?php //echo $translate('Go'); ?><!--</a>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        --><?php //endif; ?>
+if ($this->user_teams): ?>
 
-<!--add class batch-edit if including the batch edit code from above-->
 <?php
     ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
+<!--            team selector -->
             <tr>
                 <td colspan="6">
                 <form id="change_team">
@@ -99,7 +72,10 @@ if ($this->response): ?>
             </tr>
             </thead>
             <tbody>
-            <?php foreach ($response as $team): ?>
+            <?php foreach ($this->user_teams as $team):
+                $team = $team->getTeam();
+                ?>
+
 
                 <tr>
                     <td>
@@ -111,30 +87,30 @@ if ($this->response): ?>
 <!--                        --><?php //if (!$team->isPublic()): ?>
 <!--                            <span class="o-icon-private" aria-label="--><?php //echo $translate('Private'); ?><!--"></span>-->
 <!--                        --><?php //endif; ?>
-                        <?php if ($team->name() == $this->current_team->getName()){
-                            ?> <strong><? echo $team->name();?></strong><?
+                        <?php if ($team->getName() == $this->current_team->getName()){
+                            ?> <strong><? echo $team->getName();?></strong><?
                         }else{
-                            echo $team->name();
+                            echo $team->getName();
                         }?>
                     </td>
                     <td>                        <ul class="actions">
                             <!--                            --><?php //if ($team->userIsAllowed('update')): ?>
                             <li>
 
-                                <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"></a>
+                                <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
                             </li>
                             <!--                            --><?php //endif; ?>
-                            <?php if ($team->userIsAllowed('delete')): ?>
-                                <li><a class="o-icon-delete" href="<? echo $this->url('admin/teams/detail/delete', ['id' => $team->id()])?>"></a>
+<!--                            --><?php //if ($team->userIsAllowed('delete')): ?>
+                                <li><a class="o-icon-delete" href="<? echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
                                 </li>
-                            <?php endif; ?>
+<!--                            --><?php //endif; ?>
                             <li>
-                                <a class="o-icon-more" href="<? echo $this->url('admin/teams/detail', ['id' => $team->id()])?>">    </a>
+                                <a class="o-icon-more" href="<? echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
                             </li>
                         </ul>
                     </td>
                     <td>
-                        <?php foreach ($team->users() as $user):
+                        <?php foreach ($team->getTeamUsers() as $user):
 
                             if ($user->getUser()->getId() == $this->identity()->getId())
                             {
@@ -143,9 +119,9 @@ if ($this->response): ?>
 
                         endforeach;?>
                     </td>
-                    <td><?php echo $team->description(); ?></td>
-                    <td><?php  echo count($team->users())?></td>
-                    <td><?php echo count($team->resources()); ?></td>
+                    <td><?php echo $team->getDescription(); ?></td>
+                    <td><?php  echo count($team->getUsers())?></td>
+                    <td><?php echo count($team->getResources()); ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

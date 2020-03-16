@@ -50,12 +50,13 @@ class IndexController extends AbstractActionController
     {
         $user_id = $this->identity()->getId();
 
+        //post requests from this page should be the user changing their team
         $request = $this->getRequest();
         if ($request->isPost()){
             $this->changeCurrentTeamAction($user_id);
             $this->redirect()->toRoute('admin/teams');
-
         }
+
 
 
         $view = new ViewModel;
@@ -64,9 +65,9 @@ class IndexController extends AbstractActionController
         $user_teams = $team_user->findBy(['user'=>$user_id]);
         $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
 
-        $response = $this->api()->search('team');
+        $all_teams = $this->api()->search('team');
 
-        $view->setVariable('response', $response);
+
         $view->setVariable('current_team', $current_team);
         $view->setVariable('user_teams', $user_teams);
         $view->setVariable('user_id', $user_id);
