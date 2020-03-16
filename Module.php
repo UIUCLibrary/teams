@@ -500,9 +500,22 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        $user_id = $identity->getId();
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $teams = $entityManager->getRepository('Teams\Entity\TeamUser');
+        if ($teams->findOneBy(['user'=>$user_id, 'is_current'=>1])){
+            $default_team = $teams->findOneBy(['user'=>$user_id, 'is_current'=>1]);
+        } elseif ($teams->findBy(['user' => $user_id])){
+            $default_team = $teams->findOneBy(['user' => $user_id], ['name']);
+        } else {
+            $default_team = null;
+        }
 
         echo $event->getTarget()->partial(
-            'teams/partial/team-form-no-id'
+            'teams/partial/team-form-no-id',
+            ['user_id'=>$user_id, 'default_team' => $default_team->getTeam()]
         );
     }
 

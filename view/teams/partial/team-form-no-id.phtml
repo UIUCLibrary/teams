@@ -171,11 +171,13 @@ $teamTemplate = '
         ?>
 
         <?php
-        if ($this->teams){
-            foreach ($this->teams as $team): ?>
+
+        if ($this->default_team){
+            $team = $this->default_team;
+             ?>
                 <tr>
                     <td>
-                        <span><?php echo $team->getName()?></span>
+                        <span><?php echo $team->getName()?> (default)</span>
 
                         <input type="hidden" name="team[]" value="<?php echo $escape($team->getId()) ?>">
                     </td>
@@ -193,7 +195,7 @@ $teamTemplate = '
                 </tr>
 
 
-            <?php endforeach; }?>
+            <?php }?>
 
         </tbody>
     </table>
