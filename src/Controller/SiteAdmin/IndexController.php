@@ -183,9 +183,22 @@ class IndexController extends AbstractActionController
             }
         }
 
+        $user_id = $this->identity()->getId();
+        $em = $this->entityManager;
+
+        $teams = $em->getRepository('Teams\Entity\TeamUser');
+        if ($teams->findOneBy(['user'=>$user_id, 'is_current'=>1])){
+            $default_team = $teams->findOneBy(['user'=>$user_id, 'is_current'=>1]);
+        } elseif ($teams->findBy(['user' => $user_id])){
+            $default_team = $teams->findOneBy(['user' => $user_id], ['name']);
+        } else {
+            $default_team = null;
+        }
+
         $view = new ViewModel;
         $view->setVariable('form', $form);
         $view->setVariable('themes', $themes);
+        $view->setVariable('default_team', $default_team);
         return $view;
     }
 
