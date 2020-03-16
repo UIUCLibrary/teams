@@ -24,7 +24,25 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
     <div class="field-meta">
         <label for="team">Team</label>
     </div>
+<?if ($this->action == 'add'){
+    ?>    <div class="inputs">
+        <select name="team[]" class="chosen-select" data-placeholder="Add to team" multiple="multiple">
+            <? foreach ($this->user_teams as $id => $team):?>
 
+                <option value="<? echo $id;?>" <?if ($id == $this->default_team->getTeam()->getId()){?>selected<? $team = $team . ' (default)';}?>><? echo $team?></option>
+            <?endforeach;?>
+            <?
+            foreach (array_diff(array_keys($this->rt_teams), array_keys($this->user_teams)) as $id):?>
+                <option value="<? echo $id ?>" selected disabled><? echo $this->rt_teams[$id] ?></option>
+            <?
+            endforeach;
+
+            ?>
+        </select>
+
+    </div>
+    <?
+}else { ?>
     <div class="inputs">
         <select name="team[]" class="chosen-select" data-placeholder="Add to team" multiple="multiple">
             <? foreach ($this->user_teams as $id => $team):?>
@@ -41,6 +59,7 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
         </select>
 
     </div>
+    <?}?>
 
 
 </div>

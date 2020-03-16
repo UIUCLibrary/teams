@@ -141,6 +141,17 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
         $em = $this->entityManager;
         $user_id = $this->identity()->getId();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+
+        $teams = $em->getRepository('Teams\Entity\TeamUser');
+        if ($teams->findOneBy(['user'=>$user_id, 'is_current'=>1])){
+            $default_team = $teams->findOneBy(['user'=>$user_id, 'is_current'=>1]);
+        } elseif ($teams->findBy(['user' => $user_id])){
+            $default_team = $teams->findOneBy(['user' => $user_id], ['name']);
+        } else {
+            $default_team = null;
+        }
+
+
         $user_teams = array();
         foreach ($team_users as $tu):
             $user_teams[$tu->getTeam()->getId()] = $tu->getTeam()->getName();
@@ -244,6 +255,7 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
         $view->setVariable('form', $form);
         $view->setVariable('rt_teams', $rt_teams);
         $view->setVariable('user_teams', $user_teams);
+        $view->setVariable('default_team', $default_team);
 
         return $view;
     }
