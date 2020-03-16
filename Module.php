@@ -774,6 +774,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             ],
             'attributes' => [
                 'multiple' => true,
+                'id' => 'team'
             ],
         ]);
 

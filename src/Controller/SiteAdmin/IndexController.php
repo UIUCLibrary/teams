@@ -210,12 +210,19 @@ class IndexController extends AbstractActionController
                 $this->messenger()->addFormErrors($form);
             }
         }
+        $em = $this->entityManager;
+        $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$this->params('id')]);
+        $current_teams = array();
+        foreach ($team_sites as $team_site):
+            $current_teams[] = $team_site->getTeam()->getId();
+        endforeach;
 
         $view = new ViewModel;
         $view->setVariable('site', $site);
         $view->setVariable('resourceClassId', $this->params()->fromQuery('resource_class_id'));
         $view->setVariable('itemSetId', $this->params()->fromQuery('item_set_id'));
         $view->setVariable('form', $form);
+        $view->setVariable('current_teams' , $current_teams);
         return $view;
     }
 
