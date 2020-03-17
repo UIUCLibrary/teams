@@ -237,7 +237,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
         $acl->allow(
             $adminRoles,
-            [\Teams\Controller\IndexController::class],
+            [Controller\IndexController::class],
+            ['roleIndex']
+        );
+        $acl->allow(
+            $viewerRoles,
+            [Controller\IndexController::class],
             ['roleIndex']
         );
 
@@ -527,9 +532,10 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     public function teamSelectorNav(Event $event)
     {
+        if (
         $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
-        $user_id = $identity->getId();
+            ->get('Omeka\AuthenticationService')->getIdentity()){
+        $user_id = $identity->getId();}else{$user_id=null;}
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id]);
