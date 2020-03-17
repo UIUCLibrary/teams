@@ -561,6 +561,13 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             [$this, 'teamSelectorNav']
         );
 
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\IndexController',
+            'view.layout',
+            [$this, 'teamSelectorNav']
+        );
+
+
 
         //Edit pages//
             //Item//

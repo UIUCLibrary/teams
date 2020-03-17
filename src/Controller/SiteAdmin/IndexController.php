@@ -351,38 +351,136 @@ class IndexController extends AbstractActionController
         return $view;
     }
 
+
+    public function teamDetailAction()
+    {
+        $view = new ViewModel;
+        $id = $this->params()->fromRoute('id');
+        $response = $this->api()->read('team', ['id' => $id]);
+
+
+        $em = $this->entityManager;
+
+        $resources = [
+            'items'=> ['count' => 0, 'entity' => 'Item', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
+            'item sets' => ['count' => 0, 'entity' => 'ItemSet', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
+            'media' => ['count' => 0, 'entity' => 'Media', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
+            'resource templates' => ['count' => 0, 'entity' => 'ResourceTemplate', 'team_entity' => 'TeamResourceTemplate', 'fk' => 'resource_template'],
+            'sites' => ['count' => 0, 'entity' => 'Site', 'team_entity' => 'TeamSite', 'fk' => 'site']
+        ];
+
+        foreach ($resources as $key => $resource):
+            //I imagine this as like a subquery that gets the list of item ids
+            $sub_query = $em->createQueryBuilder();
+            $sub_query->select('r.id')
+                ->from('Omeka\Entity\\' . $resource['entity'], 'r');
+
+            $ids = $sub_query->getQuery()->getArrayResult();
+
+            //get the count of the total number of team items
+            $qb = $em->createQueryBuilder();
+
+            $qb->select('count(tr.' . $resource['fk'] . ')')
+                ->from('Teams\Entity\\' . $resource['team_entity'], 'tr')
+                ->where('tr.team = ?1')
+                ->andWhere('tr.' . $resource['fk'] . ' in (:ids)')
+                ->setParameter('ids', $ids)
+            ;
+            $qb->setParameter(1, $this->params('id'));
+            $resources[$key]['count'] += $qb->getQuery()->getSingleScalarResult();
+        endforeach;
+
+        $view->setVariable('resources', $resources);
+
+
+        $view->setVariable('response', $response);
+
+
+        return $view;
+    }
+
+
+
     public function resourcesAction()
     {
         $site = $this->currentSite();
+        $site_id = $site->id();
+        $em = $this->entityManager;
+        $site_teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+        $site_resources = array();
+        $site_resource_templates = array();
+        $get_itemsets = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\ItemSet");
+        $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
+        $get_media = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
+
+        //thought that a scalar would be easier but from what I can tell in this case getScalarResult===getArrayResult===getResult
+        //leaving it this way because it sounds closest to the kind of data I actually want to get out
+        $all_item_sets = $get_itemsets->getScalarResult();
+
+        //combine all of the resources from all of the teams the site is associated with
+        //maintaining the distinction between resources and resource templates from core omeka
+        foreach ($site_teams as $site_team):
+            $team_resources = $site_team->getTeam()->getTeamResources()->toArray();
+            $team_resource_templates = $site_team->getTeam()->getTeamResourceTemplates()->toArray();
+            $site_resources = array_merge($site_resources, $team_resources);
+            array_merge($site_resource_templates, $team_resource_templates);
+
+        endforeach;
+
+        //returns the id when either a TeamResource object or row from a doctrine result set is provided
+        $getIds = function ($resource){
+            if (is_object($resource)){
+                return $resource->getResource()->getId();
+            }elseif(is_array($resource)){
+                return $resource['id'];
+            }else{return null;}
+        };
+
+        //if there is a way to do this by testing TeamResources with INSTANCE OF it would be simpler, but I was not
+        //able to get that to work. So using an array of Omeka itemsets as discriminator
+
+        //ids fom the site's resources
+        $team_res_ids = array_map($getIds, $site_resources);
+
+        //ids from all omeka itemsets
+        $all_it_set_ids = array_map($getIds, $all_item_sets);
+
+        //ids from the site's itemsets
+        $site_item_sets = array_intersect($all_it_set_ids, $team_res_ids);
+
+
+
+
         $form = $this->getForm(Form::class)->setAttribute('id', 'site-form');
 
-        if ($this->getRequest()->isPost()) {
-            $formData = $this->params()->fromPost();
-            $form->setData($formData);
-            if ($form->isValid()) {
-                $itemPool = $formData;
-                unset($itemPool['form_csrf']);
-                unset($itemPool['site_item_set']);
-
-                $itemSets = isset($formData['o:site_item_set']) ? $formData['o:site_item_set'] : [];
-
-                $updateData = ['o:item_pool' => $itemPool, 'o:site_item_set' => $itemSets];
-                $response = $this->api($form)->update('sites', $site->id(), $updateData, [], ['isPartial' => true]);
-                if ($response) {
-                    $this->messenger()->addSuccess('Site resources successfully updated'); // @translate
-                    return $this->redirect()->refresh();
-                }
-            } else {
-                $this->messenger()->addFormErrors($form);
-            }
-        }
+//        if ($this->getRequest()->isPost()) {
+//            $formData = $this->params()->fromPost();
+//            $form->setData($formData);
+//            if ($form->isValid()) {
+//                $itemPool = $formData;
+//                unset($itemPool['form_csrf']);
+//                unset($itemPool['site_item_set']);
+//
+//                $itemSets = isset($formData['o:site_item_set']) ? $formData['o:site_item_set'] : [];
+//
+//                $updateData = ['o:item_pool' => $itemPool, 'o:site_item_set' => $itemSets];
+//                $response = $this->api($form)->update('sites', $site->id(), $updateData, [], ['isPartial' => true]);
+//                if ($response) {
+//                    $this->messenger()->addSuccess('Site resources successfully updated'); // @translate
+//                    return $this->redirect()->refresh();
+//                }
+//            } else {
+//                $this->messenger()->addFormErrors($form);
+//            }
+//        }
 
         $itemCount = $this->api()
             ->search('items', ['limit' => 0, 'site_id' => $site->id()])
             ->getTotalResults();
+
         $itemSets = [];
-        foreach ($site->siteItemSets() as $siteItemSet) {
-            $itemSet = $siteItemSet->itemSet();
+        foreach ($site_item_sets as $item_set_id) {
+            $itemSet = $this->api()->read('item_sets', ['id'=>$item_set_id])->getContent();
             $owner = $itemSet->owner();
             $itemSets[] = [
                 'id' => $itemSet->id(),
@@ -391,11 +489,17 @@ class IndexController extends AbstractActionController
             ];
         }
 
+
         $view = new ViewModel;
         $view->setVariable('site', $site);
         $view->setVariable('form', $form);
         $view->setVariable('itemCount', $itemCount);
         $view->setVariable('itemSets', $itemSets);
+        $view->setVariable('site_resources', $site_resources);
+        $view->setVariable('site_res_ids', $team_res_ids);
+        $view->setVariable('all_item_sets', $all_item_sets);
+        $view->setVariable('site_item_sets', $site_item_sets);
+        $view->setVariable('site_teams', $site_teams);
         return $view;
     }
 
