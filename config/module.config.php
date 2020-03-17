@@ -19,6 +19,9 @@ return [
                     [
                         'label' => 'Roles', // @translate
                         'route' => 'admin/teams/roles',
+                        'controller' => 'Index',
+                        'action' => 'roleIndex',
+//                        'privilege' => 'roleIndex',
                         'visible' => true,
                     ],
                 ]

@@ -164,12 +164,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             ['search', 'read']
         );
 
-        $acl->deny(
-            Acl::ROLE_SITE_ADMIN,
-            [Controller\IndexController::class],
-            ['index']
-
-        );
+//        $acl->deny(
+//            Acl::ROLE_SITE_ADMIN,
+//            [Controller\IndexController::class],
+//            ['index']
+//
+//        );
 
         $acl->allow(
             $viewerRoles,
@@ -234,6 +234,11 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             $viewerRoles,
             [Controller\UpdateController::class],
             ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
+        );
+        $acl->allow(
+            $adminRoles,
+            [\Teams\Controller\IndexController::class],
+            ['roleIndex']
         );
 
     }
