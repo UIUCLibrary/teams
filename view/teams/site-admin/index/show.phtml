@@ -40,3 +40,9 @@ if ($summary):
     <div class="value"><?php echo nl2br($escape($summary)); ?></div>
 </div>
 <?php endif; ?>
+<div class="property">
+    <h4><?php echo $escape($this->translate('Teams')); ?></h4>
+    <?foreach ($this->site_teams as $site_team): ?>
+    <div class="value"><?php echo $escape($site_team->getTeam()->getName()); ?></div>
+    <?endforeach;?>
+</div>

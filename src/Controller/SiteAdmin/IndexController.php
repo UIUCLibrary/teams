@@ -543,8 +543,13 @@ class IndexController extends AbstractActionController
     public function showAction()
     {
         $site = $this->currentSite();
+        $site_id = $site->id();
+        $em = $this->entityManager;
+        $site_teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
         $view = new ViewModel;
+
         $view->setVariable('site', $site);
+        $view->setVariable('site_teams', $site_teams);
         return $view;
     }
 
