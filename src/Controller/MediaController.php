@@ -154,20 +154,22 @@ class MediaController extends AbstractActionController
                 $response = $this->api($form)->update('media', $this->params('id'), $data);
 
                 $em = $this->entityManager;
-                $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $response->getContent()->id()]);
+                $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $this->params('id')]);
                 foreach ($entity as $e):
 
                     $this->entityManager->remove($e);
                 endforeach;
-                $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+                $em->flush();
 
+                $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $this->params('id')]);
+                if (array_key_exists('team', $data)){
                 foreach ($data['team'] as $team_id):
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
                     $team_res = new TeamResource($team, $resource);
                     $em = $this->entityManager;
                     $em->persist($team_res);
                 endforeach;
-                $em->flush();
+                $em->flush();}
 
                 if ($response) {
                     $this->messenger()->addSuccess('Media successfully updated'); // @translate
