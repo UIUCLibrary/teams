@@ -330,18 +330,27 @@ class ItemController extends AbstractActionController
                 $response = $this->api($form)->create('items', $data, $fileData);
                 $user_id = $this->identity()->getId();
 
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+                $em = $this->entityManager;
+                foreach ($data['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                    $team_resource = new TeamResource($team, $resource);
+                    $em->persist($team_resource);
+                    endforeach;
+                $em->flush();
+
                 //right now this doesn't care about the input it just add it to the users current team
                 //get the get the user's team_user with the is_current identifier
-                $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
+//                $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
 
                 //get their current team
-                $team = $team_user->getTeam();
+//                $team = $team_user->getTeam();
 //                $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$data['team']]);
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
-                $team_res = new TeamResource($team, $resource);
-                $em = $this->entityManager;
-                $em->persist($team_res);
-                $em->flush();
+//                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+//                $team_res = new TeamResource($team, $resource);
+//                $em = $this->entityManager;
+//                $em->persist($team_res);
+//                $em->flush();
                 if ($response) {
                     $message = new Message(
                         'Item successfully created. %s', // @translate
