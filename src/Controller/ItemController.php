@@ -330,14 +330,25 @@ class ItemController extends AbstractActionController
                 $response = $this->api($form)->create('items', $data, $fileData);
                 $user_id = $this->identity()->getId();
 
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+//                $media = $this->api()->read('items', $this->params('id'))->media();
                 $em = $this->entityManager;
+                $resource = $em->getRepository('Omeka\Entity\Item')->findOneBy(['id' => $response->getContent()->id()]);
+                $media = $resource->getMedia();
+
+                if (array_key_exists('team', $data)){
                 foreach ($data['team'] as $team_id):
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
                     $team_resource = new TeamResource($team, $resource);
                     $em->persist($team_resource);
+                    if (count($media)>0) {
+                        foreach ($media as $m):
+                            $tr = new TeamResource($team, $m);
+                            $em->persist($tr);
+                        endforeach;
+                    }
                     endforeach;
-                $em->flush();
+                $em->flush();}
+
 
                 //right now this doesn't care about the input it just add it to the users current team
                 //get the get the user's team_user with the is_current identifier
