@@ -5,32 +5,46 @@ $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.
 $this->headScript()->appendFile($this->assetUrl('js/site-item-sets.js', 'Omeka'));
 $this->htmlElement('body')->appendAttribute('class', 'sites resources');
 
+$section_nav_template = '
+    <nav class="pagination" role="navigation">
+
+        <input type="text" name="page" class="page-input-top" value="X" size="4" aria-label="Page">
+        <span class="page-count">of X</span>
+
+
+<!--        <a class="previous o-icon-first button" id="first" onclick="firstPage()" value="first" ></a>-->
+        <a class="previous o-icon-prev button" id="previous" onclick="prevPage()" value="previous" ></a>
+        <a class="next o-icon-next button" id="next" onclick="nextPage()" value="next" ></a>
+<!--        <a class="next o-icon-last button" id="last" onclick="lastPage()" value="first" ></a>-->
+
+        <span class="row-count">xx–xx of xxx</span>
+    </nav>
+
+';
+
 $rowTemplate = '
 <tr class="site-item-set-row">
     <td class="sortable-handle"></td>
     <td class="site-item-set-title"></td>
     <td class="site-item-set-owner-email"></td>
     <td>
-' . $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $this->translate('Remove item set')])
-  . $this->hyperlink('', '#', ['class' => 'o-icon-undo', 'title' => $this->translate('Restore item set'), 'style' => 'display:none'])
-  . '<input type="hidden" class="site-item-set-id" name="o:site_item_set[][o:item_set][o:id]">
-    </td>
+</td>
 </tr>';
 ?>
 
-<div><p>Item pools are functionally replaced by the Teams module This site has access to the items associated with its teams: </p>
-    <ul>
-        <? foreach ($this->site_teams as $site_team):
-        ?><li><? echo $site_team->getTeam()->getName(); ?></li><?
-        endforeach;
-        ?>
-    </ul>
+<div><p>Item pools are functionally replaced by the Teams module. </p>
+
 </div>
 
 <?php echo $this->pageTitle($this->translate('Resources'), 1, $this->translate('Sites')); ?>
 <?php echo $this->sectionNav([
-    'item-pool-section' => $this->translate('Item pool'),
+    'resource-pool-section' => $this->translate('Resource pool'),
+    'item-section' => $this->translate('Items'),
     'item-sets-section' => $this->translate('Item sets'),
+    'media-section' => $this->translate('Media'),
+    'team-section' => $this->translate('Teams'),
+
+
 ]); ?>
 
 <?php echo $this->form()->openTag($form); ?>
@@ -41,26 +55,66 @@ $rowTemplate = '
 <!--    <button>--><?php //echo $this->translate('Save'); ?><!--</button>-->
 <!--</div>-->
 
-<div id="item-pool-section" class="active section">
+<div id="resource-pool-section" class="active section">
     <p><?php echo sprintf(
-        $this->translate('There are currently %s items in this site’s pool.'),
-        $this->hyperlink(
-            $itemCount,
-            $this->url(
-                'admin/default',
-                ['controller' => 'item'],
-                ['query' => ['site_id' => $site->id()]]
-            ),
-            ['target' => '_blank']
-        )
+        $this->translate('There are currently %s resources in this site’s pool, contributed by these teams: '),
+
+
+        //TODO either this should link to a new view that has the site's resources (an acl nightmare) or shouldn't link
+        $this->hyperlink(count($this->site_items))
     ); ?></p>
-    <div id="advanced-search"><?php echo $this->partial(
-        'common/advanced-search',
-        ['query' => $site->itemPool(), 'resourceType' => 'item']
-    ); ?></div>
+    <ul>
+        <? foreach ($this->site_teams as $site_team):
+            ?><li><? echo $site_team->getTeam()->getName(); ?></li><?
+        endforeach;
+        ?>
+    </ul>
+<!--    <div id="advanced-search">--><?php //echo $this->partial(
+//        'common/advanced-search',
+//        ['query' => $site->itemPool(), 'resourceType' => 'item']
+//    ); ?><!--</div>-->
+</div>
+
+<div id="item-section" class="section">
+
+<? echo $section_nav_template ?>
+    <table id="site-items" class="tablesaw tablesaw-stack">
+        <thead>
+        <tr>
+            <th><?php echo $this->translate('Title'); ?></th>
+            <th><?php echo $this->translate('Owner'); ?></th>
+        </tr>
+        </thead>
+        <tbody id="site-media-rows">
+        <? foreach ($this->site_items as $team):
+            $team = $this->api()->read('items', ['id' => $team])->getContent();
+            ?><tr>
+            <td>
+                <? echo $team->displayTitle();?>
+            </td>
+            <td>
+                <? echo $team->owner()->name();?>
+            </td>
+
+
+            </tr><?
+
+        endforeach;
+        ?>
+        <tr>
+            <td>
+                test
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
+    <!--    --><?php //echo $this->itemSetSelector(); ?>
 </div>
 
 <div id="item-sets-section" class="section">
+    <? echo $section_nav_template ?>
+
     <table id="site-item-sets" class="tablesaw tablesaw-stack" style="display: none;"
         data-tablesaw-mode="stack"
         data-item-sets="<?php echo $this->escapeHtml(json_encode($itemSets)); ?>"
@@ -78,5 +132,81 @@ $rowTemplate = '
     <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
 <!--    --><?php //echo $this->itemSetSelector(); ?>
 </div>
+
+<div id="media-section" class="section">
+    <? echo $section_nav_template ?>
+
+    <table id="site-media" class="tablesaw tablesaw-stack">
+        <thead>
+        <tr>
+            <th><?php echo $this->translate('Title'); ?></th>
+            <th><?php echo $this->translate('Owner'); ?></th>
+        </tr>
+        </thead>
+        <tbody id="site-media-rows">
+        <? foreach ($this->site_media as $team):
+            $team = $this->api()->read('media', ['id' => $team])->getContent();
+            ?><tr>
+                <td>
+                    <? echo $team->displayTitle();?>
+                </td>
+            <td>
+                <? echo $team->owner()->name();?>
+            </td>
+
+
+            </tr><?
+
+        endforeach;
+        ?>
+        <tr>
+            <td>
+                test
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
+    <!--    --><?php //echo $this->itemSetSelector(); ?>
+</div>
+
+<div id="team-section" class="section">
+
+    <table id="site-media" class="tablesaw tablesaw-stack">
+        <thead>
+        <tr>
+            <th><?php echo $this->translate('Team Name'); ?></th>
+            <th><?php echo $this->translate('Members'); ?></th>
+        </tr>
+        </thead>
+        <tbody id="site-media-rows">
+        <? foreach ($this->site_teams as $team):
+            $team = $team->getTeam();
+            ?><tr>
+            <td>
+                <? echo $team->getName();?>
+            </td>
+            <td>
+                <ul>
+
+                    <? foreach ($team->getTeamUsers() as $tu):?>
+                        <li>
+                            <? echo $tu->getUser()->getName() . ' (' . $tu->getRole()->getName() . ')';?>
+                        </li>
+                    <? endforeach;?>
+                </ul>
+            </td>
+
+
+            </tr><?
+
+        endforeach;
+        ?>
+        </tbody>
+    </table>
+    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
+    <!--    --><?php //echo $this->itemSetSelector(); ?>
+</div>
+
 
 <?php echo $this->form()->closeTag(); ?>
