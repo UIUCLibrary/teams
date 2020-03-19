@@ -184,12 +184,14 @@ class IndexController extends AbstractActionController
 
 
 
-
-            foreach ($site_items as $item_id):
-                array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> $item_id));
-            endforeach;
+            // actually totally doesn't work
+//            foreach ($site_items as $item_id):
+//                array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> $item_id));
+//            endforeach;
 //            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '1000'));
-
+            /// alternative idea is for each site to have an itemset (or each team) and for all of the items in TeamResources
+            /// to be added to that itemset. Super anit-normalized, though.
+            array_push($itemPool['item_set_id'], '579');
             $formData['o:item_pool'] = $itemPool;
 
             $form->setData($formData);
@@ -234,7 +236,7 @@ class IndexController extends AbstractActionController
         $view->setVariable('themes', $themes);
         $view->setVariable('default_team', $default_team);
         if ($this->request->isPost()){
-            $view->setVariable('item_pool',$itemPool['property']);
+            $view->setVariable('item_pool',$itemPool['item_set_id']);
         }
         return $view;
     }

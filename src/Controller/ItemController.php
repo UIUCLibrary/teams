@@ -38,7 +38,6 @@ class ItemController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
     //end edits
-
     public function searchAction()
     {
         $view = new ViewModel;

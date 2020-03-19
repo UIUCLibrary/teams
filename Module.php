@@ -340,11 +340,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     public function teamSelectorBrowse(Event $event)
 
     {
-
-
-
-
-
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
         $user_id = $identity->getId();
@@ -365,11 +360,28 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'teams/partial/team-selector',
             ['user_teams'=>$user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
         );
+    }
+    public function teamSelectorAdvancedSearch(Event $event)
+
+    {
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        $user_id = $identity->getId();
 
 
 
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
+        $user_teams = $team_user->findBy(['user'=>$user_id]);
+        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        if ($current_team){
+            $current_team = $current_team->getTeam()->getName();
+        }else $current_team = null;
 
-
+        echo $event->getTarget()->partial(
+            'teams/partial/team-selector-adv-search',
+            ['user_teams'=>$user_teams, 'current_team' => $current_team]
+        );
     }
 
     public function addViewAfter(Event $event)
@@ -527,6 +539,14 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'teams/partial/team-form-no-id',
             ['user_id'=>$user_id, 'default_team' => $default_team->getTeam()]
         );
+    }
+    public function advancedSearch(Event $event){
+        $partials = $event->getParams()['partials'];
+        $partials[] = 'teams/partial/advanced-search';
+        $event->setParam('partials', $partials);
+
+
+
     }
 
 
@@ -717,6 +737,20 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.add.form.after',
             [$this, 'displayTeamFormNoId']
         );
+
+        //Advanced Search//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.advanced_search',
+            [$this, 'advancedSearch']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'teams.advanced_search',
+            [$this, 'teamSelectorAdvancedSearch']
+        );
+
 
 
             //Sites//
