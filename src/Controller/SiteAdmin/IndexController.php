@@ -158,7 +158,10 @@ class IndexController extends AbstractActionController
             unset($itemPool['csrf'], $itemPool['o:is_public'], $itemPool['o:title'], $itemPool['o:slug'],
                 $itemPool['o:theme']);
 
-//just added this part from the resources section and got the to the **here** part before I had to call it a night
+
+                //this works theoretically, but the way the advanced search is structured this results in a 1 min 40 second
+                //query time to populate a site pool with 4 items because it uses an inner join between item and resource
+                // ON each input item id with a "WHERE r.value_resource_id_1 = input_1  OR value_resource_id_2 = input_2 . . ."
                 $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
                 $all_items = $get_items->getScalarResult();
                 $site_resources = array();
@@ -167,7 +170,6 @@ class IndexController extends AbstractActionController
                     $team_resources = $site_team->getTeamResources()->toArray();
                     $site_resources = array_merge($site_resources, $team_resources);
                 endforeach;
-/// **here**
                 $getIds = function ($resource){
                     if (is_object($resource)){
                         return $resource->getResource()->getId();
