@@ -73,7 +73,9 @@ return [
     ],
     'view_helpers' =>[
         'invokables' => [
-            'addTeam' => 'Teams\View\Helper\AddTeam'
+            'addTeam' => 'Teams\View\Helper\AddTeam',
+            'searchFilters' => 'Teams\View\Helper\SearchFilters',
+
         ]
     ],
     'controllers' => [
