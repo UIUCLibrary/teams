@@ -157,8 +157,6 @@ class IndexController extends AbstractActionController
             $itemPool = $formData;
             unset($itemPool['csrf'], $itemPool['o:is_public'], $itemPool['o:title'], $itemPool['o:slug'],
                 $itemPool['o:theme']);
-            $formData['o:item_pool'] = $itemPool;
-            foreach ($formData['team'] as $team):
 
 //just added this part from the resources section and got the to the **here** part before I had to call it a night
                 $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
@@ -166,7 +164,7 @@ class IndexController extends AbstractActionController
                 $site_resources = array();
                 foreach ($formData['team'] as $team_id):
                     $site_team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                    $team_resources = $site_team->getTeam()->getTeamResources()->toArray();
+                    $team_resources = $site_team->getTeamResources()->toArray();
                     $site_resources = array_merge($site_resources, $team_resources);
                 endforeach;
 /// **here**
@@ -177,14 +175,20 @@ class IndexController extends AbstractActionController
                         return $resource['id'];
                     }else{return null;}
                 };
-                $team_res_ids = array_map($getIds, $site_resources);
-                $site_items = array_intersect($all_item_ids, $team_res_ids);
+                //get the ids from all omeka items
+                $all_item_ids = array_map($getIds, $all_items);
+                $site_res_ids = array_map($getIds, $site_resources);
+                $site_items = array_intersect($all_item_ids, $site_res_ids);
 
 
 
 
+            foreach ($site_items as $item_id):
+                array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> $item_id));
+            endforeach;
+//            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '1000'));
 
-            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '5'));
+            $formData['o:item_pool'] = $itemPool;
 
             $form->setData($formData);
             if ($form->isValid()) {
