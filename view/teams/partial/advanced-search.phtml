@@ -1,0 +1,24 @@
+<?php
+// Prepare the item set queries
+$teams = $this->api()->search('team')->getContent();
+
+$ids = array();
+foreach ($teams as $team):
+    $ids[] = $team->id();
+endforeach;
+?>
+
+
+<div id="teams" class="field removable multi-value" role="group">
+    <div class="field-meta">
+        <span id="by-team-label" class="label"><?php echo $this->translate('Search by team'); ?></span>
+        <?php echo $this->hyperlink('', '#', ['class' => 'expand', 'title' => $this->translate('Expand')]); ?>
+        <div class="collapsible">
+            <div class="field-description"><?php echo $this->translate('Searches for items that are assigned to any of these teams.'); ?></div>
+        </div>
+    </div>
+    <div class="inputs">
+        <?php $this->trigger('teams.advanced_search'); ?>
+
+    </div>
+</div>
