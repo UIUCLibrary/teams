@@ -11,10 +11,10 @@ endforeach;
 
 <div id="teams" class="field removable multi-value" role="group">
     <div class="field-meta">
-        <span id="by-team-label" class="label"><?php echo $this->translate('Search by team'); ?></span>
+        <span id="by-team-label" class="label"><?php echo $this->translate('Within current team'); ?></span>
         <?php echo $this->hyperlink('', '#', ['class' => 'expand', 'title' => $this->translate('Expand')]); ?>
         <div class="collapsible">
-            <div class="field-description"><?php echo $this->translate('Searches for items that are assigned to any of these teams.'); ?></div>
+            <div class="field-description"><?php echo $this->translate('Will always show results within one of your teams. Use dropdown to change current team.'); ?></div>
         </div>
     </div>
     <div class="inputs">

@@ -2,6 +2,7 @@
 namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Expr;
 use Omeka\Form\ConfirmForm;
 use Omeka\Form\ResourceForm;
 use Omeka\Form\ResourceBatchUpdateForm;
@@ -88,7 +89,7 @@ class ItemController extends AbstractActionController
 
         }else{$team_resources=null;}
 
-        return array('page_resources'=>$resources, 'team_resources'=>$team_resources);
+        return array('page_resources'=>$resources, 'team_resources'=>$team_resources, 'team_entity' => $team_entity);
 
 
 
@@ -98,16 +99,53 @@ class ItemController extends AbstractActionController
     {
         $this->setBrowseDefaults('created');
 
+
+
+
         //get the user's id
         $user_id = $this->identity()->getId();
+        if (count($this->params()->fromQuery('team_id'))>0){
+            $this->changeCurrentTeamAction($user_id, $this->params()->fromQuery());
+        }
+
 
         $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
         $items = $team_items['page_resources'];
         $total_team_resources = $team_items['team_resources'];
         $request = $this->getRequest();
         if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
+            $this->changeCurrentTeamAction($user_id, $request->getPost());
             return $this->redirect()->toRoute('admin/default',['controller'=>'item', 'action'=>'browse']);
+
+
+        }
+        ///////stopped here, in the middle of trying to apply some of the advanced search filtering options. Will be way
+        /// easier to just do this all in the api, but want to work out some of the kinks here first
+        $test_condition = false;
+        if (count($this->params()->fromQuery('item_set_id'))>0){
+            foreach ($this->params()->fromQuery('item_set_id') as $id):
+
+                if (is_int((int)$id)){
+
+                    $qb = $this->entityManager->createQueryBuilder();
+                    $qb->select('i')
+                        ->from('Omeka\Entity\Item', 'i')
+                        ->innerJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, 'i.id = tr.resource')
+                        ->where('tr.team = ?1')
+                        ->setParameter(1, $this->params()->fromQuery('team_id'));
+                    ;
+                    $result = $qb->getQuery()->getResult();
+//
+//                    $team_resources = $team_items['team_entity']->getTeamResources();
+//                    foreach($team_resources as $tr):
+//
+//                    endforeach;
+//                    array_intersect($team_items, $item_set->getItems()->getValues());
+//                    $test_condition = gettype($item_set->getItems()->getValues());
+                }
+//                Notice: Array to string conversion in /Users/adryden3/Projects_PWW/omeka-s-1-3/omeka-s_1_3/modules/Teams/src/Controller/ItemController.php on line 128
+
+            endforeach;
 
 
         }
@@ -129,6 +167,8 @@ class ItemController extends AbstractActionController
         $view->setVariable('resources', $items);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
+        $view->setVariable('test_condition', $test_condition);
+        $view->setVariable('query_result', $result);
 
 
 
@@ -173,13 +213,13 @@ class ItemController extends AbstractActionController
 
     }
 
-    public function changeCurrentTeamAction($user_id)
+    public function changeCurrentTeamAction($user_id, $data)
     {
-        $request = $this->getRequest();
-        if (!$request->isPost()) {
-            return $this->redirect()->toRoute('admin');
-        } else {
-            $data = $request->getPost();
+//        $request = $this->getRequest();
+//        if (!$request->isPost()) {
+//            return $this->redirect()->toRoute('admin');
+//        } else {
+//            $data = $request->getPost();
             $em = $this->entityManager;
             $team_user = $em->getRepository('Teams\Entity\TeamUser');
             $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
@@ -189,7 +229,7 @@ class ItemController extends AbstractActionController
             $em->flush();
 
 
-        }
+//        }
     }
 
     public function showDetailsAction()
