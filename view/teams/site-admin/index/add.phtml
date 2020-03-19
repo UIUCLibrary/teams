@@ -1,5 +1,14 @@
 <?php
 $escape = $this->plugin('escapeHtml');
+if ($this->item_pool){
+        print_r($this->item_pool);
+        echo '<br>';
+        foreach ($this->item_pool as $i):
+            print_r($i);
+            echo  '<br><br>';
+        endforeach;
+
+}
 $this->htmlElement('body')->appendAttribute('class', 'sites add');
 $form->prepare();
 $sectionNavs = [

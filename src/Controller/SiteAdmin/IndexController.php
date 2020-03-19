@@ -158,6 +158,34 @@ class IndexController extends AbstractActionController
             unset($itemPool['csrf'], $itemPool['o:is_public'], $itemPool['o:title'], $itemPool['o:slug'],
                 $itemPool['o:theme']);
             $formData['o:item_pool'] = $itemPool;
+            foreach ($formData['team'] as $team):
+
+//just added this part from the resources section and got the to the **here** part before I had to call it a night
+                $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
+                $all_items = $get_items->getScalarResult();
+                $site_resources = array();
+                foreach ($formData['team'] as $team_id):
+                    $site_team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                    $team_resources = $site_team->getTeam()->getTeamResources()->toArray();
+                    $site_resources = array_merge($site_resources, $team_resources);
+                endforeach;
+/// **here**
+                $getIds = function ($resource){
+                    if (is_object($resource)){
+                        return $resource->getResource()->getId();
+                    }elseif(is_array($resource)){
+                        return $resource['id'];
+                    }else{return null;}
+                };
+                $team_res_ids = array_map($getIds, $site_resources);
+                $site_items = array_intersect($all_item_ids, $team_res_ids);
+
+
+
+
+
+            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '5'));
+
             $form->setData($formData);
             if ($form->isValid()) {
                 $response = $this->api($form)->create('sites', $formData);
@@ -176,7 +204,7 @@ class IndexController extends AbstractActionController
 
                 if ($response) {
                     $this->messenger()->addSuccess('Site successfully created'); // @translate
-                    return $this->redirect()->toUrl($response->getContent()->url());
+//                    return $this->redirect()->toUrl($response->getContent()->url());
                 }
             } else {
                 $this->messenger()->addFormErrors($form);
@@ -199,6 +227,9 @@ class IndexController extends AbstractActionController
         $view->setVariable('form', $form);
         $view->setVariable('themes', $themes);
         $view->setVariable('default_team', $default_team);
+        if ($this->request->isPost()){
+            $view->setVariable('item_pool',$itemPool['property']);
+        }
         return $view;
     }
 
@@ -302,7 +333,17 @@ class IndexController extends AbstractActionController
                         ];
                         $this->api()->update('sites', $site->id(), ['o:navigation' => $navigation], [], ['isPartial' => true]);
                     }
-                    $this->messenger()->addSuccess('Page successfully created'); // @translate
+                    $sp = json_decode("{'o:summary':'','property':[{'joiner':'and','property':'','type':'res','text':'470'}, {'joiner':'or','property':'','type':'res','text':'4'}],'resource_class_id':[''],'resource_template_id':[''],'item_set_id':[''],'site_id':''}", true);
+                    $new_item = ['joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=>'7'];
+                    array_push($sp["property"],$new_item);
+
+                    $json_sp = json_encode($sp);
+                    $this->api()->update('sites', $site->id(), ['o:navigation' => $navigation], [], ['isPartial' => true]);
+                    $this->api()->update('sites', $site->id(), ['o:item_pool' => $json_sp], [], ['isPartial'=>true]);
+                    $site_entity = $this->entityManager->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site->id()]);
+                    $site_entity->setItemPool($json_sp);
+                    $this->entityManager->flush();
+                    $this->messenger()->addSuccess('Page successfully created testing'); // @translate
                     return $this->redirect()->toRoute(
                         'admin/site/slug/page/default',
                         [
@@ -401,12 +442,12 @@ class IndexController extends AbstractActionController
 
 
 
+
     public function resourcesAction()
     {
         $site = $this->currentSite();
         $site_id = $site->id();
         $em = $this->entityManager;
-        $this->paginator(11, $this->params()->fromQuery('page'));
         $site_teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
         $site_resources = array();
         $site_resource_templates = array();

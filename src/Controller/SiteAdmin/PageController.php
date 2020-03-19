@@ -11,6 +11,17 @@ class PageController extends AbstractActionController
     public function editAction()
     {
         $site = $this->currentSite();
+
+
+        $sp = json_decode('{"o:summary":"","property":[{"joiner":"and","property":"","type":"res","text":"470"}, {"joiner":"or","property":"","type":"res","text":"4"}],"resource_class_id":[""],"resource_template_id":[""],"item_set_id":[""],"site_id":""}', true);
+        $new_item = ["joiner"=>"or", "property"=>"", "type"=>"res", "text"=>"7"];
+        array_push($sp["property"],$new_item);
+
+        $json_sp = json_encode($sp);
+
+
+        $this->api()->update('sites', 21, ['item_pool'=>""]);
+//        $response = $this->api()->update('sites', $site->id(), $formData, [], ['isPartial' => true]);
         $page = $this->api()->read('site_pages', [
             'slug' => $this->params('page-slug'),
             'site' => $site->id(),
@@ -38,6 +49,7 @@ class PageController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('site', $site);
         $view->setVariable('page', $page);
+        $view->setVariable('site_pool', $sp);
         $view->setVariable('form', $form);
         return $view;
     }

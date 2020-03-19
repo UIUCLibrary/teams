@@ -1,4 +1,17 @@
 <?php
+
+
+
+foreach ($this->site_pool['property'] as $property):
+    echo "<br>";
+    if (is_array($property)){
+        foreach ($property as $key => $value):
+            echo "(key) " . $key . ": (value) " . $value;
+
+        endforeach;
+    }
+echo gettype($property);
+endforeach;
 $this->htmlElement('body')->appendAttribute('class', 'site-pages edit');
 $this->ckEditor();
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
