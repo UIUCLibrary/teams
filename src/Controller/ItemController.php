@@ -95,23 +95,38 @@ class ItemController extends AbstractActionController
 
     }
 
+
+
+
+
+
+
+
+
+
+
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
 
-
-
-
         //get the user's id
         $user_id = $this->identity()->getId();
-        if (count($this->params()->fromQuery('team_id'))>0){
-            $this->changeCurrentTeamAction($user_id, $this->params()->fromQuery());
-        }
+        $current_team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'is_current'=>1]);
+        $team_id = $current_team_user->getTeam()->getId();
+        $params = $this->params()->fromQuery();
+        $params['team_id'] = $team_id;
+        $response = $this->api()->search('items', $params);
 
 
-        $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
-        $items = $team_items['page_resources'];
-        $total_team_resources = $team_items['team_resources'];
+//        //TODO: these needs to be moved to the advanced search panel I think
+//        if (count($this->params()->fromQuery('team_id'))>0){
+//            $this->changeCurrentTeamAction($user_id, $this->params()->fromQuery());
+//        }
+
+
+//        $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
+//        $items = $team_items['page_resources'];
+//        $total_team_resources = $team_items['team_resources'];
         $request = $this->getRequest();
         if ($request->isPost()){
             $this->changeCurrentTeamAction($user_id, $request->getPost());
@@ -121,35 +136,7 @@ class ItemController extends AbstractActionController
         }
         ///////stopped here, in the middle of trying to apply some of the advanced search filtering options. Will be way
         /// easier to just do this all in the api, but want to work out some of the kinks here first
-        $test_condition = false;
-        if (count($this->params()->fromQuery('item_set_id'))>0){
-            foreach ($this->params()->fromQuery('item_set_id') as $id):
-
-                if (is_int((int)$id)){
-
-                    $qb = $this->entityManager->createQueryBuilder();
-                    $qb->select('i')
-                        ->from('Omeka\Entity\Item', 'i')
-                        ->innerJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, 'i.id = tr.resource')
-                        ->where('tr.team = ?1')
-                        ->setParameter(1, $this->params()->fromQuery('team_id'));
-                    ;
-                    $result = $qb->getQuery()->getResult();
-//
-//                    $team_resources = $team_items['team_entity']->getTeamResources();
-//                    foreach($team_resources as $tr):
-//
-//                    endforeach;
-//                    array_intersect($team_items, $item_set->getItems()->getValues());
-//                    $test_condition = gettype($item_set->getItems()->getValues());
-                }
-//                Notice: Array to string conversion in /Users/adryden3/Projects_PWW/omeka-s-1-3/omeka-s_1_3/modules/Teams/src/Controller/ItemController.php on line 128
-
-            endforeach;
-
-
-        }
-        $this->paginator(count($total_team_resources), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
         $this->setBrowseDefaults('created');
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
@@ -162,13 +149,15 @@ class ItemController extends AbstractActionController
         $formDeleteAll->setAttribute('id', 'confirm-delete-all');
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
+
         $view = new ViewModel;
+        $items = $response->getContent();
         $view->setVariable('items', $items);
         $view->setVariable('resources', $items);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('test_condition', $test_condition);
-        $view->setVariable('query_result', $result);
+        $view->setVariable('params', $this->params()->fromQuery());
+        return $view;
 
 
 

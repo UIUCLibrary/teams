@@ -1,5 +1,5 @@
 <?php
-namespace Omeka\Api\Adapter;
+namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
