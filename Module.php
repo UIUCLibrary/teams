@@ -573,6 +573,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     //injects into AbstractEntityAdapter where queries are structured for the api
     public function filterByTeam(Event $event){
+
+        //TODO Bug: on the advanced search class, template and search by value fail with error
+        // Too many parameters: the query defines n parameters and you bound n+1
+        // even if I remove the setParameter here. Because itemset and sitepool both work
+
+
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
@@ -598,14 +604,16 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             if (!$team_user){
                 $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
             }
+
             $current_team = $team_user->getTeam();
             $team_id = $current_team->getId();
         }
 
 
         if ( is_int($team_id)){
-         $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = ?1')
-            ->setParameter(1, $team_id);
+         $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = :team_id')
+            ->setParameter('team_id', $team_id)
+         ;
         }
     }
 
