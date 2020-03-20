@@ -573,40 +573,37 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     //injects into AbstractEntityAdapter where queries are structured for the api
     public function filterByTeam(Event $event){
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
-        $user_id = $identity->getId();
-        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
-        $current_team = $team_user->getTeam()->getId();
-
-
         $qb = $event->getParam('queryBuilder');
-
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
 
-//        if (isset($query['team_id']) && is_int($query['team_id'])){
-//            $team_id = $query['team_id'];
-//        }else{
+
+        ///If this is a case where someone is adding something and can choose which team to add it to, take that into
+        /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
+        if (isset($query['team_id']) && is_int($query['team_id'])){
+            $team_id = $query['team_id'];
+        }else{
+
+            //TODO this can be refactored out because it is used in basicaly the same form many palces
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             $identity = $this->getServiceLocator()
                 ->get('Omeka\AuthenticationService')->getIdentity();
             $user_id = $identity->getId();
 
             //there currently is not an integrity constrain that enforces one and only one is_current per user
-            //so adding a test here
+            //so adding a test here (there can not be more than one but the db would allow 0)
+
+            //TODO need some behavior for when a user doesn't belong to any teams. Ideally passing an error message
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
             if (!$team_user){
-                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id], ['team']);
-            };
+                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
+            }
             $current_team = $team_user->getTeam();
             $team_id = $current_team->getId();
-//        }
+        }
 
 
-
-        if (isset($query['team_id']) && is_int($query['team_id'])){
+        if ( is_int($team_id)){
          $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = ?1')
             ->setParameter(1, $team_id);
         }

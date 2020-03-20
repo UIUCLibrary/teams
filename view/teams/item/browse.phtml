@@ -8,7 +8,9 @@ echo count($this->query_result);
  if($this->params == $this->params_from_query){echo 'true';}else{echo 'false';};
 
 // var_dump($this->params);
- var_dump($this->params_from_query);
+ var_dump($this->params_from_q);
+ echo '<br><br>' . $this->params_from_q['team_id'];
+ echo '<br><br>' . $this->params['team_id'];
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'items browse');
