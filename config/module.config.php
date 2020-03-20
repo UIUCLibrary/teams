@@ -1,6 +1,7 @@
 <?php
 namespace Teams;
 
+use Omeka\Api\Adapter\ItemAdapter;
 use Zend\Db\Sql\Sql;
 use Zend\Router\Http\Literal;
 use Zend\Router\Http\Segment;
@@ -48,6 +49,7 @@ return [
             'team-role' => Api\Adapter\TeamRoleAdapter::class,
             'team-resource' => Api\Adapter\TeamResourceAdapter::class,
             'items' => Api\Adapter\ItemAdapter::class,
+//            'nothing' => ItemAdapter::class,
 
 
         ],

@@ -2,6 +2,7 @@
 namespace Teams;
 
 use Doctrine\ORM\Events;
+use Doctrine\ORM\Query\Expr;
 use Omeka\Entity\Resource;
 use Omeka\Form\ResourceTemplateForm;
 use Omeka\Permissions\Acl;
@@ -384,6 +385,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
     }
 
+
     public function addViewAfter(Event $event)
     {
         $sectionNav = $event->getParam('sidebar');
@@ -570,6 +572,16 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
     }
 
+    public function filterByTeam(Event $event){
+
+        $qb = $event->getParams('queryBuilder');
+
+         $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = ?1')
+            ->setParameter(1, $query['team_id']);
+         $event->setParam('queryBuilder', $qb);
+    }
+
+
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
@@ -586,6 +598,22 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'view.layout',
             [$this, 'teamSelectorNav']
         );
+
+        $adapters = [
+//            ItemSetAdapter::class,
+            ItemAdapter::class,
+//            MediaAdapter::class,
+        ];
+        foreach ($adapters as $adapter):
+
+            // Add the group filter to the search.
+            $sharedEventManager->attach(
+                '*',
+                'api.search.query',
+                [$this, 'filterByTeam']
+            );
+        endforeach;
+
 
 
 

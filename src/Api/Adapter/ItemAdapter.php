@@ -145,15 +145,15 @@ class ItemAdapter extends \Omeka\Api\Adapter\AbstractResourceEntityAdapter
 /// joins above to see if I can get any hints. Part of my problem might be that doctrine knows the relationship between
 /// teamresurces and resources, but not between teamresources and items
 /// For when you start again: commented out the line in the config file where control over item routs is moved to this module
-///
-        if (isset($query['team_id'])){
-            $qb
-                ->innerJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, 'Omeka\Entity\Item.id = tr.resource')
-                ->where('tr.team = ?1')
-                ->setParameter(1, $query['team_id']);
-            ;
-            ;
-        }
+/////
+//        if (isset($query['team_id'])){
+//            $qb
+//                ->innerJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, 'Omeka\Entity\Item.id = tr.resource')
+//                ->where('tr.team = ?1')
+//                ->setParameter(1, $query['team_id']);
+//            ;
+//            ;
+//        }
     }
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
