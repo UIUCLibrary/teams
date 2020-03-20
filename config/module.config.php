@@ -48,7 +48,7 @@ return [
             'team-user' => Api\Adapter\TeamUserAdapter::class,
             'team-role' => Api\Adapter\TeamRoleAdapter::class,
             'team-resource' => Api\Adapter\TeamResourceAdapter::class,
-            'items' => Api\Adapter\ItemAdapter::class,
+//            'items' => Api\Adapter\ItemAdapter::class,
 //            'nothing' => ItemAdapter::class,
 
 

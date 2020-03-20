@@ -39,7 +39,7 @@ $sortHeadings = [
 </div>
 
 <div id="page-actions">
-    <?php if ($this->userIsAllowed('Teams\Api\Adapter\ItemAdapter', 'create')): ?>
+    <?php if ($this->userIsAllowed('Omeka\Api\Adapter\ItemAdapter', 'create')): ?>
         <?php echo $this->hyperlink($translate('Add new item'), $this->url(null, ['action' => 'add'], true), ['class' => 'button']); ?>
     <?php endif; ?>
 </div>
@@ -63,7 +63,7 @@ $sortHeadings = [
 
 <?php if ($items): ?>
     <form method="post" id="batch-form" class="disable-unsaved-warning">
-        <?php if ($this->userIsAllowed('Teams\Api\Adapter\ItemAdapter', 'batch_update')): ?>
+        <?php if ($this->userIsAllowed('Omeka\Api\Adapter\ItemAdapter', 'batch_update')): ?>
             <div class="batch-inputs">
                 <select class="batch-actions-select" aria-label="<?php echo $translate('Batch actions'); ?>">
                     <option value="default"><?php echo $translate('Batch actions'); ?></option>
