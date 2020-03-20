@@ -574,11 +574,16 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     public function filterByTeam(Event $event){
 
-        $qb = $event->getParams('queryBuilder');
+        $qb = $event->getParam('queryBuilder');
+
+        $query = $event->getParam('request')->getContent();
+        $entityClass = $event->getTarget()->getEntityClass();
+
+
 
          $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = ?1')
             ->setParameter(1, $query['team_id']);
-         $event->setParam('queryBuilder', $qb);
+//         $event->setParam('queryBuilder', $qb);
     }
 
 
