@@ -162,25 +162,25 @@ class IndexController extends AbstractActionController
                 //this works theoretically, but the way the advanced search is structured this results in a 1 min 40 second
                 //query time to populate a site pool with 4 items because it uses an inner join between item and resource
                 // ON each input item id with a "WHERE r.value_resource_id_1 = input_1  OR value_resource_id_2 = input_2 . . ."
-                $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
-                $all_items = $get_items->getScalarResult();
-                $site_resources = array();
-                foreach ($formData['team'] as $team_id):
-                    $site_team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                    $team_resources = $site_team->getTeamResources()->toArray();
-                    $site_resources = array_merge($site_resources, $team_resources);
-                endforeach;
-                $getIds = function ($resource){
-                    if (is_object($resource)){
-                        return $resource->getResource()->getId();
-                    }elseif(is_array($resource)){
-                        return $resource['id'];
-                    }else{return null;}
-                };
-                //get the ids from all omeka items
-                $all_item_ids = array_map($getIds, $all_items);
-                $site_res_ids = array_map($getIds, $site_resources);
-                $site_items = array_intersect($all_item_ids, $site_res_ids);
+//                $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
+//                $all_items = $get_items->getScalarResult();
+//                $site_resources = array();
+//                foreach ($formData['team'] as $team_id):
+//                    $site_team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+//                    $team_resources = $site_team->getTeamResources()->toArray();
+//                    $site_resources = array_merge($site_resources, $team_resources);
+//                endforeach;
+//                $getIds = function ($resource){
+//                    if (is_object($resource)){
+//                        return $resource->getResource()->getId();
+//                    }elseif(is_array($resource)){
+//                        return $resource['id'];
+//                    }else{return null;}
+//                };
+//                //get the ids from all omeka items
+//                $all_item_ids = array_map($getIds, $all_items);
+//                $site_res_ids = array_map($getIds, $site_resources);
+//                $site_items = array_intersect($all_item_ids, $site_res_ids);
 
 
 
@@ -191,8 +191,10 @@ class IndexController extends AbstractActionController
 //            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '1000'));
             /// alternative idea is for each site to have an itemset (or each team) and for all of the items in TeamResources
             /// to be added to that itemset. Super anit-normalized, though.
-            array_push($itemPool['item_set_id'], '579');
+//            array_push($itemPool['tea'], '579');
+//            $itemPool['team_id'] = $itemPool['team'];
             $formData['o:item_pool'] = $itemPool;
+
 
             $form->setData($formData);
             if ($form->isValid()) {

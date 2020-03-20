@@ -337,7 +337,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         echo '</div>';
     }
 
-
     public function teamSelectorBrowse(Event $event)
 
     {
@@ -368,8 +367,6 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
         $user_id = $identity->getId();
-
-
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -552,6 +549,8 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     }
 
 
+
+
     public function teamSelectorNav(Event $event)
     {
         if (
@@ -587,17 +586,23 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
 
-        if (isset($query['team_id']) && is_int($query['team_id'])){
-            $team_id = $query['team_id'];
-        }else{
+//        if (isset($query['team_id']) && is_int($query['team_id'])){
+//            $team_id = $query['team_id'];
+//        }else{
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             $identity = $this->getServiceLocator()
                 ->get('Omeka\AuthenticationService')->getIdentity();
             $user_id = $identity->getId();
+
+            //there currently is not an integrity constrain that enforces one and only one is_current per user
+            //so adding a test here
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
+            if (!$team_user){
+                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id], ['team']);
+            };
             $current_team = $team_user->getTeam();
             $team_id = $current_team->getId();
-        }
+//        }
 
 
 
@@ -638,6 +643,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
+
         endforeach;
 
 
@@ -804,6 +810,22 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'teams.advanced_search',
             [$this, 'teamSelectorAdvancedSearch']
         );
+
+        //Site Pool Item Pool//
+
+        //Advanced Search//
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.advanced_search',
+            [$this, 'advancedSearch']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'teams.advanced_search',
+            [$this, 'teamSelectorAdvancedSearch']
+        );
+
 
 
 

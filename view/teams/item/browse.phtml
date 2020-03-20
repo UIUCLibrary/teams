@@ -1,6 +1,14 @@
 <?php
 echo $this->test_condition;
 echo count($this->query_result);
+
+//foreach ($this->params as $key => $param):
+//    echo $key . ": " . $param;
+//endforeach;
+ if($this->params == $this->params_from_query){echo 'true';}else{echo 'false';};
+
+// var_dump($this->params);
+ var_dump($this->params_from_query);
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'items browse');
