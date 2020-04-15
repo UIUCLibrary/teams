@@ -584,6 +584,8 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $entityClass = $event->getTarget()->getEntityClass();
 
 
+
+
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
         if (isset($query['team_id']) && is_int($query['team_id'])){
@@ -595,10 +597,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             $identity = $this->getServiceLocator()
                 ->get('Omeka\AuthenticationService')->getIdentity();
             //TODO add handeling for user not logged-in !!!this current solution would not work
-            if (!$identity){
-                $user_id = null;
-
-            }else{$user_id = $identity->getId();}
+//            if (!$identity){
+//                $user_id = 1;
+//
+//            }else{
+                $user_id = $identity->getId();
+//        }
 
 
 //            $user_id = 1;
@@ -619,9 +623,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
 
         if ( is_int($team_id)){
-         $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = :team_id')
-            ->setParameter('team_id', $team_id)
-         ;
+
+            if ($entityClass == \Omeka\Entity\Site::class){
+                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->where('ts.team = :team_id')
+                    ->setParameter('team_id', $team_id)
+                ;
+            }else{
+                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = :team_id')
+                    ->setParameter('team_id', $team_id)
+         ;}
         }
     }
 
@@ -644,15 +654,16 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
 
         $adapters = [
-            ItemSetAdapter::class,
+//            ItemSetAdapter::class,
             ItemAdapter::class,
-            MediaAdapter::class,
+//            MediaAdapter::class,
         ];
         foreach ($adapters as $adapter):
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-                $adapter,
+//                $adapter,
+                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
