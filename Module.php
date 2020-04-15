@@ -594,7 +594,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             $identity = $this->getServiceLocator()
                 ->get('Omeka\AuthenticationService')->getIdentity();
-            $user_id = $identity->getId();
+            //TODO add handeling for user not logged-in !!!this current solution would not work
+            if (!$identity){
+                $user_id = null;
+
+            }else{$user_id = $identity->getId();}
+
+
+//            $user_id = 1;
+
 
             //there currently is not an integrity constrain that enforces one and only one is_current per user
             //so adding a test here (there can not be more than one but the db would allow 0)
@@ -636,15 +644,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
 
         $adapters = [
-//            ItemSetAdapter::class,
+            ItemSetAdapter::class,
             ItemAdapter::class,
-//            MediaAdapter::class,
+            MediaAdapter::class,
         ];
         foreach ($adapters as $adapter):
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-                '*',
+                $adapter,
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
