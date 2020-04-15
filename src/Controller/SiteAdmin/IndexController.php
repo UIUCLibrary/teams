@@ -254,6 +254,18 @@ class IndexController extends AbstractActionController
             $form->setData($formData);
             if ($form->isValid()) {
                 $response = $this->api($form)->update('sites', $site->id(), $formData, [], ['isPartial' => true]);
+                $team_sites = $this->entityManager->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site->id()]);
+                foreach ($team_sites as $team_site):
+                    $this->entityManager->remove($team_site);
+                endforeach;
+                $this->entityManager->flush();
+
+                foreach ($formData['team'] as $team):
+                    $team_site = new TeamSite($this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
+                    $this->entityManager->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site->id()]));
+                    $this->entityManager->persist($team_site);
+                endforeach;
+                $this->entityManager->flush();
                 if ($response) {
                     $this->messenger()->addSuccess('Site successfully updated'); // @translate
                     // Explicitly re-read the site URL instead of using
