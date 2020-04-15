@@ -254,18 +254,24 @@ class IndexController extends AbstractActionController
             $form->setData($formData);
             if ($form->isValid()) {
                 $response = $this->api($form)->update('sites', $site->id(), $formData, [], ['isPartial' => true]);
+                //db not updating with just the form. Handeling this error after long absence from covid, but thought that
+                //this was being taken care of through the api so I wouldn't have to do it in each controller
+                //on update, remove all teams associated with the site
                 $team_sites = $this->entityManager->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site->id()]);
                 foreach ($team_sites as $team_site):
                     $this->entityManager->remove($team_site);
                 endforeach;
                 $this->entityManager->flush();
 
+                //add teams to the site for each team listed in the form
                 foreach ($formData['team'] as $team):
                     $team_site = new TeamSite($this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                     $this->entityManager->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site->id()]));
                     $this->entityManager->persist($team_site);
                 endforeach;
                 $this->entityManager->flush();
+
+                //TODO errors from the teams being updated will not show up here
                 if ($response) {
                     $this->messenger()->addSuccess('Site successfully updated'); // @translate
                     // Explicitly re-read the site URL instead of using
