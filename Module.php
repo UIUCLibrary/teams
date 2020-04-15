@@ -3,6 +3,7 @@ namespace Teams;
 
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Query\Expr;
+use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\Resource;
 use Omeka\Form\ResourceTemplateForm;
 use Omeka\Permissions\Acl;
@@ -654,16 +655,17 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         );
 
         $adapters = [
-//            ItemSetAdapter::class,
+            ItemSetAdapter::class,
             ItemAdapter::class,
-//            MediaAdapter::class,
+            MediaAdapter::class,
+            SiteAdapter::class,
         ];
         foreach ($adapters as $adapter):
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-//                $adapter,
-                '*',
+                $adapter,
+//                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
