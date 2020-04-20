@@ -624,13 +624,16 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
 
         if ( is_int($team_id)){
+            $adapter = $event->getTarget();
+            $entityAlias = $adapter->getEntityClass();
 
             if ($entityClass == \Omeka\Entity\Site::class){
-                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->where('ts.team = :team_id')
+                //TODO get the team_id's associated with the site and then do an orWhere()/orX()
+                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->andWhere('ts.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
             }else{
-                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->where('tr.team = :team_id')
+                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;}
         }
