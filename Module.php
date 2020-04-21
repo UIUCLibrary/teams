@@ -598,15 +598,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             $identity = $this->getServiceLocator()
                 ->get('Omeka\AuthenticationService')->getIdentity();
             //TODO add handeling for user not logged-in !!!this current solution would not work
-//            if (!$identity){
-//                $user_id = 1;
-//
-//            }else{
+            if (!$identity){
+                $user_id = null;
+                return;
+
+            }else{
                 $user_id = $identity->getId();
-//        }
+        }
 
 
-//            $user_id = 1;
 
 
             //there currently is not an integrity constrain that enforces one and only one is_current per user
