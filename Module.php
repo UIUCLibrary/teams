@@ -29,6 +29,7 @@ use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Interop\Container\ContainerInterface;
+use Zend\Dom\Document;
 
 
 class Module extends AbstractModule
@@ -313,6 +314,19 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     {
         $resource = $event->getTarget()->vars()->sites;
     }
+//copied this into teamSelectorNav
+    public function addAsset(Event $event){
+
+        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            $view = $event->getTarget();
+
+            echo '<style> #content {min-height: 50vh;} </style>';
+            $view->headLink()->appendStylesheet($view->assetUrl('css/iopn_header.css', 'Teams'));
+            echo $view->partial('teams/partial/overload-footer');        }
+
+
+
+    }
     public function adminShowTeams(Event $event)
     {
 
@@ -570,6 +584,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'teams/partial/team-nav-selector',
             ['current_team' => $ct]
         );
+
+//        $view = $event->getTarget();
+//
+//        echo '<style> #content {min-height: 50vh;} </style>';
+//        $view->headLink()->appendStylesheet($view->assetUrl('css/iopn_header.css', 'Teams'));
+//        echo $view->partial('teams/partial/overload-footer');
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
@@ -676,7 +696,13 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         endforeach;
 
 
+        $sharedEventManager->attach(
+//            'Omeka\Controller\Site\Index',
+            '*',
+            'view.layout',
+            [$this, 'addAsset']
 
+        );
 
         //Edit pages//
             //Item//
