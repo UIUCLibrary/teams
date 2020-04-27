@@ -314,7 +314,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
     {
         $resource = $event->getTarget()->vars()->sites;
     }
-//copied this into teamSelectorNav
+//copied this into teamSelectorNav because for some reason the two were coming into conflict
     public function addAsset(Event $event){
 
         if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
@@ -375,6 +375,28 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'teams/partial/team-selector',
             ['user_teams'=>$user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
         );
+    }
+
+    public function teamDACL(Event $event)
+    {
+        $resource = $event->getTarget()->item->id();
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        $user_id = $identity->getId();
+
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
+        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        $team_id = $current_team->getTeam()->getId();
+        if ($current_team){
+            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>$resource])){
+                echo 'yes, do what you like';
+            }else echo 'nopy, not here';
+        }else $current_team = null;
+
+
+
+
     }
     public function teamSelectorAdvancedSearch(Event $event)
 
@@ -675,6 +697,12 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
             'Omeka\Controller\SiteAdmin\IndexController',
             'view.layout',
             [$this, 'teamSelectorNav']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.show.section_nav',
+            [$this, 'teamDACL']
         );
 
         $adapters = [
