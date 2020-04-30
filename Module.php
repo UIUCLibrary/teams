@@ -322,7 +322,8 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
             echo '<style> #content {min-height: 50vh;} </style>';
             $view->headLink()->appendStylesheet($view->assetUrl('css/iopn_header.css', 'Teams'));
-            echo $view->partial('teams/partial/overload-footer');        }
+            echo $view->partial('teams/partial/overload-footer');
+        }
 
 
 
@@ -389,10 +390,15 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
         $team_id = $current_team->getTeam()->getId();
         if ($current_team){
-            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>$resource])){
+            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>100000])){
                 echo 'yes, do what you like';
             }else echo 'nopy, not here';
+
+
+
         }else $current_team = null;
+
+
 
 
 
@@ -590,6 +596,10 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     public function teamSelectorNav(Event $event)
     {
+        $view = $event->getTarget();
+
+        $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
+
         if (
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity()){
@@ -598,7 +608,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id]);
         if($ct){
-            $ct = $ct->getTeam()->getName();
+            $ct = $ct->getTeam();
         } else {
             $ct = 'None';
         }
@@ -724,13 +734,13 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         endforeach;
 
 
-        $sharedEventManager->attach(
-//            'Omeka\Controller\Site\Index',
-            '*',
-            'view.layout',
-            [$this, 'addAsset']
-
-        );
+//        $sharedEventManager->attach(
+////            'Omeka\Controller\Site\Index',
+//            '*',
+//            'view.layout',
+//            [$this, 'addAsset']
+//
+//        );
 
         //Edit pages//
             //Item//
