@@ -1,8 +1,8 @@
-window.onload = function examplefunction() {
+window.addEventListener("load", function () {
     let newP = document.createElement('p');
     let newAnchor = document.createElement('a');
 
-    newAnchor.setAttribute('href', teamHref);
+    newAnchor.setAttribute('href', 'teamHref');
     newAnchor.innerText = teamName;
 
     newP.innerText = 'Current Team';
@@ -21,5 +21,4 @@ window.onload = function examplefunction() {
 
     newButton.appendChild(buttonAnchor);
 
-    $(newButton).insertAfter( "#team" );
-};
+    $(newButton).insertAfter( "#team" );}, false );
