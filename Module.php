@@ -596,6 +596,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
 
     public function teamSelectorNav(Event $event)
     {
+        if (!$this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
         $view = $event->getTarget();
 
         $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
@@ -615,7 +616,7 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         echo $event->getTarget()->partial(
             'teams/partial/team-nav-selector',
             ['current_team' => $ct]
-        );
+        );}
 
 //        $view = $event->getTarget();
 //
