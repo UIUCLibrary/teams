@@ -2,8 +2,16 @@
 
 <script>
     switchTeamHref = "<? echo $this->url('admin/teams')?>";
-    teamName = "<?php echo $this->current_team->getName()?>";
-    teamHref = "<?php echo $this->url('admin/teams/detail', ['id'=>$this->current_team->getId()] ) ?>";
+    <?php if ($this->current_team == 'None'){
+        ?> teamName = "No Team Assigned"; <?
+    } else
+    {
+        ?>
+            teamName = "<?php echo $this->current_team->getName()?>";
+            teamHref = "<?php echo $this->url('admin/teams/detail', ['id'=>$this->current_team->getId()] ) ?>";
+        <?
+    }
+    ?>
 
 
 </script>
