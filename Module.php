@@ -90,6 +90,8 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) R
         $conn->exec('DROP TABLE IF EXISTS team_user');
         $conn->exec('DROP TABLE IF EXISTS team_role');
         $conn->exec('DROP TABLE IF EXISTS team_resource');
+        $conn->exec('DROP TABLE IF EXISTS team_resource_template');
+        $conn->exec('DROP TABLE IF EXISTS team_site');
         $conn->exec('DROP TABLE IF EXISTS team');
 
 
