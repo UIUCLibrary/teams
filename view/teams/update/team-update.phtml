@@ -11,7 +11,6 @@ $sectionNavs = [
 'team-resources' => $translate('Resources'),
 ];
 ?>
-
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
 
 <h1>Update Team for <? echo $this->api()->read('users', $this->ident)->getContent()->name()?></h1>

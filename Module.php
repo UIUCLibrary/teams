@@ -455,16 +455,33 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //        );
 //    }
 
+    protected function listUsers()
+    {
+
+    }
+
     protected function listTeams(AbstractEntityRepresentation $resource = null)
     {
 
+        /*
+         * TODO: this function goes through *every* resource associated with a team, needs optimized into something like a db search with WHERE
+         *
+         */
 
+        //
         $result = [];
+
+        //get all the teams
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $teams = $entityManager->getRepository('Teams\Entity\Team')->findAll();
+
+        //for every team, get the team resources
         foreach ($teams as $team):
             $team_resources = $team->getTeamResources();
+
+            //for each of those resources
             foreach ($team_resources as $team_resource):
+                //check to see if the resource id == the resource_id passed in to the function
                 if ($team_resource->getResource()->getId() == $resource->id()){
                     $result[$team->getName()] = $team;}
                 endforeach;
@@ -520,6 +537,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //        );
 //    }
 
+    public function displayUserForm(Event $event)
+    {
+
+        echo 'test';
+        $vars = $event->getTarget()->vars();
+
+
+        $vars->offsetSet('team-members', 'test');
+
+
+
+    }
 
 
     public function displayTeamForm(Event $event)
@@ -541,7 +570,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
-
+        //TODO: this is actually a js script and needs to just be added as such
         echo $event->getTarget()->partial(
             'teams/partial/team-form'
         );
@@ -584,6 +613,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['user_id'=>$user_id, 'default_team' => $default_team->getTeam()]
         );
     }
+
+
+
     public function advancedSearch(Event $event){
         $partials = $event->getParams()['partials'];
         $partials[] = 'teams/partial/advanced-search';
@@ -736,7 +768,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         endforeach;
 
-
+        $sharedEventManager->attach(
+            'Teams\Controller\Add',
+            'view.add.section_nav',
+            [$this, 'displayUserForm']
+        );
 //        $sharedEventManager->attach(
 ////            'Omeka\Controller\Site\Index',
 //            '*',

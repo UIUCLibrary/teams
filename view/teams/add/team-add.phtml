@@ -15,7 +15,7 @@ $sectionNavs = [
     'team-members' => $translate('Users'),
     'team-resources' => $translate('Resources'),
 ];
-echo $this->sectionNav($sectionNavs, 'view.show.section_nav');
+echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 ?>
 
 <div id="team-info" class="active section">
@@ -23,9 +23,7 @@ echo $this->sectionNav($sectionNavs, 'view.show.section_nav');
 
 <?php
 
-//echo $this->user;
-//$omekaUser =  $this->user_id->getContent();
-//echo $omekaUser->getJsonLd()['o:name'];
+
 
 $form = $this->form;
 $form->setAttribute('action', $this->url());
@@ -35,11 +33,9 @@ echo $this->form()->openTag($form);
 
 echo $this->formCollection($form);
 
-echo $this->form()->closeTag();
 ?>
     </div>
 </div>
-
 
 <div id="team-members" class="section">
     <div class="meta-group">
@@ -53,8 +49,8 @@ echo $this->form()->closeTag();
 
 
             <datalist id="add-member-options">
-                <? foreach ($this->available_u_array as $member):
-                    echo '<option value="' .  $member .'"> ';
+                <? foreach (array_keys($this->available_u_array) as $member):
+                    echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '"> ';
                 endforeach;
                 ?>
             </datalist>
@@ -70,42 +66,85 @@ echo $this->form()->closeTag();
 
 
             <datalist id="add-member-role">
-                <? foreach ($this->roles as $role):
-                    echo '<option value="' .  $role->getName() .'"> ';
+                <? foreach (array_keys($this->roles) as $role):
+                    echo '<option value="' .  $role .'"> ';
                 endforeach;
                 ?>
             </datalist>
+            <script>
+                function removeRow(id,u){
+                    let row = document.getElementById(id);
+                    row.parentElement.removeChild(row);
+                    let user_options = document.getElementById("add-member-options");
+                    let option = document.createElement('option');
+
+                    option.setAttribute('value', u);
+                    option.setAttribute('id', id);
+
+                    user_options.appendChild(option);
+
+
+                }
+
+                users = <? echo json_encode($this->available_u_array);?>;
+                roles = <? echo json_encode($this->roles);?>;
+                function addUser() {
+                    let nm = document.getElementById("new-member-choice");
+                    let nmr = document.getElementById("new-member-role");
+
+                    alert(users[nm.value]);
+
+
+                    let row = document.createElement('tr');
+                    row.id = "u" + users[nm.value];
+                    let userNameTd = document.createElement('td');
+                    let trashA = document.createElement('a');
+                    trashA.setAttribute("class", "o-icon-delete");
+                    trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
+                    userNameTd.appendChild(trashA);
+                    let userA = document.createElement('a');
+                    userA.setAttribute('href', window.location.hostname + '/admin/user' + nm.value);
+                    userA.innerText = nm.value;
+                    userNameTd.appendChild(userA);
+                    row.appendChild(userNameTd);
+                    document.getElementById("user-table").appendChild(row);
+
+                    let roleTd = document.createElement('td');
+                    roleTd.innerText = nmr.value ;
+
+                    let user_option = document.getElementById(users[nm.value]);
+
+
+
+
+
+                    row.appendChild(roleTd);
+                    nmr.value = "";
+                    nm.value = "";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                }
+            </script>
             <div style="margin-left: 20px; ">
-                <input class="btn btn-default" type="submit" name="chooseRole" value="Add User" />
-            </div>
-        </div>
-        <div class="field">
-            <div class="field-meta">
-                <label for="remove-member-choice">Remove user from the Team:</label>
-            </div>
-            <div class="input">
-                <input list="remove-member-options" id="remove-member-choice" name="remove-member-choice" />
-            </div>
-
-
-            <datalist id="remove-member-options">
-                <? foreach ($this->team_u_array as $member):
-                    echo '<option value="' .  $member .'"> ';
-                endforeach;
-                ?>
-            </datalist>
-            <br>
-            <br>
-            <div style="margin-left: 20px; ">
-                <input class="btn btn-default" type="submit" name="removeUser" value="Remove User " />
-
+                <btn class="btn btn-default" onclick="addUser()"  >add</btn>
             </div>
         </div>
         <div class="field">
             <div class="field-meta">
                 Current Users:
             </div>
-            <?php if (count($this->team_u_collection)> 0): ?>
                 <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                     <thead>
                     <tr>
@@ -116,51 +155,16 @@ echo $this->form()->closeTag();
                         <th><?php echo $translate('Created'); ?></th>
                     </tr>
                     </thead>
-                    <tbody>
-                    <?php foreach ($this->team_u_collection as $team_user):
+                    <tbody id="user-table">
 
-                        ?>
-                        <tr>
-                            <td>
-                                <a class="o-icon-delete" href="update.phtml"></a>
-                                <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' => $team_user->getUser()->getId()]) ?>">
-                                    <?php echo $team_user->getUser()->getName() ?>
-
-                                </a>
-                            </td>
-                            <td>
-                                <fieldset name="user-roles" id="user-roles">
-                                    <a class="o-icon-edit"></a>
-                                    <select  id="<?php echo $team_user->getUser()->getId()?>" name="<?php echo $team_user->getUser()->getId()?>">
-                                        <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
-                                        <?php foreach ($this->roles as $role):
-                                            if ($role->getId() !== $team_user->getRole()->getId())
-                                            {
-                                                ?> <option value="<?php echo $role->getId();?>"><?php echo $role->getName();?></option> <?php
-                                            }
-                                        endforeach; ?>
-
-
-                                    </select>
-                                </fieldset>
-
-
-                            </td>
-                            <td><?php echo 'need to make this or put some info that makes more sense here'; ?></td>
-                        </tr>
-                    <?php endforeach; ?>
                     </tbody>
                 </table>
-            <?php else: ?>
-                <div class="no-resources">
-                    <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                    <!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
-                </div>
-            <?php endif; ?>
+
         </div>
 
     </div>
 </div>
 
 
-
+<?php
+echo $this->form()->closeTag();

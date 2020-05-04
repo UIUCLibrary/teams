@@ -38,18 +38,22 @@ Class AddController extends AbstractActionController
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
-            $all_u_array[$u->id()] = $u->name();
+            $all_u_array[$u->name()] = $u->id();
         endforeach;
 
+        $role_query = $this->entityManager->createQuery('select partial r.{id, name} from Teams\Entity\TeamRole r');
+        $roles_array =  $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
+        $rolls = array();
 
-
-
+        foreach ($roles_array as $role):
+            $roles[$role['name']] = $role['id'];
+        endforeach;
 
 
 
         $form = $this->getForm(TeamForm::class);
         $request   = $this->getRequest();
-        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array]);
+        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array, 'roles' => $roles]);
 
         //if it is get, then give them the form
         if (! $request->isPost()){
@@ -69,7 +73,8 @@ Class AddController extends AbstractActionController
 
         $this->api($form)->create('team', $data);
         $view->setVariable('post_data', $data);
-        return $this->redirect()->toRoute('admin/teams');
+//        return $this->redirect()->toRoute('admin/teams');
+        return $view;
     }
 
     public function roleAddAction()
