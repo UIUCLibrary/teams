@@ -47,24 +47,24 @@ class TeamFieldset extends Fieldset
         ]);
 
 
-        $this->add([
-
-            //extremely important  that this match what is in the API adapter: Teams\Api\Representation getJsonLd()
-            'name' => 'o:user_id',
-            'type' => Element\MultiCheckbox::class,
-            'options' => [
-                'label' => 'Add User', // @translate
-                'value_options' =>[
-                    '0' => 'zero',
-                    '1' => 'one',
-                    '2' => 'two'
-                ]
-            ],
-            'attributes' => [
-                'id' => 'comment',
-                'required' => false,
-            ],
-        ]);
+//        $this->add([
+//
+//            //extremely important  that this match what is in the API adapter: Teams\Api\Representation getJsonLd()
+//            'name' => 'o:user_id',
+//            'type' => Element\MultiCheckbox::class,
+//            'options' => [
+//                'label' => 'Add User', // @translate
+//                'value_options' =>[
+//                    '0' => 'zero',
+//                    '1' => 'one',
+//                    '2' => 'two'
+//                ]
+//            ],
+//            'attributes' => [
+//                'id' => 'comment',
+//                'required' => false,
+//            ],
+//        ]);
 
     }
 
