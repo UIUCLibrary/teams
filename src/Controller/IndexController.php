@@ -63,7 +63,9 @@ class IndexController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
         $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
+        if ( $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])){
+            $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
+        } else {$current_team = null;}
 
         $all_teams = $this->api()->search('team');
 
