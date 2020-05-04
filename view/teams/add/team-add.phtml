@@ -26,6 +26,7 @@ echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 
 
 $form = $this->form;
+$form->setAttribute('id', 'new_team');
 $form->setAttribute('action', $this->url());
 $form->prepare();
 
@@ -106,6 +107,15 @@ echo $this->formCollection($form);
                     userA.setAttribute('href', window.location.hostname + '/admin/user' + nm.value);
                     userA.innerText = nm.value;
                     userNameTd.appendChild(userA);
+                    let selected = document.createElement('input');
+                    selected.setAttribute('type', 'hidden');
+                    selected.setAttribute('form','new_team');
+                    selected.setAttribute('name', 'user_role');
+                    selected.value = row.id + 'r' + roles[nmr.value] ;
+
+                    row.appendChild(selected);
+
+
                     row.appendChild(userNameTd);
                     document.getElementById("user-table").appendChild(row);
 
