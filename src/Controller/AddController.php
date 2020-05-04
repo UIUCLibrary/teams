@@ -35,15 +35,21 @@ Class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
-        //this is a php function and is good to know but totally not useful and confusing here
-        $user = get_current_user();
-        $user_id = $this->api()->searchOne('users', ['id' => 1]);
+        $all_u_array = array();
+        $all_u_collection = $this->api()->search('users')->getContent();
+        foreach ($all_u_collection as $u):
+            $all_u_array[$u->id()] = $u->name();
+        endforeach;
+
+
+
+
 
 
 
         $form = $this->getForm(TeamForm::class);
         $request   = $this->getRequest();
-        $view = new ViewModel(['form' => $form, 'user'=>$user, 'user_id' => $user_id]);
+        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array]);
 
         //if it is get, then give them the form
         if (! $request->isPost()){
