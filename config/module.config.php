@@ -73,6 +73,9 @@ return [
         ],
         'factories' => [
             Form\Element\TeamSelect::class => Service\Form\Element\TeamSelectFactory::class,
+            Form\Element\AllTeamSelect::class => Service\Form\Element\AllTeamSelectFactory::class,
+            Form\Element\UserSelect::class => Service\Form\Element\UserSelectFactory::class,
+
         ],
     ],
     'view_helpers' =>[

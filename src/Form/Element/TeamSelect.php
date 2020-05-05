@@ -3,7 +3,6 @@ namespace Teams\Form\Element;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Manager as ApiManager;
-use phpDocumentor\Reflection\Types\This;
 use Zend\Form\Element\Select;
 use Zend\View\Helper\Url;
 
@@ -20,6 +19,10 @@ class TeamSelect extends Select
      */
     protected $entityManager;
 
+    protected $data_placeholder = 'Select Teams';
+
+    protected $data_base_url = ['resource' => 'team'];
+
 //TODO remove any value as name options
     public function getValueOptions()
     {
@@ -32,7 +35,8 @@ class TeamSelect extends Select
         $user_id = 1;
         $em = $this->getEntityManager();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
-
+        //this is set to display the teams for the current user. This works in many contexts for
+        //normal users, but not for admins doing maintenance or adding new users to a team
         foreach ($team_users as $team_user):
             $team_name = $team_user->getTeam()->getName();
             $team_id = $team_user->getTeam()->getId();
@@ -69,8 +73,8 @@ class TeamSelect extends Select
             $urlHelper = $this->getUrlHelper();
             $defaultAttributes = [
                 'class' => 'chosen-select',
-                'data-placeholder' => 'Select team', // @translate
-                'data-api-base-url' => $urlHelper('api/default', ['resource' => 'team']),
+                'data-placeholder' => $this->data_placeholder, // @translate
+                'data-api-base-url' => $urlHelper('api/default', $this->data_base_url),
             ];
             $this->setAttributes($defaultAttributes);
         }
