@@ -74,7 +74,7 @@ Class AddController extends AbstractActionController
 
         $newTeam = $this->api($form)->create('team', $data);
 
-        //looks like this was a diagnosic i used to see what was in the data variable
+        //looks like this was a diagnostic i used to see what was in the data variable
         $view->setVariable('post_data', $data);
         $view->setVariable('team', $newTeam);
 

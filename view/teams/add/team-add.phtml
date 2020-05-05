@@ -1,11 +1,12 @@
 <h1>Add New Team</h1>
-<?php if ($this->post_data){
-echo $this->team->getContent()->id();
-}
+<?php
+$this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
+
+
 ?>
 <div id="page-actions">
     <!--    --><?php //if ($item->userIsAllowed('update')): ?>
-    <button type="submit" form="team-add-form" value="Submit">Add Team</button>
+    <button type="submit" form="new_team" value="Submit">Add Team</button>
     <!--    --><?php //endif; ?>
 </div>
 <?php
@@ -46,11 +47,25 @@ echo $this->formCollection($form);
     <div class="meta-group">
         <div class="field">
             <div class="field-meta">
-                <label for="add-member-choice">Add a User to the Team:</label>
+                <label for="add-member-choice">Add a User and Assign them a Role:</label>
             </div>
             <div class="input">
-                <input list="add-member-options" id="new-member-choice" name="add-member-choice" />
+                <input class="chzn-select"  placeholder="Username" list="add-member-options" id="new-member-choice" name="add-member-choice" />
             </div>
+<!--            <script type="text/javascript">-->
+<!--                $(function() {-->
+<!--                    $(".chzn-select").chosen();-->
+<!--                });-->
+<!--            </script>-->
+<!--            <div class="input">-->
+<!--                <select class="chzn-select" multiple="false" name="faculty" style="width:200px;">-->
+<!--                    <option value="AC">A</option>-->
+<!--                    <option value="AD">B</option>-->
+<!--                    <option value="AM">C</option>-->
+<!--                    <option value="AP">D</option>-->
+<!--                </select>-->
+<!--            </div>-->
+
 
 
             <datalist id="add-member-options">
@@ -62,11 +77,9 @@ echo $this->formCollection($form);
 
 
 
-            <div >
-                <label for="add-member-role">Role:</label>
-            </div>
+
             <div class="input">
-                <input list="add-member-role" id="new-member-role" name="add-member-role" />
+                <input class="row-left" placeholder="Role" list="add-member-role" id="new-member-role" name="add-member-role" />
             </div>
 
 
@@ -97,7 +110,7 @@ echo $this->formCollection($form);
                     let nm = document.getElementById("new-member-choice");
                     let nmr = document.getElementById("new-member-role");
 
-                    alert("role" + roles[nmr.value]);
+                    // alert("role" + roles[nmr.value]);
 
 
                     let row = document.createElement('tr');
@@ -105,6 +118,7 @@ echo $this->formCollection($form);
                     let userNameTd = document.createElement('td');
                     let trashA = document.createElement('a');
                     trashA.setAttribute("class", "o-icon-delete");
+                    trashA.classList.add("row-left")
                     trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
                     userNameTd.appendChild(trashA);
                     let userA = document.createElement('a');
@@ -153,7 +167,7 @@ echo $this->formCollection($form);
                 }
             </script>
             <div style="margin-left: 20px; ">
-                <btn class="btn btn-default" onclick="addUser()"  >add</btn>
+                <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
             </div>
         </div>
         <div class="field">
@@ -179,7 +193,12 @@ echo $this->formCollection($form);
 
     </div>
 </div>
-
+<div id="team-resources" class="section">
+    <p>TODO: this is not yet connected to logic that turns the advanced search into </p>
+    <p>Use the advanced search form to add existing resources to the team</p>
+    <?php echo $this->partial('common/advanced-search', ['resourceType' => 'item'], 'Omeka'); ?>
+    <p>Select Resources by owner</p>
+</div>
 
 <?php
 echo $this->form()->closeTag();

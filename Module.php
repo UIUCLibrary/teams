@@ -11,6 +11,7 @@ use Teams\Api\Adapter\TeamAdapter;
 use Teams\Controller\TestController;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\TeamSelect;
 use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
@@ -1021,7 +1022,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $form = $event->getTarget();
         $form->get('user-information')->add([
             'name' => 'o-module-teams:Team',
-            'type' => TeamSelect::class,
+            'type' => AllTeamSelect::class,
             'options' => [
                 'label' => 'Teams', // @translate
                 'chosen' => true,
