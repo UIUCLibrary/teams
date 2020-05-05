@@ -734,7 +734,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
     }
 
-
+    //add user's teams to the user detail page view/omeka/admin/user/show.phtml
+    public function userTeams(Event $event){
+        echo '
+<div class="property">
+    <h4>Teams</h4>
+    <div class="value">
+Teams TODO: put the actual teams here
+    </div>
+</div>';
+    }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
@@ -744,6 +753,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             '*',
             'view.layout',
             [$this, 'teamSelectorNav']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.show.after',
+            [$this, 'userTeams']
         );
 
         $sharedEventManager->attach(
