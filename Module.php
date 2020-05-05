@@ -366,7 +366,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $vars = $view->vars();
 
         if ( count($vars->resources) > 0){
-            $resource_type = $vars->resources->getControllerName() . 's';
+            $resource_type = $vars->resources[0]->getControllerName() . 's';
         }elseif (count($vars->sites)){
             $resource_type ='sites';
         }else{
