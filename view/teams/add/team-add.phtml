@@ -1,4 +1,8 @@
 <h1>Add New Team</h1>
+<?php if ($this->post_data){
+echo $this->team->getContent()->id();
+}
+?>
 <div id="page-actions">
     <!--    --><?php //if ($item->userIsAllowed('update')): ?>
     <button type="submit" form="team-add-form" value="Submit">Add Team</button>
@@ -93,7 +97,7 @@ echo $this->formCollection($form);
                     let nm = document.getElementById("new-member-choice");
                     let nmr = document.getElementById("new-member-role");
 
-                    alert(users[nm.value]);
+                    alert("role" + roles[nmr.value]);
 
 
                     let row = document.createElement('tr');
@@ -110,8 +114,8 @@ echo $this->formCollection($form);
                     let selected = document.createElement('input');
                     selected.setAttribute('type', 'hidden');
                     selected.setAttribute('form','new_team');
-                    selected.setAttribute('name', 'user_role');
-                    selected.value = row.id + 'r' + roles[nmr.value] ;
+                    selected.setAttribute('name', 'user_role[' + users[nm.value] +']');
+                    selected.value = roles[nmr.value] ;
 
                     row.appendChild(selected);
 
@@ -122,7 +126,8 @@ echo $this->formCollection($form);
                     let roleTd = document.createElement('td');
                     roleTd.innerText = nmr.value ;
 
-                    let user_option = document.getElementById(users[nm.value]);
+                    let user_option = document.getElementById('user' + users[nm.value]);
+                    user_option.parentElement.removeChild(user_option);
 
 
 

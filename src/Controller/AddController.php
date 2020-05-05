@@ -9,6 +9,7 @@ use Omeka\Form\ResourceForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
+use Teams\Entity\TeamUser;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Zend\Authentication\AuthenticationServiceInterface;
@@ -43,7 +44,7 @@ Class AddController extends AbstractActionController
 
         $role_query = $this->entityManager->createQuery('select partial r.{id, name} from Teams\Entity\TeamRole r');
         $roles_array =  $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
-        $rolls = array();
+        $roles = array();
 
         foreach ($roles_array as $role):
             $roles[$role['name']] = $role['id'];
@@ -71,8 +72,28 @@ Class AddController extends AbstractActionController
         //get the data from the post
         $data = $request->getPost('team');
 
-        $this->api($form)->create('team', $data);
+        $newTeam = $this->api($form)->create('team', $data);
+
+        //looks like this was a diagnosic i used to see what was in the data variable
         $view->setVariable('post_data', $data);
+        $view->setVariable('team', $newTeam);
+
+        foreach ($request->getPost('user_role') as $userId => $roleId):
+            $user = $this->entityManager->getRepository('Omeka\Entity\User')
+                ->findOneBy(['id' => (int)$userId]);
+            $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                ->findOneBy(['id' => (int)$roleId]);
+            $team = $this->entityManager->getRepository('Teams\Entity\Team')
+                ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
+            $teamUser = new TeamUser($team, $user, $role);
+
+            $this->entityManager->persist($teamUser);
+        endforeach;
+        $this->entityManager->flush();
+
+
+
+
 //        return $this->redirect()->toRoute('admin/teams');
         return $view;
     }
