@@ -362,10 +362,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $identity = $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
         $user_id = $identity->getId();
+        $view =  $event->getTarget();
+        $vars = $view->vars();
 
-        $resources = $event->getTarget()->vars()->resources;
-        if (count($resources)>0){
-        $resource_type = $resources[0]->getControllerName();}else $resource_type = 'nothing';
+        if ( count($vars->resources) > 0){
+            $resource_type = $vars->resources->getControllerName() . 's';
+        }elseif (count($vars->sites)){
+            $resource_type ='sites';
+        }else{
+            $resource_type='nothing';
+        }
+
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
