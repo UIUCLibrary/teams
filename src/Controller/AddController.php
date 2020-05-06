@@ -12,6 +12,7 @@ use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
+use Teams\Form\TeamUserForm;
 use Zend\Authentication\AuthenticationServiceInterface;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
@@ -53,8 +54,9 @@ Class AddController extends AbstractActionController
 
 
         $form = $this->getForm(TeamForm::class);
+        $userForm = $this->getForm(TeamUserForm::class);
         $request   = $this->getRequest();
-        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array, 'roles' => $roles]);
+        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array, 'roles' => $roles, "userForm" => $userForm]);
 
         //if it is get, then give them the form
         if (! $request->isPost()){
