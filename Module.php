@@ -713,9 +713,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             if (!$team_user){
                 $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
             }
+            if ($team_user){
+                $current_team = $team_user->getTeam();
+                $team_id = $current_team->getId();
+            }else{
+                $current_team = 'None';
+                $team_id = 0;
+            }
 
-            $current_team = $team_user->getTeam();
-            $team_id = $current_team->getId();
         }
 
 
