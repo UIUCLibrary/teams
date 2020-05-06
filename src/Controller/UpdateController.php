@@ -245,6 +245,44 @@ Class UpdateController extends AbstractActionController
 
 
 
+
+
+
+
+
+
+
+
+
+        $request = $this->getRequest();
+
+        if ($request->isPost()){
+            $data =  $request->getPost();
+
+            $em = $this->entityManager;
+            $team_user = $em->getRepository('Teams\Entity\TeamUser');
+            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => 1]);
+            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
+
+            if ($old_current){
+                $old_current->setCurrent(null);
+                $em->flush();
+            }
+            $new_current->setCurrent(true);
+            $em->flush();
+            return $this->redirect()->toUrl($data['return_url']);
+
+
+        }
+
+
+
+
+//        }
+
+
+
+
     }
 
 

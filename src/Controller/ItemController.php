@@ -156,7 +156,6 @@ class ItemController extends AbstractActionController
 
 
 
-        return $view;
         //end edits
     }
 
