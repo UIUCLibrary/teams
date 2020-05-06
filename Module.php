@@ -24,6 +24,7 @@ use Omeka\Api\Representation\MediaRepresentation;
 use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
+use Teams\Form\Element\UserSelect;
 use Teams\Model\TestControllerFactory;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;

@@ -1,5 +1,9 @@
 <h1>Add New Team</h1>
 <?php
+
+$this->htmlElement('body')->appendAttribute('class', 'add users');
+
+$this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 
 
@@ -143,27 +147,9 @@ echo $this->formCollection($form);
                     let user_option = document.getElementById('user' + users[nm.value]);
                     user_option.parentElement.removeChild(user_option);
 
-
-
-
-
                     row.appendChild(roleTd);
                     nmr.value = "";
                     nm.value = "";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 }
             </script>
             <div style="margin-left: 20px; ">
@@ -193,12 +179,58 @@ echo $this->formCollection($form);
 
     </div>
 </div>
+
 <div id="team-resources" class="section">
+    <p>Select one of the options to add resources to the team</p>
     <p>TODO: this is not yet connected to logic that turns the advanced search into </p>
-    <p>Use the advanced search form to add existing resources to the team</p>
-    <?php echo $this->partial('common/advanced-search', ['resourceType' => 'item'], 'Omeka'); ?>
-    <p>Select Resources by owner</p>
+
+    <div>
+        <button type="button" class="toggle selected" id="advanced-search-content">Item Advanced Search</button>
+        <button type="button" class="toggle" id="select-by-user-content" >Select Resources by Owner</button>
+    </div>
+
+    <div class="selection-criteria">
+        <p>
+            All items matching the search available to the group
+        </p>
+        <?php echo $this->partial('common/advanced-search', ['resourceType' => 'item'], 'Omeka'); ?>
+    </div>
+    <div class="selection-criteria toggle-vis">
+        <p>
+            All items owned by the user(s) will be available to the group
+        </p>
+        <div class="select-by-user-content">
+
+            <?
+            $userForm = $this->userForm;
+            $userForm->setAttribute('id', 'user_collection');
+            $userForm->setAttribute('action', $this->url());
+            $userForm->prepare();
+
+            echo $this->form()->openTag($userForm);
+
+            echo $this->formCollection($userForm);
+            echo $this->form()->closeTag($userForm)
+            ?>
+
+        </div>
+    </div>
+
 </div>
+
+<script>
+
+    $(".toggle").click(function (event) {
+        $(".toggle").toggleClass("selected");
+        $(".selection-criteria").toggleClass("toggle-vis")
+
+
+
+
+    });
+
+
+</script>
 
 <?php
 echo $this->form()->closeTag();
