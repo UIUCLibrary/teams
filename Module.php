@@ -611,18 +611,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $teams = $entityManager->getRepository('Teams\Entity\TeamUser');
         if ($teams->findOneBy(['user'=>$user_id, 'is_current'=>1])){
             $default_team = $teams->findOneBy(['user'=>$user_id, 'is_current'=>1]);
+            $default_team = $default_team->getTeam();
         } elseif ($teams->findBy(['user' => $user_id])){
             $default_team = $teams->findOneBy(['user' => $user_id], ['name']);
+            $default_team = $default_team->getTeam();
         } else {
             $default_team = null;
         }
 
         echo $event->getTarget()->partial(
             'teams/partial/team-form-no-id',
-            ['user_id'=>$user_id, 'default_team' => $default_team->getTeam()]
+            ['user_id'=>$user_id, 'default_team' => $default_team]
         );
     }
-
 
 
     public function advancedSearch(Event $event){
@@ -773,11 +774,11 @@ Teams TODO: put the actual teams here
             [$this, 'teamSelectorNav']
         );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\Item',
-            'view.show.section_nav',
-            [$this, 'teamDACL']
-        );
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\Item',
+//            'view.show.section_nav',
+//            [$this, 'teamDACL']
+//        );
 
         $adapters = [
             ItemSetAdapter::class,
