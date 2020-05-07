@@ -87,7 +87,7 @@ return [
     ],
     'controllers' => [
         'invokables' => [
-//            'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
+            'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
 
         ],
         'factories' => [
@@ -101,7 +101,7 @@ return [
 //            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
 //            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
             'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
-//            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
+            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
 
 
 
