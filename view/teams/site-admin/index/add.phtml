@@ -59,19 +59,20 @@ $fallbackThumbnailUrl = $this->assetUrl('img/theme.jpg', 'Omeka');
 <script>
     let current_team = <?php echo $this->default_team->getTeam()->getId()?>;
 
-    window.onload = function populateForm() {
+    window.addEventListener("load", function (event) {
+
         let select = document.getElementById('team');
 
         for (let i=0; i < select.options.length; i++){
-                if (current_team == select.options[i].value){
+            if (current_team == select.options[i].value){
 
-                    select.options[i].setAttribute('selected', true);
-                    select[i].innerText = select[i].innerText + ' (default)';
-                }
+                select.options[i].setAttribute('selected', true);
+                select[i].innerText = select[i].innerText + ' (default)';
+            }
 
 
 
         }
+    });
 
-    };
 </script>

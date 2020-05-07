@@ -7,7 +7,7 @@ window.addEventListener("load", function () {
 
     newP.innerText = 'Current Team';
     newP.setAttribute('class','user-id');
-    newP.setAttribute('id', 'team');
+    newP.setAttribute('id', 'nav_team');
     newAnchor.setAttribute('id', 'team-link');
 
     newP.appendChild(newAnchor);
@@ -21,4 +21,4 @@ window.addEventListener("load", function () {
 
     newButton.appendChild(buttonAnchor);
 
-    $(newButton).insertAfter( "#team" );}, false );
+    $(newButton).insertAfter( "#nav_team" );}, false );
