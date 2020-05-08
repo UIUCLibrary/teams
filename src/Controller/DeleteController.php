@@ -40,6 +40,7 @@ class DeleteController extends AbstractActionController
             return $this->redirect()->toRoute('admin/teams');
         }
 
+
         return $this->redirect()->toRoute('admin/teams');
 
     }

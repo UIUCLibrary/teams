@@ -9,6 +9,7 @@ use Omeka\Form\ResourceForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
@@ -92,6 +93,20 @@ Class AddController extends AbstractActionController
             $this->entityManager->persist($teamUser);
         endforeach;
         $this->entityManager->flush();
+
+        $params = $this->params()->fromQuery();
+        $response = $this->api()->search('items', $params)->getContent();
+        $team = $this->entityManager->getRepository('Teams\Entity\Team')
+            ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
+        foreach ($response as $item_rep):
+            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $item_rep->id()]);
+            $team_resource = new TeamResource($team, $resource);
+            $this->entityManager->persist($team_resource);
+        endforeach;
+        $this->entityManager->flush();
+        $view->setVariable('response', $response);
+
+
 
 
 
