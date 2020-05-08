@@ -59,7 +59,7 @@ $fallbackThumbnailUrl = $this->assetUrl('img/theme.jpg', 'Omeka');
 <script>
     let current_team = <?php echo $this->default_team->getTeam()->getId()?>;
 
-    window.addEventListener("load", function (event) {
+    // window.addEventListener("load", function (event) {
 
         let select = document.getElementById('team');
 
@@ -73,6 +73,7 @@ $fallbackThumbnailUrl = $this->assetUrl('img/theme.jpg', 'Omeka');
 
 
         }
-    });
+    // })
+    ;
 
 </script>

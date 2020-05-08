@@ -39,7 +39,7 @@ $form->prepare();
 <script>
     let current_team = <?php echo json_encode($current_teams)?>;
 
-    window.addEventListener("load", function (event) {
+    // window.addEventListener("load", function (event) {
         let select = document.getElementById('team');
 
         for (let i=0; i < select.options.length; i++){
@@ -55,6 +55,7 @@ $form->prepare();
 
 
 
-    });
+    // })
+    ;
 
 </script>
