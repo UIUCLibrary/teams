@@ -752,11 +752,21 @@ Teams TODO: put the actual teams here
 </div>';
     }
 
+
+
+
     public function userTeamsEdit(Event $event)
     {
         //send the form data for processing by module controller to add teamUser
         $view = $event->getTarget();
-        echo $view->partial('teams/partial/user/edit', 'Teams');
+        $user_id = $view->vars()->user->id();
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $user_teams = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
+        $team_ids = array();
+        foreach ($user_teams as $user_team):
+            $team_ids[] = $user_team->getTeam()->getId();
+        endforeach;
+        echo $view->partial('teams/partial/user/edit', ['team_ids' => $team_ids]);
     }
 
     public function userFormEdit(Event $event)
@@ -1085,6 +1095,7 @@ Teams TODO: put the actual teams here
             ],
             'attributes' => [
                 'multiple' => true,
+                'id' => 'team'
             ],
         ]);
     }

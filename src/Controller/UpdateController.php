@@ -243,8 +243,8 @@ Class UpdateController extends AbstractActionController
         if ($request->isPost()) {
             $data = $request->getPost();
             $user_teams = $data['user-information']['o-module-teams:Team'];
-            //wrong!!
-            $user_id = $this->identity()->getId();
+            //wrong!! not really able to get from the param, would need to extract from the return url
+            $user_id = $this->params('id');
             $em = $this->entityManager;
 
             foreach ($user_teams as $team_id):

@@ -1,0 +1,26 @@
+<?php
+
+
+
+?>
+
+<script>
+    let current_teams = <?php echo json_encode($this->team_ids)?>;
+
+
+    let select = document.getElementById('team');
+
+    for (let i=0; i < select.options.length; i++){
+        for (let j=0; j < current_teams.length; j++){
+            if (current_teams[j] == select.options[i].value){
+                select.options[i].setAttribute('selected', true);
+            }
+
+        }
+
+
+
+    }
+
+
+</script>
