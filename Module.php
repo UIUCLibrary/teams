@@ -743,13 +743,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     //add user's teams to the user detail page view/omeka/admin/user/show.phtml
     public function userTeams(Event $event){
-        echo '
-<div class="property">
-    <h4>Teams</h4>
-    <div class="value">
-Teams TODO: put the actual teams here
-    </div>
-</div>';
+        $view = $event->getTarget();
+        $user_id = $view->vars()->user->id();
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $user_teams = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
+        $team_names = array();
+        foreach ($user_teams as $user_team):
+            $team_names[] = $user_team->getTeam()->getName();
+        endforeach;
+        echo $view->partial('teams/partial/user/view', ['team_names'=> $team_names]);
     }
 
 
