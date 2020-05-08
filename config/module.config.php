@@ -76,6 +76,8 @@ return [
             Form\Element\TeamSelect::class => Service\Form\Element\TeamSelectFactory::class,
             Form\Element\AllTeamSelect::class => Service\Form\Element\AllTeamSelectFactory::class,
             Form\Element\UserSelect::class => Service\Form\Element\UserSelectFactory::class,
+            Form\Element\AllItemSetSelect::class => Service\Form\Element\AllItemSetSelectFactory::class,
+
 
         ],
     ],

@@ -11,6 +11,7 @@ use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Teams\Form\TeamUserForm;
@@ -56,8 +57,17 @@ Class AddController extends AbstractActionController
 
         $form = $this->getForm(TeamForm::class);
         $userForm = $this->getForm(TeamUserForm::class);
+        $itemsetForm = $this->getForm(TeamItemSetForm::class);
         $request   = $this->getRequest();
-        $view = new ViewModel(['form' => $form, 'available_u_array' => $all_u_array, 'roles' => $roles, "userForm" => $userForm]);
+        $view = new ViewModel(
+            [
+                'form' => $form,
+                'available_u_array' => $all_u_array,
+                'roles' => $roles,
+                'userForm' => $userForm,
+                'itemsetForm' => $itemsetForm
+            ]
+        );
 
         //if it is get, then give them the form
         if (! $request->isPost()){
@@ -94,7 +104,16 @@ Class AddController extends AbstractActionController
         endforeach;
         $this->entityManager->flush();
 
-        $params = $this->params()->fromQuery();
+//        $params['property'][0] = array('joiner'=>'and', 'type'=>'in', 'text'=>'test', );
+        $params['item_set_id'] = array(119);
+
+//        ['joiner'] = 'and';
+//        $params['property'][0]['type'] = 'in';
+//        $params['property'][0]['text']= 'test';
+//        $params['item_set_id'] = [119];
+//        $params = $request->getPost('item_set_id');
+
+
         $response = $this->api()->search('items', $params)->getContent();
         $team = $this->entityManager->getRepository('Teams\Entity\Team')
             ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
@@ -105,6 +124,7 @@ Class AddController extends AbstractActionController
         endforeach;
         $this->entityManager->flush();
         $view->setVariable('response', $response);
+        $view->setVariable('params', $params);
 
 
 

@@ -196,6 +196,7 @@ class UserController extends AbstractActionController
                 endforeach;
                 $em->flush();
 
+                //TODO the way it is now all roles get reset and no team is active when a new team is added through the user form
                 $teams_repo = $em->getRepository('Teams\Entity\Team');
                 $default_role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>1]);
                 foreach ($values['user-information']['o-module-teams:Team'] as $team_id):

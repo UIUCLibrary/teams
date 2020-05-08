@@ -7,10 +7,10 @@ $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 
 if ($this->response){
-    echo count($response);
+    echo count($response) . '<br>';
     foreach ($response as $item):
-        echo $item->owner()->name() . '<br>';
         echo $item->id();
+
     endforeach;
 
 }
@@ -198,9 +198,23 @@ echo $this->formCollection($form);
 
     <div class="selection-criteria">
         <p>
-            All items matching the search available to the group
+            All items in the itemsets will be added to the group
         </p>
-        <?php echo $this->partial('common/advanced-search', ['resourceType' => 'item'], 'Omeka'); ?>
+        <div class="select-by-item-set-content">
+
+            <?
+            $itemsetForm = $this->itemsetForm;
+            $itemsetForm->setAttribute('id', 'itemset_collection');
+            $itemsetForm->setAttribute('action', $this->url());
+            $itemsetForm->prepare();
+
+            echo $this->form()->openTag($itemsetForm);
+
+            echo $this->formCollection($itemsetForm);
+            echo $this->form()->closeTag($itemsetForm)
+            ?>
+
+        </div>
     </div>
     <div class="selection-criteria toggle-vis">
         <p>
