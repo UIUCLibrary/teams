@@ -752,6 +752,20 @@ Teams TODO: put the actual teams here
 </div>';
     }
 
+    public function userTeamsEdit(Event $event)
+    {
+        //send the form data for processing by module controller to add teamUser
+        $view = $event->getTarget();
+        echo $view->partial('teams/partial/user/edit', 'Teams');
+    }
+
+    public function userFormEdit(Event $event)
+    {
+        $view = $event->getTarget();
+        echo $view->partial('teams/partial/return_url', 'Teams');
+    }
+
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -761,6 +775,19 @@ Teams TODO: put the actual teams here
             'view.layout',
             [$this, 'teamSelectorNav']
         );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.edit.after',
+            [$this, 'userTeamsEdit']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.edit.form.after',
+            [$this, 'userFormEdit']
+        );
+
 
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\User',

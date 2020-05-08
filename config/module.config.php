@@ -2,6 +2,7 @@
 namespace Teams;
 
 use Omeka\Api\Adapter\ItemAdapter;
+use Teams\Controller\UpdateController;
 use Zend\Db\Sql\Sql;
 use Zend\Router\Http\Literal;
 use Zend\Router\Http\Segment;
@@ -102,6 +103,9 @@ return [
             'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
             'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
             'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
+            'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',
+
+
 
 
 
@@ -176,6 +180,18 @@ return [
                                         //TODO change to correct controller when complete
                                         'controller' => 'Add',
                                         'action' => 'teamAdd'
+                                    ]
+
+                                ]
+                            ],
+                            'user' => [
+                                'type' => 'Literal',
+                                'options' => [
+                                    'route' => '/user',
+                                    'defaults' => [
+                                        //TODO change to correct controller when complete
+                                        'controller' => 'Update',
+                                        'action' => 'user'
                                     ]
 
                                 ]
@@ -276,7 +292,7 @@ return [
                                         'action' => 'change'
                                     ]
                                 ]
-                            ]
+                            ],
                         ],
                     ],
 //                    'resource-template' => [

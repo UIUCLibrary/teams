@@ -237,6 +237,32 @@ Class UpdateController extends AbstractActionController
 
     }
 
+    public function userAction()
+    {
+        $request = $this->getRequest();
+        if ($request->isPost()) {
+            $data = $request->getPost();
+            $user_teams = $data['user-information']['o-module-teams:Team'];
+            //wrong!!
+            $user_id = $this->identity()->getId();
+            $em = $this->entityManager;
+
+            foreach ($user_teams as $team_id):
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
+                $team_user = new TeamUser($team,$user,$role);
+                $team_user->setCurrent(null);
+                $em->persist($team_user);
+            endforeach;
+            $em->flush();
+            $request = $this->getRequest();
+            $return = $request->getHeader('referer');
+//            return $this->redirect()->toUrl($data['return_url']);
+            return $this->redirect()->toUrl($return);
+        }
+    }
+
     public function currentTeamAction()
     {
         $user_id = $this->identity()->getId();
