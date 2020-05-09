@@ -108,6 +108,11 @@ Class AddController extends AbstractActionController
             foreach ($request->getPost('itemset')['o:itemset'] as $item_set_id):
                 if ((int)$item_set_id>0){
                     $item_set_id = (int)$item_set_id;
+                    /*this is going to filter against the user's current team
+                     *alt:
+                     * $em->getRepository('Omeka\Entity\Resource)
+                     * foreach (
+                     */
                     foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id])->getContent() as $item):
                         $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                             ->findOneBy(['id'=>$item->id()]);
@@ -121,6 +126,7 @@ Class AddController extends AbstractActionController
             foreach ($request->getPost('itemset')['o:user'] as $user_id):
                 if ((int)$user_id>0){
                     $user_id = (int)$user_id;
+                    //this is going to filter against the user's current team
                     foreach ($this->api()->search('items', ['owner_id' => $user_id])->getContent() as $item):
                         $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                             ->findOneBy(['id'=>$item->id()]);

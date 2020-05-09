@@ -671,7 +671,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     //injects into AbstractEntityAdapter where queries are structured for the api
     public function filterByTeam(Event $event){
 
-        //TODO Bug: on the advanced search class, template and search by value fail with error
+        //TODO Bug(DONE): on the advanced search class, template and search by value fail with error
         // Too many parameters: the query defines n parameters and you bound n+1
         // even if I remove the setParameter here. Because itemset and sitepool both work
 
@@ -681,7 +681,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $entityClass = $event->getTarget()->getEntityClass();
 
 
-
+        //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
 
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
