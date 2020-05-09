@@ -549,7 +549,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function displayUserForm(Event $event)
     {
 
-        echo 'test';
         $vars = $event->getTarget()->vars();
 
 
