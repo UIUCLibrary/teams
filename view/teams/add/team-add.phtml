@@ -7,7 +7,10 @@ $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 
 
-
+$items = $this->api()->search('items', ['owner_id'=>1])->getContent();
+foreach ($items as $item):
+    echo $item->id() . '<br>';
+endforeach;
 
 ?>
 <div id="page-actions">
