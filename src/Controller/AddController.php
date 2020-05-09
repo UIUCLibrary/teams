@@ -104,27 +104,20 @@ Class AddController extends AbstractActionController
         endforeach;
         $this->entityManager->flush();
 
-//        $params['property'][0] = array('joiner'=>'and', 'type'=>'in', 'text'=>'test', );
-        $params['item_set_id'] = array(119);
-
-//        ['joiner'] = 'and';
-//        $params['property'][0]['type'] = 'in';
-//        $params['property'][0]['text']= 'test';
-//        $params['item_set_id'] = [119];
-//        $params = $request->getPost('item_set_id');
 
 
-        $response = $this->api()->search('items', $params)->getContent();
-        $team = $this->entityManager->getRepository('Teams\Entity\Team')
-            ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
-        foreach ($response as $item_rep):
-            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $item_rep->id()]);
-            $team_resource = new TeamResource($team, $resource);
-            $this->entityManager->persist($team_resource);
-        endforeach;
-        $this->entityManager->flush();
-        $view->setVariable('response', $response);
-        $view->setVariable('params', $params);
+
+//        $response = $this->api()->search('items', $params)->getContent();
+//        $team = $this->entityManager->getRepository('Teams\Entity\Team')
+//            ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
+//        foreach ($response as $item_rep):
+//            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $item_rep->id()]);
+//            $team_resource = new TeamResource($team, $resource);
+//            $this->entityManager->persist($team_resource);
+//        endforeach;
+//        $this->entityManager->flush();
+//        $view->setVariable('response', $response);
+//        $view->setVariable('params', $params);
 
 
 
