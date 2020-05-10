@@ -14,8 +14,8 @@ class TeamItemSetForm extends Form
             'name' => 'itemset',
             'type' => TeamItemSetFieldset::class,
         ]);
-        $this->add([
-            'name' => 'user',
-            'type' => TeamUserFieldset::class,
-        ]);
+//        $this->add([
+//            'name' => 'user',
+//            'type' => TeamUserFieldset::class,
+//        ]);
     }}

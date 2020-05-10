@@ -728,6 +728,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $adapter = $event->getTarget();
             $entityAlias = $adapter->getEntityClass();
 
+            //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
+            //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
                 //TODO get the team_id's associated with the site and then do an orWhere()/orX()
                 $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->andWhere('ts.team = :team_id')

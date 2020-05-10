@@ -53,46 +53,49 @@ echo $this->formCollection($form);
             <div class="field-meta">
                 <label for="add-member-choice">Add a User and Assign them a Role:</label>
             </div>
+
+
+
             <div class="input">
-                <input class="chzn-select"  placeholder="Username" list="add-member-options" id="new-member-choice" name="add-member-choice" />
+                <select class="chozn-select" data-placeholder="Username"
+                        list="add-member-options" id="new-member-choice" name="add-member-choice">
+                    <? foreach (array_keys($this->available_u_array) as $member):
+                        echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '">'.  $member . '</option>';
+                    endforeach;
+                    ?>
+                </select>
             </div>
-<!--            <script type="text/javascript">-->
-<!--                $(function() {-->
-<!--                    $(".chzn-select").chosen();-->
-<!--                });-->
-<!--            </script>-->
-<!--            <div class="input">-->
-<!--                <select class="chzn-select" multiple="false" name="faculty" style="width:200px;">-->
-<!--                    <option value="AC">A</option>-->
-<!--                    <option value="AD">B</option>-->
-<!--                    <option value="AM">C</option>-->
-<!--                    <option value="AP">D</option>-->
-<!--                </select>-->
-<!--            </div>-->
 
 
 
-            <datalist id="add-member-options">
-                <? foreach (array_keys($this->available_u_array) as $member):
-                    echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '"> ';
-                endforeach;
-                ?>
-            </datalist>
+
+<!--            <datalist id="add-member-options">-->
+<!--                --><?// foreach (array_keys($this->available_u_array) as $member):
+//                    echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '"> ';
+//                endforeach;
+//                ?>
+<!--            </datalist>-->
 
 
 
 
             <div class="input">
-                <input class="row-left" placeholder="Role" list="add-member-role" id="new-member-role" name="add-member-role" />
+                <select class="row-left chozn-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
+                    <? foreach (array_keys($this->roles) as $role):
+                        echo '<option value="' .  $role .'">' . $role . '</option> ';
+                    endforeach;
+                    ?>
+                </select>
             </div>
 
 
-            <datalist id="add-member-role">
-                <? foreach (array_keys($this->roles) as $role):
-                    echo '<option value="' .  $role .'"> ';
-                endforeach;
-                ?>
-            </datalist>
+<!--            <datalist id="add-member-role">-->
+<!--                --><?// foreach (array_keys($this->roles) as $role):
+//                    echo '<option value="' .  $role .'"> ';
+//                endforeach;
+//                ?>
+<!--            </datalist>-->
+
             <script>
                 function removeRow(id,u){
                     let row = document.getElementById(id);
@@ -122,7 +125,7 @@ echo $this->formCollection($form);
                     let userNameTd = document.createElement('td');
                     let trashA = document.createElement('a');
                     trashA.setAttribute("class", "o-icon-delete");
-                    trashA.classList.add("row-left")
+                    trashA.classList.add("row-left");
                     trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
                     userNameTd.appendChild(trashA);
                     let userA = document.createElement('a');
@@ -155,6 +158,8 @@ echo $this->formCollection($form);
             <div style="margin-left: 20px; ">
                 <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
             </div>
+
+
         </div>
         <div class="field">
             <div class="field-meta">
@@ -209,3 +214,11 @@ echo $this->formCollection($form);
 
 <?php
 echo $this->form()->closeTag();
+
+?>
+<script type="text/javascript">
+    document.addEventListener("load", $(function () {
+        $(".chozn-select").chosen();
+
+    })
+</script>

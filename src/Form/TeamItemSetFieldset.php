@@ -5,6 +5,7 @@ namespace Teams\Form;
 
 
 use Teams\Form\Element\AllItemSetSelect;
+use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\UserSelect;
 use Zend\Form\Fieldset;
 
@@ -40,6 +41,19 @@ class TeamItemSetFieldset extends Fieldset
             ],
 
         ]);
+
+//        $this->add([
+//            'name' => 'o:role',
+//            'type' => RoleSelect::class,
+//            'options' => [
+//                'label' => 'Role', // @translate
+//                'chosen' => true,
+//            ],
+//            'attributes' => [
+//                'multiple' => false,
+//            ],
+//
+//        ]);
 
 
 
