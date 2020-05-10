@@ -99,7 +99,7 @@ $sortHeadings = [
                 <?php if ($itemSet->userIsAllowed('update') || $itemSet->userIsAllowed('delete')): ?>
                 <input type="checkbox" name="resource_ids[]" value="<?php echo $itemSet->id(); ?>" aria-label="<?php echo $translate('Select item set'); ?>">
                 <?php endif; ?>
-                <?php echo $itemSet->linkPretty() . 'what'; ?>
+                <?php echo $itemSet->linkPretty(); ?>
                 <?php if (!$itemSet->isPublic()): ?>
                     <span class="o-icon-private" aria-label="<?php echo $translate('Private'); ?>"></span>
                 <?php endif; ?>
