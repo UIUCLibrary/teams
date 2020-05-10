@@ -11,6 +11,7 @@ use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\TeamAddUserRole;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
@@ -58,6 +59,7 @@ Class AddController extends AbstractActionController
         $form = $this->getForm(TeamForm::class);
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
+        $userRoleForm = $this->getForm(TeamAddUserRole::class);
         $request   = $this->getRequest();
         $view = new ViewModel(
             [
@@ -65,7 +67,8 @@ Class AddController extends AbstractActionController
                 'available_u_array' => $all_u_array,
                 'roles' => $roles,
                 'userForm' => $userForm,
-                'itemsetForm' => $itemsetForm
+                'itemsetForm' => $itemsetForm,
+                'userRoleForm' => $userRoleForm,
             ]
         );
 

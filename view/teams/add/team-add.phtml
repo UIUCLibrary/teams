@@ -4,7 +4,7 @@
 $this->htmlElement('body')->appendAttribute('class', 'add users');
 
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
-$this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
+$this->headScript()->appendFile($this->assetUrl('js/add-team.js', 'Teams'));
 
 
 ?>
@@ -44,21 +44,34 @@ echo $this->form()->openTag($form);
 echo $this->formCollection($form);
 
 ?>
+
     </div>
 </div>
 
 <div id="team-members" class="section">
     <div class="meta-group">
         <div class="field">
+<!--            --><?//
+//            $userRoleForm = $this->userRoleForm;
+//            $userRoleForm->setAttribute('id', 'itemset_collection');
+//            $userRoleForm->setAttribute('action', $this->url());
+//            $userRoleForm->prepare();
+//
+//            echo $this->form()->openTag($userRoleForm);
+//
+//            echo $this->formCollection($userRoleForm);
+//            echo $this->form()->closeTag($userRoleForm)
+//            ?>
             <div class="field-meta">
                 <label for="add-member-choice">Add a User and Assign them a Role:</label>
             </div>
 
 
 
+
             <div class="input">
-                <select class="chozn-select" data-placeholder="Username"
-                        list="add-member-options" id="new-member-choice" name="add-member-choice">
+                <select class="chosen-select" data-placeholder="Username"
+                         id="new-member-choice" name="add-member-choice" style="display: block;">
                     <? foreach (array_keys($this->available_u_array) as $member):
                         echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '">'.  $member . '</option>';
                     endforeach;
@@ -66,21 +79,8 @@ echo $this->formCollection($form);
                 </select>
             </div>
 
-
-
-
-<!--            <datalist id="add-member-options">-->
-<!--                --><?// foreach (array_keys($this->available_u_array) as $member):
-//                    echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '"> ';
-//                endforeach;
-//                ?>
-<!--            </datalist>-->
-
-
-
-
             <div class="input">
-                <select class="row-left chozn-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
+                <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
                     <? foreach (array_keys($this->roles) as $role):
                         echo '<option value="' .  $role .'">' . $role . '</option> ';
                     endforeach;
@@ -89,14 +89,8 @@ echo $this->formCollection($form);
             </div>
 
 
-<!--            <datalist id="add-member-role">-->
-<!--                --><?// foreach (array_keys($this->roles) as $role):
-//                    echo '<option value="' .  $role .'"> ';
-//                endforeach;
-//                ?>
-<!--            </datalist>-->
-
             <script>
+
                 function removeRow(id,u){
                     let row = document.getElementById(id);
                     row.parentElement.removeChild(row);
@@ -214,11 +208,3 @@ echo $this->formCollection($form);
 
 <?php
 echo $this->form()->closeTag();
-
-?>
-<script type="text/javascript">
-    document.addEventListener("load", $(function () {
-        $(".chozn-select").chosen();
-
-    })
-</script>

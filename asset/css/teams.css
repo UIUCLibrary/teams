@@ -10,3 +10,7 @@
 .toggle-vis {
     display: none;
 }
+
+.chozn-select select{
+    display: block;
+}

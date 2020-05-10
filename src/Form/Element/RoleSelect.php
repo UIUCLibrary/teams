@@ -11,6 +11,7 @@ class RoleSelect extends TeamSelect
 
     protected $data_base_url = ['resource' => 'role'];
 
+
     public function getValueOptions()
     {
 
@@ -19,7 +20,6 @@ class RoleSelect extends TeamSelect
 
         //TODO get user id         $identity = $this->getServiceLocator()
         //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
-        $user_id = 1;
         $em = $this->getEntityManager();
         $users = $em->getRepository('Teams\Entity\TeamRole')->findAll();
         //this is set to display the teams for the current user. This works in many contexts for
@@ -37,4 +37,7 @@ class RoleSelect extends TeamSelect
         }
         return $valueOptions;
     }
+
+
+
 }

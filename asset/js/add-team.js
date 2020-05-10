@@ -1,0 +1,4 @@
+
+$(function(){
+    $(".chozn-select").chosen();
+});
