@@ -69,11 +69,13 @@ echo $this->formCollection($form);
 
 
 
-            <div class="input">
+            <div class="input" id="user-role">
+
+
                 <select class="chosen-select" data-placeholder="Username"
-                         id="new-member-choice" name="add-member-choice" style="display: block;">
-                    <? foreach (array_keys($this->available_u_array) as $member):
-                        echo '<option value="' .  $member .'" id="user' . $this->available_u_array[$member] . '">'.  $member . '</option>';
+                         id="new-member-choice" name="add-member-choice" >
+                    <? foreach ($available_u_array as $member => $id):
+                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
                     endforeach;
                     ?>
                 </select>
@@ -81,8 +83,8 @@ echo $this->formCollection($form);
 
             <div class="input">
                 <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
-                    <? foreach (array_keys($this->roles) as $role):
-                        echo '<option value="' .  $role .'">' . $role . '</option> ';
+                    <? foreach ($this->roles as $role => $id):
+                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $role . '</option>';
                     endforeach;
                     ?>
                 </select>
@@ -111,26 +113,36 @@ echo $this->formCollection($form);
                     let nm = document.getElementById("new-member-choice");
                     let nmr = document.getElementById("new-member-role");
 
-                    // alert("role" + roles[nmr.value]);
+                    alert("role" + $("#new-member-choice").val());
 
-
+                    if (document.getElementById('u' + $("#new-member-choice").val())){
+                        document.getElementById('u' + $("#new-member-choice").val()).remove();
+                    }
+                    //make row with id u+user_id
                     let row = document.createElement('tr');
-                    row.id = "u" + users[nm.value];
+                    row.id = "u" + $("#new-member-choice").val();
+
+                    //create delete row icon
                     let userNameTd = document.createElement('td');
+
                     let trashA = document.createElement('a');
                     trashA.setAttribute("class", "o-icon-delete");
                     trashA.classList.add("row-left");
                     trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
+
+                    //make the link with the user's name
                     userNameTd.appendChild(trashA);
                     let userA = document.createElement('a');
                     userA.setAttribute('href', window.location.hostname + '/admin/user' + nm.value);
-                    userA.innerText = nm.value;
+                    userA.innerText = $("#new-member-choice option:selected").text();
                     userNameTd.appendChild(userA);
+
+                    //data encoded in the form user_role[user_id] = role_id
                     let selected = document.createElement('input');
                     selected.setAttribute('type', 'hidden');
                     selected.setAttribute('form','new_team');
-                    selected.setAttribute('name', 'user_role[' + users[nm.value] +']');
-                    selected.value = roles[nmr.value] ;
+                    selected.setAttribute('name', 'user_role[' + $("#new-member-choice").val() +']');
+                    selected.value = $("#new-member-role").val() ;
 
                     row.appendChild(selected);
 
@@ -139,14 +151,12 @@ echo $this->formCollection($form);
                     document.getElementById("user-table").appendChild(row);
 
                     let roleTd = document.createElement('td');
-                    roleTd.innerText = nmr.value ;
+                    roleTd.innerText = $("#new-member-role option:selected").text() ;
 
-                    let user_option = document.getElementById('user' + users[nm.value]);
-                    user_option.parentElement.removeChild(user_option);
+
 
                     row.appendChild(roleTd);
-                    nmr.value = "";
-                    nm.value = "";
+
                 }
             </script>
             <div style="margin-left: 20px; ">
@@ -175,6 +185,9 @@ echo $this->formCollection($form);
                 </table>
 
         </div>
+
+    </div>
+    <div id="clone">
 
     </div>
 </div>

@@ -78,7 +78,12 @@ Class AddController extends AbstractActionController
         }
 
         //otherwise, set the data
+        //TODO: turn the section where user+role are added into a form so it can be populated below
         $form->setData($request->getPost());
+        $userForm->setData($request->getPost());
+        $itemsetForm->setData($request->getPost());
+        $userRoleForm->setData($request->getPost());
+
 
         //if the form isn't valid, return it
         if (! $form->isValid()){

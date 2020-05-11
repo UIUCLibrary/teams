@@ -679,6 +679,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
 
 
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
@@ -699,7 +701,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 return;
 
             }else{
+
                 $user_id = $identity->getId();
+                $user_role = $entityManager->getRepository('Omeka\Entity\User')->findOneby(['id'=>$user_id])->getRole();
+
+        }
+
+            //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
+        if (isset($query['bypass_team_filter']) && $user_role == 'global_admin'){
+            return;
         }
 
 
@@ -1121,6 +1131,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
     public function addUserFormValue(Event $event)
     {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
         $user = $event->getTarget()->vars()->user;
         $form = $event->getParam('form');
         $values = $this->listTeams($user, 'reference');
