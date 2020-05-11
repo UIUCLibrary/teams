@@ -37,7 +37,7 @@ function makeRoleElement(team_name, team_id){
     inputsDiv.className = "inputs";
 
     let select = document.createElement('select');
-    select.setAttribute('name', `user-information[o-module-teams:TeamRole[${team_id}]`);
+    select.setAttribute('name', `user-information[o-module-teams:TeamRole][${team_id}]`);
     select.setAttribute('data-placeholder', 'Select Role');
     select.className = "chosen-select";
     select.id = `role_for_${team_name}`;

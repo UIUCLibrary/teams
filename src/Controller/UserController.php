@@ -107,6 +107,27 @@ class UserController extends AbstractActionController
             if ($form->isValid()) {
                 $formData = $form->getData();
                 $response = $this->api($form)->create('users', $formData['user-information']);
+
+                $user_id = $response->getContent()->id();
+                $user = $this->entityManager->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+
+                $teams =  $this->entityManager->getRepository('Teams\Entity\Team');
+                foreach ($formData['user-information']['o-module-teams:Team'] as $team_id):
+                    $team_id = (int) $team_id;
+                    $team = $teams->findOneBy(['id'=> $team_id]);
+                    $role_id = $this->params()->fromPost()['user-information']['o-module-teams:TeamRole'][$team_id];
+                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                        ->findOneBy(['id'=>$role_id]);
+                    $team_user = new TeamUser($team,$user,$role);
+                    $this->entityManager->persist($team_user);
+
+
+                endforeach;
+                $this->entityManager->flush();
+
+
+
+
                 if ($response) {
                     $user = $response->getContent()->getEntity();
                     $this->mailer()->sendUserActivation($user);
@@ -120,6 +141,7 @@ class UserController extends AbstractActionController
                     $message->setEscapeHtml(false);
                     $this->messenger()->addSuccess($message);
                     return $this->redirect()->toUrl($response->getContent()->url());
+
                 }
             } else {
                 $this->messenger()->addFormErrors($form);
