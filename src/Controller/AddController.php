@@ -121,7 +121,7 @@ Class AddController extends AbstractActionController
                      * $em->getRepository('Omeka\Entity\Resource)
                      * foreach (
                      */
-                    foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id])->getContent() as $item):
+                    foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
                         $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                             ->findOneBy(['id'=>$item->id()]);
                         $team_resource = new TeamResource($team, $resource);
