@@ -204,7 +204,6 @@ Class UpdateController extends AbstractActionController
             }
             endforeach;
 
-        foreach ()
 
 
 
