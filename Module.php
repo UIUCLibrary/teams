@@ -25,6 +25,7 @@ use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
 use Teams\Form\Element\UserSelect;
+use Teams\Form\TeamAddUserRole;
 use Teams\Model\TestControllerFactory;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
@@ -1055,6 +1056,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //        );
 
 
+        //put the roles data in the user page
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.add.before',
+            [$this, 'addRoleFormTemplate']
+
+        );
 
         // Add the team element form to the user form.
         $sharedEventManager->attach(
@@ -1129,9 +1138,36 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         ]);
 
     }
+
+    public function addRoleFormTemplate(Event $event){
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $roles = $entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
+
+        if (count($roles)>0){
+
+            //this seems to encode the ids as characters
+
+            foreach ($roles as $role):
+                $role_array[$role->getId()] = $role->getName();
+            endforeach;
+            echo '<script> let role_array = '. json_encode($role_array) . ' </script>';
+            $view = $event->getTarget();
+
+            $view->headScript()->prependFile($view->assetUrl('js/chosen-trigger.js', 'Teams'));
+
+
+
+
+        }
+
+
+    }
+
     public function addUserFormValue(Event $event)
     {
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+
+
 
         $user = $event->getTarget()->vars()->user;
         $form = $event->getParam('form');
