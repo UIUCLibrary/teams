@@ -117,7 +117,7 @@ Class AddController extends AbstractActionController
         $this->entityManager->flush();
 
         //TODO: also add the itemset itself
-        if ($request->getPost('itemset')['o:itemset']){
+        if (isset($request->getPost('itemset')['o:itemset'])){
             foreach ($request->getPost('itemset')['o:itemset'] as $item_set_id):
                 if ((int)$item_set_id>0){
                     $item_set_id = (int)$item_set_id;
@@ -140,7 +140,7 @@ Class AddController extends AbstractActionController
                 }
             endforeach;
         }
-        if ($request->getPost('itemset')['o:user']){
+        if (isset($request->getPost('itemset')['o:user'])){
             foreach ($request->getPost('itemset')['o:user'] as $user_id):
                 if ((int)$user_id>0){
                     $user_id = (int)$user_id;
