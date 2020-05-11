@@ -1,49 +1,19 @@
-let teams_array = [];
+window.addEventListener("load", function () {
+    $('#team').on('change', function(evt, params) {
+        console.log(params.selected);
+        if (params.selected){
+            let id = params.selected;
+            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
-$("#team").chosen().change(function () {
-    teams_array = $(this).val();
-    // makeRoleElement($(this).val(), $(this).val());
-    alert('clicked');
-    /* get array of ids in the roles section
-     *
-     * Account for removed teams-
-     * for each id in the roles section not in teams_array: delete the role form element
-     *
-     * Account for added teams-
-     * for each number in teams_array not in roles section: add role form element
-     *
-     * Function to remove role form element
-     * $(#team_id).remove()
-     *
-     * function to add role element
-     *
-     */
 
+        }else{
+            $(`#role_el_for_${params.deselected}`).remove();
+
+        }
+
+        // can now use params.selected and params.deselected
+    });
 });
-
-$('#team').on('change', function(evt, params) {
-    console.log(params.selected);
-    if (params.selected){
-        let id = params.selected;
-        makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
-
-
-        document.getElementById('team').f
-    }else{
-        $(`#role_el_for_${params.deselected}`).remove();
-
-    }
-
-    // can now use params.selected and params.deselected
-});
-
-$('#team').on('change', function(evt, params) {
-    console.log(params.deselected);
-    //delete the deselected
-    $(`role_el_for${params.deselected}`).remove();
-    // can now use params.selected and params.deselected
-});
-
 
 function makeRoleElement(team_name, team_id){
 
@@ -87,7 +57,6 @@ function makeRoleElement(team_name, team_id){
     let teams_container =teams.parentElement.parentElement;
 
     teams_container.parentNode.insertBefore(fieldDiv, teams_container.nextSibling);
-
 
 }
 
