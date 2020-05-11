@@ -122,7 +122,7 @@ echo $this->form()->openTag($form);?>
                         ?>
                         <tr>
                             <td>
-                                <a class="o-icon-delete" href="update.phtml"></a>
+<!--                                <a class="o-icon-delete" href="update.phtml"></a>-->
                                 <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' => $team_user->getUser()->getId()]) ?>">
                                     <?php echo $team_user->getUser()->getName() ?>
 
@@ -130,8 +130,8 @@ echo $this->form()->openTag($form);?>
                             </td>
                             <td>
                                 <fieldset name="user-roles" id="user-roles">
-                                    <a class="o-icon-edit"></a>
-                                    <select  id="<?php echo $team_user->getUser()->getId()?>" name="<?php echo $team_user->getUser()->getId()?>">
+<!--                                    <a class="o-icon-edit"></a>-->
+                                    <select  id="UserRole[<?php echo $team_user->getUser()->getId()?>]" name="<?php echo $team_user->getUser()->getId()?>">
                                         <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
                                         <?php foreach ($this->roles as $role):
                                             if ($role->getId() !== $team_user->getRole()->getId())

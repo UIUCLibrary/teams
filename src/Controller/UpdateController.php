@@ -172,6 +172,7 @@ Class UpdateController extends AbstractActionController
 
         if ($post_data['add-member-choice']){
             //becuase the datalist only contains names, not ids, get the id that matches the name
+            //TODO: this is a terrible idea
             $new_member_choice_id = array_search($post_data['add-member-choice'], $all_u_array);
 
             //same with role
@@ -203,23 +204,25 @@ Class UpdateController extends AbstractActionController
             }
             endforeach;
 
+        foreach ()
+
 
 
         return
-//            new ViewModel(['team'=>$team,
-//            'form' => $form,
-//            'id'=>$id,
-//            'roles'=> $roles,
-//            'roles_array' => $roles_array,
-//            'all_u_collection' => $all_u_collection,
-//            'team_u_collection' => $team_u_collection,
-//            'team_u_array'=>$team_u_array,
-//            'available_u_array'=>$available_u_array,
-//            'ident' => $userId,
-//            'post_data'=>$post_data]);
+            new ViewModel(['team'=>$team,
+            'form' => $form,
+            'id'=>$id,
+            'roles'=> $roles,
+            'roles_array' => $roles_array,
+            'all_u_collection' => $all_u_collection,
+            'team_u_collection' => $team_u_collection,
+            'team_u_array'=>$team_u_array,
+            'available_u_array'=>$available_u_array,
+            'ident' => $userId,
+            'post_data'=>$post_data]);
 
 
-            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
+//            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
 
 //        if (!empty($post_data['o:user_add'])){
 //            $this->api()->create('team-user', ['o:user' => $post_data['o:user_add'], 'o:team'=> $id, 'o:role'=>1] );

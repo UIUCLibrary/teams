@@ -67,13 +67,13 @@ class TeamUpdateForm extends Form
 //            )
 //        ]);
 
-        $this->add([
-            'type' => 'submit',
-            'name' => 'submit',
-            'attributes' => [
-                'value' => 'Update Team',
-            ],
-        ]);
+//        $this->add([
+//            'type' => 'submit',
+//            'name' => 'submit',
+//            'attributes' => [
+//                'value' => 'Update Team',
+//            ],
+//        ]);
     }
 
 }
