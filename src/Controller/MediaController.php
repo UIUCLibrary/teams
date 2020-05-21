@@ -108,19 +108,10 @@ class MediaController extends AbstractActionController
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
-        $user_id = $this->identity()->getId();
 
-        $response = $this->teamResources('media', $this->params()->fromQuery(),$user_id);
+        $response = $this->api()->search('media', $this->params()->fromQuery());
 
-        $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            return $this->redirect()->toRoute('admin/default',['controller'=>'media', 'action'=>'browse']);
-
-        }
-
+        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
