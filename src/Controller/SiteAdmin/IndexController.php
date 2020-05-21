@@ -129,22 +129,12 @@ class IndexController extends AbstractActionController
 
     public function indexAction()
     {
-        $user_id = $this->identity()->getId();
-        $response = $this->teamResources('sites', $this->params()->fromQuery('page'),$user_id);
-
-
         $this->setBrowseDefaults('title', 'asc');
-        $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            return $this->redirect()->toRoute('admin/site',['controller'=>'index', 'action'=>'browse']);
-
-        }
+        $response = $this->api()->search('sites', $this->params()->fromQuery());
+        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
 
         $view = new ViewModel;
-        $view->setVariable('sites', $response['page_resources']);
+        $view->setVariable('sites', $response->getContent());
         return $view;
     }
 
