@@ -848,24 +848,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-//                $adapter,
-                '*',
+                $adapter,
+//                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
 
         endforeach;
 
-        $sharedEventManager->detach(
-            [$this, 'filterByTeam'],
-            UserAdapter::class,
 
 
-        );
 
-        $sharedEventManager->
-
-        $sharedEventManager->attach()
         $sharedEventManager->attach(
             'Teams\Controller\Add',
             'view.add.section_nav',
