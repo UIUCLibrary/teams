@@ -679,7 +679,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
-        $entityClass = $event->getTarget()->getEntityClass();
+        $entityClass = 'omeka_root';
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
 
@@ -737,7 +737,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ( is_int($team_id)){
             $adapter = $event->getTarget();
-            $entityAlias = $adapter->getEntityClass();
 
             //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site

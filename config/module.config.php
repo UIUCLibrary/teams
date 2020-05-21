@@ -91,6 +91,26 @@ return [
         ]
     ],
     'controllers' => [
+//        'invokables' => [
+//            'Omeka\Controller\Index' => 'Omeka\Controller\IndexController',
+//            'Omeka\Controller\Maintenance' => 'Omkea\Controller\MaintenanceController',
+//            'Omeka\Controller\Site\Index' => 'Omeka\Controller\Site\IndexController',
+//            'Omeka\Controller\Site\Item' => 'Omeka\Controller\Site\ItemController',
+//            'Omeka\Controller\Site\ItemSet' => 'Omeka\Controller\Site\ItemSetController',
+//            'Omeka\Controller\Site\Media' => 'Omeka\Controller\Site\MediaController',
+//            'Omeka\Controller\Site\Page' => 'Omeka\Controller\Site\PageController',
+//            'Omeka\Controller\Admin\Asset' => 'Omeka\Controller\Admin\AssetController',
+//            'Omeka\Controller\Admin\Index' => 'Omeka\Controller\Admin\IndexController',
+////            'Omeka\Controller\Admin\ItemSet' => Controller\Admin\ItemSetController::class,
+//            'Omeka\Controller\Admin\Job' => 'Omeka\Controller\Admin\JobController',
+////            'Omeka\Controller\Admin\Media' => Controller\Admin\MediaController::class,
+//            'Omeka\Controller\Admin\Property' => 'Omeka\Controller\Admin\PropertyController',
+//            'Omeka\Controller\Admin\ResourceClass' => 'Omeka\Controller\Admin\ResourceClassController',
+//            'Omeka\Controller\Admin\Setting' => 'Omeka\Controller\Admin\SettingController',
+//            'Omeka\Controller\SiteAdmin\Page' => 'Omeka\Controller\SiteAdmin\PageController',
+//            'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
+//        ],
+
         'invokables' => [
             'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
 
