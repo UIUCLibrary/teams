@@ -108,10 +108,9 @@ class MediaController extends AbstractActionController
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
-
         $response = $this->api()->search('media', $this->params()->fromQuery());
-
         $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -124,7 +123,7 @@ class MediaController extends AbstractActionController
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
         $view = new ViewModel;
-        $medias = $response['page_resources'];
+        $medias = $response->getContent();
         $view->setVariable('medias', $medias);
         $view->setVariable('resources', $medias);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
