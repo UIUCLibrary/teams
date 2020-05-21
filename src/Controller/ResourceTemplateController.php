@@ -99,38 +99,12 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
     public function browseAction()
     {
         $this->setBrowseDefaults('owner_name', 'dec');
-
-
-        $user_id = $this->identity()->getId();
-
-        $response = $this->teamResources('resource_templates', $this->params()->fromQuery(),$user_id);
-
-        $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            return $this->redirect()->toRoute('admin/default',['controller'=>'resourceTemplate', 'action'=>'browse']);
-
-        }
-
-
-
-
-
+        $response = $this->api()->search('resource_templates', $this->params()->fromQuery());
+        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
 
         $view = new ViewModel;
-        $view->setVariable('resources', $response['page_resources']);
-        $view->setVariable('team_resource', $response['team_resources']);
-        $view->setVariable('resourceTemplates', $response['team_resources']);
-
-
-
-
-
-
-            return $view;
-
+        $view->setVariable('resourceTemplates', $response->getContent());
+        return $view;
 
     }
 
