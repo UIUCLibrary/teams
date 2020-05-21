@@ -196,15 +196,9 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
-        $user_id = $this->identity()->getId();
-        $response = $this->teamResources('item_sets', $this->params()->fromQuery(),$user_id);
-        $this->paginator(count($response['team_resources']), $this->params()->fromQuery('page'));
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            return $this->redirect()->toRoute('admin/default',['controller'=>'item-set', 'action'=>'browse']);
+        $response = $this->api()->search('item_sets', $this->params()->fromQuery());
+        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
 
-        }
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -217,17 +211,12 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
         $view = new ViewModel;
-        $itemSets = $response['page_resources'];
+        $itemSets = $response->getContent();
         $view->setVariable('itemSets', $itemSets);
         $view->setVariable('resources', $itemSets);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
         return $view;
-
-        //here is a model for getting at the variable and changing it that is closer to what I need
-//        $orig = \Omeka\Controller\Admin\ItemSetController::browseAction();
-//        $orig->setVariable('itemSets', null);
-//        return $orig;
     }
 
     public function showAction()
