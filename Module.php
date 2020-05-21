@@ -9,6 +9,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\Resource;
+use Omeka\Entity\ResourceTemplate;
 use Omeka\Form\ResourceTemplateForm;
 use Omeka\Permissions\Acl;
 use Teams\Api\Adapter\TeamAdapter;
@@ -839,6 +840,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ItemAdapter::class,
             MediaAdapter::class,
             SiteAdapter::class,
+            ResourceTemplate::class
         ];
         foreach ($adapters as $adapter):
 
