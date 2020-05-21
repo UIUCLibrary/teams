@@ -5,15 +5,11 @@ namespace Teams;
 
 
 
-use Doctrine\ORM\Events;
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\SiteAdapter;
-use Omeka\Entity\Resource;
+use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Entity\ResourceTemplate;
-use Omeka\Form\ResourceTemplateForm;
 use Omeka\Permissions\Acl;
-use Teams\Api\Adapter\TeamAdapter;
-use Teams\Controller\TestController;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\Element\AllTeamSelect;
@@ -21,23 +17,14 @@ use Teams\Form\Element\TeamSelect;
 use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
 use Omeka\Api\Adapter\MediaAdapter;
-use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Api\Representation\ItemRepresentation;
-use Omeka\Api\Representation\ItemSetRepresentation;
-use Omeka\Api\Representation\MediaRepresentation;
-use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
-use Teams\Form\Element\UserSelect;
-use Teams\Form\TeamAddUserRole;
-use Teams\Model\TestControllerFactory;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use Interop\Container\ContainerInterface;
-use Zend\Dom\Document;
+
 
 
 class Module extends AbstractModule
@@ -684,8 +671,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
-        $entityClass = 'omeka_root';
+        $entityClass = $event->getTarget()->getEntityClass();
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $alias = 'omeka_root';
 
 
 
@@ -747,16 +735,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
                 //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->andWhere('ts.team = :team_id')
+                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
-            }elseif ($entityClass == \Omeka\Search\Entity\SearchPage::class){
-                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $entityClass .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
+            }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
+                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;
                  //
-            }else{
-                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->andWhere('tr.team = :team_id')
+            }elseif ($entityClass == \Omeka\Entity\User::class){
+                return;
+            }
+            else{
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
 //                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'tr', Expr\Join::WITH,  'omeka_root.id = tr.resource_template')->andWhe        re('tr.team = :team_id')
@@ -850,20 +841,31 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ItemAdapter::class,
             MediaAdapter::class,
             SiteAdapter::class,
-            ResourceTemplate::class
+            ResourceTemplate::class,
+
         ];
         foreach ($adapters as $adapter):
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-                $adapter,
-//                '*',
+//                $adapter,
+                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
 
         endforeach;
 
+        $sharedEventManager->detach(
+            [$this, 'filterByTeam'],
+            UserAdapter::class,
+
+
+        );
+
+        $sharedEventManager->
+
+        $sharedEventManager->attach()
         $sharedEventManager->attach(
             'Teams\Controller\Add',
             'view.add.section_nav',
