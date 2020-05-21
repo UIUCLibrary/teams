@@ -30,6 +30,7 @@ class ItemAdapter extends \Omeka\Api\Adapter\AbstractResourceEntityAdapter
     public function getEntityClass()
     {
         return \Omeka\Entity\Item::class;
+
     }
 
     public function buildQuery(QueryBuilder $qb, array $query)

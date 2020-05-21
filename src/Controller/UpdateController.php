@@ -4,20 +4,11 @@ namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Exception\InvalidArgumentException;
-use Omeka\Form\ConfirmForm;
-use Omeka\Form\ResourceBatchUpdateForm;
-use Omeka\Form\ResourceForm;
-use Omeka\Media\Ingester\Manager;
-use Omeka\Stdlib\Message;
-use phpDocumentor\Reflection\Types\Integer;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamUpdateForm;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\Stdlib\ArrayObject;
 use Zend\View\Model\ViewModel;
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\Form\Element;
-
 
 
 Class UpdateController extends AbstractActionController
@@ -35,7 +26,7 @@ Class UpdateController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
-    public function addTeamUser($team_id, $user_id, $role_id)
+    public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
         $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
         $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
@@ -48,7 +39,7 @@ Class UpdateController extends AbstractActionController
         $this->entityManager->flush();
     }
 
-    public function removeTeamUser($team, $user)
+    public function removeTeamUser(int $team, int $user)
     {
         $em = $this->entityManager;
         $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team, 'user' => $user]);
@@ -60,7 +51,7 @@ Class UpdateController extends AbstractActionController
 
     }
 
-    public function updateRole($team_id, $user_id, $role_id)
+    public function updateRole(int $team_id, int $user_id, int $role_id)
     {
         $em = $this->entityManager;
 
@@ -85,34 +76,27 @@ Class UpdateController extends AbstractActionController
 //    }
     public function teamUpdateAction()
     {
-//        $all_team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-//        $all_team_users->find(['team'=>2, 'user'=>1])->getRole();
 
-//        $my_team = $this->entityManager->find('Teams\Entity\Team', 1);
-//        $my_user = $this->entityManager->find('Omeka\Entity\User', 1);
-//        $my_role = $this->entityManager->find('Teams\Entity\TeamRole', 1);
-//        $my_team_user = new TeamUser($my_team,$my_user,$my_role);
-//        $this->entityManager->persist($my_team_user);
-//        $this->entityManager->flush();
-
-
-//        $new_team_user = new Team;
-
-//        $eb = $this->entityManager->getExpressionBuilder();
-//        $un = $conn->getUsername();
-//        $em = EntityManager::create();
         $userId = $this->identity()->getId();
+
         $form = $this->getForm(TeamUpdateForm::class);
-        //is there an id?
+
+        //should this really be necessary?
         $id = $this->params()->fromRoute('id');
         if (! $id){
             return $this->redirect()->toRoute('admin/teams');
         }
 
-        //does a team have that id
+        //the regex of the routing should only funnel an id that is an int here, but I guess just to make sure?
+        if (! is_int($id)){
+            return $this->redirect()->toRoute('admin/teams');
+        }
+
+        //is a team associated with that id
         try {
             $team = $this->api()->read('team', ['id'=>$id]);
         } catch (InvalidArgumentException $exception) {
+            //TODO: (error_msg) this should return an error message not silently return to teams page
             return $this->redirect()->toRoute('admin/teams');
         }
 
@@ -121,38 +105,39 @@ Class UpdateController extends AbstractActionController
 
         $data = $this->api()->read('team', ['id'=>$id])->getContent();
 
+        //TODO (refactor) this is probably a stupid way to do this
+
+        //get all of the users and put them in an associative array id:name
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
             $all_u_array[$u->id()] = $u->name();
         endforeach;
 
+        //get the team's users and put them in an associative array id:name
         $team_u_array = array();
         $team_u_collection = $this->api()->read('team', ['id'=>$id])->getContent()->users();
-
         foreach($team_u_collection as $team_user):
             $team_u_array[$team_user->getUser()->getId()] = $team_user->getUser()->getName();
         endforeach;
 
+        //get the users available to be added to the team
         $available_u_array = array_diff($all_u_array, $team_u_array);
 
+        //TODO (refactor) was trying to see if there was an easier way to get these objects into an array but consistency is more important
         $role_query = $this->entityManager->createQuery('select partial r.{id, name} from Teams\Entity\TeamRole r');
         $roles = $role_query->getResult();
         $roles_array =  $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
 
-
-
-
         //create an array object to hold the contents to pre-fill the form with
+        //TODO (emulate) this is the procedure to use to populate forms. Copy this.
         $fill = new ArrayObject;
         $fill['o:name'] = $data->getJsonLd()['o:name'];
         $fill['o:description'] = $data->getJsonLd()['o:description'];
         $form->bind($fill);
 
-
-
-
         //is it a post request?
+        //TODO (refactor) clean up this, only send what is needed 
         $request = $this->getRequest();
         if (! $request->isPost()) {
             return new ViewModel(['team'=>$team,
