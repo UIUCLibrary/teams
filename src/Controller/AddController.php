@@ -113,6 +113,9 @@ Class AddController extends AbstractActionController
 
             $teamUser = new TeamUser($team, $user, $role);
 
+            $teamUser->setCurrent(false);
+
+
             $this->entityManager->persist($teamUser);
         endforeach;
         $this->entityManager->flush();
