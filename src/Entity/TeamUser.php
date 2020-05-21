@@ -62,9 +62,10 @@ class TeamUser
      */
     protected $is_current = null;
 
-
+//TODO make this an auto generated column
     /**
      * @Column(type="integer", unique=true)
+     *
      *
      */
     protected $id;
