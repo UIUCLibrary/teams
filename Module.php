@@ -750,10 +750,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $entityClass .'.id = ts.site')->andWhere('ts.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
-            }else{
-                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->andWhere('tr.team = :team_id')
+            }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
+                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
-         ;}
+         ;
+            }else{
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $entityClass .'.id = tr.resource')->andWhere('tr.team = :team_id')
+                    ->setParameter('team_id', $team_id)
+                ;
+
+            }
         }
     }
 
