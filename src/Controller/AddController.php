@@ -113,7 +113,7 @@ Class AddController extends AbstractActionController
 
             $teamUser = new TeamUser($team, $user, $role);
 
-            $teamUser->setCurrent(false);
+            $teamUser->setCurrent(null);
 
 
             $this->entityManager->persist($teamUser);
