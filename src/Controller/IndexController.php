@@ -70,6 +70,7 @@ class IndexController extends AbstractActionController
         } elseif ($team_user->findOneBy(['user'=>$user_id])){
             $current_team = $team_user->findOneBy(['user'=>$user_id]);
             $current_team->setCurrent(true);
+            $this->entityManager->flush();
             $current_team = $current_team->getTeam();
         }
 

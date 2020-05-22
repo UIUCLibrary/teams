@@ -376,6 +376,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $current_team = $current_team->getTeam()->getName();
         } elseif ($user_teams){
             $current_team = $team_user->findOneBy(['user'=>$user_id]);
+            $current_team->setCurrent(true);
+            $entityManager->flush();
             $current_team = $current_team->getTeam()->getName();
         }else $current_team = null;
 
@@ -654,6 +656,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $tu = $tu->findOneBy(['user'=>$user_id]);
             $ct = $tu->getTeam();
             $tu->setCurrent(1);
+            $entityManager->flush();
 
         } else {
             $ct = 'None';
