@@ -648,7 +648,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if($ct){
             $ct = $ct->getTeam();
         } elseif ($tu->findOneBy(['user'=>$user_id])){
-            $ct = $tu->findOneBy(['user'=>$user_id])->getTeam();
+            $tu = $tu->findOneBy(['user'=>$user_id]);
+            $ct = $tu->getTeam();
+            $tu->setCurrent(1);
+
         } else {
             $ct = 'None';
         }
