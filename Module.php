@@ -643,9 +643,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $user_id = $identity->getId();}else{$user_id=null;}
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $ct = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+        $tu = $entityManager->getRepository('Teams\Entity\TeamUser');
+        $ct = $tu->findOneBy(['is_current'=>true, 'user'=>$user_id]);
         if($ct){
             $ct = $ct->getTeam();
+        } elseif ($tu->findOneBy(['user'=>$user_id])){
+            $ct = $tu->findOneBy(['user'=>$user_id])->getTeam();
         } else {
             $ct = 'None';
         }
