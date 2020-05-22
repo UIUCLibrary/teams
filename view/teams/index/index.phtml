@@ -31,7 +31,7 @@ $escape = $this->plugin('escapeHtml');
 //?>
 
 <!--<h1>Teams</h1>-->
-<?php if ($this->current_team){?>
+<?php if ($this->current_team != "None"){?>
 <h2> Current Team: <?echo $this->current_team->getName() ?></h2>
 <?php } else{
     ?> <h2> Current Team: You are Not Currently Assigned to a Team</h2>
