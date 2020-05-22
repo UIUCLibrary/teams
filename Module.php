@@ -374,6 +374,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
         if ($current_team){
             $current_team = $current_team->getTeam()->getName();
+        } elseif ($user_teams){
+            $current_team = $team_user->findOneBy(['user'=>$user_id]);
+            $current_team = $current_team->getTeam()->getName();
         }else $current_team = null;
 
         echo $event->getTarget()->partial(
