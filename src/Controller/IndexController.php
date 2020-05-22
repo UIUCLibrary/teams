@@ -37,8 +37,10 @@ class IndexController extends AbstractActionController
             $em = $this->entityManager;
             $team_user = $em->getRepository('Teams\Entity\TeamUser');
             $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
+            if ($old_current){
+                $old_current->setCurrent(null);
+            }
             $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            $old_current->setCurrent(null);
             $new_current->setCurrent(true);
             $em->flush();
 
