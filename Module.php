@@ -1055,7 +1055,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
             'view.add.section_nav',
-//            [$this, 'addTab']
             [$this, 'removeTab']
 
         );
