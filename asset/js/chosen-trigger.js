@@ -1,6 +1,6 @@
+//create or destroy role element after a selector event
 window.addEventListener("load", function () {
     $('#team').on('change', function(evt, params) {
-        console.log(params.selected);
         if (params.selected){
             let id = params.selected;
             makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
@@ -16,7 +16,7 @@ window.addEventListener("load", function () {
 });
 
 
-
+//generate role field
 function makeRoleElement(team_name, team_id){
 
 
@@ -62,7 +62,7 @@ function makeRoleElement(team_name, team_id){
 
 }
 
-
+//populate role for each of the user's pre-existing teams (for edit views)
 window.addEventListener("load",function () {
     let user_teams = $("select#team").children("option:selected");
 
