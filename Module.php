@@ -6,6 +6,7 @@ namespace Teams;
 
 
 use Doctrine\ORM\Query\Expr;
+use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Entity\ResourceTemplate;
@@ -767,22 +768,26 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
+                echo 'site';
                 //TODO get the team_id's associated with the site and then do an orWhere()/orX()
                 $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
             }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
+                echo "rt";
                  $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;
                  //
             }elseif ($entityClass == \Omeka\Entity\User::class){
+                echo 'user';
 
                 return;
             }elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
-                return;
+                echo "vocab";
             }
             else{
+                echo "finally";
 
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
@@ -792,7 +797,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //                    ;
 
             }
-        }
+        }else{echo "no team";}
     }
 
     //add user's teams to the user detail page view/omeka/admin/user/show.phtml
@@ -875,18 +880,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $adapters = [
             ItemSetAdapter::class,
-//            ItemAdapter::class,
-//            MediaAdapter::class,
-//            SiteAdapter::class,
-//            ResourceTemplate::class,
+            ItemAdapter::class,
+            MediaAdapter::class,
+            SiteAdapter::class,
+            ResourceTemplateAdapter::class,
 
         ];
         foreach ($adapters as $adapter):
 
             // Add the group filter to the search.
             $sharedEventManager->attach(
-//                $adapter,
-                '*',
+                $adapter,
+//                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
