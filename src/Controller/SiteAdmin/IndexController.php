@@ -204,7 +204,7 @@ class IndexController extends AbstractActionController
 
                 if ($response) {
                     $this->messenger()->addSuccess('Site successfully created'); // @translate
-//                    return $this->redirect()->toUrl($response->getContent()->url());
+                    return $this->redirect()->toUrl($response->getContent()->url());
                 }
             } else {
                 $this->messenger()->addFormErrors($form);
