@@ -100,15 +100,9 @@ class ItemController extends AbstractActionController
     {
         $this->setBrowseDefaults('created');
 
-        //get the user's id
-        $user_id = $this->identity()->getId();
-        $current_team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'is_current'=>1]);
-        $team_id = $current_team_user->getTeam()->getId();
+
         $params = $this->params()->fromQuery();
-        if (count($this->params()->fromQuery('team_id'))>0){
-            $this->changeCurrentTeamAction($user_id, $this->params()->fromQuery());
-        }
-        $params['team_id'] = $team_id;
+
         $response = $this->api()->search('items', $params);
 
 
