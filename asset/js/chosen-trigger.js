@@ -15,6 +15,8 @@ window.addEventListener("load", function () {
     });
 });
 
+
+
 function makeRoleElement(team_name, team_id){
 
 
@@ -61,3 +63,12 @@ function makeRoleElement(team_name, team_id){
 }
 
 
+window.addEventListener("load",function () {
+    let user_teams = $("select#team").children("option:selected");
+
+    for (let i = 0; i < user_teams.length; i++){
+        let team_name = user_teams[i].innerText;
+        let team_id = user_teams[i].value;
+        makeRoleElement(team_name, team_id);
+    }
+});

@@ -1133,6 +1133,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         );
 
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.edit.before',
+            [$this, 'addRoleFormTemplate']
+
+        );
+
         // Add the team element form to the user form.
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
