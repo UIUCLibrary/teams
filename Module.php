@@ -288,6 +288,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $sectionNav = $event->getParam('section_nav');
         $sectionNav['item-pool'] = 'Do Not Use'; // @translate
         unset($sectionNav['item-pool']);
+
+        //adding a tab that says Site Pool to add explanation to users who are used to the feature
+        $sectionNav['team'] = 'Site Pool'; // @translate
+
         $event->setParam('section_nav', $sectionNav);
 
     }
@@ -629,6 +633,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'teams/partial/team-form-no-id',
             ['user_id'=>$user_id, 'default_team' => $default_team]
         );
+    }
+
+    public function displaySitePoolMsg(Event $event)
+    {
+       echo '
+<p class="section" id="team">Site Pools superseded by the Teams Module. This site will have access to all associated Team Resources.</p>
+';
+
     }
 
 
@@ -1046,6 +1058,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [$this, 'removeTab']
 
         );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.add.form.before',
+            [$this, 'displaySitePoolMsg']
+        );
+
+
 
 //        $sharedEventManager->attach(
 //            'Omeka\Controller\Admin\Item',
