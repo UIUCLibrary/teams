@@ -832,6 +832,28 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $view->partial('teams/partial/return_url', 'Teams');
     }
 
+    public function siteEdit(Event $event)
+    {
+        $view = $event->getTarget();
+
+
+
+
+        //send the form data for processing by module controller to add teamUser
+        $site_id = $view->vars()->site->id();
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $site_teams = $entityManager->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+        $team_ids = array();
+        foreach ($site_teams as $site_team):
+            $team_ids[] = $site_team->getTeam()->getId();
+        endforeach;
+        echo $view->partial('teams/partial/site-admin/edit', ['site_teams' => $site_teams, 'team_ids' => $team_ids]);
+
+
+
+    }
+
+
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
@@ -893,6 +915,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             );
 
         endforeach;
+
+
 
 
 
@@ -1101,6 +1125,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Omeka\Controller\SiteAdmin\Index',
             'teams.advanced_search',
             [$this, 'teamSelectorAdvancedSearch']
+        );
+
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.edit.after',
+            [$this, 'siteEdit']
         );
 
 
