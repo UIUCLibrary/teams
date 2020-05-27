@@ -43,6 +43,7 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
         $form->setAttribute('id', 'add-item-set');
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
+            $data = $this->mergeValuesJson($data);
             $form->setData($data);
             if ($form->isValid()) {
                 $response = $this->api($form)->create('item_sets', $data);
@@ -90,6 +91,8 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
         $view->setVariable('itemSet', $itemSet);
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
+            $data = $this->mergeValuesJson($data);
+
             $form->setData($data);
 
             $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $this->params('id')]);

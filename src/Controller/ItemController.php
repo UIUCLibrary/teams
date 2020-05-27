@@ -38,7 +38,6 @@ class ItemController extends AbstractActionController
         $this->mediaIngesters = $mediaIngesters;
         $this->entityManager = $entityManager;
     }
-    //end edits
     public function searchAction()
     {
         $view = new ViewModel;
@@ -46,83 +45,12 @@ class ItemController extends AbstractActionController
         return $view;
     }
 
-    public function teamResources($resource_type, $query, $user_id, $active = true, $team_id = null)
-    {
-        if ($active){
-            $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-        } else{
-            $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'team' => $team_id ]);
-        }
-
-        $resources = array();
-        if ($team_user) {
-
-            $active_team_id = $team_user->getTeam()->getId();
-
-            $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $active_team_id]);
-
-
-
-
-            $q = $this->entityManager->createQuery("SELECT resource FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
-            $item_sets = $q->getArrayResult();
-            $team_resources = array();
-            foreach ($team_entity->getTeamResources() as $team_resource):
-                //obv here would be a place where you could just use the discriminator to see if it is an item
-                if (array_search($team_resource->getResource()->getId(), array_column($item_sets, 'id')) ){
-                    $team_resources[] = $team_resource;
-                }
-            endforeach;
-            $per_page = 10;
-            $page = $query['page'];
-            $start_i = ($per_page * $page) - $per_page;
-//            $tr = $team_entity->getTeamResources();
-            $max_i = count($team_resources);
-            if ($max_i < $start_i + $per_page){
-                $end_i = $max_i;
-            }else{$end_i = $start_i + $per_page;}
-//            $tr = $team_entity->getTeamResources();
-            for ($i = $start_i; $i < $end_i; $i++) {
-
-                $resources[] = $this->api()->read($resource_type, $team_resources[$i]->getResource()->getId())->getContent();}
-
-        }else{$team_resources=null;}
-
-        return array('page_resources'=>$resources, 'team_resources'=>$team_resources, 'team_entity' => $team_entity);
-
-
-
-    }
-
-
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
+        $response = $this->api()->search('items', $this->params()->fromQuery());
+        $this->paginator($response->getTotalResults());
 
-
-        $params = $this->params()->fromQuery();
-
-        $response = $this->api()->search('items', $params);
-
-
-
-
-
-//        $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
-//        $items = $team_items['page_resources'];
-//        $total_team_resources = $team_items['team_resources'];
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id, $request->getPost());
-            return $this->redirect()->toRoute('admin/default',['controller'=>'item', 'action'=>'browse']);
-
-
-        }
-        ///////stopped here, in the middle of trying to apply some of the advanced search filtering options. Will be way
-        /// easier to just do this all in the api, but want to work out some of the kinks here first
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
-        $this->setBrowseDefaults('created');
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -134,77 +62,24 @@ class ItemController extends AbstractActionController
         $formDeleteAll->setAttribute('id', 'confirm-delete-all');
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
-
         $view = new ViewModel;
         $items = $response->getContent();
         $view->setVariable('items', $items);
         $view->setVariable('resources', $items);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('params', $params);
-        $view->setVariable('params_from_q', $this->params()->fromQuery());
-
         return $view;
-
-
-
-
-
-        //end edits
     }
 
     public function showAction()
     {
         $response = $this->api()->read('items', $this->params('id'));
-        $current_user = $this->identity()->getId();
 
-        $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=> $this->params('id')]);
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$current_user]);
-
-        $resource_in_teams = array();
-        $user_in_teams = array();
-        foreach ($team_resource as $r):
-            $resource_in_teams[] = $r->getTeam()->getId();
-        endforeach;
-
-        foreach ($team_user as $u):
-            $user_in_teams[] = $u->getTeam()->getId();
-        endforeach;
-
-        if (array_intersect($user_in_teams, $resource_in_teams)) {
-
-            $denied = false;
-            $view = new ViewModel;
-            $item = $response->getContent();
-            $view->setVariable('item', $item);
-            $view->setVariable('resource', $item);
-            $view->setVariable('denied', $denied);
-
-            return $view;
-        }else{
-            $denied = true;
-            return $this->redirect()->toRoute('admin/default', ['controller'=>'item']);
-        }
-
-    }
-
-    public function changeCurrentTeamAction($user_id, $data)
-    {
-//        $request = $this->getRequest();
-//        if (!$request->isPost()) {
-//            return $this->redirect()->toRoute('admin');
-//        } else {
-//            $data = $request->getPost();
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            $old_current->setCurrent(null);
-            $new_current->setCurrent(true);
-            $em->flush();
-
-
-//        }
+        $view = new ViewModel;
+        $item = $response->getContent();
+        $view->setVariable('item', $item);
+        $view->setVariable('resource', $item);
+        return $view;
     }
 
     public function showDetailsAction()
@@ -224,10 +99,9 @@ class ItemController extends AbstractActionController
 
     public function sidebarSelectAction()
     {
-
-
+        $this->setBrowseDefaults('created');
         $response = $this->api()->search('items', $this->params()->fromQuery());
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $view = new ViewModel;
         $view->setVariable('items', $response->getContent());
@@ -411,7 +285,7 @@ class ItemController extends AbstractActionController
 
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
-//            $data = $this->mergeValuesJson($data);
+            $data = $this->mergeValuesJson($data);
 
             $form->setData($data);
             if ($form->isValid()) {
@@ -467,11 +341,6 @@ class ItemController extends AbstractActionController
             return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
         }
 
-        $resources = [];
-        foreach ($resourceIds as $resourceId) {
-            $resources[] = $this->api()->read('items', $resourceId)->getContent();
-        }
-
         $form = $this->getForm(ResourceBatchUpdateForm::class, ['resource_type' => 'item']);
         $form->setAttribute('id', 'batch-edit-item');
         if ($this->params()->fromPost('batch_update')) {
@@ -493,6 +362,11 @@ class ItemController extends AbstractActionController
             } else {
                 $this->messenger()->addFormErrors($form);
             }
+        }
+
+        $resources = [];
+        foreach ($resourceIds as $resourceId) {
+            $resources[] = $this->api()->read('items', $resourceId)->getContent();
         }
 
         $view = new ViewModel;
