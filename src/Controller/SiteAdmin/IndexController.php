@@ -47,91 +47,11 @@ class IndexController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
-    public function changeCurrentTeamAction($user_id)
-    {
-        $request = $this->getRequest();
-        if (!$request->isPost()) {
-            return $this->redirect()->toRoute('admin');
-        } else {
-            $data = $request->getPost();
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            if ($old_current){
-                $old_current->setCurrent(null);
-                //no idea why, but this function fails in this controller only unless the action is flushed first
-                $em->flush();}
-            $new_current->setCurrent(true);
-            $em->flush();
-
-
-        }
-    }
-
-    public function teamResources($resource_type, $page, $user_id, $active = true, $team_id = null)
-    {
-        //get the get the user's team_user with the is_current identifier
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-        //get their current team
-        $team = $team_user->getTeam();
-
-        //get that team's sites
-        $team_sites = $team->getTeamSites();
-
-        $sites_api_obj = array();
-
-
-        //TODO refactor so that this foreach starts at the appropriate index so we are only fetching what is needed
-        // for the requested page
-        foreach ($team_sites as $site):
-            $sites_api_obj[] =  $this->api()->read($resource_type, $site->getSite()->getId())->getContent();
-        endforeach;
-
-
-
-        //this logic looks at which page they requested, how many items per page, and collects the appropriate results.
-        $per_page = 10;
-
-        //get what page of the results is requested, if null set to page 1
-        if($page == null){
-            $page = 1;
-        }
-
-
-
-        //starting index for that page
-        $start_i = ($per_page * $page) - $per_page;
-
-        //max index for all results sentinel
-        $max_i = count($sites_api_obj);
-
-        //get per_page number of results unless on the last page
-        if ($max_i < $start_i + $per_page){
-            $end_i = $max_i;
-        }else{$end_i = $start_i + $per_page;}
-
-        //an array to hold the resources for just the page
-        $page_resources = array();
-        for ($i = $start_i; $i < $end_i; $i++) {
-
-            $page_resources[] = $sites_api_obj[$i];
-        }
-
-
-        return array('page_resources'=>$page_resources, 'team_resources'=>$sites_api_obj);
-
-
-
-    }
-
-
     public function indexAction()
     {
         $this->setBrowseDefaults('title', 'asc');
         $response = $this->api()->search('sites', $this->params()->fromQuery());
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $view = new ViewModel;
         $view->setVariable('sites', $response->getContent());
@@ -147,45 +67,7 @@ class IndexController extends AbstractActionController
             $itemPool = $formData;
             unset($itemPool['csrf'], $itemPool['o:is_public'], $itemPool['o:title'], $itemPool['o:slug'],
                 $itemPool['o:theme']);
-
-
-                //this works theoretically, but the way the advanced search is structured this results in a 1 min 40 second
-                //query time to populate a site pool with 4 items because it uses an inner join between item and resource
-                // ON each input item id with a "WHERE r.value_resource_id_1 = input_1  OR value_resource_id_2 = input_2 . . ."
-//                $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
-//                $all_items = $get_items->getScalarResult();
-//                $site_resources = array();
-//                foreach ($formData['team'] as $team_id):
-//                    $site_team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-//                    $team_resources = $site_team->getTeamResources()->toArray();
-//                    $site_resources = array_merge($site_resources, $team_resources);
-//                endforeach;
-//                $getIds = function ($resource){
-//                    if (is_object($resource)){
-//                        return $resource->getResource()->getId();
-//                    }elseif(is_array($resource)){
-//                        return $resource['id'];
-//                    }else{return null;}
-//                };
-//                //get the ids from all omeka items
-//                $all_item_ids = array_map($getIds, $all_items);
-//                $site_res_ids = array_map($getIds, $site_resources);
-//                $site_items = array_intersect($all_item_ids, $site_res_ids);
-
-
-
-            // actually totally doesn't work
-//            foreach ($site_items as $item_id):
-//                array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> $item_id));
-//            endforeach;
-//            array_push($itemPool['property'], array('joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=> '1000'));
-            /// alternative idea is for each site to have an itemset (or each team) and for all of the items in TeamResources
-            /// to be added to that itemset. Super anit-normalized, though.
-//            array_push($itemPool['tea'], '579');
-//            $itemPool['team_id'] = $itemPool['team'];
             $formData['o:item_pool'] = $itemPool;
-
-
             $form->setData($formData);
             if ($form->isValid()) {
                 $response = $this->api($form)->create('sites', $formData);
@@ -294,7 +176,7 @@ class IndexController extends AbstractActionController
         $site = $this->currentSite();
         if (!$site->userIsAllowed('update')) {
             throw new Exception\PermissionDeniedException(
-                'User does not have permission to edit site settings'
+                'User does not have permission to edit site settings' // @translate
             );
         }
         $form = $this->getForm(SiteSettingsForm::class);
@@ -351,17 +233,7 @@ class IndexController extends AbstractActionController
                         ];
                         $this->api()->update('sites', $site->id(), ['o:navigation' => $navigation], [], ['isPartial' => true]);
                     }
-                    $sp = json_decode("{'o:summary':'','property':[{'joiner':'and','property':'','type':'res','text':'470'}, {'joiner':'or','property':'','type':'res','text':'4'}],'resource_class_id':[''],'resource_template_id':[''],'item_set_id':[''],'site_id':''}", true);
-                    $new_item = ['joiner'=>'or', 'property'=>'', 'type'=>'res', 'text'=>'7'];
-                    array_push($sp["property"],$new_item);
-
-                    $json_sp = json_encode($sp);
-                    $this->api()->update('sites', $site->id(), ['o:navigation' => $navigation], [], ['isPartial' => true]);
-                    $this->api()->update('sites', $site->id(), ['o:item_pool' => $json_sp], [], ['isPartial'=>true]);
-                    $site_entity = $this->entityManager->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site->id()]);
-                    $site_entity->setItemPool($json_sp);
-                    $this->entityManager->flush();
-                    $this->messenger()->addSuccess('Page successfully created testing'); // @translate
+                    $this->messenger()->addSuccess('Page successfully created'); // @translate
                     return $this->redirect()->toRoute(
                         'admin/site/slug/page/default',
                         [
@@ -386,6 +258,23 @@ class IndexController extends AbstractActionController
     {
         $site = $this->currentSite();
         $form = $this->getForm(Form::class)->setAttribute('id', 'site-form');
+        $form->add([
+            'name' => 'o:homepage[o:id]',
+            'type' => 'Omeka\Form\Element\SitePageSelect',
+            'options' => [
+                'label' => 'Homepage', // @translate
+                'empty_option' => '',
+            ],
+            'attributes' => [
+                'value' => $site->homepage() ? $site->homepage()->id() : null,
+                'class' => 'chosen-select',
+                'data-placeholder' => 'First page in navigation', // @translate
+            ],
+        ]);
+        $form->getInputFilter()->add([
+            'name' => 'o:homepage[o:id]',
+            'allow_empty' => true,
+        ]);
 
         if ($this->getRequest()->isPost()) {
             $formData = $this->params()->fromPost();
@@ -409,57 +298,6 @@ class IndexController extends AbstractActionController
         $view->setVariable('site', $site);
         return $view;
     }
-
-
-    public function teamDetailAction()
-    {
-        $view = new ViewModel;
-        $id = $this->params()->fromRoute('id');
-        $response = $this->api()->read('team', ['id' => $id]);
-
-
-        $em = $this->entityManager;
-
-        $resources = [
-            'items'=> ['count' => 0, 'entity' => 'Item', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
-            'item sets' => ['count' => 0, 'entity' => 'ItemSet', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
-            'media' => ['count' => 0, 'entity' => 'Media', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
-            'resource templates' => ['count' => 0, 'entity' => 'ResourceTemplate', 'team_entity' => 'TeamResourceTemplate', 'fk' => 'resource_template'],
-            'sites' => ['count' => 0, 'entity' => 'Site', 'team_entity' => 'TeamSite', 'fk' => 'site']
-        ];
-
-        foreach ($resources as $key => $resource):
-            //I imagine this as like a subquery that gets the list of item ids
-            $sub_query = $em->createQueryBuilder();
-            $sub_query->select('r.id')
-                ->from('Omeka\Entity\\' . $resource['entity'], 'r');
-
-            $ids = $sub_query->getQuery()->getArrayResult();
-
-            //get the count of the total number of team items
-            $qb = $em->createQueryBuilder();
-
-            $qb->select('count(tr.' . $resource['fk'] . ')')
-                ->from('Teams\Entity\\' . $resource['team_entity'], 'tr')
-                ->where('tr.team = ?1')
-                ->andWhere('tr.' . $resource['fk'] . ' in (:ids)')
-                ->setParameter('ids', $ids)
-            ;
-            $qb->setParameter(1, $this->params('id'));
-            $resources[$key]['count'] += $qb->getQuery()->getSingleScalarResult();
-        endforeach;
-
-        $view->setVariable('resources', $resources);
-
-
-        $view->setVariable('response', $response);
-
-
-        return $view;
-    }
-
-
-
 
     public function resourcesAction()
     {
@@ -551,10 +389,7 @@ class IndexController extends AbstractActionController
         $itemCount = $this->api()
             ->search('items', ['limit' => 0, 'site_id' => $site->id()])
             ->getTotalResults();
-
         $itemSets = [];
-//        foreach ($site_item_sets as $item_set_id) {
-//            $itemSet = $this->api()->read('item_sets', ['id'=>$item_set_id])->getContent();
         foreach ($site->siteItemSets() as $siteItemSet) {
             $itemSet = $siteItemSet->itemSet();
             $owner = $itemSet->owner();
@@ -564,7 +399,6 @@ class IndexController extends AbstractActionController
                 'email' => $owner ? $owner->email() : null,
             ];
         }
-
 
         $view = new ViewModel;
         $view->setVariable('site', $site);
@@ -649,12 +483,14 @@ class IndexController extends AbstractActionController
         }
 
         $theme = $this->themes->getTheme($site->theme());
-        $config = $theme->getConfigSpec();
-
-        $view = new ViewModel;
-        if (!($config && $config['elements'])) {
-            return $view;
+        if (!$theme->isConfigurable()) {
+            throw new Exception\RuntimeException(
+                'The current theme is not configurable.'
+            );
         }
+
+        $config = $theme->getConfigSpec();
+        $view = new ViewModel;
 
         /** @var Form $form */
         $form = $this->getForm(Form::class)->setAttribute('id', 'site-form');
@@ -769,7 +605,7 @@ class IndexController extends AbstractActionController
 
         $response = $this->api()->search('items', $query);
         $items = $response->getContent();
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $view = new ViewModel;
         $view->setTerminal(true);
@@ -777,6 +613,7 @@ class IndexController extends AbstractActionController
         $view->setVariable('search', $this->params()->fromQuery('search'));
         $view->setVariable('resourceClassId', $this->params()->fromQuery('resource_class_id'));
         $view->setVariable('itemSetId', $this->params()->fromQuery('item_set_id'));
+        $view->setVariable('id', $this->params()->fromQuery('id'));
         $view->setVariable('items', $items);
         $view->setVariable('showDetails', false);
         return $view;
