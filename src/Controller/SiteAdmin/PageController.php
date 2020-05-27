@@ -11,9 +11,6 @@ class PageController extends AbstractActionController
     public function editAction()
     {
         $site = $this->currentSite();
-
-
-
         $page = $this->api()->read('site_pages', [
             'slug' => $this->params('page-slug'),
             'site' => $site->id(),
@@ -41,7 +38,6 @@ class PageController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('site', $site);
         $view->setVariable('page', $page);
-//        $view->setVariable('site_pool', $sp);
         $view->setVariable('form', $form);
         return $view;
     }
