@@ -38,7 +38,7 @@ class UserController extends AbstractActionController
     {
         $this->setBrowseDefaults('email', 'asc');
         $response = $this->api()->search('users', $this->params()->fromQuery());
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
@@ -81,7 +81,7 @@ class UserController extends AbstractActionController
     {
         $this->setBrowseDefaults('created');
         $response = $this->api()->search('users', $this->params()->fromQuery());
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $view = new ViewModel;
         $view->setVariable('users', $response->getContent());
@@ -140,7 +140,6 @@ class UserController extends AbstractActionController
                     $message->setEscapeHtml(false);
                     $this->messenger()->addSuccess($message);
                     return $this->redirect()->toUrl($response->getContent()->url());
-
                 }
             } else {
                 $this->messenger()->addFormErrors($form);
@@ -155,10 +154,7 @@ class UserController extends AbstractActionController
     public function editAction()
     {
         $id = $this->params('id');
-//        $prior_teams = [];
-//        foreach ($this->api()->search('team-user', ['o:user' => $id])->getContent() as $team):
-//            array_push($prior_teams, $team->teamId());
-//        endforeach;
+
         $readResponse = $this->api()->read('users', $id);
         $user = $readResponse->getContent();
         $userEntity = $user->getEntity();
@@ -178,9 +174,9 @@ class UserController extends AbstractActionController
             'include_password' => true,
             'include_key' => true,
         ]);
+        $form->setAttribute('action', $this->getRequest()->getRequestUri());
 
         $data = $user->jsonSerialize();
-
         $form->get('user-information')->populateValues($data);
         $form->get('change-password')->populateValues($data);
 
@@ -194,8 +190,6 @@ class UserController extends AbstractActionController
         $view->setVariable('user', $user);
         $view->setVariable('form', $form);
         $view->setVariable('keys', $viewKeys);
-//        $view->setVariable('target_optons', $target_options);
-
 
         $successMessages = [];
 
@@ -249,7 +243,7 @@ class UserController extends AbstractActionController
                     }
                 }
 
-                if (!empty($passwordValues['password'])) {
+                if (!empty($passwordValues['password-confirm']['password'])) {
                     if (!$this->userIsAllowed($userEntity, 'change-password')) {
                         throw new Exception\PermissionDeniedException(
                             'User does not have permission to change the password'
@@ -259,7 +253,7 @@ class UserController extends AbstractActionController
                         $this->messenger()->addError('The current password entered was invalid'); // @translate
                         return $view;
                     }
-                    $userEntity->setPassword($passwordValues['password']);
+                    $userEntity->setPassword($passwordValues['password-confirm']['password']);
                     $successMessages[] = 'Password successfully changed'; // @translate
                 }
 
@@ -296,7 +290,7 @@ class UserController extends AbstractActionController
 
                 if ($keyPersisted) {
                     $message = new Message(
-                        'API key successfully created.<br><br>Here is your key ID and credential for access to the API. WARNING: "key_credential" will be unretrievable after you navigate away from this page.<br><br>key_identity: <code>%s</code><br>key_credential: <code>%s</code>', // @translate
+                        'API key successfully created.<br><br>Here is your key ID and credential for access to the API. WARNING: "key_credential" will be unretrievable after you navigate away from this page.<br><br>key_identity: <code>%1$s</code><br>key_credential: <code>%2$s</code>', // @translate
                         $keyId, $keyCredential
                     );
                     $message->setEscapeHtml(false);
@@ -431,11 +425,6 @@ class UserController extends AbstractActionController
             return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
         }
 
-        $resources = [];
-        foreach ($resourceIds as $resourceId) {
-            $resources[] = $this->api()->read('users', $resourceId)->getContent();
-        }
-
         $form = $this->getForm(UserBatchUpdateForm::class);
         $form->setAttribute('id', 'batch-edit-user');
         if ($this->params()->fromPost('batch_update')) {
@@ -457,6 +446,11 @@ class UserController extends AbstractActionController
             } else {
                 $this->messenger()->addFormErrors($form);
             }
+        }
+
+        $resources = [];
+        foreach ($resourceIds as $resourceId) {
+            $resources[] = $this->api()->read('users', $resourceId)->getContent();
         }
 
         $view = new ViewModel;
