@@ -768,7 +768,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
-                echo 'site';
                 //TODO get the team_id's associated with the site and then do an orWhere()/orX()
                 $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
                     ->setParameter('team_id', $team_id)
@@ -779,14 +778,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
          ;
                  //
             }elseif ($entityClass == \Omeka\Entity\User::class){
-                echo 'user';
 
                 return;
             }elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
-                echo "vocab";
+                return;
             }
             else{
-                echo "finally";
 
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
