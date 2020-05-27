@@ -37,5 +37,4 @@ $this->htmlElement('body')->appendAttribute('class', 'users show');
         <?php echo $escape($user->isActive() ? $translate('yes') : $translate('no')); ?>
     </div>
 </div>
-<?php $this->trigger('view.show.after');
-?>
+<?php $this->trigger('view.show.after'); ?>

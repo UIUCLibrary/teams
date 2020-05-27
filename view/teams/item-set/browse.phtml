@@ -5,7 +5,7 @@ $this->htmlElement('body')->appendAttribute('class', 'item-sets browse');
 $sortHeadings = [
     [
         'label' => $translate('Title'),
-        'value' => 'dcterms:title'
+        'value' => 'title'
     ],
     [
         'label' => $translate('Identifier'),
@@ -44,7 +44,6 @@ $sortHeadings = [
 </div>
 
 <?php $this->trigger('view.browse.before'); ?>
-
 <?php if($itemSets): ?>
 <form method="post" id="batch-form" class="disable-unsaved-warning">
     <?php if ($this->userIsAllowed('Omeka\Api\Adapter\ItemSetAdapter', 'batch_update')): ?>
@@ -158,7 +157,7 @@ $sortHeadings = [
             <h3><?php echo $translate('Delete item sets'); ?></h3>
             <p><?php echo $translate('Are you sure you would like to delete the selected item sets?'); ?></p>
             <p class="error"><?php echo sprintf(
-                $translate('%s: this action will permanently delete %s item sets and cannot be undone.'),
+                $translate('%1$s: this action will permanently delete %2$s item sets and cannot be undone.'),
                 sprintf('<strong>%s</strong>', $translate('Warning')),
                 '<strong><span id="delete-selected-count"></span></strong>'
             ); ?></p>
@@ -176,7 +175,7 @@ $sortHeadings = [
             <h3><?php echo $translate('Delete item sets'); ?></h3>
             <p><?php echo $translate('Are you sure you would like to delete all item sets on all pages of this result?'); ?></p>
             <p class="error"><?php echo sprintf(
-                $translate('%s: this action will permanently delete %s item sets and cannot be undone.'),
+                $translate('%1$s: this action will permanently delete %2$s item sets and cannot be undone.'),
                 sprintf('<strong>%s</strong>', $translate('Warning')),
                 sprintf('<strong>%s</strong>', number_format($this->pagination()->getPaginator()->getTotalCount()))
             ); ?></p>

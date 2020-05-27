@@ -1,96 +1,46 @@
 <?php
-$form->prepare();
+$translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
+$form->prepare();
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 'Omeka'));
 ?>
-
-
 
 <?php echo $this->form()->openTag($form); ?>
 
 <div id="page-actions">
     <?php if (isset($resourceTemplate)): ?>
-    <a href="#" class="delete button sidebar-content" data-sidebar-selector="#delete"><?php echo $this->translate('Delete'); ?></a>
+    <a href="#" class="delete button sidebar-content" data-sidebar-selector="#delete"><?php echo $translate('Delete'); ?></a>
     <?php endif; ?>
     <?php echo $this->cancelButton(); ?>
     <button><?php echo $escape($submitLabel); ?></button>
 </div>
-<div>
 <?php $this->trigger("view.$action.form.before", ['form' => $form]); ?>
-
 <?php echo $this->formCollection($form, false); ?>
-<div class="field">
-    <div class="field-meta">
-        <label for="team">Team</label>
-    </div>
-<?if ($this->action == 'add'){
-    ?>    <div class="inputs">
-        <select name="team[]" class="chosen-select" data-placeholder="Add to team" multiple="multiple">
-            <? foreach ($this->user_teams as $id => $team):?>
-
-                <option value="<? echo $id;?>" <?if ($id == $this->default_team->getTeam()->getId()){?>selected<? $team = $team . ' (default)';}?>><? echo $team?></option>
-            <?endforeach;?>
-            <?
-            foreach (array_diff(array_keys($this->rt_teams), array_keys($this->user_teams)) as $id):?>
-                <option value="<? echo $id ?>" selected disabled><? echo $this->rt_teams[$id] ?></option>
-            <?
-            endforeach;
-
-            ?>
-        </select>
-
-    </div>
-    <?
-}else { ?>
-    <div class="inputs">
-        <select name="team[]" class="chosen-select" data-placeholder="Add to team" multiple="multiple">
-            <? foreach ($this->user_teams as $id => $team):?>
-
-                <option value="<? echo $id;?>" <?if (in_array($id, array_keys($this->rt_teams))){?>selected<?}?>><? echo $team?></option>
-            <?endforeach;?>
-            <?
-            foreach (array_diff(array_keys($this->rt_teams), array_keys($this->user_teams)) as $id):?>
-                                <option value="<? echo $id ?>" selected disabled><? echo $this->rt_teams[$id] ?></option>
-            <?
-            endforeach;
-
-            ?>
-        </select>
-
-    </div>
-    <?}?>
-
-
-</div>
 
 <ul id="properties" data-add-new-property-row-url="<?php echo $escape($this->url(null, ['action' => 'add-new-property-row'], true)); ?>">
-
     <?php foreach ($propertyRows as $propertyRow): ?>
     <?php echo $this->partial(
-        'teams/resource-template/show-property-row',
+        'omeka/admin/resource-template/show-property-row',
         ['propertyRow' => $propertyRow]
     ) ?>
     <?php endforeach; ?>
-
 </ul>
 <?php $this->trigger("view.$action.form.after", ['form' => $form]); ?>
+<?php echo $this->form()->closeTag(); ?>
 
-<button id="property-selector-button" class="mobile-only"><?php echo $this->translate('Add property'); ?></button>
+<button id="property-selector-button" class="mobile-only"><?php echo $translate('Add property'); ?></button>
 
 
 <?php echo $this->propertySelector(); ?>
 <?php if (isset($resourceTemplate)): ?>
     <?php echo $this->deleteConfirm($resourceTemplate, 'resource template'); ?>
 <?php endif; ?>
-</div>
-
-<?php echo $this->form()->closeTag(); ?>
 
 <div id="details" class="sidebar">
     <?php echo $this->hyperlink('', '#', [
         'class' => 'sidebar-close o-icon-close',
-        'title' => $this->translate('Close'),
+        'title' => $translate('Close'),
     ]); ?>
     <div class="sidebar-content"></div>
 </div>
@@ -99,43 +49,55 @@ $this->headScript()->appendFile($this->assetUrl('js/resource-template-form.js', 
     <div class="confirm-main">
         <?php echo $this->hyperlink('', '#', [
             'class' => 'sidebar-close o-icon-close',
-            'title' => $this->translate('Close'),
+            'title' => $translate('Close'),
         ]); ?>
         <div class="field">
-            <h3><?php echo $escape($this->translate('Label')); ?></h3>
-            <h4><?php echo $this->translate('Original'); ?></h4>
+            <h3><?php echo $escape($translate('Label')); ?></h3>
+            <h4><?php echo $translate('Original'); ?></h4>
             <span id="original-label"></span>
-            <label for="alternate-label"><?php echo $this->translate('Alternate'); ?></label>
+            <label for="alternate-label"><?php echo $translate('Alternate'); ?></label>
             <input id="alternate-label" type="text">
         </div>
         <div class="field">
-            <h3><?php echo $escape($this->translate('Comment')); ?></h3>
-            <h4><?php echo $this->translate('Original'); ?></h4>
+            <h3><?php echo $escape($translate('Comment')); ?></h3>
+            <h4><?php echo $translate('Original'); ?></h4>
             <span id="original-comment"></span>
-            <label for="alternate-comment"><?php echo $this->translate('Alternate'); ?></label>
+            <label for="alternate-comment"><?php echo $translate('Alternate'); ?></label>
             <textarea id="alternate-comment"></textarea>
         </div>
         <div class="field">
-            <h3><?php echo $this->translate('Other options'); ?></h3>
+            <h3><?php echo $translate('Other options'); ?></h3>
+            <div class="option">
+                <label for="is-title-property">
+                    <?php echo $translate('Use for resource title'); ?>
+                    <input id="is-title-property" type="checkbox">
+                </label>
+            </div>
+            <div class="option">
+                <label for="is-description-property">
+                    <?php echo $translate('Use for resource description'); ?>
+                    <input id="is-description-property" type="checkbox">
+                </label>
+            </div>
             <div class="option">
                 <label for="is-required">
-                    <?php echo $this->translate('Required'); ?>
+                    <?php echo $translate('Required'); ?>
                     <input id="is-required" type="checkbox">
                 </label>
             </div>
             <div class="option">
                 <label for="is-private">
-                    <?php echo $this->translate('Private'); ?>
+                    <?php echo $translate('Private'); ?>
                     <input id="is-private" type="checkbox">
                 </label>
             </div>
             <div class="option">
-                <label for="data-type"><?php echo $this->translate('Data type'); ?></label>
+                <label for="data-type"><?php echo $translate('Data type'); ?></label>
                 <?php echo $this->dataType()->getSelect('data_type', null, ['id' => 'data-type', 'class' => 'chosen-select']); ?>
             </div>
         </div>
     </div>
     <div class="confirm-panel">
-        <button id="set-changes"><?php echo $this->translate('Set changes'); ?></button>
+        <button id="set-changes"><?php echo $translate('Set changes'); ?></button>
     </div>
 </div>
