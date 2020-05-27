@@ -17,7 +17,7 @@ window.addEventListener("load", function () {
 
 
 //generate role field
-function makeRoleElement(team_name, team_id){
+function makeRoleElement(team_name, team_id, role = 1){
 
 
     let fieldDiv = document.createElement("div");
@@ -49,6 +49,9 @@ function makeRoleElement(team_name, team_id){
         let option = document.createElement('option');
         option.value = role_id;
         option.innerText = role_name;
+        if (role_id == role){
+            option.selected = true;
+        }
         select.appendChild(option);
     }
     inputsDiv.appendChild(select);
@@ -63,12 +66,13 @@ function makeRoleElement(team_name, team_id){
 }
 
 //populate role for each of the user's pre-existing teams (for edit views)
-window.addEventListener("load",function () {
-    let user_teams = $("select#team").children("option:selected");
-
-    for (let i = 0; i < user_teams.length; i++){
-        let team_name = user_teams[i].innerText;
-        let team_id = user_teams[i].value;
-        makeRoleElement(team_name, team_id);
-    }
-});
+//MOVED: in order to populate with the correct role, moved this to the partial: teams/partial/user/edit.phtml
+// window.addEventListener("load",function () {
+//     let user_teams = $("select#team").children("option:selected");
+//
+//     for (let i = 0; i < user_teams.length; i++){
+//         let team_name = user_teams[i].innerText;
+//         let team_id = user_teams[i].value;
+//         makeRoleElement(team_name, team_id, 3);
+//     }
+// });

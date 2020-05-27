@@ -127,7 +127,6 @@ class UserController extends AbstractActionController
 
 
 
-
                 if ($response) {
                     $user = $response->getContent()->getEntity();
                     $this->mailer()->sendUserActivation($user);
@@ -218,28 +217,24 @@ class UserController extends AbstractActionController
                 endforeach;
                 $em->flush();
 
-                //TODO the way it is now all roles get reset and no team is active when a new team is added through the user form
-                $teams_repo = $em->getRepository('Teams\Entity\Team');
-                $default_role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>1]);
-                foreach ($values['user-information']['o-module-teams:Team'] as $team_id):
-                   $team = $teams_repo->findOneBy(['id'=>$team_id]);
-                   $tu = new TeamUser($team, $user,$default_role);
-                   $em->persist($tu);
-               endforeach;
-               $em->flush();
 
 
+                $teams =  $this->entityManager->getRepository('Teams\Entity\Team');
+                foreach ($postData['user-information']['o-module-teams:Team'] as $team_id):
+                    $team_id = (int) $team_id;
+                    $team = $teams->findOneBy(['id'=> $team_id]);
+
+                    //get it this way because the roles are added dynamically as js and not part of pre-baked form
+                    $role_id = $this->params()->fromPost()['user-information']['o-module-teams:TeamRole'][$team_id];
+                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                        ->findOneBy(['id'=>$role_id]);
+                    $team_user = new TeamUser($team,$user,$role);
+                    $this->entityManager->persist($team_user);
+
+                endforeach;
+                $this->entityManager->flush();
 
 
-                //if there is a team-user entry for user+team in db  but not in form, remove it from db
-//                foreach (array_diff($prior_teams, $values['user-information']['o-module-group:team']) as $remove_team):
-//                    $this->api()->delete('team-user', ['user_id'=>$id, 'team_id'=> $remove_team]);
-//                endforeach;
-
-                //if there is a team id in the form but not a a team-user entry for the user+team, add it
-//                foreach (array_diff($prior_teams, $values['user-information']['o-module-group:team']) as $remove_team):
-//                    $this->api()->create('team-user', ['o:user'=>$id, 'o:team'=> $remove_team, 'o:role'=>1]);
-//                endforeach;
 
 
                 // Stop early if the API update fails

@@ -827,7 +827,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         foreach ($user_teams as $user_team):
             $team_ids[] = $user_team->getTeam()->getId();
         endforeach;
-        echo $view->partial('teams/partial/user/edit', ['team_ids' => $team_ids]);
+        echo $view->partial('teams/partial/user/edit', ['user_teams' => $user_teams, 'team_ids' => $team_ids]);
     }
 
     public function userFormEdit(Event $event)
