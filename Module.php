@@ -774,7 +774,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     ->setParameter('team_id', $team_id)
                 ;
             }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
-                echo "rt";
                  $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;

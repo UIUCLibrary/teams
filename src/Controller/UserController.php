@@ -307,8 +307,8 @@ class UserController extends AbstractActionController
                     $this->messenger()->addSuccess($message);
                 }
 
-                //TODO: this is leading to wsod
-//                return $this->redirect()->refresh();
+                //TODO: DONE this is leading to wsod
+                return $this->redirect()->refresh();
             } else {
                 $this->messenger()->addFormErrors($form);
             }
