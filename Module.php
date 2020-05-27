@@ -826,6 +826,25 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $view->partial('teams/partial/user/edit', ['user_teams' => $user_teams, 'team_ids' => $team_ids]);
     }
 
+    public function resourceTemplateTeamsEdit(Event $event)
+    {
+        $view = $event->getTarget();
+        $rt_id = $view->vars()->resourceTemplate->id();
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $rt_teams = $entityManager->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template'=>$rt_id]);
+
+        $team_ids = array();
+        foreach ($rt_teams as $rt_team):
+            $team_ids[] = $rt_team->getTeam()->getId();
+        endforeach;
+        echo $view->partial('teams/partial/resource-template/edit', ['rt_teams' => $rt_teams, 'team_ids' => $team_ids]);
+
+
+
+
+
+    }
+
     public function userFormEdit(Event $event)
     {
         $view = $event->getTarget();
@@ -975,12 +994,25 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'view.edit.section_nav',
             [$this, 'addTab']
         );
-            //ResourceTemplate//
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\ResourceTemplate',
-//            'view.edit.form.after',
-//            [$this, 'displayTeamForm']
-//        );
+//            ResourceTemplate//
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.add.form.before',
+            [$this, 'resourceTemplateForm']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.edit.form.before',
+            [$this, 'resourceTemplateForm']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.edit.form.before',
+            [$this, 'resourceTemplateTeamsEdit']
+        );
+
+
 
 
 
@@ -1206,7 +1238,26 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    public function resourceTemplateForm(Event $event)
+    {
+        $form = $event->getTarget()->vars()->form;
+        $form->add([
 
+            'name' => 'o-module-teams:Team',
+            'type' => AllTeamSelect::class,
+            'options' => [
+                'label' => 'Teams', // @translate
+                'chosen' => true,
+            ],
+            'attributes' => [
+                'multiple' => true,
+                'id' => 'team'
+            ],
+
+        ]);
+
+
+    }
     public function addUserFormElement(Event $event)
     {
         $form = $event->getTarget();

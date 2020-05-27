@@ -97,7 +97,7 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                     endforeach;
                     $em->flush();
                     $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $this->params('id')]);
-                    foreach ($data['team'] as $team_id):
+                    foreach ($data['o-module-teams:Team'] as $team_id):
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                         $trt = new TeamResourceTemplate($team, $resource_template);
                         $em->persist($trt);
@@ -117,7 +117,7 @@ class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplat
                     $rt_id = $new_rt->getContent()->id();
 
                     $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id' => $rt_id ]);
-                    foreach ($data['team'] as $team_id):
+                    foreach ($data['o-module-teams:Team'] as $team_id):
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                         $trt = new TeamResourceTemplate($team, $resource_template);
                         $em->persist($trt);
