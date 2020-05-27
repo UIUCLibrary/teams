@@ -207,6 +207,7 @@ class UserController extends AbstractActionController
                 $passwordValues = $values['change-password'];
                 $response = $this->api($form)->update('users', $id, $values['user-information']);
 
+                //remove the user's teams
                 $em = $this->entityManager;
                 $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $id]);
 
@@ -217,8 +218,7 @@ class UserController extends AbstractActionController
                 endforeach;
                 $em->flush();
 
-
-
+                //add the teams from the form
                 $teams =  $this->entityManager->getRepository('Teams\Entity\Team');
                 foreach ($postData['user-information']['o-module-teams:Team'] as $team_id):
                     $team_id = (int) $team_id;
@@ -306,7 +306,9 @@ class UserController extends AbstractActionController
                 foreach ($successMessages as $message) {
                     $this->messenger()->addSuccess($message);
                 }
-                return $this->redirect()->refresh();
+
+                //TODO: this is leading to wsod
+//                return $this->redirect()->refresh();
             } else {
                 $this->messenger()->addFormErrors($form);
             }
