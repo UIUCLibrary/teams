@@ -108,29 +108,44 @@ $rowTemplate = '
         </tr>
         </tbody>
     </table>
-    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
+    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No items are assigned to this site.'); ?></p>
     <!--    --><?php //echo $this->itemSetSelector(); ?>
 </div>
 
 <div id="item-sets-section" class="section">
     <? echo $section_nav_template ?>
-
-    <table id="site-item-sets" class="tablesaw tablesaw-stack" style="display: none;"
-        data-tablesaw-mode="stack"
-        data-item-sets="<?php echo $this->escapeHtml(json_encode($itemSets)); ?>"
-        data-row-template="<?php echo $this->escapeHtml($rowTemplate); ?>">
+    <table id="site-items" class="tablesaw tablesaw-stack">
         <thead>
-            <tr>
-                <th></th>
-                <th><?php echo $this->translate('Title'); ?></th>
-                <th><?php echo $this->translate('Owner'); ?></th>
-                <th></th>
-            </tr>
+        <tr>
+            <th><?php echo $this->translate('Title'); ?></th>
+            <th><?php echo $this->translate('Owner'); ?></th>
+        </tr>
         </thead>
-        <tbody id="site-item-set-rows"></tbody>
+        <tbody id="site-media-rows">
+        <? foreach ($this->site_item_sets as $team):
+            $team = $this->api()->read('item_sets', ['id' => $team])->getContent();
+            ?><tr>
+            <td>
+                <? echo $team->displayTitle();?>
+            </td>
+            <td>
+                <? echo $team->owner()->name();?>
+            </td>
+
+
+            </tr><?
+
+        endforeach;
+        ?>
+        <tr>
+            <td>
+                test
+            </td>
+        </tr>
+        </tbody>
     </table>
-    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No item sets are assigned to this site.'); ?></p>
-<!--    --><?php //echo $this->itemSetSelector(); ?>
+    <p id="no-site-item-sets" style="display: none;"><?php echo $this->translate('No items are assigned to this site.'); ?></p>
+    <!--    --><?php //echo $this->itemSetSelector(); ?>
 </div>
 
 <div id="media-section" class="section">
