@@ -696,6 +696,40 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
+
+
+    public function currentTeam()
+    {
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $identity = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+        //TODO add handeling for user not logged-in !!!this current solution would not work
+        if (!$identity){
+            $user_id = null;
+            return null;
+
+        }else{
+
+            $user_id = $identity->getId();
+            $user_role = $entityManager->getRepository('Omeka\Entity\User')->findOneby(['id'=>$user_id])->getRole();
+
+        }
+
+        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
+        if (!$team_user){
+            $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
+        }
+        if ($team_user){
+            $current_team = $team_user->getTeam();
+            $team_id = $current_team->getId();
+        }else{
+            $current_team = 'None';
+            $team_id = 0;
+        }
+        return $current_team;
+    }
+
+
     public function filterByTeam(Event $event){
 
         //TODO Bug(DONE): on the advanced search class, template and search by value fail with error
@@ -838,7 +872,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $team_ids[] = $rt_team->getTeam()->getId();
         endforeach;
         echo $view->partial('teams/partial/resource-template/edit', ['rt_teams' => $rt_teams, 'team_ids' => $team_ids]);
+    }
 
+    public function resourceTemplateTeamsAdd(Event $event)
+    {
+
+
+        $view =  $event->getTarget();
+
+        $team_id = $this->currentTeam()->getId();
+
+        echo $view->partial('teams/partial/resource-template/add', ['team_id' => $team_id]);
 
 
 
@@ -1011,6 +1055,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'view.edit.form.before',
             [$this, 'resourceTemplateTeamsEdit']
         );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.add.form.after',
+            [$this, 'resourceTemplateTeamsAdd']
+        );
+
+
 
 
 

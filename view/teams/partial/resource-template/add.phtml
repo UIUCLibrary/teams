@@ -1,0 +1,14 @@
+
+<script>
+    let current_teams = <?php echo $this->team_id?>;
+
+
+    let select = document.getElementById('team');
+
+    for (let i=0; i < select.options.length; i++){
+        if (current_teams == select.options[i].value){
+            select.options[i].setAttribute('selected', true);
+        }
+    }
+</script>
+
