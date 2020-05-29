@@ -917,6 +917,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $view->partial('teams/partial/return_url', 'Teams');
     }
 
+    public function siteFormAdd(Event $event)
+    {
+        $team_id = $this->currentTeam()->getId();
+        $view = $event->getTarget();
+        echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids'=>$team_id]);
+    }
+
+
+
     public function siteEdit(Event $event)
     {
         $view = $event->getTarget();
@@ -972,9 +981,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
 
         $sharedEventManager->attach(
-            'Omeka\Controller\SiteAdmin\IndexController',
-            'view.layout',
-            [$this, 'teamSelectorNav']
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.add.before',
+            [$this, 'siteFormAdd']
         );
 
 //        $sharedEventManager->attach(
