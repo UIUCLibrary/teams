@@ -729,6 +729,28 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return $current_team;
     }
 
+    public function deleteInsulation(Event $event)
+    {
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        $entity = $event->getParam('entity');
+
+        $identity = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $team_id = $entityManager
+            ->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$identity])
+            ->getTeam()->getId();
+        $resource_id =  $entity->getId();
+
+
+        $entity = $entityManager
+            ->getRepository('Teams\Entity\TeamResource')
+            ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id]);
+        $event->setParam('entity', $entity);
+//        $entityManager->remove($entity);
+//        return $entity;
+    }
+
 
     public function filterByTeam(Event $event){
 
@@ -922,6 +944,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         $services = $this->getServiceLocator();
 
+
+
         $sharedEventManager->attach(
             '*',
             'view.layout',
@@ -977,7 +1001,20 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 [$this, 'filterByTeam']
             );
 
+
+
         endforeach;
+
+
+
+
+//             Add the group filter to the search.
+            $sharedEventManager->attach(
+                ItemAdapter::class,
+//                '*',
+                'api.find.post',
+                [$this, 'deleteInsulation']
+            );
 
 
 
