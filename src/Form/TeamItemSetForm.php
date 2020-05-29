@@ -18,4 +18,5 @@ class TeamItemSetForm extends Form
 //            'name' => 'user',
 //            'type' => TeamUserFieldset::class,
 //        ]);
-    }}
+    }
+}

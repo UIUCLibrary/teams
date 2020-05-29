@@ -18,7 +18,6 @@
 
         });
     })
-
 </script>
 <?php
 $translate = $this->plugin('translate');
@@ -126,7 +125,7 @@ echo $this->form()->openTag($form);?>
                             <?php echo $translate('Name'); ?>
                         </th>
                         <th><?php echo $translate('Role'); ?></th>
-                        <th><?php echo $translate('Created'); ?></th>
+                        <th><?php echo $translate('Current?'); ?></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -135,6 +134,7 @@ echo $this->form()->openTag($form);?>
                         $user_id = $team_user->getUser()->getId();
                         $role_name = $team_user->getRole()->getName();
                         $role_id = $team_user->getRole()->getid();
+                        $is_active = $team_user->getCurrent()
 
                         ?>
 
@@ -157,7 +157,7 @@ echo $this->form()->openTag($form);?>
                             <td>
                                 <fieldset name="user-roles" id="user-roles">
 <!--                                    <a class="o-icon-edit"></a>-->
-                                    <select  id="UserRole[<?php echo $user_id?>]" name="<?php echo sprintf('User[%s]', $user_id)?>">
+                                    <select  id="UserRole[<?php echo $user_id?>]" name="<?php echo sprintf('UserRole[%s]', $user_id)?>">
                                         <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
                                         <?php foreach ($this->roles as $role):
                                             if ($role->getId() !== $team_user->getRole()->getId())
@@ -168,11 +168,15 @@ echo $this->form()->openTag($form);?>
 
 
                                     </select>
+                                    <input type="hidden" id="UserCurrent[<?php echo $user_id?>]"
+                                           name="<?php echo sprintf('UserCurrent[%s]', $user_id)?>"
+                                           value="<? echo $is_active?>"
+                                    >
                                 </fieldset>
 
 
                             </td>
-                            <td><?php echo 'need to make this or put some info that makes more sense here'; ?></td>
+                            <td><?php echo $is_active ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -190,29 +194,6 @@ echo $this->form()->openTag($form);?>
 
 
     <div class="selection-criteria">
-        <p>
-            All items belonging to these itemsets or owners will be added to the group
-        </p>
-        <div class="select-by-item-set-content">
-
-            <?
-
-            $itemsetForm = $this->itemsetForm;
-            $itemsetForm->setAttribute('id', 'itemset_collection');
-
-            foreach ($itemsetForm->getFieldsets() as $fs):
-                $fs->setName('addCollections');
-            endforeach;
-
-            $itemsetForm->prepare();
-
-            echo $this->form()->openTag($itemsetForm);
-
-            echo $this->formCollection($itemsetForm);
-            echo $this->form()->closeTag($itemsetForm)
-            ?>
-
-        </div>
 
         <div class="select-by-item-set-content">
 
@@ -222,11 +203,7 @@ echo $this->form()->openTag($form);?>
             <?
 
             $rm_itemsetForm = $this->itemsetForm;
-            $rm_itemsetForm->setAttribute('id', 'rm_itemset_collection');
 
-            foreach ($rm_itemsetForm->getFieldsets() as $fs):
-                $fs->setName('rmCollections');
-            endforeach;
 
             $rm_itemsetForm->prepare();
 
@@ -237,6 +214,10 @@ echo $this->form()->openTag($form);?>
             ?>
 
         </div>
+
+
+
+
 
     </div>
 

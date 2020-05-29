@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManager;
 use Omeka\Api\Exception\InvalidArgumentException;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
 use Teams\Form\TeamUserForm;
@@ -70,11 +71,109 @@ Class UpdateController extends AbstractActionController
         $em->flush();
     }
 
+    public function processItemSets(int $item_set_id){
+        if ((int)$item_set_id>0){
+            $resource_array = array();
+            $item_set_id = (int)$item_set_id;
+
+            //TODO: why isn't this a list?
+            //add all items belonging to itemset
+            foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
+                $resource_array[$item->id()] = true;
+
+                //add all media belonging to to the item
+                foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                    $resource_array[$media->id()] = true;
+                endforeach;
+            endforeach;
+        }
+        //add itemset itself
+        $resource_array[$item_set_id] = true;
+        return $resource_array;
+    }
+    public function processResources($request, $team, $existing_resources, bool $delete = false){
+        $resource_array = array();
+
+        if ($delete == false){
+            $collection = 'addCollections';
+        } else{
+            $collection = 'rmCollections';
+        }
+
+
+            //get ids of itemsets and their descendents
+            if (isset($request->getPost($collection)['o:itemset'])){
+                foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
+                    array_merge($resource_array, $this->processItemSets($item_set_id));
+                endforeach;
+            }
+
+            //get ids of things the user owns
+            if (isset($request->getPost($collection)['o:user'])){
+                foreach ($request->getPost($collection)['o:user'] as $user_id):
+                    if ((int)$user_id>0){
+                        $user_id = (int)$user_id;
+                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
+
+                            $resource_array[$item->id()] = true;
+
+                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+                            endforeach;
+
+                        endforeach;
+
+                        //also get the users itemsets
+                        foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $itemSet):
+                            array_merge($resource_array, $this->processItemSets($itemSet->id()));
+                        endforeach;
+
+                    }
+                endforeach;
+            }
+
+            if ($delete == false){
+                //remove elements that are already part of the team to prevent integrity constraint violation
+                foreach ($existing_resources as $resource):
+                    $rid = $resource->getResource()->getId();
+                    if (array_key_exists($rid, $resource_array)){
+                        unset($resource_array[$rid]);
+                    }
+                endforeach;
+                //add the resources to the team
+                foreach (array_keys($resource_array) as $resource_id):
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                        ->findOneBy(['id'=>$resource_id]);
+                    $team_resource = new TeamResource($team, $resource);
+                    $this->entityManager->persist($team_resource);
+                endforeach;
+                $this->entityManager->flush();
+            }else{
+                //for deletes, remove the id from the array if it isn't part of the team already to prevent removing
+                //items that dont exist
+                foreach ($existing_resources as $resource):
+                    $rid = $resource->getResource()->getId();
+                    if (!array_key_exists($rid, $resource_array)){
+                        unset($resource_array[$rid]);
+                    }
+                endforeach;
+
+                foreach (array_keys($resource_array) as $resource_id):
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                        ->findOneBy(['id'=>$resource_id]);
+                    $team_resource = new TeamResource($team, $resource);
+                    $this->entityManager->remove($team_resource);
+                endforeach;
+                $this->entityManager->flush();
+            }
+
+
+    }
+
     public function teamUpdateAction()
     {
 
-        $itemsetForm = $this->getForm(TeamItemSetForm::class);
-        $userForm = $this->getForm(TeamUserForm::class);
+        $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
         $form = $this->getForm(TeamUpdateForm::class);
         //should this really be necessary?
@@ -140,15 +239,25 @@ Class UpdateController extends AbstractActionController
                 'team_u_array'=>$team_u_array,
                 'available_u_array'=>$available_u_array,
                 'ident' => $userId,
-                'userForm' => $userForm,
                 'itemsetForm' => $itemsetForm,
             ]);
         }
 
+
+        $em = $this->entityManager;
+        $qb = $em->createQueryBuilder();
+        $existing_resources = $qb->select('tr')
+            ->from('Teams\Entity\TeamResource', 'tr')
+            ->where('tr.team = :team_id')
+            ->setParameter('team_id', $id)
+            ->getQuery()
+            ->getResult();
+
         if ($request->isPost()){
             $post_data = $request->getPost();
 
-            //if the post is to add a member
+            //if they clicked the add user button, just add a member and refresh
+            //TODO: return the form as filled out with whatever changes they made or use Ajax
             if ($post_data['addUser']){
                 $team_id = $id;
                 $user_id = $post_data['add-member'];
@@ -161,7 +270,7 @@ Class UpdateController extends AbstractActionController
                 return $this->redirect()->refresh();
             }
 
-            $em = $this->entityManager;
+            //remove all team users and add the ones that are active in the form
             $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
             foreach ($team_users as $tu):
                 $em->remove($tu);
@@ -170,14 +279,16 @@ Class UpdateController extends AbstractActionController
 
             $team_id = $id;
             $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-            foreach ($post_data['User'] as $user_id => $role_id):
+            foreach ($post_data['UserRole'] as $user_id => $role_id):
                 $user_id = (int) $user_id;
                 $role_id = (int) $role_id;
+                $current = (int) $post_data['UserCurrent'][$user_id];
 
                 $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
                 $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
                 $new_tu = new TeamUser($team, $user, $role);
+                $new_tu->setCurrent($current);
 
                 $em->persist($new_tu);
 
@@ -185,83 +296,9 @@ Class UpdateController extends AbstractActionController
             $em->flush();
 
 
-            $resource_array = array();
-            if (isset($request->getPost('addCollections')['o:itemset'])){
-                foreach ($request->getPost('addCollections')['o:itemset'] as $item_set_id):
-                    if ((int)$item_set_id>0){
-                        $item_set_id = (int)$item_set_id;
-
-                        //TODO: why isn't this a list?
-                        //add all items belonging to itemset
-                        foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                            $resource_array[$item->id()] = true;
-
-                            //add all media belonging to to the item
-                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
-                            endforeach;
-                        endforeach;
-                    }
-                    //add itemset itself
-                    $resource_array[$item_set_id] = true;
-                endforeach;
-            }
-            if (isset($request->getPost('addCollections')['o:user'])){
-                foreach ($request->getPost('addCollections')['o:user'] as $user_id):
-                    if ((int)$user_id>0){
-                        $user_id = (int)$user_id;
-                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
-
-                            $resource_array[$item->id()] = true;
-
-                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
-
-//                            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                                ->findOneBy(['id'=>$media->id()]);
-//                            $team_resource = new TeamResource($team, $resource);
-//                            $this->entityManager->persist($team_resource);
-
-                            endforeach;
-                        endforeach;
-                    }
-                endforeach;
-            }
-
-//            $existing_resources = $em->createQuery("
-//SELECT (tr.resource) from Teams\Entity\TeamResource tr
-//WHERE tr.team = :team_id
-//"
-//            )
-//            ->setParameter('team_id', $id)
-//            ->getArrayResult();
-            //no option for insert ignore so get rid of any resource that are already part of the teamgit
-            $qb = $em->createQueryBuilder();
-            $existing_resources = $qb->select('tr')
-                ->from('Teams\Entity\TeamResource', 'tr')
-                ->where('tr.team = :team_id')
-                ->setParameter('team_id', $id)
-                ->getQuery()
-                ->getResult();
-
-            foreach ($existing_resources as $resource):
-                $rid = $resource->getResource()->getId();
-                if (array_key_exists($rid, $resource_array)){
-                    unset($resource_array[$rid]);
-
-                }
-            endforeach;
-
-            foreach (array_keys($resource_array) as $resource_id):
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                    ->findOneBy(['id'=>$resource_id]);
-                $team_resource = new TeamResource($team, $resource);
-                $this->entityManager->persist($team_resource);
-            endforeach;
-            $this->entityManager->flush();
-
-
-
+            //first delete then add resources to team
+            $this->processResources($request, $team, $existing_resources, true);
+            $this->processResources($request, $team, $existing_resources, false);
 
             $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
             $this->messenger()->addSuccess($successMessage);
