@@ -1,3 +1,25 @@
+<script>
+    window.addEventListener("load", function () {
+        $(".remove-user").click(function(){
+            // $(this).css('color','red');
+            // $(this).next().css('background', 'red');
+            // $(this).parent().parent().parent().parent().parent().toggleClass('delete');
+            // $(this).closest("td").toggleClass('delete');
+            $(this).closest("tr").toggleClass('delete');
+            if ($(this).closest("tr").hasClass('delete')){
+                $(this).closest("tr").find("select").attr('disabled', true)
+            } else {$(this).closest("tr").find("select").removeAttr('disabled')}
+
+
+
+            $(this).toggleClass('o-icon-delete');
+            $(this).toggleClass('fa');
+            $(this).toggleClass('fa-undo');
+
+        });
+    })
+
+</script>
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
@@ -47,68 +69,59 @@ echo $this->form()->openTag($form);?>
             <div class="field-meta">
                 <label for="add-member-choice">Add a User to the Team:</label>
             </div>
-            <div class="input">
-                <input list="add-member-options" id="new-member-choice" name="add-member-choice" />
+
+            <div class="input" id="role">
+                <select class="chosen-select" data-placeholder="Username"
+                        id="new-member-choice" name="add-member" >
+                    <? foreach ($available_u_array as $id => $member):
+                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
+                    endforeach;
+                    ?>
+                </select>
+            </div>
+            <div class="input" id="role">
+                <select class="chosen-select" data-placeholder="Username"
+                        id="new-member-choice" name="member-role" >
+                    <? foreach ($roles as $role):
+                        echo '<option value="' .  $role->getId() .'" id="user' . $role->getId() . '">'.  $role->getName() . '</option>';
+                    endforeach;
+                    ?>
+                </select>
+            </div>
+            <div class="input" id="role">
+                <input class="btn btn-default"  style="margin-left: 20px;" type="submit" name="addUser" value="Add User" />
+
             </div>
 
 
-            <datalist id="add-member-options">
-                <? foreach ($this->available_u_array as $member):
-                    echo '<option value="' .  $member .'"> ';
-                endforeach;
-                ?>
-            </datalist>
-
-
-
-            <div >
-                <label for="add-member-role">Role:</label>
-            </div>
-            <div class="input">
-                <input list="add-member-role" id="new-member-role" name="add-member-role" />
-            </div>
-
-
-            <datalist id="add-member-role">
-                <? foreach ($this->roles as $role):
-                    echo '<option value="' .  $role->getName() .'"> ';
-                endforeach;
-                ?>
-            </datalist>
-            <div style="margin-left: 20px; ">
-                <input class="btn btn-default" type="submit" name="chooseRole" value="Add User" />
-            </div>
         </div>
-        <div class="field">
-            <div class="field-meta">
-                <label for="remove-member-choice">Remove user from the Team:</label>
-            </div>
-            <div class="input">
-                <input list="remove-member-options" id="remove-member-choice" name="remove-member-choice" />
-            </div>
 
 
-            <datalist id="remove-member-options">
-                <? foreach ($this->team_u_array as $member):
-                    echo '<option value="' .  $member .'"> ';
-                endforeach;
-                ?>
-            </datalist>
-            <br>
-            <br>
-            <div style="margin-left: 20px; ">
-                <input class="btn btn-default" type="submit" name="removeUser" value="Remove User " />
 
-            </div>
+
+
+
+
+
+
+
+
+
+
         </div>
+
         <div class="field">
             <div class="field-meta">
                 Current Users:
             </div>
+
             <?php if (count($this->team_u_collection)> 0): ?>
                 <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                     <thead>
                     <tr>
+                        <th>
+
+                        </th>
                         <th>
                             <?php echo $translate('Name'); ?>
                         </th>
@@ -118,20 +131,33 @@ echo $this->form()->openTag($form);?>
                     </thead>
                     <tbody>
                     <?php foreach ($this->team_u_collection as $team_user):
+                        $user_name =  $team_user->getUser()->getName();
+                        $user_id = $team_user->getUser()->getId();
+                        $role_name = $team_user->getRole()->getName();
+                        $role_id = $team_user->getRole()->getid();
 
                         ?>
+
                         <tr>
                             <td>
-<!--                                <a class="o-icon-delete" href="update.phtml"></a>-->
-                                <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' => $team_user->getUser()->getId()]) ?>">
-                                    <?php echo $team_user->getUser()->getName() ?>
+                                <ul class="actions">
+                                    <li>
 
-                                </a>
+                                        <a href="#" class="o-icon-delete remove-user" title="Remove team" aria-label="Remove team"></a>
+                                    </li>
+                                 </ul>
+                            </td>
+
+                            <td>
+
+                                    <?php echo $user_name ?>
+
+
                             </td>
                             <td>
                                 <fieldset name="user-roles" id="user-roles">
 <!--                                    <a class="o-icon-edit"></a>-->
-                                    <select  id="UserRole[<?php echo $team_user->getUser()->getId()?>]" name="<?php echo $team_user->getUser()->getId()?>">
+                                    <select  id="UserRole[<?php echo $user_id?>]" name="<?php echo sprintf('User[%s]', $user_id)?>">
                                         <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
                                         <?php foreach ($this->roles as $role):
                                             if ($role->getId() !== $team_user->getRole()->getId())
@@ -152,7 +178,7 @@ echo $this->form()->openTag($form);?>
                     </tbody>
                 </table>
             <?php else: ?>
-                <div class="no-resources">
+                <div class="-resources">
                     <p><?php echo $translate('No users currently belong to this team.'); ?></p>
                     <!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
                 </div>
@@ -160,7 +186,31 @@ echo $this->form()->openTag($form);?>
         </div>
 
     </div>
+<div id="team-resources" class="section">
+
+
+    <div class="selection-criteria">
+        <p>
+            All items belonging to these itemsets or owners will be added to the group
+        </p>
+        <div class="select-by-item-set-content">
+
+            <?
+            $itemsetForm = $this->itemsetForm;
+            $itemsetForm->setAttribute('id', 'itemset_collection');
+            $itemsetForm->prepare();
+
+            echo $this->form()->openTag($itemsetForm);
+
+            echo $this->formCollection($itemsetForm);
+            echo $this->form()->closeTag($itemsetForm)
+            ?>
+
+        </div>
+    </div>
+
 </div>
+
 <?php
 echo $this->form()->closeTag();
 ?>

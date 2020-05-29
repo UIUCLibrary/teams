@@ -5,7 +5,9 @@ namespace Teams\Controller;
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Exception\InvalidArgumentException;
 use Teams\Entity\TeamUser;
+use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
+use Teams\Form\TeamUserForm;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\Stdlib\ArrayObject;
 use Zend\View\Model\ViewModel;
@@ -28,6 +30,9 @@ Class UpdateController extends AbstractActionController
 
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
+
+
+
         $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
         $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
         $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
@@ -37,6 +42,7 @@ Class UpdateController extends AbstractActionController
         //flushing here because this is a mini-form and we want to see the name pop up
         //more efficient solution would be to have JS handle the popping and batch update
         $this->entityManager->flush();
+        return $team_user;
     }
 
     public function removeTeamUser(int $team, int $user)
@@ -63,34 +69,18 @@ Class UpdateController extends AbstractActionController
         $em->flush();
     }
 
-//    public function team_roster($team)
-//    {
-//        $em = $this->entityManager;
-//        $roster = $em->createQuery('SELECT tu FROM Teams\Entity\TeamUser tu WHERE tu.team = $team');
-//
-//    }
-//
-//    public function not_on_team()
-//    {
-//
-//    }
     public function teamUpdateAction()
     {
 
+        $itemsetForm = $this->getForm(TeamItemSetForm::class);
+        $userForm = $this->getForm(TeamUserForm::class);
         $userId = $this->identity()->getId();
-
         $form = $this->getForm(TeamUpdateForm::class);
 
         //should this really be necessary?
         $id = $this->params()->fromRoute('id');
-        if (! $id){
-            return $this->redirect()->toRoute('admin/teams');
-        }
+        $id = (int) $id;
 
-        //the regex of the routing should only funnel an id that is an int here, but I guess just to make sure?
-        if (! is_int($id)){
-            return $this->redirect()->toRoute('admin/teams');
-        }
 
         //is a team associated with that id
         try {
@@ -137,7 +127,7 @@ Class UpdateController extends AbstractActionController
         $form->bind($fill);
 
         //is it a post request?
-        //TODO (refactor) clean up this, only send what is needed 
+        //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
         if (! $request->isPost()) {
             return new ViewModel(['team'=>$team,
@@ -149,45 +139,62 @@ Class UpdateController extends AbstractActionController
                 'team_u_collection' => $team_u_collection,
                 'team_u_array'=>$team_u_array,
                 'available_u_array'=>$available_u_array,
-                'ident' => $userId]);
+                'ident' => $userId,
+                'userForm' => $userForm,
+                'itemsetForm' => $itemsetForm,
+            ]);
         }
 
-        $post_data = $request->getPost();
+        if ($request->isPost()){
+            $post_data = $request->getPost();
 
+            //if the post is to add a member
+            if ($post_data['addUser']){
+                $team_id = $id;
+                $user_id = $post_data['add-member'];
+                $role_id = $post_data['member-role'];
+                $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-        if ($post_data['add-member-choice']){
-            //becuase the datalist only contains names, not ids, get the id that matches the name
-            //TODO: this is a terrible idea
-            $new_member_choice_id = array_search($post_data['add-member-choice'], $all_u_array);
+                $successMessage = sprintf("Successfully added %s as a %s",$newMember->getUser()->getName(), $newMember->getRole()->getName() );
+                $this->messenger()->addSuccess($successMessage);
 
-            //same with role
-            foreach ($roles_array as $ar):
-                if ($ar['name'] == $post_data['add-member-role']){
-                    $role_id = $ar['id'];
-                }
-                endforeach;
-            $this->addTeamUser($id, $new_member_choice_id, $role_id);
-        }
-//        array_search($post_data['add-member-role'], $roles_array);
-
-        $remove_member_choice_id = null;
-        if ($post_data['remove-member-choice']){
-            //becuase the post_datalist only contains names, not ids, get the id that matches the name
-            $remove_member_choice_id = array_search($post_data['remove-member-choice'], $all_u_array);
-            $this->removeTeamUser($id, $remove_member_choice_id);
-
-        }
-
-//        if ($post_data['submit']){
-            $this->api()->update('team', $id, ['o:name'=>$post_data['o:name'], 'o:description'=>$post_data['o:description']]);
-//        }
-
-        foreach (array_keys($team_u_array) as $user_id):
-            if (! $user_id == $remove_member_choice_id)
-            {
-                $this->updateRole($id, $user_id, $post_data[$user_id]);
+                return $this->redirect()->refresh();
             }
+
+            $em = $this->entityManager;
+            $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
+            foreach ($team_users as $tu):
+                $em->remove($tu);
             endforeach;
+            $em->flush();
+
+            $team_id = $id;
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+            foreach ($post_data['User'] as $user_id => $role_id):
+                $user_id = (int) $user_id;
+                $role_id = (int) $role_id;
+
+                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+
+                $new_tu = new TeamUser($team, $user, $role);
+
+                $em->persist($new_tu);
+
+            endforeach;
+            $em->flush();
+
+            $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
+            $this->messenger()->addSuccess($successMessage);
+
+            return $this->redirect()->refresh();
+
+
+
+        }
+
+
+//        array_search($post_data['add-member-role'], $roles_array);
 
 
 
@@ -203,7 +210,10 @@ Class UpdateController extends AbstractActionController
             'team_u_array'=>$team_u_array,
             'available_u_array'=>$available_u_array,
             'ident' => $userId,
-            'post_data'=>$post_data]);
+            'post_data'=>$post_data,
+            'userForm' => $userForm,
+            'itemsetForm' => $itemsetForm,
+            ]);
 
 
 //            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
@@ -255,18 +265,6 @@ Class UpdateController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
 
-
-
-
-
-
-
-
-
-
-
-
-
         $request = $this->getRequest();
 
         if ($request->isPost()){
@@ -287,11 +285,6 @@ Class UpdateController extends AbstractActionController
 
 
         }
-
-
-
-
-//        }
 
 
 
