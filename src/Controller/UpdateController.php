@@ -4,6 +4,7 @@ namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Exception\InvalidArgumentException;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
@@ -76,7 +77,6 @@ Class UpdateController extends AbstractActionController
         $userForm = $this->getForm(TeamUserForm::class);
         $userId = $this->identity()->getId();
         $form = $this->getForm(TeamUpdateForm::class);
-
         //should this really be necessary?
         $id = $this->params()->fromRoute('id');
         $id = (int) $id;
@@ -183,6 +183,79 @@ Class UpdateController extends AbstractActionController
 
             endforeach;
             $em->flush();
+
+
+            $resource_array = array();
+            if (isset($request->getPost('addCollections')['o:itemset'])){
+                foreach ($request->getPost('addCollections')['o:itemset'] as $item_set_id):
+                    if ((int)$item_set_id>0){
+                        $item_set_id = (int)$item_set_id;
+
+                        //TODO: why isn't this a list?
+                        //add all items belonging to itemset
+                        foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
+                            $resource_array[$item->id()] = true;
+
+                            //add all media belonging to to the item
+                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+                            endforeach;
+                        endforeach;
+                    }
+                    //add itemset itself
+                    $resource_array[$item_set_id] = true;
+                endforeach;
+            }
+            if (isset($request->getPost('addCollections')['o:user'])){
+                foreach ($request->getPost('addCollections')['o:user'] as $user_id):
+                    if ((int)$user_id>0){
+                        $user_id = (int)$user_id;
+                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
+
+                            $resource_array[$item->id()] = true;
+
+                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+
+//                            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+//                                ->findOneBy(['id'=>$media->id()]);
+//                            $team_resource = new TeamResource($team, $resource);
+//                            $this->entityManager->persist($team_resource);
+
+                            endforeach;
+                        endforeach;
+                    }
+                endforeach;
+            }
+//
+//            $existing_resources = $em->createQuery("
+//SELECT (tr.resource) from Teams\Entity\TeamResource tr
+//WHERE tr.team = :team_id
+//"
+//            )
+//            ->setParameter('team_id', $id)
+//            ->getArrayResult();
+////            $existing_resources = $q->select('tr.resource')
+////                ->from('Teams\Entity\TeamResource', 'tr')
+////                ->where('tr.team = :team_id')
+////                ->setParameter('team_id', $id)
+////                ->getQuery()
+////                ->getResult();
+//
+//            foreach ($existing_resources as $resource):
+//                unset($resource_array[$resource]);
+//            endforeach;
+
+            foreach (array_keys($resource_array) as $resource_id):
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id'=>$resource_id]);
+                $team_resource = new TeamResource($team, $resource);
+                $this->entityManager->persist($team_resource);
+            endforeach;
+            $this->entityManager->flush();
+
+
+
 
             $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
             $this->messenger()->addSuccess($successMessage);

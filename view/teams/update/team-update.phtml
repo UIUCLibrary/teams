@@ -196,8 +196,14 @@ echo $this->form()->openTag($form);?>
         <div class="select-by-item-set-content">
 
             <?
+
             $itemsetForm = $this->itemsetForm;
             $itemsetForm->setAttribute('id', 'itemset_collection');
+
+            foreach ($itemsetForm->getFieldsets() as $fs):
+                $fs->setName('addCollections');
+            endforeach;
+
             $itemsetForm->prepare();
 
             echo $this->form()->openTag($itemsetForm);
@@ -207,6 +213,31 @@ echo $this->form()->openTag($form);?>
             ?>
 
         </div>
+
+        <div class="select-by-item-set-content">
+
+            <p>
+                All resources belonging to these itemsets or owners will be removed from the group
+            </p>
+            <?
+
+            $rm_itemsetForm = $this->itemsetForm;
+            $rm_itemsetForm->setAttribute('id', 'rm_itemset_collection');
+
+            foreach ($rm_itemsetForm->getFieldsets() as $fs):
+                $fs->setName('rmCollections');
+            endforeach;
+
+            $rm_itemsetForm->prepare();
+
+            echo $this->form()->openTag($rm_itemsetForm);
+
+            echo $this->formCollection($rm_itemsetForm);
+            echo $this->form()->closeTag($rm_itemsetForm)
+            ?>
+
+        </div>
+
     </div>
 
 </div>
