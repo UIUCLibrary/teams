@@ -1,10 +1,6 @@
 <script>
     window.addEventListener("load", function () {
         $(".remove-user").click(function(){
-            // $(this).css('color','red');
-            // $(this).next().css('background', 'red');
-            // $(this).parent().parent().parent().parent().parent().toggleClass('delete');
-            // $(this).closest("td").toggleClass('delete');
             $(this).closest("tr").toggleClass('delete');
             if ($(this).closest("tr").hasClass('delete')){
                 $(this).closest("tr").find("select").attr('disabled', true)
