@@ -227,7 +227,7 @@ Class UpdateController extends AbstractActionController
                     }
                 endforeach;
             }
-//
+
 //            $existing_resources = $em->createQuery("
 //SELECT (tr.resource) from Teams\Entity\TeamResource tr
 //WHERE tr.team = :team_id
@@ -235,16 +235,22 @@ Class UpdateController extends AbstractActionController
 //            )
 //            ->setParameter('team_id', $id)
 //            ->getArrayResult();
-////            $existing_resources = $q->select('tr.resource')
-////                ->from('Teams\Entity\TeamResource', 'tr')
-////                ->where('tr.team = :team_id')
-////                ->setParameter('team_id', $id)
-////                ->getQuery()
-////                ->getResult();
-//
-//            foreach ($existing_resources as $resource):
-//                unset($resource_array[$resource]);
-//            endforeach;
+            //no option for insert ignore so get rid of any resource that are already part of the teamgit
+            $qb = $em->createQueryBuilder();
+            $existing_resources = $qb->select('tr')
+                ->from('Teams\Entity\TeamResource', 'tr')
+                ->where('tr.team = :team_id')
+                ->setParameter('team_id', $id)
+                ->getQuery()
+                ->getResult();
+
+            foreach ($existing_resources as $resource):
+                $rid = $resource->getResource()->getId();
+                if (array_key_exists($rid, $resource_array)){
+                    unset($resource_array[$rid]);
+
+                }
+            endforeach;
 
             foreach (array_keys($resource_array) as $resource_id):
                 $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
