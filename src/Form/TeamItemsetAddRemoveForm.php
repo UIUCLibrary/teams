@@ -18,7 +18,9 @@ class TeamItemsetAddRemoveForm extends Form
         $this->add([
             'name' => 'rmCollections',
             'type' => TeamItemSetFieldset::class,
+
         ]);
+
 
     }
 

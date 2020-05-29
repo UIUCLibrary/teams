@@ -197,20 +197,30 @@ echo $this->form()->openTag($form);?>
 
         <div class="select-by-item-set-content">
 
-            <p>
-                All resources belonging to these itemsets or owners will be removed from the group
-            </p>
+
             <?
 
-            $rm_itemsetForm = $this->itemsetForm;
+            $itemsetForm = $this->itemsetForm;
+            $fs = $itemsetForm->getFieldsets();
+            $fs['addCollections']->setLabel('Add resources to team');
+            $fs['rmCollections']->setLabel('Remove resources from team');
+            $reEls = $fs['rmCollections']->getElements();
+
+            $reEls['o:itemset']->setPlaceholder('Test');
+
+//            foreach ($fs['rmCollections']->getElements() as $key => $element):
+//                echo $key;
+//            endforeach;
 
 
-            $rm_itemsetForm->prepare();
 
-            echo $this->form()->openTag($rm_itemsetForm);
 
-            echo $this->formCollection($rm_itemsetForm);
-            echo $this->form()->closeTag($rm_itemsetForm)
+            $itemsetForm->prepare();
+
+            echo $this->form()->openTag($itemsetForm);
+
+            echo $this->formCollection($itemsetForm);
+            echo $this->form()->closeTag($itemsetForm)
             ?>
 
         </div>

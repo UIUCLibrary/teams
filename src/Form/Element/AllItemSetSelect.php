@@ -38,4 +38,8 @@ class AllItemSetSelect extends TeamSelect
         return $valueOptions;
     }
 
+    public function setPlaceholder($placeholder)
+    {
+        $this->data_placeholder = $placeholder;
+    }
 }
