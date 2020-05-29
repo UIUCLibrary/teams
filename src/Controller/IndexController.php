@@ -133,25 +133,9 @@ class IndexController extends AbstractActionController
         $view = new ViewModel;
         $id = $this->params()->fromRoute('id');
         $response = $this->api()->read('team', ['id' => $id]);
-        $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$id]);
 
-//        $items_te = $team_entity->getTeamResources()->getValues();
-//        $items_omeka = $this->entityManager->getRepository('Omkea\Entity\Item')->findAll();
-
-
-//        $resource_id = array_column(array_values($items_te),'resource');
-//        $view->setVariable('test', $items_te);
-//        $count = count($resource_id);
-//        $items = array();
         $em = $this->entityManager;
-//        $count = $em->createQueryBuilder();
-//        $count->select('count(distinct(tr.resource))')
-//            ->from('Teams\Entity\TeamResource', 'tr')
-//            ->leftJoin('Omeka\Entity\Resource', 'r')
-//            ->where('r INSTANCE of Omeka\Entity\Item')
-//            ->where('tr.team = ?1');
-//        $count->setParameter(1, $this->params('id'));
-//        $count = $count->getQuery()->getSingleScalarResult();
+
         $resources = [
             'items'=> ['count' => 0, 'entity' => 'Item', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
             'item sets' => ['count' => 0, 'entity' => 'ItemSet', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
@@ -183,48 +167,8 @@ class IndexController extends AbstractActionController
 
         $view->setVariable('resources', $resources);
 
-//        //get the page resources for the page of results the user requested
-//        $qb = $em->createQueryBuilder();
-//        $q = $qb->select('tr')
-//            ->from('Teams\Entity\TeamResource', 'tr')
-//            ->where('tr.team = ?1')
-//            ->andWhere('tr.resource in (:ids)')
-//            ->setParameter('ids', $ids)
-//        ;
-//        //establish first and last results to get for the page
-//        //if a page is listed in the query, start there. Else, start at 0
-//        $items_per_page = 10;
-//        if ($this->params()->fromQuery()['page']){
-//            $offset = ($this->params()->fromQuery()['page']*$items_per_page)-$items_per_page;
-//
-//        }else{$offset=0;}
-//        $limit = $offset + $items_per_page;
-//
-//        $qb->setFirstResult($offset);
-//        $qb->setMaxResults($limit);
-//        $qb->setParameter(1, $this->params('id'));
-//
-//        $team_resources = $q->getQuery()->getResult();
-//
-//        $items = array();
-//        $item_sets = array();
-//        $media = array();
-//
-//
-//        foreach ($team_resources as $tr):
-//            $tr = $tr->getResource();
-//            if ($tr->getResourceName() == 'items') {
-//                $items[] = $this->api()->read('items', $tr->getId())->getContent();
-//
-//            } elseif ($tr->getResourceName() == 'item_sets'){
-//                $item_sets[] = $this->api()->read('item_sets', $tr->getId())->getContent();
-//            } elseif ($tr->getResourceName() == 'media'){
-//                $media[] = $this->api()->read('media', $tr->getId())->getContent();
-//            } else {}
-//        endforeach;
-//        $this->paginator($count, $this->params()->fromQuery('page'));
+
         $view->setVariable('response', $response);
-//        $view->setVariable('items', $items);
 
 
         return $view;

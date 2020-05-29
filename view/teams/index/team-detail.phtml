@@ -60,7 +60,13 @@ $sectionNavs = [
 
     <div class="meta-group">
         <h4><?php echo $translate('Linked Site(s)'); ?></h4>
-        <div class="value">TODO: make linked sites in data model</div>
+        <div class="value">
+            <? foreach ($team->sites() as $site):?>
+            <? echo $site->getSite()->getTitle(); ?>
+            <? echo '<br>' ?>
+            <? endforeach; ?>
+
+        </div>
     </div>
 
 </div>

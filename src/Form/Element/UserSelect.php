@@ -4,30 +4,31 @@
 namespace Teams\Form\Element;
 
 
+
 class UserSelect extends TeamSelect
 {
     protected $data_placeholder = 'Select Users';
 
     protected $data_base_url = ['resource' => 'user'];
+    /**
+     * @var array
+     */
+    private $team_id = 1;
 
     public function getValueOptions()
     {
-
-
         $valueOptions = [];
-
-        //TODO get user id         $identity = $this->getServiceLocator()
-        //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
-        $user_id = 1;
         $em = $this->getEntityManager();
         $users = $em->getRepository('Omeka\Entity\User')->findAll();
-        //this is set to display the teams for the current user. This works in many contexts for
-        //normal users, but not for admins doing maintenance or adding new users to a team
+
         foreach ($users as $user):
+//            $user = $user->getUser();
             $user_name = $user->getName();
             $user_id = $user->getId();
             $valueOptions[$user_id] = $user_name;
         endforeach;
+        $valueOptions['total'] = count($users);
+
 
 
         $prependValueOptions = $this->getOption('prepend_value_options');
@@ -35,6 +36,16 @@ class UserSelect extends TeamSelect
             $valueOptions = $prependValueOptions + $valueOptions;
         }
         return $valueOptions;
+    }
+
+    public function setTeam(int $team_id)
+    {
+        $this->team_id = $team_id;
+    }
+
+    public function setValueOptions(array $options)
+    {
+        $this->valueOptions = $options;
     }
 
 }
