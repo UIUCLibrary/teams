@@ -34,7 +34,7 @@ return [
     'permissions' => [
         'acl_resources' => [
             Entity\TeamUser::class,
-            Entity\TeamResource::class,
+//            Entity\TeamResource::class,
             Controller\AddController::class,
             Controller\IndexController::class,
             Controller\DeleteController::class,

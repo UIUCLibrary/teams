@@ -3,13 +3,16 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
+use Omeka\Api\Request;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
 use Teams\Form\TeamUserForm;
+use Zend\EventManager\Event;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\Stdlib\ArrayObject;
 use Zend\View\Model\ViewModel;
@@ -28,6 +31,16 @@ Class UpdateController extends AbstractActionController
     public function __construct(EntityManager $entityManager)
     {
         $this->entityManager = $entityManager;
+    }
+
+    public function createNamedParameter(QueryBuilder $qb, $value,
+                                         $prefix = 'omeka_'
+    ) {
+        $index = 0;
+        $placeholder = $prefix . $index;
+        $index++;
+        $qb->setParameter($placeholder, $value);
+        return ":$placeholder";
     }
 
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
@@ -189,10 +202,31 @@ Class UpdateController extends AbstractActionController
             return $this->redirect()->toRoute('admin/teams');
         }
 
+        $criteria = ['id' => $id];
 
+        $qb = $this->entityManager->createQueryBuilder();
+        $entityClass = 'Teams\Entity\Team';
+
+        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $qb->setMaxResults(1);
+
+        $entity = $qb->getQuery()->getOneOrNullResult();
 
 
         $data = $this->api()->read('team', ['id'=>$id])->getContent();
+        $request = new Request('update','team');
+        $event = new Event('api.hydrate.pre', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
 
         //TODO (refactor) this is probably a stupid way to do this
 

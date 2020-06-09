@@ -48,7 +48,8 @@ class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
             if ($form->isValid()) {
                 $response = $this->api($form)->create('item_sets', $data);
 
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id' => $response->getContent()->id()]);
                 $em = $this->entityManager;
                 foreach ($data['team'] as $team_id):
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
