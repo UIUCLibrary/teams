@@ -4,11 +4,14 @@ namespace Teams;
 
 
 
+use Omeka\Api\Exception;
 
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Api\Adapter\UserAdapter;
+use Omeka\Api\Request;
+use Omeka\Entity\EntityInterface;
 use Omeka\Entity\ResourceTemplate;
 use Omeka\Permissions\Acl;
 use Teams\Entity\TeamResource;
@@ -94,29 +97,34 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
     protected function addAclRules()
     {
+
+        /*
+         *
+         */
+        //db get the roles table
+        //for each role, make an acl
+        //    public function addRoleLabel($roleId, $roleLabel)
+        //    {
+        //        $this->roleLabels[$roleId] = $roleLabel;
+        //    }
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
 
         // Everybody can read groups, but not view them.
         $roles = $acl->getRoles();
+        //entity rights are the actions of controllers
         $entityRights = ['read', 'create', 'update', 'delete', 'assign'];
         $adapterRights = ['read', 'create', 'update', 'delete', 'assign'];
 
         $acl->allow(
-            'editor',
+            'global_admin',
             [
-
                 'Teams\Controller\Index',
                 'Teams\Controller\Add',
                 'Teams\Controller\Update',
-
             ],
             [
-                'browse',
-                'add',
-                'edit',
-                'delete',
-                'delete-confirm',
+
                 'index',
                 'teamAdd',
                 'teamDetail',
@@ -165,12 +173,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['search', 'read']
         );
 
-//        $acl->deny(
-//            Acl::ROLE_SITE_ADMIN,
-//            [Controller\IndexController::class],
-//            ['index']
-//
-//        );
+
 
         $acl->allow(
             $viewerRoles,
@@ -476,10 +479,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //        );
 //    }
 
-    protected function listUsers()
-    {
 
-    }
 
     protected function listTeams(AbstractEntityRepresentation $resource = null)
     {
@@ -930,9 +930,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         $view = $event->getTarget();
 
-
-
-
         //send the form data for processing by module controller to add teamUser
         $site_id = $view->vars()->site->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -947,7 +944,135 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    public function teamAuthority(EntityInterface $resource, $action){
 
+        $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
+        //instantiate default behavior
+        $authorized = false;
+
+        //default for all entities except SitePage
+        $fk_id = $resource->getId();
+
+        if (in_array($resource->getResourceId(), $resource_domains )){
+            $teamsRepo = 'Teams\Entity\TeamResource';
+            $fk = 'resource';
+        }
+        elseif ($resource->getResourceId() == 'Omeka\Entity\Site'){
+            $teamsRepo = 'Teams\Entity\TeamSite';
+            $fk = 'site';
+
+        }
+        elseif ($resource->getResourceId() == 'Omeka\Entity\SitePage'){
+            $teamsRepo = 'Teams\Entity\TeamSite';
+            $fk = 'site';
+            $fk_id = $resource->getSite()->getId();
+
+        }
+        elseif ($resource->getResourceId() == 'Omeka\Entity\ResourceTemplate'){
+            $teamsRepo = 'Teams\Entity\TeamResourceTemplate';
+            $fk = 'resource_template';
+
+
+        }
+        else{
+
+            $authorized = false;
+            throw new Exception\PermissionDeniedException(sprintf(
+                $this->getTranslator()->translate(
+                    'Case not yet handled. Resource "%1$s: %2$s" is not part of your current team.
+                    If you feel this is an error, try changing teams or talk to the administrator.'
+
+                ),
+                $resource->getResourceId(), $resource->getId()
+            ));
+
+
+        }
+
+
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        $user_id = $user->getId();
+        $team_user = $em->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+        $team = $team_user->getTeam();
+        $team_user_role = $team_user->getRole() ;
+
+        $team_resource = $em->getRepository($teamsRepo)
+            ->findOneBy(['team'=>$team->getId(), $fk =>$fk_id]);
+
+        //if resource not part of user's current team, no action at all
+        if (!$team_resource){
+            $authorized = false;
+            throw new Exception\PermissionDeniedException(sprintf(
+//                $this->getTranslator()->translate(
+                    'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s.
+                    If you feel this is an error, try changing teams or talk to the administrator.'
+
+//                )
+                ,
+                $resource->getResourceId(), $resource->getId(), $team->getName()
+            ));
+        }
+
+        else{
+
+
+            if ($action == 'create' && $team_user_role->getCanAddItems()){
+                $authorized = true;
+            }
+
+            elseif ($action == 'update' && $team_user_role->getCanModifyResources()){
+                $authorized = true;
+
+            }
+
+            elseif ($action == 'delete' && $team_user_role->getCanDeleteResources()){
+                $authorized = true;
+
+            }
+
+            elseif ($action == 'read'){
+                $authorized = true;
+
+            }
+
+            else{
+                $authorized = false;
+                throw new Exception\PermissionDeniedException(sprintf(
+                    $this->getTranslator()->translate(
+                        'Permission denied. Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role:'
+
+                    ),
+                    $resource->getResourceId(), $resource->getId(), $action, $team_user_role->getName()
+                ));
+            }
+
+            return $authorized;
+
+
+
+
+        }
+
+
+    }
+
+    public function teamAuthorize(Event $event){
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $this->teamAuthority($entity, Request::READ);
+
+    }
+
+    public function teamAuthorizeOnHydrate(Event $event){
+        $request = $event->getParam('request');
+        $entity = $event->getParam('entity');
+        $operation = $request->getOperation();
+        $this->teamAuthority($entity, $operation);
+
+    }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
@@ -1014,16 +1139,27 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         endforeach;
 
+        $sharedEventManager->attach(
+            '*',
+            'api.find.post',
+            [$this, 'teamAuthorize']
+        );
+
+        $sharedEventManager->attach(
+            '*',
+            'api.hydrate.pre',
+            [$this, 'teamAuthorizeOnHydrate']
+        );
 
 
-
+//This is throwing an error when used alongside the teamAuthorize because it is not returing the required type EntityInterface
 //             Add the group filter to the search.
-            $sharedEventManager->attach(
-                ItemAdapter::class,
-//                '*',
-                'api.find.post',
-                [$this, 'deleteInsulation']
-            );
+//            $sharedEventManager->attach(
+//                ItemAdapter::class,
+////                '*',
+//                'api.find.post',
+//                [$this, 'deleteInsulation']
+//            );
 
 
 
