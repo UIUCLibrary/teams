@@ -1059,7 +1059,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
-    public function teamAuthorize(Event $event){
+    public function teamAuthorizeOnRead(Event $event){
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $this->teamAuthority($entity, Request::READ);
@@ -1142,7 +1142,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $sharedEventManager->attach(
             '*',
             'api.find.post',
-            [$this, 'teamAuthorize']
+            [$this, 'teamAuthorizeOnRead']
         );
 
         $sharedEventManager->attach(
