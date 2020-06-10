@@ -3,6 +3,7 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Omeka\Form\ConfirmForm;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Model\ViewModel;
@@ -27,6 +28,64 @@ class IndexController extends AbstractActionController
     {
         $this->entityManager = $entityManager;
     }
+    public function deleteAction()
+    {
+        if ($this->getRequest()->isPost()) {
+            $form = $this->getForm(ConfirmForm::class);
+            $form->setData($this->getRequest()->getPost());
+            if ($form->isValid()) {
+
+
+
+
+                $entityManager = $this->entityManager;
+
+
+                $user_id = $this->identity()->getId();
+
+                $team_id = $entityManager
+                    ->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+                    ->getTeam()->getId();
+
+
+                $entity = $entityManager
+                    ->getRepository('Teams\Entity\TeamResource')
+                    ->findOneBy(['team'=>$team_id, 'resource'=> (int) $this->params('id')]);
+                if ($entity){
+                    $entityManager->remove($entity);
+                    $entityManager->flush();
+                    $this->messenger()->addSuccess('Item successfully removed from your team.'); // @translate
+                    $this->messenger()->addSuccess('Item remains available to other teams if they are linked to it.'); // @translate
+                    $this->messenger()->addSuccess('Item will be deleted after x days   '); // @translate
+
+                } else{
+                    $this->messenger()->addSuccess('something went wrong'); // @translate
+
+                }
+
+
+
+
+
+
+
+//
+//                $response = $this->api($form)->delete('items', $this->params('id'));
+//                if ($response) {
+//                    $this->messenger()->addSuccess('Item successfully deleted'); // @translate
+//                }
+            } else {
+                $this->messenger()->addFormErrors($form);
+            }
+        }
+        return $this->redirect()->toRoute(
+            'admin/default',
+            ['action' => 'browse'],
+            true
+        );
+    }
+
     public function changeCurrentTeamAction($user_id)
     {
         $request = $this->getRequest();

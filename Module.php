@@ -999,7 +999,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
     //only working for read, update, add
-    public function teamAuthority(EntityInterface $resource, $action){
+    public function teamAuthority(EntityInterface $resource, $action, Event $event){
 
 
         $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
@@ -1010,9 +1010,23 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
         $team = $team_user->getTeam();
         $team_user_role = $team_user->getRole() ;
-        if ($action == 'create' && $team_user_role->getCanAddItems()){
-            $authorized = true;
-            return $authorized;
+        if ($action == 'create'){
+
+            if ($team_user_role->getCanAddItems()) {
+                $authorized = true;
+                return $authorized;
+            }else{
+                $authorized = false;
+                throw new Exception\PermissionDeniedException(sprintf(
+//                    $this->getTranslator()->translate(
+                    'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s %6$s.
+                     Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+
+//                    )
+                    ,
+                    $resource->getResourceId(), $resource->getId(), $action, $team_user_role->getName(), $team->getName(), $resource->getResourceName()
+                ));
+            }
         }
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         //instantiate default behavior
@@ -1113,6 +1127,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         //if resource not part of user's current team, no action at all
         if (!$team_resource){
+
             $authorized = false;
             throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
@@ -1128,21 +1143,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
 
         else{
-
-
             if ($action == 'update' && $team_user_role->getCanModifyResources()){
                 $authorized = true;
-
-            }
-
-            elseif ($action == 'delete' && $team_user_role->getCanDeleteResources()){
+            }elseif ($action == 'delete' && $team_user_role->getCanDeleteResources()){
                 $authorized = true;
-
             }
-
             elseif ($action == 'read'){
                 $authorized = true;
-
             }
 
             else{
@@ -1171,7 +1178,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
-        $this->teamAuthority($entity, $operation);
+        $this->teamAuthority($entity, $operation, $event);
 
     }
 
@@ -1179,7 +1186,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $request = $event->getParam('request');
         $entity = $event->getParam('entity');
         $operation = $request->getOperation();
-        $this->teamAuthority($entity, $operation);
+        $this->teamAuthority($entity, $operation, $event);
 
 
     }

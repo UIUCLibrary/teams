@@ -319,18 +319,19 @@ return [
                             ],
                         ],
                     ],
-//                    'resource-template' => [
-//                        'type' => Literal::class,
-//                        'options' => [
-//                            'route' => 'resource-template',
-//                            'defaults' => [
-//                                '__NAMESPACE__' => 'Teams\Controller',
-//                                'controller' => 'Index',
-//                                'action' => 'index',
-//                            ],
-//                        ]
-//
-//                    ]
+                    //okay, this seems like a super bad way to do this but I'm not sure what else to do
+                    'del' => [
+                        'type' => 'Segment',
+                        'options' => [
+                            'route' => '/item/:id/delete',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                //need to make a anew action for the delete function?
+                                'controller' => 'Index',
+                                'action' => 'delete',
+                            ],
+                        ],
+                        ]
                 ],
             ],
         ],
