@@ -201,7 +201,7 @@ class UserController extends AbstractActionController
                 $passwordValues = $values['change-password'];
                 $response = $this->api($form)->update('users', $id, $values['user-information']);
 
-                //remove the user's teams
+                if ($user_role = $this->identity()->getRole() == 'global_admin') {//remove the user's teams
                 $em = $this->entityManager;
                 $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $id]);
 
@@ -227,8 +227,7 @@ class UserController extends AbstractActionController
 
                 endforeach;
                 $this->entityManager->flush();
-
-
+                }
 
 
                 // Stop early if the API update fails

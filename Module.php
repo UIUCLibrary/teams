@@ -127,6 +127,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $entityRights = ['read', 'create', 'update', 'delete', 'assign'];
         $adapterRights = ['read', 'create', 'update', 'delete', 'assign'];
 
+        //allow everyone to see their teams
+        $acl->allow(
+            $roles,
+            'Teams\Controller\Index'
+
+        );
         $acl->allow(
             'global_admin',
             [
@@ -143,12 +149,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ]
         );
         $acl->allow(
+            'global_admin',
+            Entity\TeamRole::class,
+            $entityRights
+        );
+        $acl->allow(
             null,
             [
                 Entity\Team::class,
                 Entity\TeamUser::class,
                 Entity\TeamResource::class,
-                Entity\TeamRole::class
 
             ],
             $entityRights
@@ -1401,6 +1411,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [$this, 'adminShowTeams']
         );
 
+
+
         //Browse pages//
             //Item//
         $sharedEventManager->attach(
@@ -1610,19 +1622,29 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
     public function addUserFormElement(Event $event)
     {
-        $form = $event->getTarget();
-        $form->get('user-information')->add([
-            'name' => 'o-module-teams:Team',
-            'type' => AllTeamSelect::class,
-            'options' => [
-                'label' => 'Teams', // @translate
-                'chosen' => true,
-            ],
-            'attributes' => [
-                'multiple' => true,
-                'id' => 'team'
-            ],
-        ]);
+        $user_role = $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity()
+            ->getRole();
+        ;
+
+        if ($user_role === 'global_admin'){
+            //TODO: only add if the user is superuser
+            $form = $event->getTarget();
+            $form->get('user-information')->add([
+                'name' => 'o-module-teams:Team',
+                'type' => AllTeamSelect::class,
+                'options' => [
+                    'label' => 'Teams', // @translate
+                    'chosen' => true,
+                ],
+                'attributes' => [
+                    'multiple' => true,
+                    'id' => 'team',
+
+
+                ],
+            ]);
+        }
     }
 
     public function addSiteFormElement(Event $event){
