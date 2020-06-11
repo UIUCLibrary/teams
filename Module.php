@@ -1008,42 +1008,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
-    //only working for read, update, add
-    public function teamAuthority(EntityInterface $resource, $action, Event $event){
-
-
-        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+    public function inTeam($resource, $team_user)
+    {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
-        $user_id = $user->getId();
-        $team_user = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
-        $team = $team_user->getTeam();
-        $team_user_role = $team_user->getRole() ;
-        if ($action == 'create'){
-
-            if ($team_user_role->getCanAddItems()) {
-                $authorized = true;
-                return $authorized;
-            }else{
-                $authorized = false;
-                throw new Exception\PermissionDeniedException(sprintf(
-//                    $this->getTranslator()->translate(
-                    'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s %6$s.
-                     Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
-
-//                    )
-                    ,
-                    $resource->getResourceId(), $resource->getId(), $action, $team_user_role->getName(), $team->getName(), $resource->getResourceName()
-                ));
-            }
-        }
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
-        //instantiate default behavior
-        $authorized = false;
-
-        //default for all entities except SitePage
         $fk_id = $resource->getId();
+        $team = $team_user->getTeam();
+        $user = $team_user->getUser();
 
         if (in_array(get_class($resource), $resource_domains )){
             $teamsRepo = 'Teams\Entity\TeamResource';
@@ -1069,75 +1040,55 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $teamsRepo = 'Teams\Entity\TeamResourceTemplate';
             $fk = 'resource_template';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
-
-
-
         }
         elseif (get_class($resource) == 'Teams\Entity\Team' ){
-
-            if ($action == 'read'){
-                echo 'action: ' . $action;
-
-                $authorized = true;
-                return $authorized;
-            }
-            elseif ($action == 'update' || $action == 'delete'){
-                if ($team_user_role->getCanAddUsers()){
-                    echo 'they can';
-                    return true;
-                }else{
-                    $authorized = false;
-                    throw new Exception\PermissionDeniedException(sprintf(
-//                    $this->getTranslator()->translate(
-                        'Permission denied. Your role within %1$s, %2$s, is not permitted to update or delete its team. '
-
-//                    )
-                        ,
-                        $team->getName(), $team_user_role->getName()
-                    ));
-
-                }
-            }
-            else {
-                echo 'action: ' . $action;
-            }
-        }
+            $teamsRepo = 'Teams\Entity\TeamUser';
+            $fk = 'user';
+            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];        }
         elseif (get_class($resource) == 'Omeka\Entity\User'){
 
             return true;
         }
-//        elseif (get_class($resource) == 'Teams\Entity\TeamResource'){
-//            $teamsRepo = 'Teams\Entity\TeamResource';
-//            $fk = 'resource';
-//            $fk_id = $resource->getResource()->getId();
-//            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
-//
-//
-//
-//        }
-
-
         else{
-
-            $authorized = false;
             throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
-                    'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
+                'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
                     so by default action here is not permitted. Resource "%1$s: %2$s" .'
 
 //                )
                 ,
                 get_class($resource), $resource->getId()
             ));
+
         }
 
-            $team_resource = $em->getRepository($teamsRepo)
-            ->findOneBy($criteria);
+        if ($team_resource = $em->getRepository($teamsRepo)
+            ->findOneBy($criteria)){
+            $in_team = true;
+        }
+        else{
+            $in_team = false;
+        }
 
+        return $in_team;
+
+    }
+
+    //only working for read, update, add
+    public function teamAuthority(EntityInterface $resource, $action, Event $event){
+        $authorized = false;
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $is_glob_admin = ($user->getRole() == 'global_admin');
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        $user_id = $user->getId();
+        $team_user = $em->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+        $team = $team_user->getTeam();
+        $team_user_role = $team_user->getRole() ;
 
         //if resource not part of user's current team, no action at all
-        if (!$team_resource){
-
+        if (! $this->inTeam($resource, $team_user)){
             $authorized = false;
             throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
@@ -1145,42 +1096,129 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     If you feel this is an error, try changing teams or talk to the administrator.
                     Action: %4$s
                     '
-
 //                )
                 ,
                 get_class($resource), $resource->getId(), $team->getName(), $action
             ));
         }
 
-        else{
-            if ($action == 'update' && $team_user_role->getCanModifyResources()){
-                $authorized = true;
-            }elseif ($action == 'delete' && $team_user_role->getCanDeleteResources()){
-                $authorized = true;
+        $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media', 'Omeka\Entity\ResourceTemplate'];
+
+        if (in_array(get_class($resource), $resource_domains )){
+            if ($action == 'create'){
+                $authorized = $team_user_role->getCanAddItems();
+
+            }
+            elseif ($action == 'delete'){
+                $authorized = $team_user_role->getCanDeleteResources();
+
+            }
+            elseif ($action == 'update'){
+                $authorized = $team_user_role->getCanModifyResources();
+
             }
             elseif ($action == 'read'){
                 $authorized = true;
+
             }
 
-            else{
-                $authorized = false;
-                throw new Exception\PermissionDeniedException(sprintf(
-//                    $this->getTranslator()->translate(
-                        'Permission denied. Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+        }
+        elseif (get_class($resource) == 'Omeka\Entity\Site'){
+            if ($action == 'create'){
+                $authorized = $is_glob_admin;
 
-//                    )
-                    ,
-                    $resource->getResourceId(), $resource->getId(), $action, $team_user_role->getName()
-                ));
             }
+            elseif ($action == 'delete'){
+                $authorized = $is_glob_admin;
 
-            return $authorized;
+            }
+            elseif ($action == 'update'){
+                $authorized = $team_user_role->getCanAddSitePages();
 
+            }
+            elseif ($action == 'read'){
+                $authorized = true;
 
+            }
 
 
         }
+        elseif (get_class($resource) == 'Omeka\Entity\SitePage'){
+            if ($action == 'create'){
+                $authorized = $team_user_role->getCanAddSitePages();
 
+            }
+            elseif ($action == 'delete'){
+                $authorized = $team_user_role->getCanAddSitePages();
+
+            }
+            elseif ($action == 'update'){
+                $authorized = $team_user_role->getCanAddSitePages();
+
+            }
+            elseif ($action == 'read'){
+                $authorized = true;
+
+            }
+
+
+        }
+        elseif (get_class($resource) == 'Teams\Entity\Team' ){
+            if ($action == 'create'){
+                $authorized = $is_glob_admin;
+
+            }
+            elseif ($action == 'delete'){
+                $authorized = $is_glob_admin;
+
+            }
+            elseif ($action == 'update'){
+                $authorized = $team_user_role->getCanAddUsers();
+
+            }
+            elseif ($action == 'read'){
+                $authorized = true;
+
+            }
+        }
+        elseif (get_class($resource) == 'Omeka\Entity\User'){
+            return true;
+        }
+
+        if (!$authorized){
+
+            $authorized = false;
+            $msg = sprintf(
+//                    $this->getTranslator()->translate(
+                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource. Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+
+//                    )
+                ,
+                get_class($resource), $resource->getId(), $action, $team_user_role->getName(), $team->getName()
+            );
+            $str = <<<EOD
+                <script>
+                    window.addEventListener("load", function() {
+                      let msg = "$msg";
+                      let content = document.getElementById("content");
+                      let ul = document.createElement("ul")
+                      ul.className = "messages";
+                      let li = document.createElement("li");
+                      li.className = "error";
+                      li.innerText = msg;
+                      ul.appendChild(li);
+                      content.prepend(ul);
+                      })
+                      </script>
+EOD;
+            echo $str;
+
+
+
+            throw new Exception\PermissionDeniedException($msg);
+
+        }
+        return $authorized;
 
     }
 
