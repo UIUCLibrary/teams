@@ -11,7 +11,7 @@ use Zend\View\Helper\AbstractHelper;
 class RoleAuth extends AbstractHelper
 {
     public $actions = ['add', 'delete', 'update'];
-    public $domains = ['resource', 'team', 'site', 'team_user'];
+    public $domains = ['resource', 'team', 'site', 'team_user', 'role'];
     /**
      * @var EntityManager
      */
@@ -62,7 +62,7 @@ class RoleAuth extends AbstractHelper
             //go through each domain and determine if user is authorized for actions in that domain
 
             //only the global admin can create, delete or modify teams
-            if ($domain == 'team'){
+            if ($domain == 'team' || 'role'){
                     $authorized = $this->isGlobAdmin();
             }
 
