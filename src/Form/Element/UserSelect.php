@@ -27,7 +27,6 @@ class UserSelect extends TeamSelect
             $user_id = $user->getId();
             $valueOptions[$user_id] = $user_name;
         endforeach;
-        $valueOptions['total'] = count($users);
 
 
 
