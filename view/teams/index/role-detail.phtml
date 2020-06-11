@@ -40,9 +40,9 @@ $sectionNavs = [
 
 
 <div id="page-actions">
-    <!--    --><?php //if ($item->userIsAllowed('update')): ?>
+    <?php if ($this->roleAuth()->teamAuthorized('update', 'role')): ?>
     <a class="button" href="<? echo $this->url('admin/teams/roles/detail/update', ['id' => $role->id()])?>"> Edit Role </a>
-    <!--    --><?php //endif; ?>
+        <?php endif; ?>
 </div>
 
 
@@ -145,16 +145,8 @@ foreach ($teams as $team):
     </tr>
 
 <?
-            endforeach;
-            ?>
-
-
-
-
-
-
-
-
+endforeach;
+?>
 
         </tbody>
     </table>
