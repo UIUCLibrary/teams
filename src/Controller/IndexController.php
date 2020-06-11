@@ -93,6 +93,37 @@ class IndexController extends AbstractActionController
         );
     }
 
+    public function batchDeleteAction()
+    {
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('admin', ['action'=>'browse', 'controller' => 'item']);
+        }
+
+        $entityManager = $this->entityManager;
+
+        $user_id = $this->identity()->getId();
+
+        $team_id = $entityManager
+            ->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+            ->getTeam()->getId();
+
+        $request = $this->getRequest();
+
+        $resource_ids = $request->getPost()['resource_ids'];
+        for ($i= 0; $i< count($resource_ids); $i++){
+            $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
+                ->findOneBy(['team'=>$team_id, 'resource'=>$resource_ids[$i]]);
+            $entityManager->remove($entity);
+    }
+
+
+        $entityManager->flush();
+        return $this->redirect()->toRoute('admin', ['controller'=>'item']);
+
+
+    }
+
     public function changeCurrentTeamAction($user_id)
     {
         $request = $this->getRequest();

@@ -1057,6 +1057,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             return true;
         }
+        elseif (get_class($resource) == 'Omeka\Entity\Job'){
+            return true;
+        }
         else{
             throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
@@ -1128,9 +1131,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
             }
-            elseif ($action == 'delete'){
+            elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $team_user_role->getCanDeleteResources();
-                echo "deleting";
             }
             elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanModifyResources();
@@ -1147,7 +1149,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $authorized = $is_glob_admin;
 
             }
-            elseif ($action == 'delete'){
+            elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $is_glob_admin;
 
             }
@@ -1167,7 +1169,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $authorized = $team_user_role->getCanAddSitePages();
 
             }
-            elseif ($action == 'delete'){
+            elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $team_user_role->getCanAddSitePages();
 
             }
@@ -1187,7 +1189,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $authorized = $is_glob_admin;
 
             }
-            elseif ($action == 'delete'){
+            elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $is_glob_admin;
 
             }
@@ -1203,6 +1205,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif (get_class($resource) == 'Omeka\Entity\User'){
             return true;
         }
+        elseif (get_class($resource) == 'Omeka\Entity\Job'){
+            return true;
+        }
+
+
         elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
             $authorized = $is_glob_admin;
         }
@@ -1257,7 +1264,6 @@ EOD;
         $entity = $event->getParam('entity');
         $operation = $request->getOperation();
         $this->teamAuthority($entity, $operation, $event);
-        echo $operation;
 
 
     }
