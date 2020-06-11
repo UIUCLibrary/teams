@@ -3,7 +3,9 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
+use Zend\EventManager\Event;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Model\ViewModel;
@@ -35,9 +37,6 @@ class IndexController extends AbstractActionController
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
 
-
-
-
                 $entityManager = $this->entityManager;
 
 
@@ -52,6 +51,14 @@ class IndexController extends AbstractActionController
                 $entity = $entityManager
                     ->getRepository('Teams\Entity\TeamResource')
                     ->findOneBy(['team'=>$team_id, 'resource'=> (int) $this->params('id')]);
+
+                $request = new Request('delete', 'team_resource');
+                $event = new Event('api.hydrate.pre', $this, [
+                    'entity' => $entity,
+                    'request' => $request,
+                ]);
+                $this->getEventManager()->triggerEvent($event);
+
                 if ($entity){
                     $entityManager->remove($entity);
                     $entityManager->flush();

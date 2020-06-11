@@ -695,11 +695,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $ct = $tu->findOneBy(['is_current'=>true, 'user'=>$user_id]);
         if($ct){
             $ct = $ct->getTeam();
-        } elseif ($tu->findOneBy(['user'=>$user_id])){
-            $tu = $tu->findOneBy(['user'=>$user_id]);
-            $ct = $tu->getTeam();
-            $tu->setCurrent(1);
-            $entityManager->flush();
+//        } elseif ($tu->findOneBy(['user'=>$user_id])){
+//            $tu = $tu->findOneBy(['user'=>$user_id]);
+//            $ct = $tu->getTeam();
+//            $tu->setCurrent(1);
+//            $entityManager->flush();
 
         } else {
             $ct = 'None';
@@ -1021,12 +1021,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $fk = 'resource';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
+        elseif (get_class($resource) == 'Teams\Entity\TeamResource'){
+            $teamsRepo = 'Teams\Entity\TeamResource';
+            $fk = 'resource';
+            $fk_id = $resource->getResource()->getId();
+            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+        }
         elseif (get_class($resource) == 'Omeka\Entity\Site'){
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
-
-
         }
         elseif (get_class($resource) == 'Omeka\Entity\SitePage'){
             $teamsRepo = 'Teams\Entity\TeamSite';
@@ -1046,6 +1050,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $fk = 'user';
             $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];        }
         elseif (get_class($resource) == 'Omeka\Entity\User'){
+
+            return true;
+        }
+        elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
 
             return true;
         }
@@ -1087,31 +1095,42 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $team = $team_user->getTeam();
         $team_user_role = $team_user->getRole() ;
 
-        //if resource not part of user's current team, no action at all
-        if (! $this->inTeam($resource, $team_user)){
-            $authorized = false;
-            throw new Exception\PermissionDeniedException(sprintf(
+        //don't check if in same team if a create action
+        if ($action != 'create'){
+            //if resource not part of user's current team, no action at all
+            if (! $this->inTeam($resource, $team_user)){
+                $authorized = false;
+                throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
                     'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s.
                     If you feel this is an error, try changing teams or talk to the administrator.
                     Action: %4$s
                     '
 //                )
-                ,
-                get_class($resource), $resource->getId(), $team->getName(), $action
-            ));
+                    ,
+                    get_class($resource), $resource->getId(), $team->getName(), $action
+                ));
+            }
         }
 
-        $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media', 'Omeka\Entity\ResourceTemplate'];
+
+        $resource_domains = [
+            'Omeka\Entity\Item',
+            'Omeka\Entity\ItemSet',
+            'Omeka\Entity\Media',
+            'Omeka\Entity\ResourceTemplate',
+            'Teams\Entity\TeamResource'
+            ];
 
         if (in_array(get_class($resource), $resource_domains )){
             if ($action == 'create'){
                 $authorized = $team_user_role->getCanAddItems();
 
+
             }
             elseif ($action == 'delete'){
                 $authorized = $team_user_role->getCanDeleteResources();
-
+                echo "deleting";
             }
             elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanModifyResources();
@@ -1184,6 +1203,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif (get_class($resource) == 'Omeka\Entity\User'){
             return true;
         }
+        elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
+            $authorized = $is_glob_admin;
+        }
 
         if (!$authorized){
 
@@ -1235,6 +1257,7 @@ EOD;
         $entity = $event->getParam('entity');
         $operation = $request->getOperation();
         $this->teamAuthority($entity, $operation, $event);
+        echo $operation;
 
 
     }
