@@ -38,6 +38,7 @@ class ItemController extends AbstractActionController
         $this->mediaIngesters = $mediaIngesters;
         $this->entityManager = $entityManager;
     }
+
     public function searchAction()
     {
         $view = new ViewModel;
@@ -84,7 +85,7 @@ class ItemController extends AbstractActionController
 
     public function showDetailsAction()
     {
-        $linkTitle = (bool) $this->params()->fromQuery('link-title', true);
+        $linkTitle = (bool)$this->params()->fromQuery('link-title', true);
         $response = $this->api()->read('items', $this->params('id'));
         $item = $response->getContent();
         $values = $item->valueRepresentation();
@@ -116,7 +117,7 @@ class ItemController extends AbstractActionController
 
     public function deleteConfirmAction()
     {
-        $linkTitle = (bool) $this->params()->fromQuery('link-title', true);
+        $linkTitle = (bool)$this->params()->fromQuery('link-title', true);
         $response = $this->api()->read('items', $this->params('id'));
         $item = $response->getContent();
         $values = $item->valueRepresentation();
@@ -225,19 +226,20 @@ class ItemController extends AbstractActionController
                 $resource = $em->getRepository('Omeka\Entity\Item')->findOneBy(['id' => $response->getContent()->id()]);
                 $media = $resource->getMedia();
 
-                if (array_key_exists('team', $data)){
-                foreach ($data['team'] as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                    $team_resource = new TeamResource($team, $resource);
-                    $em->persist($team_resource);
-                    if (count($media)>0) {
-                        foreach ($media as $m):
-                            $tr = new TeamResource($team, $m);
-                            $em->persist($tr);
-                        endforeach;
-                    }
+                if (array_key_exists('team', $data)) {
+                    foreach ($data['team'] as $team_id):
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                        $team_resource = new TeamResource($team, $resource);
+                        $em->persist($team_resource);
+                        if (count($media) > 0) {
+                            foreach ($media as $m):
+                                $tr = new TeamResource($team, $m);
+                                $em->persist($tr);
+                            endforeach;
+                        }
                     endforeach;
-                $em->flush();}
+                    $em->flush();
+                }
 
 
                 //right now this doesn't care about the input it just add it to the users current team
@@ -293,27 +295,49 @@ class ItemController extends AbstractActionController
                 $response = $this->api($form)->update('items', $this->params('id'), $data, $fileData);
 
 
-                    $em = $this->entityManager;
-                    $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $response->getContent()->id()]);
-                    foreach ($entity as $e):
+                $em = $this->entityManager;
+                $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
+                    ->findBy(['resource' => $response->getContent()->id()]);
+                $media_ids = [];
+                if (array_key_exists('o:media', $data)) {
+                    if ($data['o:media'][0]['o:ingester']) {
+                        $this->messenger()->addSuccess('this had some media');
 
-                        $this->entityManager->remove($e);
+                        foreach ($response->getContent  ()->media() as $media):
+                            $media_ids[] = $media->id();
+                        endforeach;
+                    }
+
+                }
+                foreach ($entity as $e):
+                    $this->entityManager->remove($e);
+                endforeach;
+                $em->flush();
+
+                $resource = $em->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id' => $response->getContent()->id()]);
+
+                foreach ($data['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    $team_res = new TeamResource($team, $resource);
+                    $em->persist($team_res);
+                    foreach ($media_ids as $media_id):
+                        $media_res = $em->getRepository('Omeka\Entity\Resource')
+                            ->findOneBy(['id' => $media_id]);
+                        $team_res = new TeamResource($team, $media_res);
+                        $em->persist($team_res);
+                    endforeach;
                     endforeach;
                     $em->flush();
-                    $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
 
-                    foreach ($data['team'] as $team_id):
-                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                        $team_res = new TeamResource($team, $resource);
-                        $em = $this->entityManager;
-                        $em->persist($team_res);
-                        endforeach;
-                    $em->flush();
-                if ($response) {
-                    $this->messenger()->addSuccess('Item successfully updated'); // @translate
-                    return $this->redirect()->toUrl($response->getContent()->url());
-                }
-            } else {
+
+                    if ($response) {
+
+                        $this->messenger()->addSuccess('Item successfully updated'); // @translate
+                        return $this->redirect()->toUrl($response->getContent()->url());
+
+                    }
+                } else {
                 $this->messenger()->addFormErrors($form);
             }
         }
