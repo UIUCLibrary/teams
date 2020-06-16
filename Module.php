@@ -1008,6 +1008,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    //if process is looking at a doctrine proxy, eg for a lot of Resource template processes, test against the proxied class
+    public  function getResourceClass($resource){
+        $doctrine_ent = 'DoctrineProxies\__CG__';
+        $doctrine_test = strpos(get_class($resource), $doctrine_ent);
+        if ($doctrine_test === false){
+            $res_class = get_class($resource);
+        }else{
+            $res_class = substr(get_class($resource), strlen($doctrine_ent)+1);
+        }
+        return $res_class;
+    }
+
     public function inTeam($resource, $team_user)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -1015,24 +1027,25 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $fk_id = $resource->getId();
         $team = $team_user->getTeam();
         $user = $team_user->getUser();
+        $res_class = $this->getResourceClass($resource);
 
-        if (in_array(get_class($resource), $resource_domains )){
+        if (in_array($res_class, $resource_domains )){
             $teamsRepo = 'Teams\Entity\TeamResource';
             $fk = 'resource';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
-        elseif (get_class($resource) == 'Teams\Entity\TeamResource'){
+        elseif ($res_class == 'Teams\Entity\TeamResource'){
             $teamsRepo = 'Teams\Entity\TeamResource';
             $fk = 'resource';
             $fk_id = $resource->getResource()->getId();
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Site'){
+        elseif ($res_class == 'Omeka\Entity\Site'){
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
-        elseif (get_class($resource) == 'Omeka\Entity\SitePage'){
+        elseif ($res_class == 'Omeka\Entity\SitePage'){
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
             $fk_id = $resource->getSite()->getId();
@@ -1040,27 +1053,27 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
         }
-        elseif (get_class($resource) == 'Omeka\Entity\ResourceTemplate'){
+        elseif ($res_class == 'Omeka\Entity\ResourceTemplate'){
             $teamsRepo = 'Teams\Entity\TeamResourceTemplate';
             $fk = 'resource_template';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
-        elseif (get_class($resource) == 'Teams\Entity\Team' ){
+        elseif ($res_class == 'Teams\Entity\Team' ){
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
             $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];        }
-        elseif (get_class($resource) == 'Omeka\Entity\User'){
+        elseif ($res_class == 'Omeka\Entity\User'){
 
             return true;
         }
-        elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
+        elseif ($res_class == 'Teams\Entity\TeamRole'){
 
             return true;
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Job'){
+        elseif ($res_class == 'Omeka\Entity\Job'){
             return true;
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Property'){
+        elseif ($res_class == 'Omeka\Entity\Property'){
             return true;
         }
         else{
@@ -1071,7 +1084,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 //                )
                 ,
-                get_class($resource), $resource->getId()
+                $res_class, $resource->getId()
             ));
 
         }
@@ -1088,10 +1101,22 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    public function getUser(){
+        return $this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity();
+    }
     //only working for read, update, add
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $authorized = false;
-        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $user = $this->getUser();
+        $res_class = $this->getResourceClass($resource);
+
+        //case that I don't fully understand. When selecting resource template on new item form
+        //the Omeka\AuthenticationService->getIdentity() returns null
+        if ($user == null && $action == 'read' && $res_class == 'Omeka\Entity\ResourceTemplate'){
+            return true;
+        }
+
         $is_glob_admin = ($user->getRole() == 'global_admin');
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
@@ -1120,6 +1145,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
 
 
+
+
         $resource_domains = [
             'Omeka\Entity\Item',
             'Omeka\Entity\ItemSet',
@@ -1128,7 +1155,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Teams\Entity\TeamResource'
             ];
 
-        if (in_array(get_class($resource), $resource_domains )){
+        if (in_array($res_class, $resource_domains )){
             if ($action == 'create'){
                 $authorized = $team_user_role->getCanAddItems();
 
@@ -1147,7 +1174,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
 
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Site'){
+        elseif ($res_class == 'Omeka\Entity\Site'){
             if ($action == 'create'){
                 $authorized = $is_glob_admin;
 
@@ -1167,7 +1194,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
         }
-        elseif (get_class($resource) == 'Omeka\Entity\SitePage'){
+        elseif ($res_class == 'Omeka\Entity\SitePage'){
             if ($action == 'create'){
                 $authorized = $team_user_role->getCanAddSitePages();
 
@@ -1187,7 +1214,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
         }
-        elseif (get_class($resource) == 'Teams\Entity\Team' ){
+        elseif ($res_class == 'Teams\Entity\Team' ){
             if ($action == 'create'){
                 $authorized = $is_glob_admin;
 
@@ -1205,18 +1232,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             }
         }
-        elseif (get_class($resource) == 'Omeka\Entity\User'){
+        elseif ($res_class == 'Omeka\Entity\User'){
             return true;
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Job'){
+        elseif ($res_class == 'Omeka\Entity\Job'){
             return true;
         }
-        elseif (get_class($resource) == 'Omeka\Entity\Property'){
+        elseif ($res_class == 'Omeka\Entity\Property'){
             return true;
         }
 
 
-        elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
+        elseif ($res_class == 'Teams\Entity\TeamRole'){
             $authorized = $is_glob_admin;
         }
 
