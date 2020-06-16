@@ -836,7 +836,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             //TODO this can be refactored out because it is used in basicaly the same form many palces
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-            $identity =$this->getUser();
+            $identity = $this->getUser();
             //TODO add handeling for user not logged-in !!!this current solution would not work
             if (!$identity){
                 $user_id = null;
