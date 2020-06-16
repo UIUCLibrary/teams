@@ -1060,6 +1060,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif (get_class($resource) == 'Omeka\Entity\Job'){
             return true;
         }
+        elseif (get_class($resource) == 'Omeka\Entity\Property'){
+            return true;
+        }
         else{
             throw new Exception\PermissionDeniedException(sprintf(
 //                $this->getTranslator()->translate(
@@ -1208,6 +1211,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif (get_class($resource) == 'Omeka\Entity\Job'){
             return true;
         }
+        elseif (get_class($resource) == 'Omeka\Entity\Property'){
+            return true;
+        }
 
 
         elseif (get_class($resource) == 'Teams\Entity\TeamRole'){
@@ -1354,11 +1360,6 @@ EOD;
 //                [$this, 'deleteInsulation']
 //            );
 
-
-
-
-
-
         $sharedEventManager->attach(
             'Teams\Controller\Add',
             'view.add.section_nav',
@@ -1385,11 +1386,11 @@ EOD;
             [$this, 'displayTeamForm']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\ResourceTemplate',
-//            'view.edit.form.after',
-//            [$this, 'displayTeamForm']
-//        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.edit.form.after',
+            [$this, 'displayTeamForm']
+        );
 
             //ItemSet//
         $sharedEventManager->attach(
@@ -1436,12 +1437,6 @@ EOD;
             'view.add.form.after',
             [$this, 'resourceTemplateTeamsAdd']
         );
-
-
-
-
-
-
 
         // Show pages //
             //Item//
