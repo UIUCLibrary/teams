@@ -391,8 +391,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function teamSelectorBrowse(Event $event)
 
     {
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        $identity = $this->getUser();
         $user_id = $identity->getId();
         $view =  $event->getTarget();
         $vars = $view->vars();
@@ -428,8 +427,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function teamDACL(Event $event)
     {
         $resource = $event->getTarget()->item->id();
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        $identity = $this->getUser();
         $user_id = $identity->getId();
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -454,8 +452,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function teamSelectorAdvancedSearch(Event $event)
 
     {
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        $identity = $this->getUser();
         $user_id = $identity->getId();
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -636,8 +633,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        $identity = $this->getUser();
         $user_id = $identity->getId();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $teams = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -685,10 +681,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
 
-        if (
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity()){
-        $user_id = $identity->getId();}else{$user_id=null;}
+        if ($identity = $this->getUser())
+        {
+            $user_id = $identity->getId();
+        }else{$user_id = null;}
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $tu = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -722,8 +718,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function currentTeam()
     {
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $identity = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        $identity =$this->getUser();
         //TODO add handeling for user not logged-in !!!this current solution would not work
         if (!$identity){
             $user_id = null;
@@ -755,7 +750,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $entity = $event->getParam('entity');
 
-        $identity = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $identity = $this->getUser();
         $team_id = $entityManager
             ->getRepository('Teams\Entity\TeamUser')
             ->findOneBy(['is_current'=>true, 'user'=>$identity])
@@ -841,8 +836,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             //TODO this can be refactored out because it is used in basicaly the same form many palces
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-            $identity = $this->getServiceLocator()
-                ->get('Omeka\AuthenticationService')->getIdentity();
+            $identity =$this->getUser();
             //TODO add handeling for user not logged-in !!!this current solution would not work
             if (!$identity){
                 $user_id = null;
@@ -1711,8 +1705,7 @@ EOD;
     }
     public function addUserFormElement(Event $event)
     {
-        $user_role = $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity()
+        $user_role = $this->getUser()
             ->getRole();
         ;
 
