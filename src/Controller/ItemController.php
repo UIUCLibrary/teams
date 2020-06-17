@@ -219,9 +219,6 @@ class ItemController extends AbstractActionController
             if ($form->isValid()) {
                 $fileData = $this->getRequest()->getFiles()->toArray();
                 $response = $this->api($form)->create('items', $data, $fileData);
-                $user_id = $this->identity()->getId();
-
-//                $media = $this->api()->read('items', $this->params('id'))->media();
                 $em = $this->entityManager;
                 $resource = $em->getRepository('Omeka\Entity\Item')->findOneBy(['id' => $response->getContent()->id()]);
                 $media = $resource->getMedia();
@@ -241,19 +238,6 @@ class ItemController extends AbstractActionController
                     $em->flush();
                 }
 
-
-                //right now this doesn't care about the input it just add it to the users current team
-                //get the get the user's team_user with the is_current identifier
-//                $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-                //get their current team
-//                $team = $team_user->getTeam();
-//                $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$data['team']]);
-//                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
-//                $team_res = new TeamResource($team, $resource);
-//                $em = $this->entityManager;
-//                $em->persist($team_res);
-//                $em->flush();
                 if ($response) {
                     $message = new Message(
                         'Item successfully created. %s', // @translate
@@ -299,15 +283,15 @@ class ItemController extends AbstractActionController
                 $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
                     ->findBy(['resource' => $response->getContent()->id()]);
                 $media_ids = [];
-                if (array_key_exists('o:media', $data)) {
-                    if ($data['o:media'][0]['o:ingester']) {
-                        $this->messenger()->addSuccess('this had some media');
 
-                        foreach ($response->getContent  ()->media() as $media):
+                //if user added media, the form will include the ingester [0]['o:ingester']
+                if (array_key_exists('o:media', $data)) {
+                    if ($data['o:media']) {
+
+                        foreach ($response->getContent()->media() as $media):
                             $media_ids[] = $media->id();
                         endforeach;
                     }
-
                 }
                 foreach ($entity as $e):
                     $this->entityManager->remove($e);
@@ -324,11 +308,14 @@ class ItemController extends AbstractActionController
                     foreach ($media_ids as $media_id):
                         $media_res = $em->getRepository('Omeka\Entity\Resource')
                             ->findOneBy(['id' => $media_id]);
-                        $team_res = new TeamResource($team, $media_res);
-                        $em->persist($team_res);
+                        if (!$em->getRepository('Teams\Entity\TeamResource')
+                            ->findOneBy(['resource' => $media_id, 'team'=> $team_id])){
+                            $team_res = new TeamResource($team, $media_res);
+                            $em->persist($team_res);
+                        }
                     endforeach;
-                    endforeach;
-                    $em->flush();
+                endforeach;
+                $em->flush();
 
 
                     if ($response) {
