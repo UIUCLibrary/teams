@@ -28,9 +28,23 @@ return [
                     ],
                 ]
             ],
+        ],
+//        'AdminGlobal' => [
+//            [
+//                'label' => 'All Teams', // @translate
+//                'class' => 'o-icon-users',
+//                //make new route
+//                'route' => 'admin/teams',
+//                //etc
+//                'controller' => 'setting',
+//                'action' => 'browse',
+//                'resource' => 'Omeka\Controller\Admin\Setting',
+//                'privilege' => 'browse',
+//            ],
+//        ],
 
-        ]
     ],
+
     'permissions' => [
         'acl_resources' => [
             Entity\TeamUser::class,
@@ -107,8 +121,8 @@ return [
             //to make the item controlller do what I made it do by editing the Omeka ItemController, just add this
             //and route it to a different factory that invokes a controller of my design
             'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
-            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
-            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
+//            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
+//            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
             'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
             'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
             'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',

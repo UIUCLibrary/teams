@@ -5,8 +5,9 @@ namespace Teams;
 
 
 use Doctrine\ORM\QueryBuilder;
+use DoctrineExtensions\Query\Mysql\Now;
 use Omeka\Api\Exception;
-
+use Omeka\Entity\ItemSet;
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
@@ -29,8 +30,7 @@ use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-
-
+use DateTime;
 
 class Module extends AbstractModule
 {
@@ -940,6 +940,99 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $view->partial('teams/partial/user/edit', ['user_teams' => $user_teams, 'team_ids' => $team_ids]);
     }
 
+    public function itemSetCreate(Event $event){
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+
+        if ($operation == 'create'){
+
+        $response = $event->getParam('response');
+
+        $resource_id = $response->getContent()->getId();
+        $resource =  $response->getContent();
+
+        $teams = $request->getContent()['team'];
+
+        foreach ($teams as $team_id):
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+            $tr = new TeamResource($team, $resource);
+            $em->persist($tr);
+        endforeach;
+        $em->flush();
+
+        }
+
+
+    }
+
+    public function itemSetUpdate(Event $event)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation == 'update'){
+
+            $resource_id = $request->getId();
+            $teams = $request->getContent()['team'];
+
+            //remove team resources for id
+            $remove_tr  = $em->getRepository('Teams\Entity\TeamResource')->findBY(['resource' => $resource_id]);
+            foreach ($remove_tr as $tr):
+                $em->remove($tr);
+            endforeach;
+            $em->flush();
+
+            //add team resources for id
+            $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource_id]);
+            foreach ($teams as $team_id):
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                $add_tr = new TeamResource($team, $resource);
+                $em->persist($add_tr);
+            endforeach;
+            $em->flush();
+
+            //add and return errors
+//            $validationException = new Exception\ValidationException;
+//            $validationException->setErrorStore($error_store);
+//            throw $validationException;
+        }
+//        if ($operation == 'create'){
+//            echo $request->getContent()['team'][0];
+////            $place_holder = new ItemSet();
+//
+//
+//
+//
+//
+////            $place_holder->setCreated(new DateTime());
+////            $em->persist($place_holder);
+////            $em->flush();
+////            $em->refresh($place_holder);
+////
+////            echo 'placeholder: ' . $place_holder->getId();
+////            echo '<br>';
+////            $em->remove($place_holder);
+////            $em->flush();
+////            $entity->setId($place_holder->getId());
+//
+//            foreach (get_class_methods($request) as $method):
+//                echo $method;
+//                echo '<br>';
+//            endforeach;
+//            echo $request->getId();
+//            echo $entity->getId();
+//
+//
+//
+//
+//        }
+    }
+
     public function resourceTemplateTeamsEdit(Event $event)
     {
         $view = $event->getTarget();
@@ -1099,6 +1192,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return $this->getServiceLocator()
             ->get('Omeka\AuthenticationService')->getIdentity();
     }
+
     //only working for read, update, add
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $authorized = false;
@@ -1301,6 +1395,7 @@ EOD;
 
 
 
+
         $sharedEventManager->attach(
             '*',
             'view.layout',
@@ -1366,10 +1461,34 @@ EOD;
             [$this, 'teamAuthorizeOnRead']
         );
 
+        //on api calls, make sure the users has the team authority to do action as well.
         $sharedEventManager->attach(
             '*',
             'api.hydrate.pre',
             [$this, 'teamAuthorizeOnHydrate']
+        );
+
+        $sharedEventManager->attach(
+            ItemSetAdapter::class,
+            'api.execute.post',
+            [$this, 'itemSetCreate']
+        );
+
+
+
+        //only make changes after checking team authority . . . should these two be combined?
+        //seems like they probably should because they are looking at similar things . . .
+        //unless I really need it to be pre and post hydration . . . which maybe I do?
+        $sharedEventManager->attach(
+            ItemSetAdapter::class,
+            'api.hydrate.post',
+            [$this, 'itemSetUpdate']
+        );
+
+        $sharedEventManager->attach(
+            MediaAdapter::class,
+            'api.hydrate.post',
+            [$this, 'itemSetUpdate']
         );
 
 
