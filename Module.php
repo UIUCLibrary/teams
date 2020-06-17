@@ -2,19 +2,12 @@
 namespace Teams;
 
 
-
-
 use Doctrine\ORM\QueryBuilder;
-use DoctrineExtensions\Query\Mysql\Now;
 use Omeka\Api\Exception;
-use Omeka\Entity\ItemSet;
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
-use Omeka\Api\Adapter\UserAdapter;
-use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
-use Omeka\Entity\ResourceTemplate;
 use Omeka\Permissions\Acl;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
@@ -30,7 +23,6 @@ use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
-use DateTime;
 
 class Module extends AbstractModule
 {
@@ -38,12 +30,12 @@ class Module extends AbstractModule
     {
         return include __DIR__ . '/config/module.config.php';
     }
+
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
         $this->addAclRules();
     }
-
 
     public function install(ServiceLocatorInterface $serviceLocator)
     {
@@ -96,6 +88,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
     }
+
     public function createNamedParameter(QueryBuilder $qb, $value,
                                          $prefix = 'omeka_'
     ) {
@@ -194,8 +187,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['search', 'read']
         );
 
-
-
         $acl->allow(
             $viewerRoles,
             [Entity\TeamResource::class],
@@ -203,19 +194,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['read', 'create', 'update', 'delete', 'assign']
         );
 
-
         $acl->allow(
             $viewerRoles,
             [Entity\Team::class],
             ['read', 'create', 'update', 'delete']
         );
+
         $acl->allow(
             $viewerRoles,
             [TeamUser::class, Entity\TeamResource::class],
             // The right "assign" is used to display the form or not.
             ['read', 'create', 'update', 'delete', 'assign']
         );
-
 
         $acl->allow(
             $viewerRoles,
@@ -321,22 +311,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
-//    public function overloadVariable(Event $event)
-//    {
-//        $params = $event->getParams();
-//        foreach ($params as $p):
-//            foreach ($p as $ar):
-//                echo $ar . "<br>";
-////                foreach ($ar as $what):
-////                    echo gettype($what);
-////                endforeach;
-//            endforeach;
-//        endforeach;
-//        $value = null;
-//
-//        $event->setParam('Metadata', $value);
-//    }
-
     public function viewShowAfterResource(Event $event)
     {
         echo '<div id="teams" class="section">';
@@ -372,8 +346,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $resource_type = $resource->getControllerName();
         $associated_teams = $this->listTeams($resource);
-//        $event->setTarget(\Omeka\Controller\Admin\ItemSetController::class);
-//        $event->setParam('item', null);
+
 
         echo '<div id="teams" class="section"><p>';
             //get the partial and pass it whatever variables it needs
@@ -424,31 +397,31 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
-    public function teamDACL(Event $event)
-    {
-        $resource = $event->getTarget()->item->id();
-        $identity = $this->getUser();
-        $user_id = $identity->getId();
-
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
-        $team_id = $current_team->getTeam()->getId();
-        if ($current_team){
-            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>100000])){
-                echo 'yes, do what you like';
-            }else echo 'nopy, not here';
-
-
-
-        }else $current_team = null;
-
-
-
-
-
-
-    }
+//    public function teamDACL(Event $event)
+//    {
+//        $resource = $event->getTarget()->item->id();
+//        $identity = $this->getUser();
+//        $user_id = $identity->getId();
+//
+//        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+//        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
+//        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+//        $team_id = $current_team->getTeam()->getId();
+//        if ($current_team){
+//            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>100000])){
+//                echo 'yes, do what you like';
+//            }else echo 'nopy, not here';
+//
+//
+//
+//        }else $current_team = null;
+//
+//
+//
+//
+//
+//
+//    }
     public function teamSelectorAdvancedSearch(Event $event)
 
     {
@@ -470,12 +443,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 
-    public function addViewAfter(Event $event)
-    {
-        $sectionNav = $event->getParam('sidebar');
-        $event->stopPropagation(true); // @translate
-//        $event->setParam('sidebar', $sectionNav);
-    }
+//    public function addViewAfter(Event $event)
+//    {
+//        $sectionNav = $event->getParam('sidebar');
+//        $event->stopPropagation(true); // @translate
+////        $event->setParam('sidebar', $sectionNav);
+//    }
 //    protected function displayViewAdmin(
 //        Event $event,
 //        AbstractEntityRepresentation $resource = null,
@@ -545,36 +518,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         : TeamResource::class;
     return $acl->userIsAllowed($groupEntity, $privilege);
 }
-//    public function displayGroupResourceForm(Event $event)
-//    {
-//        $operation = $event->getName();
-//        if (!$this->checkAcl(Resource::class, $operation === 'view.add.form.after' ? 'create' : 'update')
-//            || !$this->checkAcl(Resource::class, 'assign')
-//        ) {
-//            $this->viewShowAfterResource($event);
-//            return;
-//        }
-//
-//        $vars = $event->getTarget()->vars();
-//        // Manage add/edit form.
-//        if (isset($vars->item)) {
-//            $vars->offsetSet('resource', $vars->item);
-//        } elseif (isset($vars->itemSet)) {
-//            $vars->offsetSet('resource', $vars->itemSet);
-//        } elseif (isset($vars->media)) {
-//            $vars->offsetSet('resource', $vars->media);
-//        } else {
-//            $vars->offsetSet('resource', null);
-//            $vars->offsetSet('groups', []);
-//        }
-//        if ($vars->resource) {
-//            $vars->offsetSet('groups', $this->listTeams($vars->resource, 'representation'));
-//        }
-//
-//        echo $event->getTarget()->partial(
-//            'common/admin/groups-resource-form'
-//        );
-//    }
+
 
     public function displayUserForm(Event $event)
     {
@@ -744,71 +688,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
         return $current_team;
     }
-    public function deleteInsulation(Event $event)
-    {
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-        $entity = $event->getParam('entity');
-
-        $identity = $this->getUser();
-        $team_id = $entityManager
-            ->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current'=>true, 'user'=>$identity])
-            ->getTeam()->getId();
-        $resource_id =  $entity->getId();
-
-
-        $entity = $entityManager
-            ->getRepository('Teams\Entity\TeamResource')
-            ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id]);
-        $event->setParam('entity', $entity);
-//        $event->stopPropagation(true);
-//        $entityManager->remove($entity);
-//        return $entity;
-    }
-
-//    public function deleteInsulation(Event $event)
-//    {
-//        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-//
-//        $entity = $event->getParam('entity');
-////
-////        $identity = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
-////        $team_id = $entityManager
-////            ->getRepository('Teams\Entity\TeamUser')
-////            ->findOneBy(['is_current'=>true, 'user'=>$identity])
-////            ->getTeam()->getId();
-////        $resource_id =  $entity->getId();
-////
-////
-////        $entity = $entityManager
-////            ->getRepository('Teams\Entity\TeamResource')
-////            ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id]);
-//
-//
-//
-//
-//        $identity = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
-//        $team_id = $entityManager
-//            ->getRepository('Teams\Entity\TeamUser')
-//            ->findOneBy(['is_current'=>true, 'user'=>$identity])
-//            ->getTeam()->getId();
-//        $resource_id =  $entity->getId();
-//
-//        $team_entity =$entityManager
-//            ->getRepository('Teams\Entity\TeamResource')
-//            ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id]);
-//        $entityManager->remove($team_entity);
-//
-//
-//        $event->stopPropagation(true);
-//
-//
-//
-//
-//
-//
-//    }
 
 
     public function filterByTeam(Event $event){
@@ -902,9 +782,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
-//                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'tr', Expr\Join::WITH,  'omeka_root.id = tr.resource_template')->andWhere('tr.team = :team_id')
-//                        ->setParameter('team_id', 1)
-//                    ;
+
 
             }
         }else{echo "no team";}
@@ -950,7 +828,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $response = $event->getParam('response');
 
-        $resource_id = $response->getContent()->getId();
         $resource =  $response->getContent();
 
         $teams = $request->getContent()['team'];
@@ -981,7 +858,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $teams = $request->getContent()['team'];
 
             //remove team resources for id
-            $remove_tr  = $em->getRepository('Teams\Entity\TeamResource')->findBY(['resource' => $resource_id]);
+            $remove_tr  = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
             foreach ($remove_tr as $tr):
                 $em->remove($tr);
             endforeach;
@@ -1001,37 +878,95 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //            $validationException->setErrorStore($error_store);
 //            throw $validationException;
         }
-//        if ($operation == 'create'){
-//            echo $request->getContent()['team'][0];
-////            $place_holder = new ItemSet();
-//
-//
-//
-//
-//
-////            $place_holder->setCreated(new DateTime());
-////            $em->persist($place_holder);
-////            $em->flush();
-////            $em->refresh($place_holder);
-////
-////            echo 'placeholder: ' . $place_holder->getId();
-////            echo '<br>';
-////            $em->remove($place_holder);
-////            $em->flush();
-////            $entity->setId($place_holder->getId());
-//
-//            foreach (get_class_methods($request) as $method):
-//                echo $method;
-//                echo '<br>';
-//            endforeach;
-//            echo $request->getId();
-//            echo $entity->getId();
-//
-//
-//
-//
-//        }
     }
+
+    public function itemUpdate(Event $event){
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation == 'update' ){
+            $resource_id = $request->getId();
+
+            if (array_key_exists('team', $request->getContent())){
+
+                //array of team ids
+                $teams = $request->getContent()['team'];
+
+                //array of media ids
+                $media_ids = [];
+                foreach ($entity->getMedia() as $media):
+                    $media_ids[] = $media->getId();
+                endforeach;
+
+                //resource represented by the item in the resource table
+                $resource = $em->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id' => $resource_id]);
+
+                foreach ($teams as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    if (! $em->getRepository('Teams\Entity\TeamResource')
+                        ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id])){
+                        $tr = new TeamResource($team, $resource);
+                        $em->persist($tr);}
+
+
+                    foreach ($media_ids as $media_id):
+                        if (! $em->getRepository('Teams\Entity\TeamResource')
+                            ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])){
+                        $m = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$media_id]);
+                        $mtr = new TeamResource($team, $m);
+                        $em->persist($mtr);}
+                    endforeach;
+                endforeach;
+                $em->flush();
+            }
+        }
+
+    }
+
+    public function itemCreate(Event $event)
+    {
+
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+
+        if ($operation == 'create'){
+
+            $response = $event->getParam('response');
+
+            $resource =  $response->getContent();
+            $media = $resource->getMedia();
+
+            if (array_key_exists('team', $request->getContent())){
+                $teams = $request->getContent()['team'];
+
+                //add items to team
+                foreach ($teams as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                    $tr = new TeamResource($team, $resource);
+                    $em->persist($tr);
+
+                    //if there is media, at those to the team as well
+                    if (count($media) > 0) {
+                        foreach ($media as $m):
+                            $tr = new TeamResource($team, $m);
+                            $em->persist($tr);
+                        endforeach;}
+
+                endforeach;
+                $em->flush();
+            }
+        }
+    }
+
+
+
+
 
     public function resourceTemplateTeamsEdit(Event $event)
     {
@@ -1474,6 +1409,15 @@ EOD;
             [$this, 'itemSetCreate']
         );
 
+        $sharedEventManager->attach(
+            ItemAdapter::class,
+            'api.execute.post',
+            [$this, 'itemCreate']
+        );
+
+
+
+
 
 
         //only make changes after checking team authority . . . should these two be combined?
@@ -1489,6 +1433,12 @@ EOD;
             MediaAdapter::class,
             'api.hydrate.post',
             [$this, 'itemSetUpdate']
+        );
+
+        $sharedEventManager->attach(
+            ItemAdapter::class,
+            'api.hydrate.post',
+            [$this, 'itemUpdate']
         );
 
 
