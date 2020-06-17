@@ -47,6 +47,11 @@ class IndexController extends AbstractActionController
                     ->findOneBy(['is_current'=>true, 'user'=>$user_id])
                     ->getTeam()->getId();
 
+                //array of media ids
+                $media_ids = [];
+                foreach ($this->api()->read('items', $this->params('id'))->getContent()->media() as $media):
+                    $media_ids[] = $media->id();
+                endforeach;
 
                 $entity = $entityManager
                     ->getRepository('Teams\Entity\TeamResource')
@@ -59,8 +64,19 @@ class IndexController extends AbstractActionController
                 ]);
                 $this->getEventManager()->triggerEvent($event);
 
+
                 if ($entity){
                     $entityManager->remove($entity);
+                    foreach ($media_ids as $media_id):
+                        $tr = $entityManager->getRepository('Teams\Entity\TeamResource')
+                            ->findOneBy(['team' => $team_id, 'resource' => $media_id]);
+                        if ($tr){
+                            $entityManager->remove($tr);
+                            $this->messenger()->addSuccess('Associated Media successfully removed from your team.'); // @translate
+
+
+                        }
+                    endforeach;
                     $entityManager->flush();
                     $this->messenger()->addSuccess('Item successfully removed from your team.'); // @translate
                     $this->messenger()->addSuccess('Item remains available to other teams if they are linked to it.'); // @translate
@@ -71,13 +87,6 @@ class IndexController extends AbstractActionController
 
                 }
 
-
-
-
-
-
-
-//
 //                $response = $this->api($form)->delete('items', $this->params('id'));
 //                if ($response) {
 //                    $this->messenger()->addSuccess('Item successfully deleted'); // @translate
