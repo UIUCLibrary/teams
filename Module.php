@@ -1124,8 +1124,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
     public function getUser(){
-        return $this->getServiceLocator()
-            ->get('Omeka\AuthenticationService')->getIdentity();
+        if ($this->getServiceLocator()
+            ->get('Omeka\AuthenticationService')->getIdentity()){
+            return $this->getServiceLocator()
+                ->get('Omeka\AuthenticationService')->getIdentity();
+
+        };
     }
 
     //only working for read, update, add
@@ -1136,7 +1140,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
-        if ($user == null && $action == 'read' && $res_class == 'Omeka\Entity\ResourceTemplate'){
+
+        if ($user == null && $action == 'read'){
             return true;
         }
 
@@ -1167,9 +1172,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
         }
 
-
-
-
         $resource_domains = [
             'Omeka\Entity\Item',
             'Omeka\Entity\ItemSet',
@@ -1181,8 +1183,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if (in_array($res_class, $resource_domains )){
             if ($action == 'create'){
                 $authorized = $team_user_role->getCanAddItems();
-
-
             }
             elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $team_user_role->getCanDeleteResources();
@@ -1328,9 +1328,6 @@ EOD;
     {
         $services = $this->getServiceLocator();
 
-
-
-
         $sharedEventManager->attach(
             '*',
             'view.layout',
@@ -1415,11 +1412,6 @@ EOD;
             [$this, 'itemCreate']
         );
 
-
-
-
-
-
         //only make changes after checking team authority . . . should these two be combined?
         //seems like they probably should because they are looking at similar things . . .
         //unless I really need it to be pre and post hydration . . . which maybe I do?
@@ -1441,27 +1433,11 @@ EOD;
             [$this, 'itemUpdate']
         );
 
-
-////This is throwing an error when used alongside the teamAuthorize because it is not returing the required type EntityInterface
-//            $sharedEventManager->attach(
-//                ItemAdapter::class,
-////                '*',
-//                'api.find.post',
-//                [$this, 'deleteInsulation']
-//            );
-
         $sharedEventManager->attach(
             'Teams\Controller\Add',
             'view.add.section_nav',
             [$this, 'displayUserForm']
         );
-//        $sharedEventManager->attach(
-////            'Omeka\Controller\Site\Index',
-//            '*',
-//            'view.layout',
-//            [$this, 'addAsset']
-//
-//        );
 
         //Edit pages//
             //Item//
@@ -1631,14 +1607,6 @@ EOD;
             [$this, 'displaySitePoolMsg']
         );
 
-
-
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.add.after',
-//            [$this, 'displayTeamFormNoId']
-//        );
-
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.add.form.after',
@@ -1681,22 +1649,6 @@ EOD;
         );
 
 
-
-
-            //Sites//
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\SiteAdmin\Index',
-//            'view.add.section_nav',
-//            [$this, 'addTab']
-//        );
-//
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\SiteAdmin\Index',
-//            'view.add.after',
-//            [$this, 'displayTeamFormNoId']
-//        );
-
-
         //put the roles data in the user page
 
         $sharedEventManager->attach(
@@ -1725,29 +1677,6 @@ EOD;
             'form.add_elements',
             [$this, 'addSiteFormElement']
         );
-
-
-
-//        $sharedEventManager->attach(
-//            '*',
-//            'view.edit.form.after',
-//            [$this, 'addResourceTemplateFormElement']
-//        );
-
-
-
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\User',
-//            'view.edit.form.before',
-//            [$this, 'addUserFormValue']
-//        );
-
-
-
-
-
-
-
 
 
     }
