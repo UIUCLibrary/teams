@@ -1,7 +1,7 @@
 <?php
 namespace Teams;
 
-
+use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
 use Doctrine\ORM\Query\Expr;
@@ -337,6 +337,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
     }
+
+    //content under the Teams tab for resources
     public function adminShowTeams(Event $event)
     {
 
@@ -351,7 +353,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo '<div id="teams" class="section"><p>';
             //get the partial and pass it whatever variables it needs
         echo $event->getTarget()->partial(
-            'teams/partial/test',
+            'teams/partial/resource-show-teams',
             [
                 'teams' => $associated_teams,
                 'resource_type' => $resource_type
@@ -442,36 +444,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
-
-//    public function addViewAfter(Event $event)
-//    {
-//        $sectionNav = $event->getParam('sidebar');
-//        $event->stopPropagation(true); // @translate
-////        $event->setParam('sidebar', $sectionNav);
-//    }
-//    protected function displayViewAdmin(
-//        Event $event,
-//        AbstractEntityRepresentation $resource = null,
-//        $listAsDiv = false
-//    ) {
-//        // TODO Add an acl check for right to view groups (controller level).
-//        $isUser = $resource && $resource->getControllerName() === 'user';
-//        $groups = $this->listGroups($resource, 'representation');
-//        $partial = $listAsDiv
-//            ? 'common/admin/groups-resource'
-//            : 'common/admin/groups-resource-list';
-//        echo $event->getTarget()->partial(
-//            $partial,
-//            [
-//                'resource' => $resource,
-//                'groups' => $groups,
-//                'isUser' => $isUser,
-//            ]
-//        );
-//    }
-
-
-
     protected function listTeams(AbstractEntityRepresentation $resource = null)
     {
 
@@ -481,34 +453,44 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
          */
 
         //
+//        $messanger = new Messenger();
+//        $messanger->addError('this is an error');
+//        $messanger->addWarning('THIS is an warning');
+//        $messanger->addNotice("you got this");
+//        $messanger->addSuccess('yup');
         $result = [];
 
         //get all the teams
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $teams = $entityManager->getRepository('Teams\Entity\Team')->findAll();
+//        $teams = $entityManager->getRepository('Teams\Entity\Team')->findAll();
+//
+//        //for every team, get the team resources
+//        foreach ($teams as $team):
+//            $team_resources = $team->getTeamResources();
+//
+//            //for each of those resources
+//            foreach ($team_resources as $team_resource):
+//                //check to see if the resource id == the resource_id passed in to the function
+//                if ($team_resource->getResource()->getId() == $resource->id()){
+//                    $result[$team->getName()] = $team;}
+//                endforeach;
+//        endforeach;
+        $team_resource = $entityManager->getRepository('Teams\Entity\TeamResource')
+            ->findBy(['resource'=>$resource->id()]);
 
-        //for every team, get the team resources
-        foreach ($teams as $team):
-            $team_resources = $team->getTeamResources();
-
-            //for each of those resources
-            foreach ($team_resources as $team_resource):
-                //check to see if the resource id == the resource_id passed in to the function
-                if ($team_resource->getResource()->getId() == $resource->id()){
-                    $result[$team->getName()] = $team;}
-                endforeach;
-
-
+        foreach ($team_resource as $tr):
+            $result[$tr->getTeam()->getName()] = $tr->getTeam();
         endforeach;
+
         return  $result;
     }
 
-    public function addBrowseBefore(Event $event)
-    {
-        $browse_before = $event->getParam('before');
-        $browse_before['team'] = 'testing';
-        $event->setParam('before', $browse_before);
-    }
+//    public function addBrowseBefore(Event $event)
+//    {
+//        $browse_before = $event->getParam('before');
+//        $browse_before['team'] = 'testing';
+//        $event->setParam('before', $browse_before);
+//    }
 
     protected function checkAcl($resourceClass, $privilege)
 {
@@ -690,13 +672,46 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 
+    public function getTeamContext($query)
+    {
+        //if the query explicitly asks for a team, that trumps all
+        if (isset($query['team_id'])){
+            $team_id = $query['team_id'];
+        }
 
+        //Logged-in or not, if it is a public site use the TeamSite
+        elseif ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
+            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+            $team_id = $entityManager->getRepository('Teams\Entity\TeamSite')
+                ->findOneBy(['site' => $query['site_id']])
+                ->getTeam()->getId();
+        }
+
+        elseif ($this->getUser() != null) {
+            $identity = $this->getUser();
+            if ($identity){
+                $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+                $user_id = $identity->getId();
+                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
+
+                if ($team_user){
+                    $team_id = $team_user->getTeam()->getId();
+                }
+
+            }
+
+        }
+        else{
+            $team_id = 0;
+        }
+        return $team_id;
+
+    }
     public function filterByTeam(Event $event){
 
         //TODO Bug(DONE): on the advanced search class, template and search by value fail with error
         // Too many parameters: the query defines n parameters and you bound n+1
         // even if I remove the setParameter here. Because itemset and sitepool both work
-
 
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
@@ -704,60 +719,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $alias = 'omeka_root';
 
-
+        //TODO this can be refactored out because it is used in basicaly the same form many palces
+        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
-
-        ///If this is a case where someone is adding something and can choose which team to add it to, take that into
-        /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
-        if (isset($query['team_id']) && is_int($query['team_id'])){
-            $team_id = $query['team_id'];
-        }else{
-
-            //TODO this can be refactored out because it is used in basicaly the same form many palces
-            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-            $identity = $this->getUser();
-            //TODO add handeling for user not logged-in !!!this current solution would not work
-            if (!$identity){
-                $user_id = null;
-                return;
-
-            }else{
-
-                $user_id = $identity->getId();
-                $user_role = $entityManager->getRepository('Omeka\Entity\User')->findOneby(['id'=>$user_id])->getRole();
-
-        }
-
-            //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
-        if (isset($query['bypass_team_filter']) && $user_role == 'global_admin'){
+        //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
+        if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
             return;
         }
+        ///If this is a case where someone is adding something and can choose which team to add it to, take that into
+        /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
 
-
-
-
-            //there currently is not an integrity constrain that enforces one and only one is_current per user
-            //so adding a test here (there can not be more than one but the db would allow 0)
-
-            //TODO need some behavior for when a user doesn't belong to any teams. Ideally passing an error message
-            $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
-            if (!$team_user){
-                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
-            }
-            if ($team_user){
-                $current_team = $team_user->getTeam();
-                $team_id = $current_team->getId();
-            }else{
-                $current_team = 'None';
-                $team_id = 0;
-            }
-
-        }
-
-
+        $team_id = $this->getTeamContext($query);
         if ( is_int($team_id)){
-            $adapter = $event->getTarget();
 
             //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
@@ -1134,6 +1108,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     //only working for read, update, add
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
+
+        $messanger = new Messenger();
+
         $authorized = false;
         $user = $this->getUser();
         $res_class = $this->getResourceClass($resource);
@@ -1141,9 +1118,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
 
+        //should be by far the most common case
+        //if it isn't on the backend, let the public vs private rules take over
+        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return true;
+        }
+        //actually need this even less restrictive just so that public can see frontend
         if ($user == null && $action == 'read'){
             return true;
         }
+
 
         $is_glob_admin = ($user->getRole() == 'global_admin');
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -1159,7 +1143,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //if resource not part of user's current team, no action at all
             if (! $this->inTeam($resource, $team_user)){
                 $authorized = false;
-                throw new Exception\PermissionDeniedException(sprintf(
+                $err = sprintf(
 //                $this->getTranslator()->translate(
                     'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s.
                     If you feel this is an error, try changing teams or talk to the administrator.
@@ -1168,7 +1152,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //                )
                     ,
                     get_class($resource), $resource->getId(), $team->getName(), $action
-                ));
+                );
+                $messanger->addError($err);
+                throw new Exception\PermissionDeniedException($err
+
+                );
             }
         }
 
@@ -1275,28 +1263,39 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $authorized = false;
             $msg = sprintf(
 //                    $this->getTranslator()->translate(
-                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource. Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.'
 
 //                    )
                 ,
                 get_class($resource), $resource->getId(), $action, $team_user_role->getName(), $team->getName()
             );
-            $str = <<<EOD
-                <script>
-                    window.addEventListener("load", function() {
-                      let msg = "$msg";
-                      let content = document.getElementById("content");
-                      let ul = document.createElement("ul")
-                      ul.className = "messages";
-                      let li = document.createElement("li");
-                      li.className = "error";
-                      li.innerText = msg;
-                      ul.appendChild(li);
-                      content.prepend(ul);
-                      })
-                      </script>
-EOD;
-            echo $str;
+            $diagnostic = sprintf(
+//                    $this->getTranslator()->translate(
+                'Diagnostic:  --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+
+//                    )
+                ,
+                get_class($resource), $resource->getId(), $action, $team_user_role->getName(), $team->getName()
+            );
+
+            $messanger->addError($msg);
+            $messanger->addError($diagnostic);
+//            $str = <<<EOD
+//                <script>
+//                    window.addEventListener("load", function() {
+//                      let msg = "$msg";
+//                      let content = document.getElementById("content");
+//                      let ul = document.createElement("ul")
+//                      ul.className = "messages";
+//                      let li = document.createElement("li");
+//                      li.className = "error";
+//                      li.innerText = msg;
+//                      ul.appendChild(li);
+//                      content.prepend(ul);
+//                      })
+//                      </script>
+//EOD;
+//            echo $str;
 
 
 
