@@ -29,19 +29,19 @@ return [
                 ]
             ],
         ],
-//        'AdminGlobal' => [
-//            [
-//                'label' => 'All Teams', // @translate
-//                'class' => 'o-icon-users',
-//                //make new route
-//                'route' => 'admin/teams',
-//                //etc
-//                'controller' => 'setting',
-//                'action' => 'browse',
-//                'resource' => 'Omeka\Controller\Admin\Setting',
-//                'privilege' => 'browse',
-//            ],
-//        ],
+        'AdminGlobal' => [
+            [
+                'label' => 'All Teams', // @translate
+                'class' => 'o-icon-users',
+                //make new route
+                'route' => 'admin/teams/all',
+                //etc
+                'controller' => 'setting',
+                'action' => 'browse',
+                'resource' => 'Omeka\Controller\Admin\Setting',
+                'privilege' => 'browse',
+            ],
+        ],
 
     ],
 
@@ -312,6 +312,16 @@ return [
                                     'defaults' => [
                                         'controller' => 'ChangeTeam',
                                         'action' => 'change'
+                                    ]
+                                ]
+                            ],
+                            'all' => [
+                                'type' => Literal::class,
+                                'options' => [
+                                    'route' => '/all',
+                                    'defaults' => [
+                                        'controller' => 'Index',
+                                        'action' => 'all'
                                     ]
                                 ]
                             ],

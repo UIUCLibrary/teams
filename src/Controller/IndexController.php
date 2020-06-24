@@ -30,6 +30,20 @@ class IndexController extends AbstractActionController
     {
         $this->entityManager = $entityManager;
     }
+
+    public function allAction(){
+
+        $view = new ViewModel;
+        $teams = $this->entityManager->getRepository('Teams\Entity\Team')->findAll();
+
+
+        $view->setVariable('teams', $teams);
+        return $view;
+
+
+
+
+    }
     public function deleteAction()
     {
         if ($this->getRequest()->isPost()) {
@@ -67,6 +81,8 @@ class IndexController extends AbstractActionController
 
                 if ($entity){
                     $entityManager->remove($entity);
+
+                    //remove associated media from the team
                     foreach ($media_ids as $media_id):
                         $tr = $entityManager->getRepository('Teams\Entity\TeamResource')
                             ->findOneBy(['team' => $team_id, 'resource' => $media_id]);

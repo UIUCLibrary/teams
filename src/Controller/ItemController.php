@@ -205,7 +205,6 @@ class ItemController extends AbstractActionController
         return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
     }
 
-
     public function addAction()
     {
         $form = $this->getForm(ResourceForm::class);
@@ -223,20 +222,6 @@ class ItemController extends AbstractActionController
                 $resource = $em->getRepository('Omeka\Entity\Item')->findOneBy(['id' => $response->getContent()->id()]);
                 $media = $resource->getMedia();
 
-                if (array_key_exists('team', $data)) {
-                    foreach ($data['team'] as $team_id):
-                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                        $team_resource = new TeamResource($team, $resource);
-                        $em->persist($team_resource);
-                        if (count($media) > 0) {
-                            foreach ($media as $m):
-                                $tr = new TeamResource($team, $m);
-                                $em->persist($tr);
-                            endforeach;
-                        }
-                    endforeach;
-                    $em->flush();
-                }
 
                 if ($response) {
                     $message = new Message(
@@ -308,6 +293,7 @@ class ItemController extends AbstractActionController
                     foreach ($media_ids as $media_id):
                         $media_res = $em->getRepository('Omeka\Entity\Resource')
                             ->findOneBy(['id' => $media_id]);
+                        //don't add the media to a team where it already exists
                         if (!$em->getRepository('Teams\Entity\TeamResource')
                             ->findOneBy(['resource' => $media_id, 'team'=> $team_id])){
                             $team_res = new TeamResource($team, $media_res);
