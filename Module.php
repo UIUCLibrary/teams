@@ -749,7 +749,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     <<<EOF
 <script>
     window.addEventListener("load", function () {
-    $(".site-list-heading").text("Sites for Team $team_name")
+    $(".site-list-heading").text("Sites for Team: '$team_name'")
         }
     );
 </script>;
