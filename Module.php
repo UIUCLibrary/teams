@@ -1706,7 +1706,7 @@ EOF;
         $form->add([
 
             'name' => 'o-module-teams:Team',
-            'type' => AllTeamSelect::class,
+            'type' => TeamSelect::class,
             'options' => [
                 'label' => 'Teams', // @translate
                 'chosen' => true,
