@@ -123,9 +123,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         //allow everyone to see their teams
         $acl->allow(
             $roles,
-            'Teams\Controller\Index'
+            'Teams\Controller\Index',
+            ['index']
 
         );
+
+        //allow everyone to change their current team
+        $acl->allow(
+            $roles,
+            'Teams\Controller\Update',
+            ['currentTeam']
+
+        );
+
         $acl->allow(
             'global_admin',
             [
@@ -138,7 +148,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'index',
                 'teamAdd',
                 'teamDetail',
-                'teamUpdate'
+                'teamUpdate',
+
             ]
         );
         $acl->allow(
@@ -599,23 +610,20 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
 
-
+//need to use the currentTeam() function
     public function teamSelectorNav(Event $event)
     {
         if (!$this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
-        $view = $event->getTarget();
+            $view = $event->getTarget();
+            $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
+            if ($identity = $this->getUser()) {
+                $user_id = $identity->getId();
+            }else{$user_id = null;}
+            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+            $tu = $entityManager->getRepository('Teams\Entity\TeamUser');
+            $ct = $tu->findOneBy(['is_current'=>true, 'user'=>$user_id]);
 
-        $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
-
-        if ($identity = $this->getUser())
-        {
-            $user_id = $identity->getId();
-        }else{$user_id = null;}
-
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $tu = $entityManager->getRepository('Teams\Entity\TeamUser');
-        $ct = $tu->findOneBy(['is_current'=>true, 'user'=>$user_id]);
-        if($ct){
+            if($ct){
             $ct = $ct->getTeam();
 //        } elseif ($tu->findOneBy(['user'=>$user_id])){
 //            $tu = $tu->findOneBy(['user'=>$user_id]);
@@ -653,13 +661,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }else{
 
             $user_id = $identity->getId();
-            $user_role = $entityManager->getRepository('Omeka\Entity\User')->findOneby(['id'=>$user_id])->getRole();
-
         }
 
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
         if (!$team_user){
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
+            $team_user->setCurrent('1');
+            $entityManager->merge($team_user);
+            $entityManager->flush();
         }
         if ($team_user){
             $current_team = $team_user->getTeam();
@@ -692,19 +701,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
 
         elseif ($this->getUser() != null) {
-            $identity = $this->getUser();
-            if ($identity){
-                $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-                $user_id = $identity->getId();
-                $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
 
-                if ($team_user){
-                    $team_id = $team_user->getTeam()->getId();
-                }
+                $team_id = $this->currentTeam()->getId();
+
 
             }
 
-        }
+
         else{
             $team_id = 0;
         }
@@ -752,7 +755,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     $(".site-list-heading").text("Sites for Team: '$team_name'")
         }
     );
-</script>;
+</script>
 EOF;
 
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
