@@ -1128,11 +1128,16 @@ EOF;
 
     //only working for read, update, add
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
+        $user = $this->getUser();
 
-        $messanger = new Messenger();
+        //if it is the 'super' global admin, bypass any team controls
+        if ($user->getId() === 1 && $user->getRole() === 'global_admin'){
+            return true;
+        }
+        $messenger = new Messenger();
 
         $authorized = false;
-        $user = $this->getUser();
+
         $res_class = $this->getResourceClass($resource);
 
         //case that I don't fully understand. When selecting resource template on new item form
@@ -1173,7 +1178,7 @@ EOF;
                     ,
                     get_class($resource), $resource->getId(), $team->getName(), $action
                 );
-                $messanger->addError($err);
+                $messenger->addError($err);
                 throw new Exception\PermissionDeniedException($err
 
                 );
@@ -1298,8 +1303,8 @@ EOF;
                 get_class($resource), $resource->getId(), $action, $team_user_role->getName(), $team->getName()
             );
 
-            $messanger->addError($msg);
-            $messanger->addError($diagnostic);
+            $messenger->addError($msg);
+            $messenger->addError($diagnostic);
 //            $str = <<<EOD
 //                <script>
 //                    window.addEventListener("load", function() {
