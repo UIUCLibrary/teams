@@ -21,13 +21,18 @@ class AllItemSetSelect extends TeamSelect
         //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
         $em = $this->getEntityManager();
         $api = $this->getApiManager();
-        $users = $api->search('item_sets', ['bypass_team_filter'=>true])->getContent();
+        $item_sets = $api->search('item_sets', ['bypass_team_filter'=>true])->getContent();
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
-        foreach ($users as $user):
-            $user_name = $user->displayTitle() . ' (' . $user->owner()->name() . ')';
-            $user_id = $user->id();
-            $valueOptions[$user_id] = $user_name;
+        foreach ($item_sets as $item_set):
+            if ($item_set->owner()){
+                $owner = $item_set->owner()->name();
+            }else{
+                $owner = 'No One';
+            }
+            $item_set_name = $item_set->displayTitle() . ' (' . $owner . ')';
+            $item_set_id = $item_set->id();
+            $valueOptions[$item_set_id] = $item_set_name;
         endforeach;
 
 
