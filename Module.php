@@ -674,6 +674,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function getTeamContext($query)
     {
+//        foreach ($query as $key => $value):
+//            echo $key . ': ' . $value . '<br>';
+//        endforeach;
+
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             $team_id = $query['team_id'];
@@ -719,8 +723,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $alias = 'omeka_root';
 
-        //TODO this can be refactored out because it is used in basicaly the same form many palces
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
@@ -733,13 +735,30 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $team_id = $this->getTeamContext($query);
         if ( is_int($team_id)){
 
-            //TODO: site really should be taking its team cue from the teams the site is associated with, not the user
+            //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
-                //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
-                    ->setParameter('team_id', $team_id)
-                ;
+                if (! $this->getUser()){
+                    return ;
+                }else{
+                    $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+                    $team_name = $entityManager->getRepository('Teams\Entity\Team')
+                        ->findOneBy(['id'=> $team_id])
+                        ->getName();
+                    echo
+                    <<<EOF
+<script>
+    window.addEventListener("load", function () {
+    $(".site-list-heading").text("Sites for Team $team_name")
+        }
+    );
+</script>;
+EOF;
+
+                    //TODO get the team_id's associated with the site and then do an orWhere()/orX()
+                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
+                        ->setParameter('team_id', $team_id)
+                ;}
             }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
                  $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
@@ -756,10 +775,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
-
-
             }
-        }else{echo "no team";}
+        }
     }
 
     //add user's teams to the user detail page view/omeka/admin/user/show.phtml
