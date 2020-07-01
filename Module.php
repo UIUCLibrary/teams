@@ -1130,6 +1130,11 @@ EOF;
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $user = $this->getUser();
 
+        if (!$user){
+
+            return true;
+        }
+
         //if it is the 'super' global admin, bypass any team controls
         if ($user->getId() === 1 && $user->getRole() === 'global_admin'){
             return true;
