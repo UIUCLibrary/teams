@@ -753,7 +753,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
-                if (! $this->getUser() || $team_id === 0){
+                if (! $this->getUser()){
                     return ;
                 }else{
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
