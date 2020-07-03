@@ -753,15 +753,22 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
-                if (! $this->getUser()){
+                if (! $this->getUser() || $team_id === 0){
                     return ;
                 }else{
-                    $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-                    $team_name = $entityManager->getRepository('Teams\Entity\Team')
-                        ->findOneBy(['id'=> $team_id])
-                        ->getName();
-                    echo
-                    <<<EOF
+                    //TODO get the team_id's associated with the site and then do an orWhere()/orX()
+                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
+                        ->setParameter('team_id', $team_id);
+
+                    //TODO:This needs to be moved to its own fuction and only fire when on the site index page, which
+                    //is where it belongs
+                        if ($team_id !=0){
+                            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+                            $team_name = $entityManager->getRepository('Teams\Entity\Team')
+                                ->findOneBy(['id'=> $team_id])
+                                ->getName();
+                            echo
+                            <<<EOF
 <script>
     window.addEventListener("load", function () {
     $(".site-list-heading").text("Sites for Team: '$team_name'")
@@ -769,11 +776,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     );
 </script>
 EOF;
-
-                    //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
-                        ->setParameter('team_id', $team_id)
-                ;}
+                        }
+                }
             }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
                  $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
