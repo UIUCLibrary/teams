@@ -35,9 +35,15 @@ class IndexController extends AbstractActionController
 
         $view = new ViewModel;
         $teams = $this->entityManager->getRepository('Teams\Entity\Team')->findAll();
+        $super_admin = $this->entityManager->getRepository('Omeka\Entity\User')
+            ->findOneBy(['id' => 1, 'role' => 'global_admin']);
+        $user = $this->identity();
 
 
         $view->setVariable('teams', $teams);
+        $view->setVariable('super_admin', $super_admin);
+        $view->setVariable('user', $user);
+
         return $view;
 
 

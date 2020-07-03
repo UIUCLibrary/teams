@@ -666,6 +666,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
         if (!$team_user){
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
+
+
             $team_user->setCurrent('1');
             $entityManager->merge($team_user);
             $entityManager->flush();

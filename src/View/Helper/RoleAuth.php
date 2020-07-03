@@ -30,7 +30,12 @@ class RoleAuth extends AbstractHelper
 
     public function isGlobAdmin()
     {
-        return $this->user()->getRole() == 'global_admin';
+        return $this->user()->getRole() === 'global_admin';
+    }
+
+    public function isSuper()
+    {
+        return ($this->isGlobAdmin() && $this->user()->getId() === 1);
     }
 
     public function teamAuthorized(string $action, string $domain)
@@ -47,6 +52,11 @@ class RoleAuth extends AbstractHelper
                 sprintf('"%1$s" not a valid domain for teamAuthorized().',
                     $domain)
             );
+        }
+
+        //super admin should bypass team authority
+        if ($this->isSuper()){
+            return true;
         }
 
         $em = $this->entityManger;

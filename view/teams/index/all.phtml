@@ -1,5 +1,12 @@
 <?php
+if ($user == $super_admin){
+    ?>
 
+    <div class="breadcrumbs">
+    Only the super admin, <?php echo $this->super_admin->getName();?>, can make changes to team they don't belong to
+</div>
+<?php
+}
 $translate = $this->plugin('translate');
 echo $this->pageTitle($translate('All Teams'));
 
@@ -37,7 +44,7 @@ if ($this->teams): ?>
                     </td>
                     <td>
                         <ul class="actions">
-                            <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
+                            <?php if ($this->roleAuth()->teamAuthorized('update', 'team') ): ?>
                             <li>
 
                                 <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
@@ -53,7 +60,10 @@ if ($this->teams): ?>
                         </ul>
                     </td>
                     <td>
-                        <?php foreach ($team->getTeamUsers() as $user):
+                        <?php
+
+                        echo $team->getUsers();
+                        foreach ($team->getTeamUsers() as $user):
 
                             if ($user->getUser()->getId() == $this->identity()->getId())
                             {
