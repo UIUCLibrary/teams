@@ -1,4 +1,13 @@
 <?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+<div id="page-actions">
+    <?php if ($this->roleAuth()->teamAuthorized('add', 'team')): ?>
+        <?php echo $this->hyperlink($translate('Add new team'), $this->url('admin/teams/add'), ['class' => 'button']); ?>
+    <?php endif; ?>
+</div>
+<?php
 if ($user != $super_admin){
     ?>
 
