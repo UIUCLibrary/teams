@@ -9,6 +9,7 @@ use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\EntityInterface;
 use Omeka\Permissions\Acl;
+use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\Element\AllTeamSelect;
@@ -649,6 +650,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     //injects into AbstractEntityAdapter where queries are structured for the api
 
 
+
     public function currentTeam()
     {
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -667,10 +669,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if (!$team_user){
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
 
+            if ($team_user){
 
-            $team_user->setCurrent('1');
-            $entityManager->merge($team_user);
-            $entityManager->flush();
+                $team_user->setCurrent('1');
+                $entityManager->merge($team_user);
+                $entityManager->flush();
+            }
+            else{
+
+                return null;}
+            ;
+
         }
         if ($team_user){
             $current_team = $team_user->getTeam();
@@ -702,12 +711,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 ->getTeam()->getId();
         }
 
-        elseif ($this->getUser() != null) {
+        elseif ($this->getUser() != null && $this->currentTeam() != null) {
 
                 $team_id = $this->currentTeam()->getId();
 
 
             }
+
 
 
         else{
