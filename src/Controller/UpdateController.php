@@ -332,7 +332,10 @@ Class UpdateController extends AbstractActionController
                 foreach ($post_data['UserRole'] as $user_id => $role_id):
                     $user_id = (int) $user_id;
                     $role_id = (int) $role_id;
-                    $current = (int) $post_data['UserCurrent'][$user_id];
+
+                    if ($post_data['UserCurrent'][$user_id] == 1){
+                        $current = 1;
+                    }else {$current = null;}
 
                     $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
                     $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
