@@ -223,8 +223,10 @@ Class AddController extends AbstractActionController
 
 
 
-//        return $this->redirect()->toRoute('admin/teams');
-        return $view;
+
+        $successMessage = sprintf("Successfully added the team: '%s'", $data['o:name']);
+        $this->messenger()->addSuccess($successMessage);
+        return $this->redirect()->toRoute('admin/teams');
     }
 
     public function roleAddAction()
