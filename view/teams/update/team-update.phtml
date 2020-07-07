@@ -30,7 +30,7 @@ $sectionNavs = [
 ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
 
-<h1>Update Team for <? echo $this->api()->read('users', $this->ident)->getContent()->name()?></h1>
+<h1>Update Team for <? echo $this->form->get('o:name')->getValue()?></h1>
 <div id="page-actions">
     <!--    --><?php //if ($item->userIsAllowed('update')): ?>
     <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
