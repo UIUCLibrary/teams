@@ -125,7 +125,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $acl->allow(
             $roles,
             'Teams\Controller\Index',
-            ['index']
+            ['index', 'teamDetail']
 
         );
 
@@ -312,14 +312,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function removeTab(Event $event)
     {
-        $sectionNav = $event->getParam('section_nav');
-        $sectionNav['item-pool'] = 'Do Not Use'; // @translate
-        unset($sectionNav['item-pool']);
-
-        //adding a tab that says Site Pool to add explanation to users who are used to the feature
-        $sectionNav['team'] = 'Site Pool'; // @translate
-
-        $event->setParam('section_nav', $sectionNav);
+//        $sectionNav = $event->getParam('section_nav');
+//        $sectionNav['item-pool'] = 'Do Not Use'; // @translate
+//        unset($sectionNav['item-pool']);
+//
+//        //adding a tab that says Site Pool to add explanation to users who are used to the feature
+//        $sectionNav['team'] = 'Site Pool'; // @translate
+//
+//        $event->setParam('section_nav', $sectionNav);
 
     }
 
@@ -691,13 +691,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return $current_team;
     }
 
-
-    public function getTeamContext($query)
+    public function getTeamContext($query, Event $event)
     {
-//        foreach ($query as $key => $value):
-//            echo $key . ': ' . $value . '<br>';
-//        endforeach;
-
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             $team_id = $query['team_id'];
@@ -705,21 +700,29 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         //Logged-in or not, if it is a public site use the TeamSite
         elseif ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
+
+
+            if (! isset($query['site_id'])){
+                return 0;
+            }
+            //do a try catch
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-            $team_id = $entityManager->getRepository('Teams\Entity\TeamSite')
-                ->findOneBy(['site' => $query['site_id']])
-                ->getTeam()->getId();
+            if (isset($query['site_id'])){
+                $team = $entityManager->getRepository('Teams\Entity\TeamSite')
+                    ->findOneBy(['site' => $query['site_id']]);
+                if ($team){
+                    $team_id = $team->getTeam()->getId();
+                }
+                else{$team_id = 0;}
+            } else{ $team_id = 0;}
+
+
+
         }
 
         elseif ($this->getUser() != null && $this->currentTeam() != null) {
-
                 $team_id = $this->currentTeam()->getId();
-
-
             }
-
-
-
         else{
             $team_id = 0;
         }
@@ -728,10 +731,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
     public function filterByTeam(Event $event){
 
-        //TODO Bug(DONE): on the advanced search class, template and search by value fail with error
-        // Too many parameters: the query defines n parameters and you bound n+1
-        // even if I remove the setParameter here. Because itemset and sitepool both work
-
+//        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+//            return true;
+//        }
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
@@ -739,23 +741,41 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $alias = 'omeka_root';
 
 
+
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
+
         if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
             return;
         }
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
+        /// This turned out to be vital to making public facing browse and search work
+        if (isset($query['team_id'])){
+            $team_id = (int) $query['team_id'];
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
+                ->setParameter('team_id', $team_id)
+            ;
 
-        $team_id = $this->getTeamContext($query);
+        }else{
+            $team_id = (int) $this->getTeamContext($query, $event);
+        }
+
+        if ($team_id === 0){
+
+            return;
+        }
         if ( is_int($team_id)){
 
             //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
+
                 if (! $this->getUser()){
+
                     return ;
                 }else{
+
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
                     $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
                         ->setParameter('team_id', $team_id);
@@ -779,14 +799,17 @@ EOF;
                         }
                 }
             }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
-                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
+
+                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;
                  //
             }elseif ($entityClass == \Omeka\Entity\User::class){
 
+
                 return;
             }elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
+
                 return;
             }
             else{
