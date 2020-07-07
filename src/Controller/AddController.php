@@ -108,20 +108,22 @@ Class AddController extends AbstractActionController
 
         $team = $this->entityManager->getRepository('Teams\Entity\Team')
             ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
-        foreach ($request->getPost('user_role') as $userId => $roleId):
-            $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                ->findOneBy(['id' => (int)$userId]);
-            $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                ->findOneBy(['id' => (int)$roleId]);
+        if ($request->getPost('user_role'))
+        {
+            foreach ($request->getPost('user_role') as $userId => $roleId):
+                $user = $this->entityManager->getRepository('Omeka\Entity\User')
+                    ->findOneBy(['id' => (int)$userId]);
+                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                    ->findOneBy(['id' => (int)$roleId]);
 
-            $teamUser = new TeamUser($team, $user, $role);
+                $teamUser = new TeamUser($team, $user, $role);
 
-            $teamUser->setCurrent(null);
+                $teamUser->setCurrent(null);
 
 
-            $this->entityManager->persist($teamUser);
-        endforeach;
-        $this->entityManager->flush();
+                $this->entityManager->persist($teamUser);
+            endforeach;
+            $this->entityManager->flush();}
 
         //TODO: (Done) also add the itemset itself
 
