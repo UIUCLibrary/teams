@@ -290,8 +290,22 @@ Class UpdateController extends AbstractActionController
         if ($request->isPost()){
             $post_data = $request->getPost();
 
+            //first update the team name and description
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->update('Teams\Entity\Team', 'team')
+                ->set('team.name', '?1')
+                ->set('team.description', '?2')
+                ->where('team.id = ?3')
+                ->setParameter(1, $post_data['o:name'])
+                ->setParameter(2, $post_data['o:description'])
+                ->setParameter(3, $id)
+                ->getQuery()
+                ->execute();
+
             //if they clicked the add user button, just add a member and refresh
             //TODO: return the form as filled out with whatever changes they made or use Ajax
+
+            //if they actually click on the add user button
             if ($post_data['addUser']){
                 $team_id = $id;
                 $user_id = $post_data['add-member'];
@@ -313,21 +327,25 @@ Class UpdateController extends AbstractActionController
 
             $team_id = $id;
             $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-            foreach ($post_data['UserRole'] as $user_id => $role_id):
-                $user_id = (int) $user_id;
-                $role_id = (int) $role_id;
-                $current = (int) $post_data['UserCurrent'][$user_id];
 
-                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+            if ($post_data['UserRole']){
+                foreach ($post_data['UserRole'] as $user_id => $role_id):
+                    $user_id = (int) $user_id;
+                    $role_id = (int) $role_id;
+                    $current = (int) $post_data['UserCurrent'][$user_id];
 
-                $new_tu = new TeamUser($team, $user, $role);
-                $new_tu->setCurrent($current);
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                $em->persist($new_tu);
+                    $new_tu = new TeamUser($team, $user, $role);
+                    $new_tu->setCurrent($current);
 
-            endforeach;
-            $em->flush();
+                    $em->persist($new_tu);
+
+                endforeach;
+                $em->flush();
+            }
+
 
 
             //first delete then add resources to team
