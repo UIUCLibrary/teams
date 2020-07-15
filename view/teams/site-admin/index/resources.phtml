@@ -61,8 +61,7 @@ $rowTemplate = '
 
 
         //TODO either this should link to a new view that has the site's resources (an acl nightmare) or shouldn't link
-        $this->hyperlink(count($this->site_items))
-    ); ?></p>
+        count($this->site_items)); ?></p>
     <ul>
         <? foreach ($this->site_teams as $site_team):
             ?><li><? echo $site_team->getTeam()->getName(); ?></li><?
