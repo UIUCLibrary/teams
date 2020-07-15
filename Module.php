@@ -1363,6 +1363,10 @@ EOF;
             $authorized = $is_glob_admin;
         }
 
+        elseif ($res_class == "CustomVocab\Entity\CustomVocab"){
+            return true;
+        }
+
         if (!$authorized){
 
             $authorized = false;
