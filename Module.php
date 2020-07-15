@@ -753,9 +753,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         /// This turned out to be vital to making public facing browse and search work
         if (isset($query['team_id'])){
             $team_id = (int) $query['team_id'];
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
+                ->andWhere('tr.team = :team_id')
                 ->setParameter('team_id', $team_id)
             ;
+            return;
 
         }else{
             $team_id = (int) $this->getTeamContext($query, $event);
@@ -771,13 +773,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
 
-                if (! $this->getUser()){
+                if (!$this->getUser()){
 
                     return ;
                 }else{
 
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')->andWhere('ts.team = :team_id')
+                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')
+                        ->andWhere('ts.team = :team_id')
+//                        ->orWhere('ts.team = 150')
                         ->setParameter('team_id', $team_id);
 
                     //TODO:This needs to be moved to its own fuction and only fire when on the site index page, which
@@ -813,8 +817,10 @@ EOF;
                 return;
             }
             else{
+                //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
 
-                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')->andWhere('tr.team = :team_id')
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
+                    ->andWhere('tr.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
             }
