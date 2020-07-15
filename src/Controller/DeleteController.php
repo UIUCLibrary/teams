@@ -97,6 +97,42 @@ class DeleteController extends AbstractActionController
     public function roleDeleteAction()
     {
 
+        $user = $this->identity()->getRole();
+        $id = $this->params()->fromRoute('id');
+        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+            ->findOneBy(['id'=> $id]);
+
+        $request = $this->getRequest();
+
+        //test to see if anyone has this role. If they do, can't delete.
+        $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findBy(['role'=>$id]);
+        if (! $request->isPost()) {
+            return new ViewModel(
+                [
+                    'role'=>$role,
+                    'role_users' => $role_users,
+                    'user' => $user,
+                ]
+            );
+        }
+        if ($request->isPost()){
+            if (! $role_users){
+                if ($this->identity()->getRole() == 'global_admin' ){
+                    if ($request->getPost('confirm') == 'Delete'){
+
+                        $this->entityManager->remove($role);
+                        $this->entityManager->flush();
+                        $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+
+                        return $this->redirect()->toRoute('admin/teams/roles');
+
+                    } else{ return $this->redirect()->toRoute('admin/teams/roles');}
+                } else {$this->messenger()->addError('Only global admins can delete roles');}
+
+            } else {$this->messenger()->addError("Can't be deleted because teams are using the role");}
+        }
+
     }
 
 }

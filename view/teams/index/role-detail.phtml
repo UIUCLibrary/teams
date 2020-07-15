@@ -43,6 +43,9 @@ $sectionNavs = [
     <?php if ($this->roleAuth()->teamAuthorized('update', 'role')): ?>
     <a class="button" href="<? echo $this->url('admin/teams/roles/detail/update', ['id' => $role->id()])?>"> Edit Role </a>
         <?php endif; ?>
+    <?php if ($this->roleAuth()->teamAuthorized('delete', 'role')): ?>
+        <a class="button" href="<? echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->id()])?>"> Delete Role </a>
+    <?php endif; ?>
 </div>
 
 
