@@ -695,7 +695,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
-            $team_id = $query['team_id'];
+            foreach ($query['team_id'] as $id):
+                $team_id[] = $id;
+            endforeach;
         }
 
         //Logged-in or not, if it is a public site use the TeamSite
@@ -703,29 +705,36 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
             if (! isset($query['site_id'])){
-                return 0;
+                return array(0);
             }
             //do a try catch
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             if (isset($query['site_id'])){
+
                 $team = $entityManager->getRepository('Teams\Entity\TeamSite')
-                    ->findOneBy(['site' => $query['site_id']]);
+                    ->findBy(['site' => $query['site_id']]);
                 if ($team){
-                    $team_id = $team->getTeam()->getId();
+//                    $team_id = $team->getTeam()->getId();
+                    foreach ($team as $t):
+                        $team_id[] = $t->getTeam()->getId();
+                    endforeach;
+
                 }
-                else{$team_id = 0;}
-            } else{ $team_id = 0;}
+                else{$team_id = array(0);}
+            } else{ $team_id = array(0);}
 
 
 
         }
 
         elseif ($this->getUser() != null && $this->currentTeam() != null) {
-                $team_id = $this->currentTeam()->getId();
+
+            $team_id[] = $this->currentTeam()->getId();
             }
         else{
-            $team_id = 0;
+            $team_id = array(0);
         }
+
         return $team_id;
 
     }
@@ -760,21 +769,21 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             return;
 
         }else{
-            $team_id = (int) $this->getTeamContext($query, $event);
+            $team_id = $this->getTeamContext($query, $event);
         }
 
         if ($team_id === 0){
 
             return;
         }
-        if ( is_int($team_id)){
+        if ( is_array($team_id)){
+
 
             //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
 
                 if (!$this->getUser()){
-
                     return ;
                 }else{
 
@@ -802,27 +811,40 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 EOF;
                         }
                 }
-            }elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
+            }
+            elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
 
                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
                     ->setParameter('team_id', $team_id)
          ;
                  //
-            }elseif ($entityClass == \Omeka\Entity\User::class){
-
-
+            }
+            elseif ($entityClass == \Omeka\Entity\User::class){
                 return;
-            }elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
-
+            }
+            elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
                 return;
             }
             else{
                 //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
 
+
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
                     ->andWhere('tr.team = :team_id')
-                    ->setParameter('team_id', $team_id)
+                    ->setParameter('team_id', $team_id[0])
+
                 ;
+
+                if (count($team_id) > 1) {
+                    $orX = $qb->expr()->orX();
+                    $i=0;
+                    foreach ($team_id as $value) {
+                        $orX->add($qb->expr()->eq('tr.team', ':name'.$i));
+                        $qb->setParameter('name'.$i, $value);
+                        $i++;
+                    }
+                    $qb->orWhere($orX);
+                }
             }
         }
     }
