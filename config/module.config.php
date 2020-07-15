@@ -92,6 +92,8 @@ return [
             Form\Element\UserSelect::class => Service\Form\Element\UserSelectFactory::class,
             Form\Element\AllItemSetSelect::class => Service\Form\Element\AllItemSetSelectFactory::class,
             Form\Element\RoleSelect::class => Service\Form\Element\RoleSelectFactor::class,
+            Form\Element\AllSiteSelect::class => Service\Form\Element\AllSiteSelectFactory::class,
+
 
 
 

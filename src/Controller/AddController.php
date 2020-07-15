@@ -10,7 +10,10 @@ use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamResource;
+use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
+use Teams\Form\AddSitesToTeam;
+use Teams\Form\AddSiteToTeamFieldset;
 use Teams\Form\TeamAddUserRole;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamRoleForm;
@@ -128,8 +131,8 @@ Class AddController extends AbstractActionController
         //TODO: (Done) also add the itemset itself
 
         $resource_array = array();
-        if (isset($request->getPost('itemset')['o:itemset'])){
-            foreach ($request->getPost('itemset')['o:itemset'] as $item_set_id):
+        if (isset($request->getPost('itemset')['itemset']['o:itemset'])){
+            foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
                 if ((int)$item_set_id>0){
                     $item_set_id = (int)$item_set_id;
 
@@ -167,8 +170,8 @@ Class AddController extends AbstractActionController
 //                $this->entityManager->persist($team_resource);
             endforeach;
         }
-        if (isset($request->getPost('itemset')['o:user'])){
-            foreach ($request->getPost('itemset')['o:user'] as $user_id):
+        if (isset($request->getPost('itemset')['itemset']['o:user'])){
+            foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
                 if ((int)$user_id>0){
                     $user_id = (int)$user_id;
                     foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
@@ -203,6 +206,17 @@ Class AddController extends AbstractActionController
         endforeach;
         $this->entityManager->flush();
 
+        if (isset($request->getPost('site')['site']['o:site'])){
+            foreach ( $request->getPost('site')['site']['o:site'] as $site_id ):
+                $site_id = (int) $site_id;
+                $site = $this->entityManager->getRepository('Omeka\Entity\Site')
+                    ->findOneBy(['id'=>$site_id]);
+                $team_site = new TeamSite($team, $site);
+                $this->entityManager->persist($team_site);
+            endforeach;
+            $this->entityManager->flush();
+        }
+
 
 
 
@@ -217,6 +231,7 @@ Class AddController extends AbstractActionController
 //        $this->entityManager->flush();
 //        $view->setVariable('response', $response);
 //        $view->setVariable('params', $params);
+
 
 
 

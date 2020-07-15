@@ -7,6 +7,7 @@ $this->htmlElement('body')->appendAttribute('class', 'add users');
 
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headScript()->appendFile($this->assetUrl('js/add-team.js', 'Teams'));
+$formElement = $this->plugin('formElement');
 
 
 ?>
@@ -25,6 +26,7 @@ $sectionNavs = [
     'team-info' => $translate('Info'),
     'team-members' => $translate('Users'),
     'team-resources' => $translate('Resources'),
+    'team-sites' => $translate('Sites'),
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 ?>
@@ -194,31 +196,35 @@ echo $this->formCollection($form);
     </div>
 </div>
 
-<div id="team-resources" class="section">
-
-
+<?php
+$itemsetForm = $this->itemsetForm;
+$itemsetForm->prepare();
+$formElement = $this->plugin('formElement');
+echo $this->form()->openTag($itemsetForm);
+?>
+<fieldset id="team-resources" class="section">
     <div class="selection-criteria">
         <p>
             All items belonging to these itemsets or owners will be added to the group
         </p>
         <div class="select-by-item-set-content">
-
-            <?
-            $itemsetForm = $this->itemsetForm;
-            $itemsetForm->setAttribute('id', 'itemset_collection');
-            $itemsetForm->setAttribute('action', $this->url());
-            $itemsetForm->prepare();
-
-            echo $this->form()->openTag($itemsetForm);
-
-            echo $this->formCollection($itemsetForm);
-            echo $this->form()->closeTag($itemsetForm)
-            ?>
-
+            <?php echo $this->formCollection($itemsetForm->get('itemset')); ?>
         </div>
     </div>
+</fieldset>
 
-</div>
+<fieldset id="team-sites" class="section">
+    <div class="selection-criteria">
+        <p>
+            Attach sites to team. Note: you should add any resources associated with these sites in the Resources tab.
+        </p>
+        <div class="select-by-item-set-content">
+            <?php echo $this->formCollection($itemsetForm->get('site')); ?>
+        </div>
+    </div>
+</fieldset>
+
+
 
 
 <?php

@@ -12,11 +12,23 @@ class TeamItemSetForm extends Form
     {
         $this->add([
             'name' => 'itemset',
+            'type' => 'fieldset',
+        ]);
+        $this->add([
+            'name' => 'site',
+            'type' => 'fieldset',
+        ]);
+
+        $this->get('itemset')->add([
+            'name' => 'itemset',
             'type' => TeamItemSetFieldset::class,
         ]);
-//        $this->add([
-//            'name' => 'user',
-//            'type' => TeamUserFieldset::class,
-//        ]);
+
+        $this->get('site')->add([
+            'name' => 'site',
+            'type' => AddSiteToTeamFieldset::class,
+        ]);
+
+
     }
 }
