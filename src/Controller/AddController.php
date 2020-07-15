@@ -163,11 +163,11 @@ Class AddController extends AbstractActionController
                 }
                 //add itemset itself
                 $resource_array[$item_set_id] = true;
-//                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                    ->findOneBy(['id'=>$item_set_id]);
-//                $team_resource = new TeamResource($team, $resource);
-//
-//                $this->entityManager->persist($team_resource);
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id'=>$item_set_id]);
+                $team_resource = new TeamResource($team, $resource);
+
+                $this->entityManager->persist($team_resource);
             endforeach;
         }
         if (isset($request->getPost('itemset')['itemset']['o:user'])){
