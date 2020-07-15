@@ -162,7 +162,7 @@ Class AddController extends AbstractActionController
 
                 }
                 //add itemset itself
-                $resource_array[$item_set_id] = true;
+//                $resource_array[$item_set_id] = true;
                 $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                     ->findOneBy(['id'=>$item_set_id]);
                 $team_resource = new TeamResource($team, $resource);

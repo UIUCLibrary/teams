@@ -364,6 +364,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         echo '<div id="teams" class="section"><p>';
             //get the partial and pass it whatever variables it needs
+
         echo $event->getTarget()->partial(
             'teams/partial/resource-show-teams',
             [
