@@ -1169,7 +1169,8 @@ EOF;
             return true;
         }
         else{
-            throw new Exception\PermissionDeniedException(sprintf(
+            $messanger = new Messenger();
+            $msg = sprintf(
 //                $this->getTranslator()->translate(
                 'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
                     so by default action here is not permitted. Resource "%1$s: %2$s" .'
@@ -1177,7 +1178,10 @@ EOF;
 //                )
                 ,
                 $res_class, $resource->getId()
-            ));
+            );
+            $messanger->addError('this is an error');
+
+            throw new Exception\PermissionDeniedException($msg);
 
         }
 
