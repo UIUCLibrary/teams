@@ -693,6 +693,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function getTeamContext($query, Event $event)
     {
+        $entityClass = $event->getTarget()->getEntityClass();
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             foreach ($query['team_id'] as $id):
@@ -1157,6 +1158,13 @@ EOF;
             return true;
         }
         elseif ($res_class == 'Omeka\Entity\Property'){
+            return true;
+        }
+        elseif ($res_class == 'Omeka\Entity\Property'){
+            return true;
+        }
+        elseif ($res_class == 'CustomVocab\Entity\CustomVocab')
+        {
             return true;
         }
         else{
