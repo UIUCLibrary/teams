@@ -28,13 +28,27 @@ return [
                     ],
                 ]
             ],
+        ],
+        'AdminGlobal' => [
+            [
+                'label' => 'All Teams', // @translate
+                'class' => 'o-icon-users',
+                //make new route
+                'route' => 'admin/teams/all',
+                //etc
+                'controller' => 'setting',
+                'action' => 'browse',
+                'resource' => 'Omeka\Controller\Admin\Setting',
+                'privilege' => 'browse',
+            ],
+        ],
 
-        ]
     ],
+
     'permissions' => [
         'acl_resources' => [
             Entity\TeamUser::class,
-            Entity\TeamResource::class,
+//            Entity\TeamResource::class,
             Controller\AddController::class,
             Controller\IndexController::class,
             Controller\DeleteController::class,
@@ -78,6 +92,8 @@ return [
             Form\Element\UserSelect::class => Service\Form\Element\UserSelectFactory::class,
             Form\Element\AllItemSetSelect::class => Service\Form\Element\AllItemSetSelectFactory::class,
             Form\Element\RoleSelect::class => Service\Form\Element\RoleSelectFactor::class,
+            Form\Element\AllSiteSelect::class => Service\Form\Element\AllSiteSelectFactory::class,
+
 
 
 
@@ -87,7 +103,11 @@ return [
         'invokables' => [
             'addTeam' => 'Teams\View\Helper\AddTeam',
             'searchFilters' => 'Teams\View\Helper\SearchFilters',
+//            'roleAuth' => 'Teams\View\Helper\RoleAuth',
 
+        ],
+        'factories' => [
+            'roleAuth' => Service\ViewHelper\RoleAuthFactory::class,
         ]
     ],
     'controllers' => [
@@ -103,9 +123,9 @@ return [
             'Teams\Controller\Update' => 'Teams\Model\UpdateControllerFactory',
             //to make the item controlller do what I made it do by editing the Omeka ItemController, just add this
             //and route it to a different factory that invokes a controller of my design
-            'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
-            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
-            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
+//            'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
+//            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
+//            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
             'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
             'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
             'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',
@@ -298,20 +318,43 @@ return [
                                     ]
                                 ]
                             ],
+                            'all' => [
+                                'type' => Literal::class,
+                                'options' => [
+                                    'route' => '/all',
+                                    'defaults' => [
+                                        'controller' => 'Index',
+                                        'action' => 'all'
+                                    ]
+                                ]
+                            ],
                         ],
                     ],
-//                    'resource-template' => [
-//                        'type' => Literal::class,
-//                        'options' => [
-//                            'route' => 'resource-template',
-//                            'defaults' => [
-//                                '__NAMESPACE__' => 'Teams\Controller',
-//                                'controller' => 'Index',
-//                                'action' => 'index',
-//                            ],
-//                        ]
-//
-//                    ]
+                    //okay, this seems like a super bad way to do this but I'm not sure what else to do
+                    'del' => [
+                        'type' => 'Segment',
+                        'options' => [
+                            'route' => '/item/:id/delete',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                //need to make a anew action for the delete function?
+                                'controller' => 'Index',
+                                'action' => 'delete',
+                            ],
+                        ],
+                        ],
+                    'batch_del'  => [
+                        'type' => Literal::class,
+                        'options' => [
+                            'route' => '/item/batch-delete',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                //need to make a anew action for the delete function?
+                                'controller' => 'Index',
+                                'action' => 'batch-delete',
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ],

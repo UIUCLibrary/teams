@@ -41,11 +41,11 @@ trait QueryBuilderTrait
     {
         if (is_null($value)) {
             $qb->andWhere($qb->expr()->isNull(
-                $this->getEntityClass() . '.' . $column
+                'omeka_root' . '.' . $column
             ));
         } else {
             $qb->andWhere($qb->expr()->eq(
-                $this->getEntityClass() . '.' . $column,
+                'omeka_root' . '.' . $column,
                 $this->createNamedParameter($qb, $value)
             ));
         }

@@ -1,37 +1,28 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
+
 ?>
 
 <?php echo $this->pageTitle($translate('Teams'));
 ?>
 
-<!--variable passed in from the controller-->
-<?php //echo $this->searchFilters(); ?>
 <style>
     tr.current-team {
         background: lightgrey;
     }
 </style>
-<div class="browse-controls">
-<!--    --><?php //echo $this->pagination(); ?>
-<!--    --><?php //echo $this->hyperlink($translate('Advanced search'), $this->url(null, ['action' => 'search'], ['query' => $this->params()->fromQuery()], true), ['class' => 'advanced-search']); ?>
-<!--    --><?php //echo $this->sortSelector($sortHeadings); ?>
-</div>
+
 
 <div id="page-actions">
 <!--  for when ACL rules are in place  -->
-<!--    --><?php //if ($this->userIsAllowed('Omeka\Api\Adapter\ItemAdapter', 'create')): ?>
+    <?php if ($this->roleAuth()->teamAuthorized('add', 'team')): ?>
         <?php echo $this->hyperlink($translate('Add new team'), $this->url('admin/teams/add'), ['class' => 'button']); ?>
-<!--    --><?php //endif; ?>
+    <?php endif; ?>
 </div>
 
-<?php
-//$response = $this->response->getContent();
-//?>
 
-<!--<h1>Teams</h1>-->
-<?php if ($this->current_team){?>
+<?php if ($this->current_team != "None"){?>
 <h2> Current Team: <?echo $this->current_team->getName() ?></h2>
 <?php } else{
     ?> <h2> Current Team: You are Not Currently Assigned to a Team</h2>
@@ -42,14 +33,12 @@ $escape = $this->plugin('escapeHtml');
 
 
 <?php
-//$this->response = false;
 if ($this->user_teams): ?>
 
 <?php
     ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
-<!--            team selector -->
             <tr>
                 <td colspan="6">
                 <form id="change_team">
@@ -86,14 +75,6 @@ if ($this->user_teams): ?>
 
                 <tr<? if ($team->getId() == $this->current_team->getId()){echo ' class="current-team" ';}?>>
                     <td>
-<!--                        un comment to include checkbox for batch editing -->
-<!--                        --><?php //if ($team->userIsAllowed('update') || $team->userIsAllowed('delete')): ?>
-<!--                            <input type="checkbox" name="resource_ids[]" value="--><?php //echo $team->id(); ?><!--" aria-label="--><?php //echo $translate('Select team'); ?><!--">-->
-<!--                        --><?php //endif; ?>
-<!--                        --><?php //echo $team->linkPretty(); ?>
-<!--                        --><?php //if (!$team->isPublic()): ?>
-<!--                            <span class="o-icon-private" aria-label="--><?php //echo $translate('Private'); ?><!--"></span>-->
-<!--                        --><?php //endif; ?>
                         <a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()){
                             ?> <strong><? echo $team->getName();?></strong><?
                         }else{
@@ -101,17 +82,18 @@ if ($this->user_teams): ?>
 
                         }?></a>
                     </td>
-                    <td>                        <ul class="actions">
-                            <!--                            --><?php //if ($team->userIsAllowed('update')): ?>
+                    <td>
+                        <ul class="actions">
+                            <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
                             <li>
 
                                 <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
                             </li>
-                            <!--                            --><?php //endif; ?>
-<!--                            --><?php //if ($team->userIsAllowed('delete')): ?>
+                                                        <?php endif; ?>
+                            <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
                                 <li><a class="o-icon-delete" href="<? echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
                                 </li>
-<!--                            --><?php //endif; ?>
+                            <?php endif; ?>
                             <li>
                                 <a class="o-icon-more" href="<? echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
                             </li>
@@ -136,81 +118,6 @@ if ($this->user_teams): ?>
         </table>
 
     </form>
-
-    <?php $this->trigger('view.browse.after'); ?>
-<!--    <div class="browse-controls">-->
-<!--        --><?php //echo $this->pagination(); ?>
-<!--    </div>-->
-
-    <div id="sidebar" class="sidebar">
-        <?php echo $this->hyperlink('', '#', [
-            'class' => 'sidebar-close o-icon-close',
-            'title' => $translate('Close'),
-        ]); ?>
-        <div class="sidebar-content"></div>
-    </div>
-    <div id="sidebar-delete-selected" class="sidebar">
-        <?php echo $this->hyperlink('', '#', [
-            'class' => 'sidebar-close o-icon-close',
-            'title' => $translate('Close'),
-        ]); ?>
-        <div class="sidebar-content">
-            <div id="sidebar-confirm">
-                <h3><?php echo $translate('Delete items'); ?></h3>
-                <p><?php echo $translate('Are you sure you would like to delete the selected items?'); ?></p>
-                <p class="error"><?php echo sprintf(
-                        $translate('%s: this action will permanently delete %s items and cannot be undone.'),
-                        sprintf('<strong>%s</strong>', $translate('Warning')),
-                        '<strong><span id="delete-selected-count"></span></strong>'
-                    ); ?></p>
-<!--                --><?php //echo $this->form($this->formDeleteSelected); ?>
-            </div>
-        </div>
-    </div>
-<!--    <div id="sidebar-delete-all" class="sidebar">-->
-<!--        --><?php //echo $this->hyperlink('', '#', [
-//            'class' => 'sidebar-close o-icon-close',
-//            'title' => $translate('Close'),
-//        ]); ?>
-<!--        <div class="sidebar-content">-->
-<!--            <div id="sidebar-confirm">-->
-<!--                <h3>--><?php //echo $translate('Delete items'); ?><!--</h3>-->
-<!--                <p>--><?php //echo $translate('Are you sure you would like to delete all items on all pages of this result?'); ?><!--</p>-->
-<!--                <p class="error">--><?php //echo sprintf(
-//                        $translate('%s: this action will permanently delete %s items and cannot be undone.'),
-//                        sprintf('<strong>%s</strong>', $translate('Warning')),
-//                        sprintf('<strong>%s</strong>', number_format($this->pagination()->getPaginator()->getTotalCount()))
-//                    ); ?><!--</p>-->
-<!--                <label><input type="checkbox" name="confirm-delete-all-check"> --><?php //echo $translate('Are you sure?'); ?><!--</label>-->
-<!--                --><?php //echo $this->form($this->formDeleteAll); ?>
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--    <script>-->
-<!--        // Complete the batch delete form after confirmation.-->
-<!--        $('#confirm-delete-selected, #confirm-delete-all').on('submit', function(e) {-->
-<!--            var confirmForm = $(this);-->
-<!--            if ('confirm-delete-all' === this.id) {-->
-<!--                confirmForm.append($('.batch-query').clone());-->
-<!--            } else {-->
-<!--                $('#batch-form').find('input[name="resource_ids[]"]:checked').each(function() {-->
-<!--                    confirmForm.append($(this).clone().prop('disabled', false).attr('type', 'hidden'));-->
-<!--                });-->
-<!--            }-->
-<!--        });-->
-<!--        $('.delete-all').on('click', function(e) {-->
-<!--            Omeka.closeSidebar($('#sidebar-delete-selected'));-->
-<!--        });-->
-<!--        $('.delete-selected').on('click', function(e) {-->
-<!--            Omeka.closeSidebar($('#sidebar-delete-all'));-->
-<!--            var inputs = $('input[name="resource_ids[]"]');-->
-<!--            $('#delete-selected-count').text(inputs.filter(':checked').length);-->
-<!--        });-->
-<!--        $('#sidebar-delete-all').on('click', 'input[name="confirm-delete-all-check"]', function(e) {-->
-<!--            $('#confirm-delete-all input[type="submit"]').prop('disabled', this.checked ? false : true);-->
-<!--        });-->
-<!--    </script>-->
 
 <?php else: ?>
 

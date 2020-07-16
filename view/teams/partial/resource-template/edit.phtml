@@ -1,0 +1,37 @@
+<?php
+
+$team = array();
+foreach ($this->rt_teams as $tu):
+    $team[] = $tu->getTeam()->getId();
+endforeach;
+
+?>
+
+<?php $this->headScript()->captureStart() ?>
+
+    window.addEventListener("load", function () {
+
+
+        let current_teams = <?php echo json_encode($team)?>;
+
+
+        let select = document.getElementById('team');
+
+        for (let i=0; i < select.options.length; i++){
+            for (let j=0; j < current_teams.length; j++){
+                if (current_teams[j] == select.options[i].value){
+                    select.options[i].setAttribute('selected', true);
+                }
+
+
+            }
+
+
+
+        }
+    $("#team").trigger("chosen:updated");
+    });
+
+
+
+<?php $this->headScript()->captureEnd() ?>

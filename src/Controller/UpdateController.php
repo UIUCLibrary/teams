@@ -3,9 +3,16 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
+use Omeka\Api\Request;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\TeamItemsetAddRemoveForm;
+use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
+use Teams\Form\TeamUserForm;
+use Zend\EventManager\Event;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\Stdlib\ArrayObject;
 use Zend\View\Model\ViewModel;
@@ -26,8 +33,21 @@ Class UpdateController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
+    public function createNamedParameter(QueryBuilder $qb, $value,
+                                         $prefix = 'omeka_'
+    ) {
+        $index = 0;
+        $placeholder = $prefix . $index;
+        $index++;
+        $qb->setParameter($placeholder, $value);
+        return ":$placeholder";
+    }
+
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
+
+
+
         $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
         $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
         $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
@@ -37,6 +57,7 @@ Class UpdateController extends AbstractActionController
         //flushing here because this is a mini-form and we want to see the name pop up
         //more efficient solution would be to have JS handle the popping and batch update
         $this->entityManager->flush();
+        return $team_user;
     }
 
     public function removeTeamUser(int $team, int $user)
@@ -63,34 +84,115 @@ Class UpdateController extends AbstractActionController
         $em->flush();
     }
 
-//    public function team_roster($team)
-//    {
-//        $em = $this->entityManager;
-//        $roster = $em->createQuery('SELECT tu FROM Teams\Entity\TeamUser tu WHERE tu.team = $team');
-//
-//    }
-//
-//    public function not_on_team()
-//    {
-//
-//    }
+    public function processItemSets(int $item_set_id){
+        if ((int)$item_set_id>0){
+            $resource_array = array();
+            $item_set_id = (int)$item_set_id;
+
+            //TODO: why isn't this a list?
+            //add all items belonging to itemset
+            foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
+                $resource_array[$item->id()] = true;
+
+                //add all media belonging to to the item
+                foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                    $resource_array[$media->id()] = true;
+                endforeach;
+            endforeach;
+        }
+        //add itemset itself
+        $resource_array[$item_set_id] = true;
+        return $resource_array;
+    }
+    public function processResources($request, $team, $existing_resources, bool $delete = false){
+        $resource_array = array();
+
+        if ($delete == false){
+            $collection = 'addCollections';
+        } else{
+            $collection = 'rmCollections';
+        }
+
+
+            //get ids of itemsets and their descendents
+            if (isset($request->getPost($collection)['o:itemset'])){
+                foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
+                    array_merge($resource_array, $this->processItemSets($item_set_id));
+                endforeach;
+            }
+
+            //get ids of things the user owns
+            if (isset($request->getPost($collection)['o:user'])){
+                foreach ($request->getPost($collection)['o:user'] as $user_id):
+                    if ((int)$user_id>0){
+                        $user_id = (int)$user_id;
+                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
+
+                            $resource_array[$item->id()] = true;
+
+                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+                            endforeach;
+
+                        endforeach;
+
+                        //also get the users itemsets
+                        foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $itemSet):
+                            array_merge($resource_array, $this->processItemSets($itemSet->id()));
+                        endforeach;
+
+                    }
+                endforeach;
+            }
+
+            if ($delete == false){
+                //remove elements that are already part of the team to prevent integrity constraint violation
+                foreach ($existing_resources as $resource):
+                    $rid = $resource->getResource()->getId();
+                    if (array_key_exists($rid, $resource_array)){
+                        unset($resource_array[$rid]);
+                    }
+                endforeach;
+                //add the resources to the team
+                foreach (array_keys($resource_array) as $resource_id):
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                        ->findOneBy(['id'=>$resource_id]);
+                    $team_resource = new TeamResource($team, $resource);
+                    $this->entityManager->persist($team_resource);
+                endforeach;
+                $this->entityManager->flush();
+            }else{
+                //for deletes, remove the id from the array if it isn't part of the team already to prevent removing
+                //items that dont exist
+                foreach ($existing_resources as $resource):
+                    $rid = $resource->getResource()->getId();
+                    if (!array_key_exists($rid, $resource_array)){
+                        unset($resource_array[$rid]);
+                    }
+                endforeach;
+
+                foreach (array_keys($resource_array) as $resource_id):
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                        ->findOneBy(['id'=>$resource_id]);
+                    $team_resource = new TeamResource($team, $resource);
+                    $this->entityManager->remove($team_resource);
+                endforeach;
+                $this->entityManager->flush();
+            }
+
+
+    }
+
     public function teamUpdateAction()
     {
 
+        $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
-
         $form = $this->getForm(TeamUpdateForm::class);
-
         //should this really be necessary?
         $id = $this->params()->fromRoute('id');
-        if (! $id){
-            return $this->redirect()->toRoute('admin/teams');
-        }
+        $id = (int) $id;
 
-        //the regex of the routing should only funnel an id that is an int here, but I guess just to make sure?
-        if (! is_int($id)){
-            return $this->redirect()->toRoute('admin/teams');
-        }
 
         //is a team associated with that id
         try {
@@ -100,10 +202,31 @@ Class UpdateController extends AbstractActionController
             return $this->redirect()->toRoute('admin/teams');
         }
 
+        $criteria = ['id' => $id];
 
+        $qb = $this->entityManager->createQueryBuilder();
+        $entityClass = 'Teams\Entity\Team';
+
+        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $qb->setMaxResults(1);
+
+        $entity = $qb->getQuery()->getOneOrNullResult();
 
 
         $data = $this->api()->read('team', ['id'=>$id])->getContent();
+        $request = new Request('update','team');
+        $event = new Event('api.hydrate.pre', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
 
         //TODO (refactor) this is probably a stupid way to do this
 
@@ -137,7 +260,7 @@ Class UpdateController extends AbstractActionController
         $form->bind($fill);
 
         //is it a post request?
-        //TODO (refactor) clean up this, only send what is needed 
+        //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
         if (! $request->isPost()) {
             return new ViewModel(['team'=>$team,
@@ -149,45 +272,100 @@ Class UpdateController extends AbstractActionController
                 'team_u_collection' => $team_u_collection,
                 'team_u_array'=>$team_u_array,
                 'available_u_array'=>$available_u_array,
-                'ident' => $userId]);
+                'ident' => $userId,
+                'itemsetForm' => $itemsetForm,
+            ]);
         }
 
-        $post_data = $request->getPost();
 
+        $em = $this->entityManager;
+        $qb = $em->createQueryBuilder();
+        $existing_resources = $qb->select('tr')
+            ->from('Teams\Entity\TeamResource', 'tr')
+            ->where('tr.team = :team_id')
+            ->setParameter('team_id', $id)
+            ->getQuery()
+            ->getResult();
 
-        if ($post_data['add-member-choice']){
-            //becuase the datalist only contains names, not ids, get the id that matches the name
-            //TODO: this is a terrible idea
-            $new_member_choice_id = array_search($post_data['add-member-choice'], $all_u_array);
+        if ($request->isPost()){
+            $post_data = $request->getPost();
 
-            //same with role
-            foreach ($roles_array as $ar):
-                if ($ar['name'] == $post_data['add-member-role']){
-                    $role_id = $ar['id'];
-                }
-                endforeach;
-            $this->addTeamUser($id, $new_member_choice_id, $role_id);
-        }
-//        array_search($post_data['add-member-role'], $roles_array);
+            //first update the team name and description
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->update('Teams\Entity\Team', 'team')
+                ->set('team.name', '?1')
+                ->set('team.description', '?2')
+                ->where('team.id = ?3')
+                ->setParameter(1, $post_data['o:name'])
+                ->setParameter(2, $post_data['o:description'])
+                ->setParameter(3, $id)
+                ->getQuery()
+                ->execute();
 
-        $remove_member_choice_id = null;
-        if ($post_data['remove-member-choice']){
-            //becuase the post_datalist only contains names, not ids, get the id that matches the name
-            $remove_member_choice_id = array_search($post_data['remove-member-choice'], $all_u_array);
-            $this->removeTeamUser($id, $remove_member_choice_id);
+            //if they clicked the add user button, just add a member and refresh
+            //TODO: return the form as filled out with whatever changes they made or use Ajax
 
-        }
+            //if they actually click on the add user button
+            if ($post_data['addUser']){
+                $team_id = $id;
+                $user_id = $post_data['add-member'];
+                $role_id = $post_data['member-role'];
+                $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-//        if ($post_data['submit']){
-            $this->api()->update('team', $id, ['o:name'=>$post_data['o:name'], 'o:description'=>$post_data['o:description']]);
-//        }
+                $successMessage = sprintf("Successfully added %s as a %s",$newMember->getUser()->getName(), $newMember->getRole()->getName() );
+                $this->messenger()->addSuccess($successMessage);
 
-        foreach (array_keys($team_u_array) as $user_id):
-            if (! $user_id == $remove_member_choice_id)
-            {
-                $this->updateRole($id, $user_id, $post_data[$user_id]);
+                return $this->redirect()->refresh();
             }
+
+            //remove all team users and add the ones that are active in the form
+            $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
+            foreach ($team_users as $tu):
+                $em->remove($tu);
             endforeach;
+            $em->flush();
+
+            $team_id = $id;
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+
+            if ($post_data['UserRole']){
+                foreach ($post_data['UserRole'] as $user_id => $role_id):
+                    $user_id = (int) $user_id;
+                    $role_id = (int) $role_id;
+
+                    if ($post_data['UserCurrent'][$user_id] == 1){
+                        $current = 1;
+                    }else {$current = null;}
+
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+
+                    $new_tu = new TeamUser($team, $user, $role);
+                    $new_tu->setCurrent($current);
+
+                    $em->persist($new_tu);
+
+                endforeach;
+                $em->flush();
+            }
+
+
+
+            //first delete then add resources to team
+            $this->processResources($request, $team, $existing_resources, true);
+            $this->processResources($request, $team, $existing_resources, false);
+
+            $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
+            $this->messenger()->addSuccess($successMessage);
+
+            return $this->redirect()->refresh();
+
+
+
+        }
+
+
+//        array_search($post_data['add-member-role'], $roles_array);
 
 
 
@@ -203,7 +381,10 @@ Class UpdateController extends AbstractActionController
             'team_u_array'=>$team_u_array,
             'available_u_array'=>$available_u_array,
             'ident' => $userId,
-            'post_data'=>$post_data]);
+            'post_data'=>$post_data,
+            'userForm' => $userForm,
+            'itemsetForm' => $itemsetForm,
+            ]);
 
 
 //            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
@@ -255,18 +436,6 @@ Class UpdateController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
 
-
-
-
-
-
-
-
-
-
-
-
-
         $request = $this->getRequest();
 
         if ($request->isPost()){
@@ -287,11 +456,6 @@ Class UpdateController extends AbstractActionController
 
 
         }
-
-
-
-
-//        }
 
 
 

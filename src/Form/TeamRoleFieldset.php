@@ -59,7 +59,7 @@ class TeamRoleFieldset extends Fieldset
             'name' => 'can_add_items',
             'type' => 'Checkbox',
             'options' => [
-                'label' => '<strong class="o-icon-items"> Can add items to team repository</strong>',
+                'label' => '<strong class="o-icon-items"> Can add resources to team repository</strong>',
                 'label_options' => [
                     'disable_html_escape' => true,
                 ],
@@ -69,19 +69,20 @@ class TeamRoleFieldset extends Fieldset
             ]
         ]);
 
-        $this->add([
-            'name' => 'can_add_itemsets',
-            'type' => 'Checkbox',
-            'options' => [
-                'label' => '<strong class="o-icon-item-sets"> Can add itemsets to team repository</strong>',
-                'label_options' => [
-                    'disable_html_escape' => true,
-                ],
-            ],
-            'attributes' => [
-                'id' => 'can_add_itemsets'
-            ]
-        ]);
+//        $this->add([
+//            'name' => 'can_add_itemsets',
+//            'type' => 'Checkbox',
+//            'options' => [
+//                'label' => '<strong class="o-icon-item-sets"> <strike>Can add itemsets to team repository</strike> Disabled</strong>',
+//                'label_options' => [
+//                    'disable_html_escape' => true,
+//                ],
+//            ],
+//            'attributes' => [
+//                'id' => 'can_add_itemsets',
+//                'disabled' => 'disabled'
+//            ]
+//        ]);
 
         $this->add([
             'name' => 'can_modify_resources',

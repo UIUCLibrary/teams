@@ -3,6 +3,9 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
+use Omeka\Api\Request;
+use Omeka\Form\ConfirmForm;
+use Zend\EventManager\Event;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Model\ViewModel;
@@ -27,6 +30,131 @@ class IndexController extends AbstractActionController
     {
         $this->entityManager = $entityManager;
     }
+
+    public function allAction(){
+
+        $view = new ViewModel;
+        $teams = $this->entityManager->getRepository('Teams\Entity\Team')->findAll();
+        $super_admin = $this->entityManager->getRepository('Omeka\Entity\User')
+            ->findOneBy(['id' => 1, 'role' => 'global_admin']);
+        $user = $this->identity();
+
+
+        $view->setVariable('teams', $teams);
+        $view->setVariable('super_admin', $super_admin);
+        $view->setVariable('user', $user);
+
+        return $view;
+
+
+
+
+    }
+    public function deleteAction()
+    {
+        if ($this->getRequest()->isPost()) {
+            $form = $this->getForm(ConfirmForm::class);
+            $form->setData($this->getRequest()->getPost());
+            if ($form->isValid()) {
+
+                $entityManager = $this->entityManager;
+
+
+                $user_id = $this->identity()->getId();
+
+                $team_id = $entityManager
+                    ->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+                    ->getTeam()->getId();
+
+                //array of media ids
+                $media_ids = [];
+                foreach ($this->api()->read('items', $this->params('id'))->getContent()->media() as $media):
+                    $media_ids[] = $media->id();
+                endforeach;
+
+                $entity = $entityManager
+                    ->getRepository('Teams\Entity\TeamResource')
+                    ->findOneBy(['team'=>$team_id, 'resource'=> (int) $this->params('id')]);
+
+                $request = new Request('delete', 'team_resource');
+                $event = new Event('api.hydrate.pre', $this, [
+                    'entity' => $entity,
+                    'request' => $request,
+                ]);
+                $this->getEventManager()->triggerEvent($event);
+
+
+                if ($entity){
+                    $entityManager->remove($entity);
+
+                    //remove associated media from the team
+                    foreach ($media_ids as $media_id):
+                        $tr = $entityManager->getRepository('Teams\Entity\TeamResource')
+                            ->findOneBy(['team' => $team_id, 'resource' => $media_id]);
+                        if ($tr){
+                            $entityManager->remove($tr);
+                            $this->messenger()->addSuccess('Associated Media successfully removed from your team.'); // @translate
+
+
+                        }
+                    endforeach;
+                    $entityManager->flush();
+                    $this->messenger()->addSuccess('Item successfully removed from your team.'); // @translate
+                    $this->messenger()->addSuccess('Item remains available to other teams if they are linked to it.'); // @translate
+                    $this->messenger()->addSuccess('Item will be deleted after x days   '); // @translate
+
+                } else{
+                    $this->messenger()->addSuccess('something went wrong'); // @translate
+
+                }
+
+//                $response = $this->api($form)->delete('items', $this->params('id'));
+//                if ($response) {
+//                    $this->messenger()->addSuccess('Item successfully deleted'); // @translate
+//                }
+            } else {
+                $this->messenger()->addFormErrors($form);
+            }
+        }
+        return $this->redirect()->toRoute(
+            'admin/default',
+            ['action' => 'browse'],
+            true
+        );
+    }
+
+    public function batchDeleteAction()
+    {
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('admin', ['action'=>'browse', 'controller' => 'item']);
+        }
+
+        $entityManager = $this->entityManager;
+
+        $user_id = $this->identity()->getId();
+
+        $team_id = $entityManager
+            ->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+            ->getTeam()->getId();
+
+        $request = $this->getRequest();
+
+        $resource_ids = $request->getPost()['resource_ids'];
+        for ($i= 0; $i< count($resource_ids); $i++){
+            $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
+                ->findOneBy(['team'=>$team_id, 'resource'=>$resource_ids[$i]]);
+            $entityManager->remove($entity);
+    }
+
+
+        $entityManager->flush();
+        return $this->redirect()->toRoute('admin', ['controller'=>'item']);
+
+
+    }
+
     public function changeCurrentTeamAction($user_id)
     {
         $request = $this->getRequest();
@@ -37,8 +165,10 @@ class IndexController extends AbstractActionController
             $em = $this->entityManager;
             $team_user = $em->getRepository('Teams\Entity\TeamUser');
             $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
+            if ($old_current){
+                $old_current->setCurrent(null);
+            }
             $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            $old_current->setCurrent(null);
             $new_current->setCurrent(true);
             $em->flush();
 
@@ -63,12 +193,19 @@ class IndexController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
         $user_teams = $team_user->findBy(['user'=>$user_id]);
-        if ( $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])){
+        if ( $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])){
             $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
-        } else {$current_team = null;}
+        } elseif ($team_user->findOneBy(['user'=>$user_id])){
+            $current_team = $team_user->findOneBy(['user'=>$user_id]);
+            $current_team->setCurrent(true);
+            $this->entityManager->flush();
+            $current_team = $current_team->getTeam();
+        }
 
-        $all_teams = $this->api()->search('team');
 
+         else {
+             $current_team = 'None';
+        }
 
         $view->setVariable('current_team', $current_team);
         $view->setVariable('user_teams', $user_teams);
@@ -124,25 +261,9 @@ class IndexController extends AbstractActionController
         $view = new ViewModel;
         $id = $this->params()->fromRoute('id');
         $response = $this->api()->read('team', ['id' => $id]);
-        $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$id]);
 
-//        $items_te = $team_entity->getTeamResources()->getValues();
-//        $items_omeka = $this->entityManager->getRepository('Omkea\Entity\Item')->findAll();
-
-
-//        $resource_id = array_column(array_values($items_te),'resource');
-//        $view->setVariable('test', $items_te);
-//        $count = count($resource_id);
-//        $items = array();
         $em = $this->entityManager;
-//        $count = $em->createQueryBuilder();
-//        $count->select('count(distinct(tr.resource))')
-//            ->from('Teams\Entity\TeamResource', 'tr')
-//            ->leftJoin('Omeka\Entity\Resource', 'r')
-//            ->where('r INSTANCE of Omeka\Entity\Item')
-//            ->where('tr.team = ?1');
-//        $count->setParameter(1, $this->params('id'));
-//        $count = $count->getQuery()->getSingleScalarResult();
+
         $resources = [
             'items'=> ['count' => 0, 'entity' => 'Item', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
             'item sets' => ['count' => 0, 'entity' => 'ItemSet', 'team_entity' => 'TeamResource', 'fk' => 'resource'],
@@ -174,48 +295,8 @@ class IndexController extends AbstractActionController
 
         $view->setVariable('resources', $resources);
 
-//        //get the page resources for the page of results the user requested
-//        $qb = $em->createQueryBuilder();
-//        $q = $qb->select('tr')
-//            ->from('Teams\Entity\TeamResource', 'tr')
-//            ->where('tr.team = ?1')
-//            ->andWhere('tr.resource in (:ids)')
-//            ->setParameter('ids', $ids)
-//        ;
-//        //establish first and last results to get for the page
-//        //if a page is listed in the query, start there. Else, start at 0
-//        $items_per_page = 10;
-//        if ($this->params()->fromQuery()['page']){
-//            $offset = ($this->params()->fromQuery()['page']*$items_per_page)-$items_per_page;
-//
-//        }else{$offset=0;}
-//        $limit = $offset + $items_per_page;
-//
-//        $qb->setFirstResult($offset);
-//        $qb->setMaxResults($limit);
-//        $qb->setParameter(1, $this->params('id'));
-//
-//        $team_resources = $q->getQuery()->getResult();
-//
-//        $items = array();
-//        $item_sets = array();
-//        $media = array();
-//
-//
-//        foreach ($team_resources as $tr):
-//            $tr = $tr->getResource();
-//            if ($tr->getResourceName() == 'items') {
-//                $items[] = $this->api()->read('items', $tr->getId())->getContent();
-//
-//            } elseif ($tr->getResourceName() == 'item_sets'){
-//                $item_sets[] = $this->api()->read('item_sets', $tr->getId())->getContent();
-//            } elseif ($tr->getResourceName() == 'media'){
-//                $media[] = $this->api()->read('media', $tr->getId())->getContent();
-//            } else {}
-//        endforeach;
-//        $this->paginator($count, $this->params()->fromQuery('page'));
+
         $view->setVariable('response', $response);
-//        $view->setVariable('items', $items);
 
 
         return $view;

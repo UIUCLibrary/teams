@@ -40,7 +40,6 @@ class TeamUpdateForm extends Form
             ],
             'attributes' => [
                 'id' => 'comment',
-                'required' => true,
             ],
         ]);
 

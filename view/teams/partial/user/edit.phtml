@@ -1,26 +1,36 @@
 <?php
+$role = array();
+$team = array();
+foreach ($this->user_teams as $tu):
+    $role[] = $tu->getRole()->getId();
+    $team[] = $tu->getTeam()->getId();
 
-
+endforeach;
 
 ?>
 
 <script>
-    let current_teams = <?php echo json_encode($this->team_ids)?>;
+
+    window.addEventListener("load", function () {
 
 
-    let select = document.getElementById('team');
+        let current_teams = <?php echo json_encode($team)?>;
+        let current_roles = <?php echo json_encode($role)?>;
 
-    for (let i=0; i < select.options.length; i++){
-        for (let j=0; j < current_teams.length; j++){
-            if (current_teams[j] == select.options[i].value){
-                select.options[i].setAttribute('selected', true);
+
+        let select = document.getElementById('team');
+
+        for (let i=0; i < select.options.length; i++){
+            for (let j=0; j < current_teams.length; j++){
+                if (current_teams[j] == select.options[i].value){
+                    select.options[i].setAttribute('selected', true);
+                    makeRoleElement(select.options[i].innerText, current_teams[j], current_roles[j])
+                }
             }
-
         }
+        $("#team").trigger("chosen:updated");
+    });
 
-
-
-    }
 
 
 </script>

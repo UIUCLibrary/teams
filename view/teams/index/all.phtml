@@ -1,0 +1,102 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+<div id="page-actions">
+    <?php if ($this->roleAuth()->teamAuthorized('add', 'team')): ?>
+        <?php echo $this->hyperlink($translate('Add new team'), $this->url('admin/teams/add'), ['class' => 'button']); ?>
+    <?php endif; ?>
+</div>
+<?php
+if ($user != $super_admin){
+    ?>
+
+    <div class="breadcrumbs">
+    Only the super admin, <?php echo $this->super_admin->getName();?>, can make changes to team they don't belong to
+</div>
+<?php
+}
+$translate = $this->plugin('translate');
+echo $this->pageTitle($translate('All Teams'));
+
+if ($this->teams): ?>
+
+<?php
+    ?>
+        <table class="tablesaw" data-tablesaw-mode="stack">
+            <thead>
+            <tr>
+
+            </tr>
+            <tr>
+<!--                include below in the first <th> to include the Select All checkbox for batch edits -->
+<!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+                <th><?php echo $this->translate('Team Name'); ?></th>
+                <th></th>
+                <th><?php echo $translate('Your Role'); ?></th>
+                <th><?php echo $translate('Description'); ?></th>
+                <th><?php echo $translate('Member Count'); ?></th>
+                <th><?php echo $translate('Resource Count'); ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($this->teams as $team):
+                ?>
+
+
+                <tr>
+                    <td>
+                        <a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php
+                            echo $team->getName();
+
+                        ?></a>
+                    </td>
+                    <td>
+                        <ul class="actions">
+                            <?php if ($this->roleAuth()->teamAuthorized('update', 'team') ): ?>
+                            <li>
+
+                                <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
+                            </li>
+                                                        <?php endif; ?>
+                            <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
+                                <li><a class="o-icon-delete" href="<? echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
+                                </li>
+                            <?php endif; ?>
+                            <li>
+                                <a class="o-icon-more" href="<? echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
+                            </li>
+                        </ul>
+                    </td>
+                    <td>
+                        <?php
+
+                        echo $team->getUsers();
+                        foreach ($team->getTeamUsers() as $user):
+
+                            if ($user->getUser()->getId() == $this->identity()->getId())
+                            {
+                                echo $user->getRole()->getName();
+                            }
+
+                        endforeach;?>
+                    </td>
+                    <td><?php echo $team->getDescription(); ?></td>
+                    <td><a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
+                    <td><a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+
+    </form>
+
+<?php else: ?>
+
+    <div class="no-resources o-icon-users">
+        <p><?php echo $this->translate('Omeka could not find any teams you belong to.'); ?></p>
+    </div>
+
+<?php endif; ?>
+
+

@@ -38,7 +38,7 @@ class ItemController extends AbstractActionController
         $this->mediaIngesters = $mediaIngesters;
         $this->entityManager = $entityManager;
     }
-    //end edits
+
     public function searchAction()
     {
         $view = new ViewModel;
@@ -46,89 +46,12 @@ class ItemController extends AbstractActionController
         return $view;
     }
 
-    public function teamResources($resource_type, $query, $user_id, $active = true, $team_id = null)
-    {
-        if ($active){
-            $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-        } else{
-            $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'team' => $team_id ]);
-        }
-
-        $resources = array();
-        if ($team_user) {
-
-            $active_team_id = $team_user->getTeam()->getId();
-
-            $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $active_team_id]);
-
-
-
-
-            $q = $this->entityManager->createQuery("SELECT resource FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
-            $item_sets = $q->getArrayResult();
-            $team_resources = array();
-            foreach ($team_entity->getTeamResources() as $team_resource):
-                //obv here would be a place where you could just use the discriminator to see if it is an item
-                if (array_search($team_resource->getResource()->getId(), array_column($item_sets, 'id')) ){
-                    $team_resources[] = $team_resource;
-                }
-            endforeach;
-            $per_page = 10;
-            $page = $query['page'];
-            $start_i = ($per_page * $page) - $per_page;
-//            $tr = $team_entity->getTeamResources();
-            $max_i = count($team_resources);
-            if ($max_i < $start_i + $per_page){
-                $end_i = $max_i;
-            }else{$end_i = $start_i + $per_page;}
-//            $tr = $team_entity->getTeamResources();
-            for ($i = $start_i; $i < $end_i; $i++) {
-
-                $resources[] = $this->api()->read($resource_type, $team_resources[$i]->getResource()->getId())->getContent();}
-
-        }else{$team_resources=null;}
-
-        return array('page_resources'=>$resources, 'team_resources'=>$team_resources, 'team_entity' => $team_entity);
-
-
-
-    }
-
-
     public function browseAction()
     {
         $this->setBrowseDefaults('created');
+        $response = $this->api()->search('items', $this->params()->fromQuery());
+        $this->paginator($response->getTotalResults());
 
-        //get the user's id
-        $user_id = $this->identity()->getId();
-        $current_team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'is_current'=>1]);
-        $team_id = $current_team_user->getTeam()->getId();
-        $params = $this->params()->fromQuery();
-        if (count($this->params()->fromQuery('team_id'))>0){
-            $this->changeCurrentTeamAction($user_id, $this->params()->fromQuery());
-        }
-        $params['team_id'] = $team_id;
-        $response = $this->api()->search('items', $params);
-
-
-
-
-
-//        $team_items = $this->teamResources('items', $this->params()->fromQuery(), $user_id);
-//        $items = $team_items['page_resources'];
-//        $total_team_resources = $team_items['team_resources'];
-        $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id, $request->getPost());
-            return $this->redirect()->toRoute('admin/default',['controller'=>'item', 'action'=>'browse']);
-
-
-        }
-        ///////stopped here, in the middle of trying to apply some of the advanced search filtering options. Will be way
-        /// easier to just do this all in the api, but want to work out some of the kinks here first
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
-        $this->setBrowseDefaults('created');
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
@@ -140,82 +63,29 @@ class ItemController extends AbstractActionController
         $formDeleteAll->setAttribute('id', 'confirm-delete-all');
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
-
         $view = new ViewModel;
         $items = $response->getContent();
         $view->setVariable('items', $items);
         $view->setVariable('resources', $items);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
-        $view->setVariable('params', $params);
-        $view->setVariable('params_from_q', $this->params()->fromQuery());
-
         return $view;
-
-
-
-
-
-        //end edits
     }
 
     public function showAction()
     {
         $response = $this->api()->read('items', $this->params('id'));
-        $current_user = $this->identity()->getId();
 
-        $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=> $this->params('id')]);
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$current_user]);
-
-        $resource_in_teams = array();
-        $user_in_teams = array();
-        foreach ($team_resource as $r):
-            $resource_in_teams[] = $r->getTeam()->getId();
-        endforeach;
-
-        foreach ($team_user as $u):
-            $user_in_teams[] = $u->getTeam()->getId();
-        endforeach;
-
-        if (array_intersect($user_in_teams, $resource_in_teams)) {
-
-            $denied = false;
-            $view = new ViewModel;
-            $item = $response->getContent();
-            $view->setVariable('item', $item);
-            $view->setVariable('resource', $item);
-            $view->setVariable('denied', $denied);
-
-            return $view;
-        }else{
-            $denied = true;
-            return $this->redirect()->toRoute('admin/default', ['controller'=>'item']);
-        }
-
-    }
-
-    public function changeCurrentTeamAction($user_id, $data)
-    {
-//        $request = $this->getRequest();
-//        if (!$request->isPost()) {
-//            return $this->redirect()->toRoute('admin');
-//        } else {
-//            $data = $request->getPost();
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            $old_current->setCurrent(null);
-            $new_current->setCurrent(true);
-            $em->flush();
-
-
-//        }
+        $view = new ViewModel;
+        $item = $response->getContent();
+        $view->setVariable('item', $item);
+        $view->setVariable('resource', $item);
+        return $view;
     }
 
     public function showDetailsAction()
     {
-        $linkTitle = (bool) $this->params()->fromQuery('link-title', true);
+        $linkTitle = (bool)$this->params()->fromQuery('link-title', true);
         $response = $this->api()->read('items', $this->params('id'));
         $item = $response->getContent();
         $values = $item->valueRepresentation();
@@ -230,10 +100,9 @@ class ItemController extends AbstractActionController
 
     public function sidebarSelectAction()
     {
-
-
+        $this->setBrowseDefaults('created');
         $response = $this->api()->search('items', $this->params()->fromQuery());
-        $this->paginator($response->getTotalResults(), $this->params()->fromQuery('page'));
+        $this->paginator($response->getTotalResults());
 
         $view = new ViewModel;
         $view->setVariable('items', $response->getContent());
@@ -248,7 +117,7 @@ class ItemController extends AbstractActionController
 
     public function deleteConfirmAction()
     {
-        $linkTitle = (bool) $this->params()->fromQuery('link-title', true);
+        $linkTitle = (bool)$this->params()->fromQuery('link-title', true);
         $response = $this->api()->read('items', $this->params('id'));
         $item = $response->getContent();
         $values = $item->valueRepresentation();
@@ -344,44 +213,16 @@ class ItemController extends AbstractActionController
         $form->setAttribute('id', 'add-item');
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
+            $data = $this->mergeValuesJson($data);
             $form->setData($data);
             if ($form->isValid()) {
                 $fileData = $this->getRequest()->getFiles()->toArray();
                 $response = $this->api($form)->create('items', $data, $fileData);
-                $user_id = $this->identity()->getId();
-
-//                $media = $this->api()->read('items', $this->params('id'))->media();
                 $em = $this->entityManager;
                 $resource = $em->getRepository('Omeka\Entity\Item')->findOneBy(['id' => $response->getContent()->id()]);
                 $media = $resource->getMedia();
 
-                if (array_key_exists('team', $data)){
-                foreach ($data['team'] as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                    $team_resource = new TeamResource($team, $resource);
-                    $em->persist($team_resource);
-                    if (count($media)>0) {
-                        foreach ($media as $m):
-                            $tr = new TeamResource($team, $m);
-                            $em->persist($tr);
-                        endforeach;
-                    }
-                    endforeach;
-                $em->flush();}
 
-
-                //right now this doesn't care about the input it just add it to the users current team
-                //get the get the user's team_user with the is_current identifier
-//                $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-                //get their current team
-//                $team = $team_user->getTeam();
-//                $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$data['team']]);
-//                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
-//                $team_res = new TeamResource($team, $resource);
-//                $em = $this->entityManager;
-//                $em->persist($team_res);
-//                $em->flush();
                 if ($response) {
                     $message = new Message(
                         'Item successfully created. %s', // @translate
@@ -415,33 +256,61 @@ class ItemController extends AbstractActionController
 
         if ($this->getRequest()->isPost()) {
             $data = $this->params()->fromPost();
+            $data = $this->mergeValuesJson($data);
+
             $form->setData($data);
             if ($form->isValid()) {
                 $fileData = $this->getRequest()->getFiles()->toArray();
                 $response = $this->api($form)->update('items', $this->params('id'), $data, $fileData);
 
 
-                    $em = $this->entityManager;
-                    $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $response->getContent()->id()]);
-                    foreach ($entity as $e):
+                $em = $this->entityManager;
+                $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
+                    ->findBy(['resource' => $response->getContent()->id()]);
+                $media_ids = [];
 
-                        $this->entityManager->remove($e);
-                    endforeach;
-                    $em->flush();
-                    $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $response->getContent()->id()]);
+                //if user added media, the form will include the ingester [0]['o:ingester']
+                if (array_key_exists('o:media', $data)) {
+                    if ($data['o:media']) {
 
-                    foreach ($data['team'] as $team_id):
-                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                        $team_res = new TeamResource($team, $resource);
-                        $em = $this->entityManager;
-                        $em->persist($team_res);
+                        foreach ($response->getContent()->media() as $media):
+                            $media_ids[] = $media->id();
                         endforeach;
-                    $em->flush();
-                if ($response) {
-                    $this->messenger()->addSuccess('Item successfully updated'); // @translate
-                    return $this->redirect()->toUrl($response->getContent()->url());
+                    }
                 }
-            } else {
+                foreach ($entity as $e):
+                    $this->entityManager->remove($e);
+                endforeach;
+                $em->flush();
+
+                $resource = $em->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id' => $response->getContent()->id()]);
+
+                foreach ($data['team'] as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    $team_res = new TeamResource($team, $resource);
+                    $em->persist($team_res);
+                    foreach ($media_ids as $media_id):
+                        $media_res = $em->getRepository('Omeka\Entity\Resource')
+                            ->findOneBy(['id' => $media_id]);
+                        //don't add the media to a team where it already exists
+                        if (!$em->getRepository('Teams\Entity\TeamResource')
+                            ->findOneBy(['resource' => $media_id, 'team'=> $team_id])){
+                            $team_res = new TeamResource($team, $media_res);
+                            $em->persist($team_res);
+                        }
+                    endforeach;
+                endforeach;
+                $em->flush();
+
+
+                    if ($response) {
+
+                        $this->messenger()->addSuccess('Item successfully updated'); // @translate
+                        return $this->redirect()->toUrl($response->getContent()->url());
+
+                    }
+                } else {
                 $this->messenger()->addFormErrors($form);
             }
         }
@@ -469,11 +338,6 @@ class ItemController extends AbstractActionController
             return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
         }
 
-        $resources = [];
-        foreach ($resourceIds as $resourceId) {
-            $resources[] = $this->api()->read('items', $resourceId)->getContent();
-        }
-
         $form = $this->getForm(ResourceBatchUpdateForm::class, ['resource_type' => 'item']);
         $form->setAttribute('id', 'batch-edit-item');
         if ($this->params()->fromPost('batch_update')) {
@@ -495,6 +359,11 @@ class ItemController extends AbstractActionController
             } else {
                 $this->messenger()->addFormErrors($form);
             }
+        }
+
+        $resources = [];
+        foreach ($resourceIds as $resourceId) {
+            $resources[] = $this->api()->read('items', $resourceId)->getContent();
         }
 
         $view = new ViewModel;

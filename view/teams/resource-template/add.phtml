@@ -1,17 +1,18 @@
+<?php
+$translate = $this->plugin('translate');
+?>
 <?php $this->htmlElement('body')->appendAttribute('class', 'add resource-templates'); ?>
 
-<?php echo $this->pageTitle($this->translate('New resource template'), 1, $this->translate('Resource templates')); ?>
+<?php echo $this->pageTitle($translate('New resource template'), 1, $translate('Resource templates')); ?>
+
 <?php
 echo $this->partial(
-    'teams/resource-template/form.phtml',
+    'omeka/admin/resource-template/form.phtml',
     [
         'form' => $form,
         'propertyRows' => $propertyRows,
-        'submitLabel' => $this->translate('Add'),
+        'submitLabel' => $translate('Add'),
         'action' => 'add',
-        'user_teams' => $this->user_teams,
-        'rt_teams' => $this->rt_teams,
-        'default_team' => $this->default_team
     ]
 );
 ?>

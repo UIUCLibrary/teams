@@ -1,0 +1,42 @@
+
+<?php
+echo $this->user;
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+
+echo $this->pageTitle($translate('Delete role'));
+?>
+
+<?php
+if ($this->role_users){
+    ?> You can't delete this role because it is being used by the following teams
+    <ul class="list-group">
+        <?
+        foreach ($role_users as $user):?>
+            <li class="list-group-item"><?= $user->getTeam()->getName() ?></li>
+        <? endforeach; ?>
+    </ul>
+
+
+    <?php
+} else{
+?>
+<p>
+    Are you sure you want to delete the this role ?
+</p>
+<?php
+foreach ($this->role_users as $user):
+    echo $user->getId();
+endforeach;
+?>
+
+<ul class="list-group">
+    <li class="list-group-item"><?= $role->getName() ?></li>
+</ul>
+
+<form action="<?php $this->url('admin/teams/detail/delete', ['id'=>$this->params()->fromRoute('id')])?>" method="post">
+    <input class="btn btn-default" type="submit" name="confirm" value="Cancel" />
+    <input class="btn btn-danger" type="submit" name="confirm" value="Delete" />
+</form>
+<?php }
+

@@ -3,12 +3,19 @@ namespace Teams\Form\Element;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Manager as ApiManager;
+use Zend\Authentication\AuthenticationService;
 use Zend\Form\Element\Select;
+use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Helper\Url;
 
 //TODO add filter so only shows teams that the user should be able to see and use
 class TeamSelect extends Select
 {
+
+    /**
+     * @var AuthenticationService
+     */
+    protected $authenticationService;
     /**
      * @var ApiManager
      */
@@ -32,7 +39,7 @@ class TeamSelect extends Select
 
         //TODO get user id         $identity = $this->getServiceLocator()
         //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
-        $user_id = 1;
+        $user_id = $this->authenticationService->getIdentity();
         $em = $this->getEntityManager();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
         //this is set to display the teams for the current user. This works in many contexts for
@@ -71,6 +78,7 @@ class TeamSelect extends Select
             }
 
             $urlHelper = $this->getUrlHelper();
+
             $defaultAttributes = [
                 'class' => 'chosen-select',
                 'data-placeholder' => $this->data_placeholder, // @translate
@@ -114,6 +122,11 @@ class TeamSelect extends Select
         $this->entityManager = $entityManager;
     }
 
+    public function setAuthService(AuthenticationService $authenticationService)
+    {
+        $this->authenticationService = $authenticationService;
+    }
+
     /**
      * @param Url $urlHelper
      */
@@ -129,4 +142,9 @@ class TeamSelect extends Select
     {
         return $this->urlHelper;
     }
+
+
+
+
+
 }

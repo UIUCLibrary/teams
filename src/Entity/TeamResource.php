@@ -1,6 +1,7 @@
 <?php
 namespace Teams\Entity;
 
+use Omeka\Entity\AbstractEntity;
 use Omeka\Entity\Resource;
 
 /**
@@ -10,11 +11,19 @@ use Omeka\Entity\Resource;
  *
  * @Entity
  */
-class TeamResource
+  class TeamResource extends AbstractEntity
 {
+//
+//     /**
+//      * @var int
+//      * @Id
+//      * @Column(type="integer")
+//      * @GeneratedValue
+//      */
+//     protected $id;
     /**
-     * @var Team
      * @Id
+     * @var Team
      * @ManyToOne(
      *     targetEntity="Teams\Entity\Team",
      *     inversedBy="team_resources",
@@ -28,8 +37,8 @@ class TeamResource
     protected $team;
 
     /**
-     * @var Resource
      * @Id
+     * @var Resource
      * @ManyToOne(
      *     targetEntity="Omeka\Entity\Resource",
      *     cascade={"persist"}
@@ -63,5 +72,22 @@ class TeamResource
             'team' => $this->getTeam()->getId(),
             'resource' => $this->getResource()->getId(),
         ]);
+    }
+
+
+     /**
+      * @inheritDoc
+      */
+     public function getResourceName()
+     {
+         // TODO: Implement getResourceName() method.
+     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getId()
+    {
+        // TODO: Implement getId() method.
     }
 }

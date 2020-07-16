@@ -34,28 +34,3 @@ $form->prepare();
 <?php echo $this->form()->closeTag(); ?>
 <?php $this->trigger('view.edit.after'); ?>
 <?php echo $this->deleteConfirm($site, 'site'); ?>
-
-<?php $current_teams = $this->current_teams ?>
-<script>
-    let current_team = <?php echo json_encode($current_teams)?>;
-
-    // window.addEventListener("load", function (event) {
-        let select = document.getElementById('team');
-
-        for (let i=0; i < select.options.length; i++){
-            for (let j=0; j<current_team.length; j++)
-                if (current_team[j] == select.options[i].value){
-
-                    select.options[i].setAttribute('selected', true)
-                }
-
-
-
-        }
-
-
-
-    // })
-    ;
-
-</script>

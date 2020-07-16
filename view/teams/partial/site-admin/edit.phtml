@@ -1,0 +1,28 @@
+<?php $this->headScript()->captureStart() ?>
+
+window.addEventListener("load", function () {
+
+
+        let current_teams = <?php echo json_encode($this->team_ids)?>;
+
+
+        let select = document.getElementById('team_selected');
+
+        for (let i=0; i < select.options.length; i++){
+            for (let j=0; j < current_teams.length; j++){
+                if (current_teams[j] == select.options[i].value){
+                    select.options[i].setAttribute('selected', true);
+                }
+
+
+            }
+
+
+
+        }
+        $("select#team_selected").trigger("chosen:updated");
+    });
+
+
+
+    <?php $this->headScript()->captureEnd() ?>
