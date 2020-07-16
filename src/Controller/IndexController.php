@@ -5,6 +5,7 @@ namespace Teams\Controller;
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
+use Omeka\Stdlib\DateTime;
 use Zend\EventManager\Event;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -69,6 +70,9 @@ class IndexController extends AbstractActionController
 
                 //array of media ids
                 $media_ids = [];
+
+                //date to update last modified
+                $datetime = new \DateTime('now');
                 foreach ($this->api()->read('items', $this->params('id'))->getContent()->media() as $media):
                     $media_ids[] = $media->id();
                 endforeach;
@@ -86,6 +90,7 @@ class IndexController extends AbstractActionController
 
 
                 if ($entity){
+                    $entity->getResource()->setModified($datetime);
                     $entityManager->remove($entity);
 
                     //remove associated media from the team
@@ -95,8 +100,8 @@ class IndexController extends AbstractActionController
                         if ($tr){
                             $entityManager->remove($tr);
                             $this->messenger()->addSuccess('Associated Media successfully removed from your team.'); // @translate
-
-
+                            $entityManager->getRepository('Omeka\Entity\Resource')
+                                ->findOneBy(['id'=>$media_id])->setModified($datetime);
                         }
                     endforeach;
                     $entityManager->flush();
@@ -105,7 +110,7 @@ class IndexController extends AbstractActionController
                     $this->messenger()->addSuccess('Item will be deleted after x days   '); // @translate
 
                 } else{
-                    $this->messenger()->addSuccess('something went wrong'); // @translate
+                    $this->messenger()->addError('something went wrong'); // @translate
 
                 }
 
