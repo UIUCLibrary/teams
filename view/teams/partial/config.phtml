@@ -1,0 +1,29 @@
+<?php
+?>
+<div class="resource-values field template">
+    <input type="hidden" disabled="disabled" name="propertyIds[]" class="property-ids"></input>
+
+    <div class="field-meta">
+        <div class="field-label"></div>
+        <a href="#" class="expand" aria-label="<?php echo $this->translate("Expand"); ?>"></a>
+        <div class="collapsible">
+            <div class="field-description"></div>
+            <div class="field-term" title="<?php echo $this->translate("Property term for development use"); ?>"></div>
+        </div>
+    </div>
+    <span class="restore-property"><?php echo $this->translate("Property to be removed"); ?></span>
+    <ul class="actions metadata-browse">
+        <li>
+            <a href="#"
+               class="o-icon-delete remove-property"
+               title="<?php echo $this->translate("Remove property"); ?>"
+               aria-label="<?php echo $this->translate("Remove property"); ?>"></a>
+        </li>
+        <li>
+            <a href="#"
+               class="o-icon-undo restore-property"
+               title="<?php echo $this->translate("Restore property"); ?>"
+               aria-label="<?php echo $this->translate("Restore property"); ?>"></a>
+        </li>
+    </ul>
+</div>

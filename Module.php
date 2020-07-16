@@ -12,6 +12,7 @@ use Omeka\Permissions\Acl;
 use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
+use Teams\Form\ConfigForm;
 use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\TeamSelect;
 use Omeka\Api\Adapter\ItemAdapter;
@@ -22,8 +23,10 @@ use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
+use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\View\Renderer\PhpRenderer;
 
 class Module extends AbstractModule
 {
@@ -77,6 +80,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
         $conn = $serviceLocator->get('Omeka\Connection');
@@ -88,6 +92,28 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $conn->exec('DROP TABLE IF EXISTS team');
 
 
+    }
+
+    public function handleConfigForm(AbstractController $controller)
+    {
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+
+        $params = $controller->params()->fromPost();
+
+        $globalSettings->set('teams_site_admin_make_site', $params['teams_site_admin_make_site']);
+        $globalSettings->set('teams_editor_make_site', $params['teams_editor_make_site']);
+   }
+
+    public function getConfigForm(PhpRenderer $renderer)
+    {
+
+        $html = '';
+
+        $formElementManager = $this->getServiceLocator()->get('FormElementManager');
+        $form = $formElementManager->get(ConfigForm::class, []);
+        $html .= $renderer->formCollection($form, false);
+
+        return $html;
     }
 
     public function createNamedParameter(QueryBuilder $qb, $value,
@@ -272,6 +298,28 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [Controller\IndexController::class],
             ['roleIndex']
         );
+
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        if (! $globalSettings->get('teams_site_admin_make_site')){
+            $acl->deny(
+                'site_admin',
+                'Omeka\Entity\Site',
+                'create'
+            );
+        }
+
+        if (!$globalSettings->get('teams_editor_make_site')){
+            $acl->deny(
+                'editor',
+                'Omeka\Entity\Site',
+                'create'
+            );
+        }
+
+
+
+
+
 
     }
 
@@ -1073,7 +1121,20 @@ EOF;
         echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids'=>$team_id]);
     }
 
-
+//    public function siteAddPermission(Event $event){
+//
+//        $user = $this->getUser();
+//        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+//        $is_glob_admin = ($user->getRole() == 'global_admin');
+//
+//        if ($globalSettings->get('teams_site_admin_make_site') ||$is_glob_admin ){
+//            return;
+//        } else {
+//
+//            echo "<script>$('a').filter(function(index) { return $(this).text() === 'Add site'; });</script>";
+//        }
+//
+//    }
 
     public function siteEdit(Event $event)
     {
@@ -1297,8 +1358,12 @@ EOF;
         }
         elseif ($res_class == 'Omeka\Entity\Site'){
             if ($action == 'create'){
-                $authorized = $is_glob_admin;
-
+                $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+                if ($globalSettings->get('teams_site_admin_make_site')){
+                    $authorized = true;
+                } else {
+                    $authorized = $is_glob_admin;
+                }
             }
             elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $is_glob_admin;
@@ -1362,7 +1427,6 @@ EOF;
         elseif ($res_class == 'Omeka\Entity\Property'){
             return true;
         }
-
 
         elseif ($res_class == 'Teams\Entity\TeamRole'){
             $authorized = $is_glob_admin;
@@ -1761,6 +1825,11 @@ EOF;
             [$this, 'siteEdit']
         );
 
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\SiteAdmin\Index',
+//            'view.browse.before',
+//            [$this, 'siteAddPermission']
+//        );
 
         //put the roles data in the user page
 
