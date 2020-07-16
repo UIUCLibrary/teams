@@ -111,6 +111,7 @@ return [
         ]
     ],
     'controllers' => [
+
         'invokables' => [
             'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
 
