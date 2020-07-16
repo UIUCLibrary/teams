@@ -40,7 +40,28 @@ class TrashController extends AbstractActionController
     public function indexAction()
     {
 
+        $params = $this->params();
+        if ($params()->fromQuery('sort_order') === 'asc'){
+            $order = 'asc';
+        } else {
+            $order = 'desc';
+        }
+        $sort_options = [
+            'title' => 'title',
+            'id' => 'id',
+            'resource_class_label' => 'class',
+            'owner_name' => 'owner',
+            'created' => 'created',
+        ];
+        if (key_exists($params->fromQuery('sort_by'), $sort_options)){
+            $sort = $sort_options[$params->fromQuery('sort_by')];
+        } else {
+            $sort = 'created';
+        }
+
+
         $qb = $this->entityManager->createQueryBuilder();
+
         $qb->select('r')
             ->from('Omeka\Entity\Item ', 'r')
             ->leftJoin(
@@ -50,8 +71,9 @@ class TrashController extends AbstractActionController
                 'r.id = tr.resource'
             )
             ->where('tr.team is NULL')
-//            ->setMaxResults(10)
-//            ->setFirstResult(0)
+            ->orderBy('r.' . $sort, $order)
+
+
         ;
 
         $orphans =  $qb->getQuery()->getResult();
