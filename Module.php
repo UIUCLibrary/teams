@@ -316,6 +316,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             );
         }
 
+        $acl->deny(
+            ['site_admin', 'editor', 'reviewer', 'author', 'researcher'],
+            'Teams\Controller\Trash',
+            'update'
+        );
+
 
 
 

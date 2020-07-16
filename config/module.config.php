@@ -23,7 +23,7 @@ return [
                         'route' => 'admin/teams/roles',
                         'controller' => 'Index',
                         'action' => 'roleIndex',
-//                        'privilege' => 'roleIndex',
+//                        'privilege' => 'update',
                         'visible' => true,
                     ],
                 ]
@@ -40,6 +40,16 @@ return [
                 'action' => 'browse',
                 'resource' => 'Omeka\Controller\Admin\Setting',
                 'privilege' => 'browse',
+            ],
+            [
+                'label' => 'Trash', // @translate
+                'class' => 'fa-trash',
+                //make new route
+                'route' => 'admin/trash',
+                //etc
+
+                'resource' => 'Teams\Controller\Trash',
+                'privilege' => 'update',
             ],
         ],
 
@@ -118,6 +128,8 @@ return [
             'Teams\Controller\Delete' => 'Teams\Model\DeleteControllerFactory',
             'Teams\Controller\Add' => 'Teams\Model\AddControllerFactory',
             'Teams\Controller\Update' => 'Teams\Model\UpdateControllerFactory',
+            'Teams\Controller\Trash' => 'Teams\Model\TrashControllerFactory',
+
             //to make the item controlller do what I made it do by editing the Omeka ItemController, just add this
             //and route it to a different factory that invokes a controller of my design
 //            'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
@@ -352,6 +364,18 @@ return [
                             ],
                         ],
                     ],
+                    'trash' => [
+                        'type' => Literal::class,
+                        'options' => [
+                            'route' => '/trash',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                'controller' => 'Trash',
+                                'action' => 'index',
+                                ]
+
+                        ]
+                    ]
                 ],
             ],
         ],
