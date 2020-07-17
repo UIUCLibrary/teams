@@ -1051,7 +1051,7 @@ EOF;
 
                     foreach ($pre_teams as $pre_team):
                         if ($pre_team->getCurrent()){
-                            $current_team_id = $pre_teams->getTeam()->getId();
+                            $current_team_id = $pre_team->getTeam()->getId();
                         }
                         $em->remove($pre_team);
                     endforeach;
