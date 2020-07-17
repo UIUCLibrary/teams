@@ -4,11 +4,14 @@
     <?
         foreach ($this->team_users as $team_user):
             ?>
-    <div class="value">
+    <div class="values">
         <?
             echo sprintf('%s (%s)<br>', $team_user->getTeam()->getName(), $team_user->getRole()->getName());
+            ?>
+    </div>
+    <?
         endforeach;
         ?>
-    </div>
+
 </div>
 
