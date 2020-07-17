@@ -2103,10 +2103,13 @@ EOF;
                 'options' => [
                     'label' => 'Teams', // @translate
                     'chosen' => true,
+                    'required' => 'true',
                 ],
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
+                    'required' => 'true',
+
 
 
                 ],
@@ -2124,6 +2127,7 @@ EOF;
                     'multiple' => true,
                     'id' => 'team role',
                     'hidden' => 'hidden',
+                    'class' => 'hidden_no_value'
 
 
                 ],
