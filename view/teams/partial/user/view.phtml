@@ -1,10 +1,12 @@
 
 <div class="property">
     <h4>Teams</h4>
+    <?
+        foreach ($this->team_users as $team_user):
+            ?>
     <div class="value">
         <?
-        foreach ($this->team_names as $team_name):
-        echo $team_name . "<br> ";
+            echo sprintf('%s (%s)<br>', $team_user->getTeam()->getName(), $team_user->getRole()->getName());
         endforeach;
         ?>
     </div>

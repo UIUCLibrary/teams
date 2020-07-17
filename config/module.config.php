@@ -138,7 +138,7 @@ return [
 //            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
             'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
             'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
-            'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',
+//            'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',
 
 
 

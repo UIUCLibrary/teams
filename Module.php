@@ -1,6 +1,7 @@
 <?php
 namespace Teams;
 
+use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
@@ -14,6 +15,7 @@ use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
 use Teams\Form\Element\AllTeamSelect;
+use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\TeamSelect;
 use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
@@ -902,21 +904,18 @@ EOF;
     }
 
     //add user's teams to the user detail page view/omeka/admin/user/show.phtml
-    public function userTeams(Event $event){
+    public function userTeamsView(Event $event){
         $view = $event->getTarget();
         $user_id = $view->vars()->user->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $user_teams = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
-        $team_names = array();
-        foreach ($user_teams as $user_team):
-            $team_names[] = $user_team->getTeam()->getName();
-        endforeach;
-        echo $view->partial('teams/partial/user/view', ['team_names'=> $team_names]);
+        $team_users = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
+
+        echo $view->partial('teams/partial/user/view', ['team_users'=> $team_users]);
     }
 
 
 
-
+//populates user edit form with the user's current teams+roles
     public function userTeamsEdit(Event $event)
     {
         //send the form data for processing by module controller to add teamUser
@@ -993,6 +992,107 @@ EOF;
         }
     }
 
+    public function userCreate(Event $event){
+
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+
+        if ($operation == 'create'){
+
+            $response = $event->getParam('response');
+            $resource =  $response->getContent();
+            $user_id =  $resource->getId();
+            $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+            $teams =  $em->getRepository('Teams\Entity\Team');
+
+
+            $team_ids = $request->getContent()['o-module-teams:Team'];
+
+            //format is key = team_id : value = role_id
+            $team_role_ids = $request->getContent()['o-module-teams:TeamRole'];
+
+            foreach ($team_ids as $team_id):
+                $team_id = (int) $team_id;
+                $team = $teams->findOneBy(['id'=> $team_id]);
+                $role_id = $team_role_ids[$team_id];
+                $role = $em->getRepository('Teams\Entity\TeamRole')
+                    ->findOneBy(['id'=>$role_id]);
+                $team_user = new TeamUser($team,$user,$role);
+                $em->persist($team_user);
+
+
+            endforeach;
+            $em->flush();
+
+
+
+        }
+
+
+    }
+
+    public function userUpdate(Event $event){
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation == 'update' ){
+            $user_id = $request->getId();
+
+                //array of team ids
+                if ($user_role = $this->getUser()->getRole() == 'global_admin') {//remove the user's teams
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
+
+                    $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+
+                    foreach ($pre_teams as $pre_team):
+                        if ($pre_team->getCurrent()){
+                            $current_team_id = $pre_teams->getTeam()->getId();
+                        }
+                        $em->remove($pre_team);
+                    endforeach;
+                    $em->flush();
+                    $current_team_id = isset($current_team_id )? $current_team_id : 0;
+
+                    //add the teams from the form
+                    $teams =  $em->getRepository('Teams\Entity\Team');
+                    foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                        $team_id = (int) $team_id;
+                        $team = $teams->findOneBy(['id'=> $team_id]);
+
+
+                        //get it this way because the roles are added dynamically as js and not part of pre-baked form
+                        $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
+                        $role = $em->getRepository('Teams\Entity\TeamRole')
+                            ->findOneBy(['id'=>$role_id]);
+                        $team_user = new TeamUser($team,$user,$role);
+
+                        if ($team_id == $current_team_id){
+                            $team_user->setCurrent(true);
+                        }
+                        $em->persist($team_user);
+
+                    endforeach;
+                    $em->flush();
+
+                    //if their current team was removed, just give them a current team from the top of the list
+                    if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
+                        $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
+                        ->setCurrent(true);
+                        $em->flush();
+
+                    }
+                }
+
+        }
+        return;
+
+    }
+
     public function itemUpdate(Event $event){
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $entity = $event->getParam('entity');
@@ -1004,6 +1104,13 @@ EOF;
             $resource_id = $request->getId();
 
             if (array_key_exists('team', $request->getContent())){
+
+                foreach (get_class_methods($request) as $key):
+
+                    echo "this is the method  " . $key . "<br>";
+                endforeach;
+                echo $request->getResource();
+
 
                 //array of team ids
                 $teams = $request->getContent()['team'];
@@ -1529,7 +1636,7 @@ EOF;
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\User',
             'view.show.after',
-            [$this, 'userTeams']
+            [$this, 'userTeamsView']
         );
 
         $sharedEventManager->attach(
@@ -1591,6 +1698,12 @@ EOF;
             [$this, 'itemCreate']
         );
 
+        $sharedEventManager->attach(
+            UserAdapter::class,
+            'api.execute.post',
+            [$this, 'userCreate']
+        );
+
         //only make changes after checking team authority . . . should these two be combined?
         //seems like they probably should because they are looking at similar things . . .
         //unless I really need it to be pre and post hydration . . . which maybe I do?
@@ -1598,6 +1711,12 @@ EOF;
             ItemSetAdapter::class,
             'api.hydrate.post',
             [$this, 'itemSetUpdate']
+        );
+
+        $sharedEventManager->attach(
+            UserAdapter::class,
+            'api.hydrate.post',
+            [$this, 'userUpdate']
         );
 
         $sharedEventManager->attach(
@@ -1904,6 +2023,23 @@ EOF;
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
+
+
+                ],
+            ]);
+
+            //this needs to be in here so that the form will push the jQuery created team roles into the request object
+            $form->get('user-information')->add([
+                'name' => 'o-module-teams:TeamRole',
+                'type' => RoleSelect::class,
+                'options' => [
+                    'label' => ' ', // @translate
+                    'hidden' => 'hidden'
+                ],
+                'attributes' => [
+                    'multiple' => true,
+                    'id' => 'team role',
+                    'hidden' => 'hidden',
 
 
                 ],
