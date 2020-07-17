@@ -12,6 +12,7 @@ use Omeka\Entity\EntityInterface;
 use Omeka\Permissions\Acl;
 use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
+use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
 use Teams\Form\Element\AllTeamSelect;
@@ -856,7 +857,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
         if ( is_array($team_id)){
 
-
             //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
@@ -868,7 +868,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
                     $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')
                         ->andWhere('ts.team = :team_id')
-//                        ->orWhere('ts.team = 150')
                         ->setParameter('team_id', $team_id);
 
                     //TODO:This needs to be moved to its own fuction and only fire when on the site index page, which
@@ -1049,7 +1048,56 @@ EOF;
 
             endforeach;
             $em->flush();
+        }
+    }
 
+    public function resourceTemplateCreate(Event $event){
+
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+
+        if ($operation == 'create') {
+            $resource_template =  $event->getParam('entity');
+            $teams =  $em->getRepository('Teams\Entity\Team');
+            foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                $team = $teams->findOneBy(['id'=>$team_id]);
+                $trt = new TeamResourceTemplate($team,$resource_template);
+                $em->persist($trt);
+            endforeach;
+            $em->flush();
+        }
+
+    }
+
+    public function resourceTemplateUpdate(Event $event){
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation == 'update') {
+            $resource_template_id = $request->getId();
+            $resource_template  = $em->getRepository('Omeka\Entity\ResourceTemplate')
+                ->findOneBy(['id' => $resource_template_id]);
+
+            $pre_teams = $em->getRepository('Teams\Entity\TeamResourceTemplate')
+                ->findBy(['resource_template' => $resource_template_id]);
+
+            foreach ($pre_teams as $pre_team):
+                $em->remove($pre_team);
+            endforeach;
+            $em->flush();
+
+            $teams =  $em->getRepository('Teams\Entity\Team');
+            foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                $team = $teams->findOneBy(['id'=>$team_id]);
+                $trt = new TeamResourceTemplate($team,$resource_template);
+                $em->persist($trt);
+            endforeach;
+            $em->flush();
 
 
         }
@@ -1741,6 +1789,18 @@ EOF;
             UserAdapter::class,
             'api.hydrate.post',
             [$this, 'userUpdate']
+        );
+
+        $sharedEventManager->attach(
+            ResourceTemplateAdapter::class,
+            'api.execute.post',
+            [$this, 'resourceTemplateUpdate']
+        );
+
+        $sharedEventManager->attach(
+            ResourceTemplateAdapter::class,
+            'api.hydrate.post',
+            [$this, 'resourceTemplateCreate']
         );
 
         $sharedEventManager->attach(
