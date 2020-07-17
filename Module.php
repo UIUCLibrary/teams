@@ -811,6 +811,30 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
             return;
         }
+        if (isset($query['site_id'])) {
+            $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+            $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
+            foreach ($team_site as $ts):
+
+                $team_id[] = $ts->getTeam()->getId();
+            endforeach;
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias . '.id = tr.resource')
+                ->andWhere('tr.team = :team_id')
+                ->setParameter('team_id', $team_id[0]);
+
+            if (count($team_id) > 1) {
+                $orX = $qb->expr()->orX();
+                $i = 0;
+                foreach ($team_id as $value) {
+                    $orX->add($qb->expr()->eq('tr.team', ':name' . $i));
+                    $qb->setParameter('name' . $i, $value);
+                    $i++;
+                }
+                $qb->orWhere($orX);
+                return;
+
+            }
+        }
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
         /// This turned out to be vital to making public facing browse and search work
