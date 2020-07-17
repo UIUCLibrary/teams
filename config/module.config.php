@@ -12,6 +12,7 @@ use Teams\Controller\CurrentTeamController;
 $teamname = 'Example Team';
 return [
     'navigation' => [
+
         'AdminResource' => [
             [
                 'label' => 'My Teams', // @translate

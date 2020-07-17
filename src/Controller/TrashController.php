@@ -39,6 +39,15 @@ class TrashController extends AbstractActionController
 
     public function indexAction()
     {
+        if ($this->request->isPost()){
+            if ($this->identity()->getRole() == 'global_admin'){
+                foreach ($this->getRequest()->getPost('resource_ids') as $id):
+                    $id = (int) $id;
+                    $this->api()->delete('items', ['id' =>$id]);
+                endforeach;
+            }
+
+        }
 
         $params = $this->params();
         if ($params()->fromQuery('sort_order') === 'asc'){
@@ -102,6 +111,8 @@ class TrashController extends AbstractActionController
         $view->setVariable('formDeleteAll', $formDeleteAll);
 
         return $view;
+
+
     }
 
 }
