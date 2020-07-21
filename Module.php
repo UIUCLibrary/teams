@@ -1537,9 +1537,11 @@ EOF;
         elseif ($res_class == 'Omeka\Entity\Site'){
             if ($action == 'create'){
                 $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-                if ($globalSettings->get('teams_site_admin_make_site')){
+                if ($globalSettings->get('teams_site_admin_make_site') && $user->getRole() == 'site_admin'){
                     $authorized = true;
-                } else {
+                } elseif ($globalSettings->get('teams_editor_make_site') && $user->getRole() == 'editor'){
+		    $authorized = true;
+		} else {
                     $authorized = $is_glob_admin;
                 }
             }
