@@ -664,7 +664,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 
-
+//TODO: refactor to use the currentTeam() function
 //need to use the currentTeam() function
     public function teamSelectorNav(Event $event)
     {
@@ -692,7 +692,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $event->getTarget()->partial(
             'teams/partial/team-nav-selector',
             ['current_team' => $ct]
-        );}
+        );
+        }
 
 //        $view = $event->getTarget();
 //
@@ -806,6 +807,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
 
+
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
 
@@ -813,14 +815,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             return;
         }
         if (isset($query['site_id'])) {
+
             $em = $this->getServiceLocator()->get('Omeka\EntityManager');
             $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
             foreach ($team_site as $ts):
-
                 $team_id[] = $ts->getTeam()->getId();
             endforeach;
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias . '.id = tr.resource')
-                ->andWhere('tr.team = :team_id')
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_si', Expr\Join::WITH, $alias . '.id = tr_si.resource')
+                ->andWhere('tr_si.team = :team_id')
                 ->setParameter('team_id', $team_id[0]);
 
             if (count($team_id) > 1) {
@@ -840,14 +842,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
         /// This turned out to be vital to making public facing browse and search work
         if (isset($query['team_id'])){
+
             $team_id = (int) $query['team_id'];
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
-                ->andWhere('tr.team = :team_id')
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_ti', Expr\Join::WITH, $alias .'.id = tr_ti.resource')
+                ->andWhere('tr_ti.team = :team_id')
                 ->setParameter('team_id', $team_id)
             ;
             return;
 
         }else{
+
             $team_id = $this->getTeamContext($query, $event);
         }
 
@@ -906,8 +910,8 @@ EOF;
                 //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
 
 
-                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
-                    ->andWhere('tr.team = :team_id')
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr_else', Expr\Join::WITH, $alias .'.id = tr_else.resource')
+                    ->andWhere('tr_else.team = :team_id')
                     ->setParameter('team_id', $team_id[0])
 
                 ;
