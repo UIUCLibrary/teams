@@ -1177,13 +1177,6 @@ EOF;
 
             if (array_key_exists('team', $request->getContent())){
 
-                foreach (get_class_methods($request) as $key):
-
-                    echo "this is the method  " . $key . "<br>";
-                endforeach;
-                echo $request->getResource();
-
-
                 //array of team ids
                 $teams = $request->getContent()['team'];
 
@@ -1717,11 +1710,7 @@ EOF;
             [$this, 'siteFormAdd']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.show.section_nav',
-//            [$this, 'teamDACL']
-//        );
+
 
         $adapters = [
             ItemSetAdapter::class,
@@ -2103,31 +2092,30 @@ EOF;
                 'options' => [
                     'label' => 'Teams', // @translate
                     'chosen' => true,
-                    'required' => 'true',
+//                    'required' => 'true',
                 ],
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
-                    'required' => 'true',
+//                    'required' => true,
 
 
 
                 ],
             ]);
 
-            //this needs to be in here so that the form will push the jQuery created team roles into the request object
+//            this needs to be in here so that the form will push the jQuery created team roles into the request object
             $form->get('user-information')->add([
                 'name' => 'o-module-teams:TeamRole',
                 'type' => RoleSelect::class,
                 'options' => [
                     'label' => ' ', // @translate
-                    'hidden' => 'hidden'
                 ],
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team role',
                     'hidden' => 'hidden',
-                    'class' => 'hidden_no_value'
+//                    'class' => 'hidden_no_value'
 
 
                 ],
@@ -2224,12 +2212,6 @@ EOF;
         }else{$tr=null;}
 
         return array('page_resource'=>$resources, 'team_resources'=>$tr);
-
-
-
     }
-
-
-
 }
 
