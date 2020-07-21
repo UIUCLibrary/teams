@@ -829,7 +829,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $orX = $qb->expr()->orX();
                 $i = 0;
                 foreach ($team_id as $value) {
-                    $orX->add($qb->expr()->eq('tr.team', ':name' . $i));
+                    $orX->add($qb->expr()->eq('tr_si.team', ':name' . $i));
                     $qb->setParameter('name' . $i, $value);
                     $i++;
                 }
