@@ -7,6 +7,7 @@ namespace Teams\Controller;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Form\ConfirmForm;
+use Teams\Form\TrashForms\DeleteAllForm;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
@@ -37,18 +38,54 @@ class TrashController extends AbstractActionController
         return ":$placeholder";
     }
 
+//    public function batchDeleteAllAction(){
+//        echo "batch delete all";
+//        return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
+//    }
+//
+//    public function batchDeleteAction(){
+//        echo "you made it";
+//    }
+
     public function indexAction()
     {
+
+        $qb = $this->entityManager->createQueryBuilder();
+
         if ($this->request->isPost()){
             if ($this->identity()->getRole() == 'global_admin'){
-                foreach ($this->getRequest()->getPost('resource_ids') as $id):
-                    $id = (int) $id;
-                    $this->api()->delete('items', ['id' =>$id]);
-                endforeach;
+                if ($this->getRequest()->getPost('submit') == 'Delete Selected'){
+                    foreach ($this->getRequest()->getPost('resource_ids') as $id):
+                        $id = (int) $id;
+                        $this->api()->delete('items', ['id' =>$id]);
+                    endforeach;
+                } elseif ($this->getRequest()->getPost('submit') == 'Delete All'){
+
+                    $qb1 = $this->entityManager->createQueryBuilder();
+                    $qb1->select('r')
+                        ->from('Omeka\Entity\Item ', 'r')
+                        ->leftJoin(
+                            'Teams\Entity\TeamResource',
+                            'tr',
+                            \Doctrine\ORM\Query\Expr\Join::WITH,
+                            'r.id = tr.resource'
+                        )
+                        ->where('tr.team is NULL');
+
+                    $orphans = $qb1->getQuery()->getResult();
+
+                    foreach ($orphans as $resource):
+                        echo $resource->getId();
+                        $this->api()->delete('items', $resource->getId());
+                    endforeach;
+
+
+                }
+
             }
 
-        }
 
+        }
         $params = $this->params();
         if ($params()->fromQuery('sort_order') === 'asc'){
             $order = 'asc';
@@ -69,23 +106,20 @@ class TrashController extends AbstractActionController
         }
 
 
-        $qb = $this->entityManager->createQueryBuilder();
 
-        $qb->select('r')
-            ->from('Omeka\Entity\Item ', 'r')
+        $qb->select('r_trash')
+            ->from('Omeka\Entity\Item ', 'r_trash')
             ->leftJoin(
                 'Teams\Entity\TeamResource',
-                'tr',
+                'tr_trash',
                 \Doctrine\ORM\Query\Expr\Join::WITH,
-                'r.id = tr.resource'
+                'r_trash.id = tr_trash.resource'
             )
-            ->where('tr.team is NULL')
-            ->orderBy('r.' . $sort, $order)
-
-
-        ;
+            ->where('tr_trash.team is NULL')
+            ->orderBy('r_trash.' . $sort, $order);
 
         $orphans =  $qb->getQuery()->getResult();
+
 
         $this->paginator(count($orphans));
 
@@ -93,13 +127,13 @@ class TrashController extends AbstractActionController
         $offset = ($page * 10) - 10;
         $orphans = array_slice($orphans,$offset,10);
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
-        $formDeleteSelected->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete'], true));
-        $formDeleteSelected->setButtonLabel('Confirm Delete'); // @translate
+        $formDeleteSelected->setAttribute('action', $this->url()->fromRoute('admin/trash', ['action' => 'batch-delete'], true));
+        $formDeleteSelected->setButtonLabel('Delete Selected'); // @translate
         $formDeleteSelected->setAttribute('id', 'confirm-delete-selected');
 
-        $formDeleteAll = $this->getForm(ConfirmForm::class);
+        $formDeleteAll = $this->getForm(DeleteAllForm::class);
         $formDeleteAll->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete-all'], true));
-        $formDeleteAll->setButtonLabel('Confirm Delete'); // @translate
+        $formDeleteAll->setButtonLabel('Delete All'); // @translate
         $formDeleteAll->setAttribute('id', 'confirm-delete-all');
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 

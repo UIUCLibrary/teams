@@ -366,16 +366,16 @@ return [
                         ],
                     ],
                     'trash' => [
-                        'type' => Literal::class,
+                        'type' => Segment::class,
                         'options' => [
                             'route' => '/trash',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Teams\Controller',
                                 'controller' => 'Trash',
                                 'action' => 'index',
-                                ]
+                                ],
+                        ],
 
-                        ]
                     ]
                 ],
             ],
