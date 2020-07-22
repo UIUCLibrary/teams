@@ -65,9 +65,10 @@ class RoleAuth extends AbstractHelper
 
 
         //if the user has a current team
-        if ($current_role = $em->getRepository('Teams\Entity\TeamUser')
+        if ($has_role = $em->getRepository('Teams\Entity\TeamUser')
             ->findOneBy(['is_current' => true, 'user'=>$user_id])
-            ->getRole()) {
+            ) {
+            $current_role = $has_role->getRole();
 
             //go through each domain and determine if user is authorized for actions in that domain
 
