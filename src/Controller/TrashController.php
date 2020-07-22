@@ -75,7 +75,6 @@ class TrashController extends AbstractActionController
                     $orphans = $qb1->getQuery()->getResult();
 
                     foreach ($orphans as $resource):
-                        echo $resource->getId();
                         $this->api()->delete('items', $resource->getId());
                     endforeach;
 
