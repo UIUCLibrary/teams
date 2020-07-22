@@ -85,23 +85,24 @@ Class UpdateController extends AbstractActionController
     }
 
     public function processItemSets(int $item_set_id){
+        $resource_array = array();
         if ((int)$item_set_id>0){
-            $resource_array = array();
             $item_set_id = (int)$item_set_id;
 
             //TODO: why isn't this a list?
             //add all items belonging to itemset
             foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                $resource_array[$item->id()] = true;
+                $resource_array += [$item->id() => true];
 
                 //add all media belonging to to the item
                 foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                    $resource_array[$media->id()] = true;
+                    $resource_array += [$media->id()=>true];
                 endforeach;
             endforeach;
         }
         //add itemset itself
-        $resource_array[$item_set_id] = true;
+        $resource_array += [$item_set_id => true];
+
         return $resource_array;
     }
     public function processResources($request, $team, $existing_resources, bool $delete = false){
@@ -114,11 +115,14 @@ Class UpdateController extends AbstractActionController
         }
 
 
+
+
             //get ids of itemsets and their descendents
             if (isset($request->getPost($collection)['o:itemset'])){
                 foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
-                    array_merge($resource_array, $this->processItemSets($item_set_id));
+                    $resource_array += $this->processItemSets($item_set_id);
                 endforeach;
+
             }
 
             //get ids of things the user owns
@@ -128,19 +132,18 @@ Class UpdateController extends AbstractActionController
                         $user_id = (int)$user_id;
                         foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
 
-                            $resource_array[$item->id()] = true;
+                            $resource_array += [$item->id() => true];
 
                             foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
+                                $resource_array += [$media->id() => true];
                             endforeach;
 
                         endforeach;
 
                         //also get the users itemsets
                         foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $itemSet):
-                            array_merge($resource_array, $this->processItemSets($itemSet->id()));
+                            $resource_array += $this->processItemSets($itemSet->id());
                         endforeach;
-
                     }
                 endforeach;
             }
@@ -154,33 +157,22 @@ Class UpdateController extends AbstractActionController
                     }
                 endforeach;
                 //add the resources to the team
-                foreach (array_keys($resource_array) as $resource_id):
+                foreach ($resource_array as $resource_id => $value):
                     $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                         ->findOneBy(['id'=>$resource_id]);
                     $team_resource = new TeamResource($team, $resource);
                     $this->entityManager->persist($team_resource);
                 endforeach;
                 $this->entityManager->flush();
-            }else{
-                //for deletes, remove the id from the array if it isn't part of the team already to prevent removing
-                //items that dont exist
-                foreach ($existing_resources as $resource):
-                    $rid = $resource->getResource()->getId();
-                    if (!array_key_exists($rid, $resource_array)){
-                        unset($resource_array[$rid]);
-                    }
-                endforeach;
-
+            } else {
                 foreach (array_keys($resource_array) as $resource_id):
-                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                        ->findOneBy(['id'=>$resource_id]);
-                    $team_resource = new TeamResource($team, $resource);
-                    $this->entityManager->remove($team_resource);
+                    $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')
+                        ->findOneBy(['resource'=>$resource_id, 'team'=>$team]);
+                    if ($team_resource){
+                    $this->entityManager->remove($team_resource);}
                 endforeach;
                 $this->entityManager->flush();
-            }
-
-
+                }
     }
 
     public function teamUpdateAction()
