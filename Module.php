@@ -628,15 +628,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $identity = $this->getUser();
         $user_id = $identity->getId();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $teams = $entityManager->getRepository('Teams\Entity\TeamUser');
-        if ($teams->findOneBy(['user'=>$user_id, 'is_current'=>1])){
-            $default_team = $teams->findOneBy(['user'=>$user_id, 'is_current'=>1]);
-            $default_team = $default_team->getTeam();
-        } elseif ($teams->findBy(['user' => $user_id])){
-            $default_team = $teams->findOneBy(['user' => $user_id], ['name']);
-            $default_team = $default_team->getTeam();
-        } else {
-            $default_team = null;
+        $default_team = $this->currentTeam();
+        if (! $default_team){
+            $messanger = new Messenger();
+            $messanger->addError("You can only make a new resource after you have been added to a team");
+            echo '<script>$(\'button:contains("Add")\').prop("disabled",true);</script>';
         }
 
         echo $event->getTarget()->partial(
@@ -680,11 +676,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             if($ct){
             $ct = $ct->getTeam();
-//        } elseif ($tu->findOneBy(['user'=>$user_id])){
-//            $tu = $tu->findOneBy(['user'=>$user_id]);
-//            $ct = $tu->getTeam();
-//            $tu->setCurrent(1);
-//            $entityManager->flush();
+
 
         } else {
             $ct = 'None';
@@ -720,6 +712,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $user_id = $identity->getId();
         }
 
+        //look for their current team
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
         if (!$team_user){
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
@@ -732,15 +725,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
             else{
 
-                return null;}
-            ;
+                return null;
+            }
+
 
         }
         if ($team_user){
             $current_team = $team_user->getTeam();
             $team_id = $current_team->getId();
         }else{
-            $current_team = 'None';
+            $current_team = null;
             $team_id = 0;
         }
         return $current_team;
@@ -1277,8 +1271,16 @@ EOF;
 
         $view =  $event->getTarget();
 
-        $team_id = $this->currentTeam()->getId();
+        if ($has_team = $this->currentTeam()){
+            $team_id = $has_team->getId();
 
+        } else {
+            $messanger = new Messenger();
+            $messanger->addError("You can only make a resource template after you have been added to a team");
+            $team_id = 0;
+            echo '<script>$(\'button:contains("Add")\').prop("disabled",true);</script>';
+
+        }
         echo $view->partial('teams/partial/resource-template/add', ['team_id' => $team_id]);
 
 
@@ -1294,7 +1296,15 @@ EOF;
 
     public function siteFormAdd(Event $event)
     {
-        $team_id = $this->currentTeam()->getId();
+        if ($has_team = $this->currentTeam()){
+            $team_id = $has_team->getId();
+
+        } else {
+            $messanger = new Messenger();
+            $messanger->addError("You can only make a site after you have been added to a team");
+            $team_id = 0;
+
+        }
         $view = $event->getTarget();
         echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids'=>$team_id]);
     }
