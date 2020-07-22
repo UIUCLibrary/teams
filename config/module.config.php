@@ -22,10 +22,7 @@ return [
                     [
                         'label' => 'Roles', // @translate
                         'route' => 'admin/teams/roles',
-                        'controller' => 'Index',
-                        'action' => 'roleIndex',
-//                        'privilege' => 'update',
-                        'visible' => true,
+                        'resource' => 'Teams\Controller\Add',
                     ],
                 ]
             ],
