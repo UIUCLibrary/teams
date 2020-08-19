@@ -1839,11 +1839,11 @@ EOF;
             [$this, 'displayTeamForm']
         );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\ResourceTemplate',
-            'view.edit.form.after',
-            [$this, 'displayTeamForm']
-        );
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\ResourceTemplate',
+//            'view.edit.form.after',
+//            [$this, 'displayTeamForm']
+//        );
 
             //ItemSet//
         $sharedEventManager->attach(
