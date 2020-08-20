@@ -39,7 +39,6 @@ if ($this->teams){
     foreach ($this->teams as $team):
         ?>
    <li><a href="<? echo $this->url('admin/teams/detail', ['id'=> $team->getId()])?>">
-test
     <?php echo $team->getName();?>
     </a></li>
     <?php endforeach;
