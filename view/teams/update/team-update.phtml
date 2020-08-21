@@ -30,7 +30,7 @@ $sectionNavs = [
 ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
 
-<h1>Update Team for <? echo $this->form->get('o:name')->getValue()?></h1>
+<h1>Update Team for <?php echo $this->form->get('o:name')->getValue()?></h1>
 <div id="page-actions">
     <!--    --><?php //if ($item->userIsAllowed('update')): ?>
     <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
@@ -68,7 +68,7 @@ echo $this->form()->openTag($form);?>
             <div class="input" id="role">
                 <select class="chosen-select" data-placeholder="Username"
                         id="new-member-choice" name="add-member" >
-                    <? foreach ($available_u_array as $id => $member):
+                    <?php foreach ($available_u_array as $id => $member):
                         echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
                     endforeach;
                     ?>
@@ -77,7 +77,7 @@ echo $this->form()->openTag($form);?>
             <div class="input" id="role">
                 <select class="chosen-select" data-placeholder="Username"
                         id="new-member-choice" name="member-role" >
-                    <? foreach ($roles as $role):
+                    <?php foreach ($roles as $role):
                         echo '<option value="' .  $role->getId() .'" id="user' . $role->getId() . '">'.  $role->getName() . '</option>';
                     endforeach;
                     ?>
@@ -166,7 +166,7 @@ echo $this->form()->openTag($form);?>
                                     </select>
                                     <input type="hidden" id="UserCurrent[<?php echo $user_id?>]"
                                            name="<?php echo sprintf('UserCurrent[%s]', $user_id)?>"
-                                           value="<? echo $is_active?>"
+                                           value="<?php echo $is_active?>"
                                     >
                                 </fieldset>
 
@@ -194,8 +194,7 @@ echo $this->form()->openTag($form);?>
         <div class="select-by-item-set-content">
 
 
-            <?
-
+            <?php
             $itemsetForm = $this->itemsetForm;
             $fs = $itemsetForm->getFieldsets();
             $fs['addCollections']->setLabel('Add resources to team');

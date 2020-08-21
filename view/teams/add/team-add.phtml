@@ -78,7 +78,7 @@ echo $this->formCollection($form);
 
                 <select class="chosen-select" data-placeholder="Username"
                          id="new-member-choice" name="add-member-choice" >
-                    <? foreach ($available_u_array as $member => $id):
+                    <?php foreach ($available_u_array as $member => $id):
                         echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
                     endforeach;
                     ?>
@@ -87,7 +87,7 @@ echo $this->formCollection($form);
 
             <div class="input">
                 <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
-                    <? foreach ($this->roles as $role => $id):
+                    <?php foreach ($this->roles as $role => $id):
                         echo '<option value="' .  $id .'" id="user' . $id . '">'.  $role . '</option>';
                     endforeach;
                     ?>
@@ -111,8 +111,8 @@ echo $this->formCollection($form);
 
                 }
 
-                users = <? echo json_encode($this->available_u_array);?>;
-                roles = <? echo json_encode($this->roles);?>;
+                users = <?php echo json_encode($this->available_u_array);?>;
+                roles = <?php echo json_encode($this->roles);?>;
                 function addUser() {
                     let nm = document.getElementById("new-member-choice");
                     let nmr = document.getElementById("new-member-role");

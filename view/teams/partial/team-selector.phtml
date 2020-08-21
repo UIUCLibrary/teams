@@ -1,23 +1,19 @@
 <div>
-    <form id="change_team" method="post" action=" <?echo $this->url('admin/teams/current') ?>" >
+    <form id="change_team" method="post" action=" <?php echo $this->url('admin/teams/current') ?>" >
 
-        <label for="team_options"> <? echo sprintf('Showing %s for your current team: ', $this->resource_type) ?></label>
-        <input type="hidden" value="<? echo $_SERVER["REQUEST_URI"]; ?>" name="return_url">
+        <label for="team_options"> <?php echo sprintf('Showing %s for your current team: ', $this->resource_type) ?></label>
+        <input type="hidden" value="<?php echo $_SERVER["REQUEST_URI"]; ?>" name="return_url">
         <select id="team_options" name="team_id" form="change_team">
 
-            <? if ($this->current_team == null){
+            <?php if ($this->current_team == null){
                 echo 'Current Team is Null';
                 foreach ($this->user_teams as $team):
-                    ?><option value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
-                endforeach;
-                ?> <option value="null" selected>None</option><?
-            } else {
+                    ?><option value="<?php echo $team->getTeam()->getId();?>"><?php echo $team->getTeam()->getName();?></option><?php                 endforeach;
+                ?> <option value="null" selected>None</option><?php             } else {
 
                 foreach ($this->user_teams as $team):
                     ?>
-                    <option <? if ($team->getTeam()->getName() == $this->current_team){ ?>selected <?
-                } ?>value="<? echo $team->getTeam()->getId(); ?>"><? echo $team->getTeam()->getName(); ?></option><?
-                endforeach;
+                    <option <?php if ($team->getTeam()->getName() == $this->current_team){ ?>selected <?php                 } ?>value="<?php echo $team->getTeam()->getId(); ?>"><?php echo $team->getTeam()->getName(); ?></option><?php                 endforeach;
 
             }?>
 

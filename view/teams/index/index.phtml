@@ -23,7 +23,7 @@ $escape = $this->plugin('escapeHtml');
 
 
 <?php if ($this->current_team != "None"){?>
-<h2> Current Team: <?echo $this->current_team->getName() ?></h2>
+<h2> Current Team: <?php echo $this->current_team->getName() ?></h2>
 <?php } else{
     ?> <h2> Current Team: You are Not Currently Assigned to a Team</h2>
     <?php
@@ -45,14 +45,13 @@ if ($this->user_teams): ?>
 
                     <label for="team_options"></label>
                     <select id="team_options" name="team_id" form="change_team">
-                        <? foreach ($this->user_teams as $team):
-                            ?><option <? if ($team->getTeam()->getName() == $this->current_team->getName()){?>selected <?}?> value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
-                        endforeach;
+                        <?php foreach ($this->user_teams as $team):
+                            ?><option <?php if ($team->getTeam()->getName() == $this->current_team->getName()){?>selected <?php }?> value="<?php  echo $team->getTeam()->getId();?>"><?php echo $team->getTeam()->getName();?></option><?php                         endforeach;
 
                         ?>
 
                     </select>
-                    <button form="change_team" formaction="<?$this->url('admin/teams')?>" formmethod="post">Change Team</button>
+                    <button form="change_team" formaction="<?php $this->url('admin/teams')?>" formmethod="post">Change Team</button>
                 </form>
                 </td>
             </tr>
@@ -73,11 +72,10 @@ if ($this->user_teams): ?>
                 ?>
 
 
-                <tr<? if ($team->getId() == $this->current_team->getId()){echo ' class="current-team" ';}?>>
+                <tr<?php if ($team->getId() == $this->current_team->getId()){echo ' class="current-team" ';}?>>
                     <td>
-                        <a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()){
-                            ?> <strong><? echo $team->getName();?></strong><?
-                        }else{
+                        <a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()){
+                            ?> <strong><?php echo $team->getName();?></strong><?php                         }else{
                             echo $team->getName();
 
                         }?></a>
@@ -87,15 +85,15 @@ if ($this->user_teams): ?>
                             <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
                             <li>
 
-                                <a class="o-icon-edit" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
+                                <a class="o-icon-edit" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
                             </li>
                                                         <?php endif; ?>
                             <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
-                                <li><a class="o-icon-delete" href="<? echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
+                                <li><a class="o-icon-delete" href="<?php echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
                                 </li>
                             <?php endif; ?>
                             <li>
-                                <a class="o-icon-more" href="<? echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
+                                <a class="o-icon-more" href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
                             </li>
                         </ul>
                     </td>
@@ -110,8 +108,8 @@ if ($this->user_teams): ?>
                         endforeach;?>
                     </td>
                     <td><?php echo $team->getDescription(); ?></td>
-                    <td><a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
-                    <td><a href="<? echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
+                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
+                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
