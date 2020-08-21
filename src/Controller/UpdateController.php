@@ -193,11 +193,20 @@ Class UpdateController extends AbstractActionController
 
 
             else {
+                //remove resources
                 foreach (array_keys($resource_array) as $resource_id):
                     $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')
                         ->findOneBy(['resource'=>$resource_id, 'team'=>$team]);
                     if ($team_resource){
                     $this->entityManager->remove($team_resource);}
+                endforeach;
+
+                //remove resource templates
+                foreach (array_keys($resource_template_array) as $resource_id):
+                    $team_resource_template = $this->entityManager->getRepository('Teams\Entity\TeamResourceTemplate')
+                        ->findOneBy(['resource_template'=>$resource_id, 'team'=>$team]);
+                    if ($team_resource_template){
+                        $this->entityManager->remove($team_resource_template);}
                 endforeach;
                 $this->entityManager->flush();
                 }
