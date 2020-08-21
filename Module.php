@@ -1184,6 +1184,23 @@ EOF;
                     $media_ids[] = $media->getId();
                 endforeach;
 
+                //remove resource from all teams
+                $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
+                foreach ($team_resources as $tr):
+                    $em->remove($tr);
+                endforeach;
+
+
+
+                //remove associated media from all teams
+                foreach ($media_ids as $media_id):
+                    $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $media_id]);
+                    foreach ($team_resources as $tr):
+                        $em->remove($tr);
+                    endforeach;
+                endforeach;
+                $em->flush();
+
                 //resource represented by the item in the resource table
                 $resource = $em->getRepository('Omeka\Entity\Resource')
                     ->findOneBy(['id' => $resource_id]);
