@@ -45,7 +45,7 @@ $response = $this->response;
 
             <tr>
                 <td>
-                    <a href="<?echo $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])?>">
+                    <a href="<?php echo $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])?>">
                     <?php echo $role->getName()?></a>
                 </td>
                 <td>
@@ -57,22 +57,20 @@ $response = $this->response;
 
                        <li>
                         <a href="<?php echo $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()]) ?>">
-                            <?
-                            echo $roleUser->getTeam()->getName();?>
-                            </a> </li><?
-                        }
+                            <?php                             echo $roleUser->getTeam()->getName();?>
+                            </a> </li><?php                         }
 
                     endforeach;
                     ?>
                     </ul>
                 </td>
 
-                <td><input type="checkbox" disabled <?php if($role->getCanAddUsers()){?> checked <?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddItems()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddItemsets()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddSitePages()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanModifyResources()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanDeleteResources()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanAddUsers()){?> checked <?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanAddItems()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanAddItemsets()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanAddSitePages()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanModifyResources()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->getCanDeleteResources()){?> checked<?php }; ?>></td>
 
 
 

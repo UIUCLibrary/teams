@@ -11,10 +11,9 @@ echo $this->pageTitle($translate('Delete role'));
 if ($this->role_users){
     ?> You can't delete this role because it is being used by the following teams
     <ul class="list-group">
-        <?
-        foreach ($role_users as $user):?>
+        <?php         foreach ($role_users as $user):?>
             <li class="list-group-item"><?= $user->getTeam()->getName() ?></li>
-        <? endforeach; ?>
+        <?php endforeach; ?>
     </ul>
 
 

@@ -2,19 +2,15 @@
 
     <select id="team_options" name="team_id" >
 
-            <? if ($this->current_team == null){
+            <?php if ($this->current_team == null){
                 echo 'Current Team is Null';
                 foreach ($this->user_teams as $team):
-                    ?><option value="<?echo $team->getTeam()->getId();?>"><? echo $team->getTeam()->getName();?></option><?
-                endforeach;
-                ?> <option value="null" selected>None</option><?
-            } else {
+                    ?><option value="<?php echo $team->getTeam()->getId();?>"><?php echo $team->getTeam()->getName();?></option><?php                 endforeach;
+                ?> <option value="null" selected>None</option><?php             } else {
 
                 foreach ($this->user_teams as $team):
                     ?>
-                    <option <? if ($team->getTeam()->getName() == $this->current_team){ ?>selected <?
-                } ?>value="<? echo $team->getTeam()->getId(); ?>"><? echo $team->getTeam()->getName(); ?></option><?
-                endforeach;
+                    <option <?php if ($team->getTeam()->getName() == $this->current_team){ ?>selected <?php                 } ?>value="<?php echo $team->getTeam()->getId(); ?>"><?php echo $team->getTeam()->getName(); ?></option><?php                 endforeach;
 
             }?>
 

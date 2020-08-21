@@ -43,7 +43,7 @@ $sectionNavs = [
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $team); ?>
 <div id="page-actions">
     <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
-        <a class="button" href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
+        <a class="button" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
     <?php endif; ?>
 </div>
 
@@ -60,10 +60,10 @@ $sectionNavs = [
     <div class="meta-group">
         <h4><?php echo $translate('Linked Site(s)'); ?></h4>
         <div class="value">
-            <? foreach ($team->sites() as $site):?>
-            <? echo $site->getSite()->getTitle(); ?>
-            <? echo '<br>' ?>
-            <? endforeach; ?>
+            <?php foreach ($team->sites() as $site):?>
+            <?php echo $site->getSite()->getTitle(); ?>
+            <?php echo '<br>' ?>
+            <?php endforeach; ?>
 
         </div>
     </div>
@@ -103,7 +103,7 @@ $sectionNavs = [
     <?php else: ?>
         <div class="no-resources o-icon-users">
             <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                        <a href="<? echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>">Add a User</a>
+                        <a href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>">Add a User</a>
         </div>
     <?php endif; ?>
 
@@ -126,18 +126,18 @@ $sectionNavs = [
                 </tr>
                 </thead>
                 <tbody>
-                <? foreach ($this->resources as $key => $values):
+                <?php foreach ($this->resources as $key => $values):
 
                 ?>
                 <tr>
                     <td>
-                        <? echo $key;?>
+                        <?php echo $key;?>
                     </td>
                     <td>
-                        <? echo $values['count']?>
+                        <?php echo $values['count']?>
                     </td>
                 </tr>
-                <? endforeach;?>
+                <?php endforeach;?>
                 </tbody>
             </table>
 

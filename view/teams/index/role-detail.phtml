@@ -40,11 +40,9 @@ $sectionNavs = [
 
 
 <div id="page-actions">
-<!--    --><?php //if ($this->roleAuth()->teamAuthorized('update', 'role')): ?>
-<!--    <a class="button" href="--><?// echo $this->url('admin/teams/roles/detail/update', ['id' => $role->id()])?><!--"> Edit Role </a>-->
-<!--        --><?php //endif; ?>
+
     <?php if ($this->roleAuth()->teamAuthorized('delete', 'role')): ?>
-        <a class="button" href="<? echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->id()])?>"> Delete Role </a>
+        <a class="button" href="<?php echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->id()])?>"> Delete Role </a>
     <?php endif; ?>
 </div>
 
@@ -87,12 +85,12 @@ $sectionNavs = [
 
 
 
-                <td><input type="checkbox" disabled <?php if($role->canAddUsers()){?> checked <?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddItems()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddItemsets()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddSitePages()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canModifyResources()){?> checked<?}; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canDeleteResources()){?> checked<?}; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddUsers()){?> checked <?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddItems()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddItemsets()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canAddSitePages()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canModifyResources()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if($role->canDeleteResources()){?> checked<?php }; ?>></td>
 
 
 
@@ -106,7 +104,7 @@ $sectionNavs = [
 </div>
 
 <div id="role-users" class="section">
-    <? $teams = $this->api()->search('team')->getContent();
+    <?php $teams = $this->api()->search('team')->getContent();
 
     ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
@@ -124,31 +122,27 @@ $sectionNavs = [
 
 
 
-<?
-foreach ($teams as $team):
+<?php foreach ($teams as $team):
 ?>
     <tr>
-    <td><? echo $team->name()?></td>
+    <td><?php echo $team->name()?></td>
     <td><ul>
-        <?$team_users = $team->users();
+        <?php $team_users = $team->users();
         $key = array_search($role->name(), array_column(array($team_users), 'role'));
         foreach ($team_users as $team_user):
             if ($team_user->getRole()->getName() == $role->name()){
 
         ?><li>
                 <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
-                    <? echo $team_user->getUser()->getName(); ?></a> <?
-            };
-        ?></li><?
-        endforeach;
+                    <?php echo $team_user->getUser()->getName(); ?></a> <?php             };
+        ?></li><?php         endforeach;
 
         ?>
         </ul>
     </td>
     </tr>
 
-<?
-endforeach;
+<?php endforeach;
 ?>
 
         </tbody>

@@ -39,7 +39,7 @@ $sortHeadings = [
 
 <div class="browse-controls">
     <?php echo $this->pagination(); ?>
-    <?php echo $this->hyperlink($translate('Advanced search'), $this->url(null, ['action' => 'search'], ['query' => $this->params()->fromQuery()], true), ['class' => 'advanced-search']); ?>
+<!--    --><?php //echo $this->hyperlink($translate('Advanced search'), $this->url(null, ['action' => 'search'], ['query' => $this->params()->fromQuery()], true), ['class' => 'advanced-search']); ?>
     <?php echo $this->sortSelector($sortHeadings); ?>
 </div>
 
@@ -109,6 +109,14 @@ $sortHeadings = [
                         'title' => $translate('Edit'),
                     ]); ?></li>
                     <?php endif; ?>
+<!--                    --><?php //if ($item->userIsAllowed('delete')): ?>
+<!--                        <li>--><?php //echo $this->hyperlink('', '#', [
+//                                'data-sidebar-selector' => '#sidebar',
+//                                'data-sidebar-content-url' => $item->url('perm-delete-confirm'),
+//                                'class' => 'o-icon-delete sidebar-content',
+//                                'title' => $translate('Delete'),
+//                            ]); ?><!--</li>-->
+<!--                    --><?php //endif; ?>
                     <li><?php echo $this->hyperlink('', '#', [
                         'data-sidebar-selector' => '#sidebar',
                         'data-sidebar-content-url' => $item->url('show-details'),

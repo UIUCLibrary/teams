@@ -63,9 +63,8 @@ $rowTemplate = '
         //TODO either this should link to a new view that has the site's resources (an acl nightmare) or shouldn't link
         count($this->site_items)); ?></p>
     <ul>
-        <? foreach ($this->site_teams as $site_team):
-            ?><li><? echo $site_team->getTeam()->getName(); ?></li><?
-        endforeach;
+        <?php foreach ($this->site_teams as $site_team):
+            ?><li><?php echo $site_team->getTeam()->getName(); ?></li><?php         endforeach;
         ?>
     </ul>
 <!--    <div id="advanced-search">--><?php //echo $this->partial(
@@ -76,7 +75,7 @@ $rowTemplate = '
 
 <div id="item-section" class="section">
 
-<? echo $section_nav_template ?>
+<?php echo $section_nav_template ?>
     <table id="site-items" class="tablesaw tablesaw-stack">
         <thead>
         <tr>
@@ -85,19 +84,18 @@ $rowTemplate = '
         </tr>
         </thead>
         <tbody id="site-media-rows">
-        <? foreach ($this->site_items as $team):
+        <?php foreach ($this->site_items as $team):
             $team = $this->api()->read('items', ['id' => $team])->getContent();
             ?><tr>
             <td>
-                <? echo $team->displayTitle();?>
+                <?php echo $team->displayTitle();?>
             </td>
             <td>
-                <? echo $team->owner()->name();?>
+                <?php echo $team->owner()->name();?>
             </td>
 
 
-            </tr><?
-
+            </tr><?php
         endforeach;
         ?>
 
@@ -108,7 +106,7 @@ $rowTemplate = '
 </div>
 
 <div id="item-sets-section" class="section">
-    <? echo $section_nav_template ?>
+    <?php echo $section_nav_template ?>
     <table id="site-items" class="tablesaw tablesaw-stack">
         <thead>
         <tr>
@@ -117,19 +115,18 @@ $rowTemplate = '
         </tr>
         </thead>
         <tbody id="site-media-rows">
-        <? foreach ($this->site_item_sets as $team):
+        <?php foreach ($this->site_item_sets as $team):
             $team = $this->api()->read('item_sets', ['id' => $team])->getContent();
             ?><tr>
             <td>
-                <? echo $team->displayTitle();?>
+                <?php echo $team->displayTitle();?>
             </td>
             <td>
-                <? echo $team->owner()->name();?>
+                <?php echo $team->owner()->name();?>
             </td>
 
 
-            </tr><?
-
+            </tr><?php
         endforeach;
         ?>
 
@@ -140,7 +137,7 @@ $rowTemplate = '
 </div>
 
 <div id="media-section" class="section">
-    <? echo $section_nav_template ?>
+    <?php echo $section_nav_template ?>
 
     <table id="site-media" class="tablesaw tablesaw-stack">
         <thead>
@@ -150,19 +147,18 @@ $rowTemplate = '
         </tr>
         </thead>
         <tbody id="site-media-rows">
-        <? foreach ($this->site_media as $team):
+        <?php foreach ($this->site_media as $team):
             $team = $this->api()->read('media', ['id' => $team])->getContent();
             ?><tr>
                 <td>
-                    <? echo $team->displayTitle();?>
+                    <?php echo $team->displayTitle();?>
                 </td>
             <td>
-                <? echo $team->owner()->name();?>
+                <?php echo $team->owner()->name();?>
             </td>
 
 
-            </tr><?
-
+            </tr><?php
         endforeach;
         ?>
         <tr>
@@ -186,26 +182,25 @@ $rowTemplate = '
         </tr>
         </thead>
         <tbody id="site-media-rows">
-        <? foreach ($this->site_teams as $team):
+        <?php foreach ($this->site_teams as $team):
             $team = $team->getTeam();
             ?><tr>
             <td>
-                <? echo $team->getName();?>
+                <?php echo $team->getName();?>
             </td>
             <td>
                 <ul>
 
-                    <? foreach ($team->getTeamUsers() as $tu):?>
+                    <?php foreach ($team->getTeamUsers() as $tu):?>
                         <li>
-                            <? echo $tu->getUser()->getName() . ' (' . $tu->getRole()->getName() . ')';?>
+                            <?php echo $tu->getUser()->getName() . ' (' . $tu->getRole()->getName() . ')';?>
                         </li>
-                    <? endforeach;?>
+                    <?php endforeach;?>
                 </ul>
             </td>
 
 
-            </tr><?
-
+            </tr><?php
         endforeach;
         ?>
         </tbody>
