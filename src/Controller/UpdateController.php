@@ -166,9 +166,9 @@ Class UpdateController extends AbstractActionController
 
                 //resource templates remove existing from the add list
                 foreach ($existing_resources_templates as $resource):
-                    $rid = $resource->getResource()->getId();
+                    $rid = $resource->getResourceTemplate()->getId();
                     if (array_key_exists($rid, $resource_template_array)){
-                        unset($resource_array[$rid]);
+                        unset($resource_template_array[$rid]);
                     }
                 endforeach;
 
