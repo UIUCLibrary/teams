@@ -10,6 +10,7 @@ use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamResource;
+use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\AddSitesToTeam;
@@ -131,6 +132,7 @@ Class AddController extends AbstractActionController
         //TODO: (Done) also add the itemset itself
 
         $resource_array = array();
+        $resource_template_array = array();
         if (isset($request->getPost('itemset')['itemset']['o:itemset'])){
             foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
                 if ((int)$item_set_id>0){
@@ -174,38 +176,53 @@ Class AddController extends AbstractActionController
             foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
                 if ((int)$user_id>0){
                     $user_id = (int)$user_id;
+
+                    //add all of that users items and their media
                     foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
-
                         $resource_array[$item->id()] = true;
-
-//                        $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                            ->findOneBy(['id'=>$item->id()]);
-//
-//                        $team_resource = new TeamResource($team, $resource);
-//                        $this->entityManager->persist($team_resource);
-
                         foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
                             $resource_array[$media->id()] = true;
-
-//                            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                                ->findOneBy(['id'=>$media->id()]);
-//                            $team_resource = new TeamResource($team, $resource);
-//                            $this->entityManager->persist($team_resource);
-
                         endforeach;
+                    endforeach;
+
+                    //add all of that user's item sets
+                    foreach ($this->api()->search('item_sets', ['owner_id'=> $user_id, 'bypass_team_filter'=>true])->getContent() as $itemset):
+                        $resource_array[$itemset->id()] = true;
+                    endforeach;
+
+                    //add all of that user's resource templates
+//                    foreach ($this->api()->search('resource_templates', ['owner' => $user_id, 'bypass_team_filter'=>true])->getContent() as $rt):
+//                        $resource_template_array[$rt->id()] = true;
+//                        echo $rt->id();
+//                        echo '<br>';
+//                    endforeach;
+
+                    $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner'=>$user_id]);
+                    foreach ($rts as $rt):
+                        $resource_template_array[$rt->getId()] = true;
                     endforeach;
                 }
             endforeach;
         }
 
+        //persist the resources, ie item, item set, media
         foreach (array_keys($resource_array) as $resource_id):
             $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                 ->findOneBy(['id'=>$resource_id]);
             $team_resource = new TeamResource($team, $resource);
             $this->entityManager->persist($team_resource);
         endforeach;
+
+        //persist the resource templates
+        foreach (array_keys($resource_template_array) as $rt_id):
+            $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
+                ->findOneBy(['id'=>$rt_id]);
+            $team_rt = new TeamResourceTemplate($team, $resource_template);
+            $this->entityManager->persist($team_rt);
+        endforeach;
         $this->entityManager->flush();
 
+        //persist the sites (no possibility of duplicates, so don't need to save to associative array)
         if (isset($request->getPost('site')['site']['o:site'])){
             foreach ( $request->getPost('site')['site']['o:site'] as $site_id ):
                 $site_id = (int) $site_id;
