@@ -7,6 +7,7 @@ use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
 use Omeka\Api\Request;
 use Teams\Entity\TeamResource;
+use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamItemSetForm;
@@ -105,8 +106,10 @@ Class UpdateController extends AbstractActionController
 
         return $resource_array;
     }
-    public function processResources($request, $team, $existing_resources, bool $delete = false){
+    public function processResources($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false){
         $resource_array = array();
+        $resource_template_array = array();
+
 
         if ($delete == false){
             $collection = 'addCollections';
@@ -114,15 +117,11 @@ Class UpdateController extends AbstractActionController
             $collection = 'rmCollections';
         }
 
-
-
-
             //get ids of itemsets and their descendents
             if (isset($request->getPost($collection)['o:itemset'])){
                 foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
                     $resource_array += $this->processItemSets($item_set_id);
                 endforeach;
-
             }
 
             //get ids of things the user owns
@@ -144,18 +143,35 @@ Class UpdateController extends AbstractActionController
                         foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $itemSet):
                             $resource_array += $this->processItemSets($itemSet->id());
                         endforeach;
+
+                        //also ge the user's resource templates
+                        $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner'=>$user_id]);
+                        foreach ($rts as $rt):
+                            $resource_template_array[$rt->getId()] = true;
+                        endforeach;
                     }
                 endforeach;
             }
 
             if ($delete == false){
                 //remove elements that are already part of the team to prevent integrity constraint violation
+
+                //resources remove existing from the add list
                 foreach ($existing_resources as $resource):
                     $rid = $resource->getResource()->getId();
                     if (array_key_exists($rid, $resource_array)){
                         unset($resource_array[$rid]);
                     }
                 endforeach;
+
+                //resource templates remove existing from the add list
+                foreach ($existing_resources_templates as $resource):
+                    $rid = $resource->getResource()->getId();
+                    if (array_key_exists($rid, $resource_template_array)){
+                        unset($resource_array[$rid]);
+                    }
+                endforeach;
+
                 //add the resources to the team
                 foreach ($resource_array as $resource_id => $value):
                     $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
@@ -163,8 +179,20 @@ Class UpdateController extends AbstractActionController
                     $team_resource = new TeamResource($team, $resource);
                     $this->entityManager->persist($team_resource);
                 endforeach;
+
+                //add the resource templates to the team
+                foreach ($resource_template_array as $resource_id => $value):
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
+                        ->findOneBy(['id'=>$resource_id]);
+                    $team_resource = new TeamResourceTemplate($team, $resource);
+                    $this->entityManager->persist($team_resource);
+                endforeach;
+
                 $this->entityManager->flush();
-            } else {
+            }
+
+
+            else {
                 foreach (array_keys($resource_array) as $resource_id):
                     $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')
                         ->findOneBy(['resource'=>$resource_id, 'team'=>$team]);
@@ -279,6 +307,13 @@ Class UpdateController extends AbstractActionController
             ->getQuery()
             ->getResult();
 
+        $existing_resource_templates = $qb->select('trt')
+            ->from('Teams\Entity\TeamResourceTemplate', 'trt')
+            ->where('trt.team = :team_id')
+            ->setParameter('team_id', $id)
+            ->getQuery()
+            ->getResult();
+
         if ($request->isPost()){
             $post_data = $request->getPost();
 
@@ -344,8 +379,10 @@ Class UpdateController extends AbstractActionController
 
 
             //first delete then add resources to team
-            $this->processResources($request, $team, $existing_resources, true);
-            $this->processResources($request, $team, $existing_resources, false);
+            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
+            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
+
+
 
             $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
             $this->messenger()->addSuccess($successMessage);
@@ -358,9 +395,6 @@ Class UpdateController extends AbstractActionController
 
 
 //        array_search($post_data['add-member-role'], $roles_array);
-
-
-
 
         return
             new ViewModel(['team'=>$team,
