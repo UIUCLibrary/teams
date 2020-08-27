@@ -1671,6 +1671,10 @@ EOF;
             return true;
         }
 
+        elseif (strpos($res_class, 'Mapping\Entity')){
+            return true;
+        }
+
         if (!$authorized){
 
             $authorized = false;
