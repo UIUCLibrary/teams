@@ -1671,7 +1671,7 @@ EOF;
             return true;
         }
 
-        elseif (strpos($res_class, 'Mapping\Entity')){
+        elseif (strpos($res_class, 'Mapping\Entity') === 0){
             return true;
         }
 
