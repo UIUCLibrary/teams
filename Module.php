@@ -2,6 +2,7 @@
 namespace Teams;
 
 use Omeka\Api\Adapter\UserAdapter;
+use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
@@ -1181,6 +1182,8 @@ EOF;
                 //array of media ids
                 $media_ids = [];
                 foreach ($entity->getMedia() as $media):
+                    error_log('found a media. Id: ' . $media->getId());
+
                     $media_ids[] = $media->getId();
                 endforeach;
 
@@ -1214,6 +1217,7 @@ EOF;
 
 
                     foreach ($media_ids as $media_id):
+                        error_log('this is a media id:' . $media_id);
                         if (! $em->getRepository('Teams\Entity\TeamResource')
                             ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])){
 
@@ -1232,36 +1236,28 @@ EOF;
 
     }
 
-    public function itemUpdateAddMedia(Event $event){
-
+    public function addMedia(Event $event){
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $response = $event->getParam('response');
-        $resource =  $response->getContent();
+        $entity = $event->getParam('entity');
 
 
+        if ($operation == 'create'){
 
+            $item_id = $entity->getItem()->getId();
 
-        if ($operation == 'update' or $operation == 'create'){
-
-            //media id
-            $m_id = $resource->getId();
-
-            //id of item to which media belongs
-            $i_id = $resource->getItem()->getId();
-            $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $i_id]);
-            foreach ($team_resources as $team_resource){
+            $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=>$item_id]);
+            foreach($team_resources as $team_resource):
                 $team = $team_resource->getTeam();
-                $media_is_in_team = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $m_id]);
-                if (! $media_is_in_team){
+                $tr = new TeamResource($team, $entity);
+                $em->persist($tr);
+            endforeach;
+            $em->flush();
 
-                    $tr = new TeamResource($team, $resource);
-                    $em->persist($tr);
-                    $em->flush();
-                }
-            }
+
         }
+
     }
     public function itemCreate(Event $event)
     {
@@ -1869,11 +1865,13 @@ EOF;
             [$this, 'itemUpdate']
         );
 
+
         $sharedEventManager->attach(
             MediaAdapter::class,
-            'api.execute.post',
-            [$this, 'itemUpdateAddMedia']
+            'api.hydrate.post',
+            [$this, 'addMedia']
         );
+
 
         $sharedEventManager->attach(
             'Teams\Controller\Add',
