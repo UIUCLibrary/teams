@@ -1221,8 +1221,6 @@ EOF;
                             if ($m){
                                 $mtr = new TeamResource($team, $m);
                                 $em->persist($mtr);
-                            } else{
-                                $post_img[]  = $media_id;
                             }
 
                         }
@@ -1233,7 +1231,37 @@ EOF;
         }
 
     }
-    public function itemUpdateAddMedia(Event $event){}
+
+    public function itemUpdateAddMedia(Event $event){
+
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $response = $event->getParam('response');
+        $resource =  $response->getContent();
+
+        //media id
+        $m_id = $resource->getId();
+
+        //id of item to which media belongs
+        $i_id = $resource->getItem()->getId();
+
+
+        if ($operation == 'update' or $operation == 'create'){
+            $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $i_id]);
+            foreach ($team_resources as $team_resource){
+                $team = $team_resource->getTeam();
+                $media_is_in_team = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $m_id]);
+                if (! $media_is_in_team){
+
+                    $tr = new TeamResource($team, $resource);
+                    $em->persist($tr);
+                    $em->flush();
+                }
+            }
+
+        }
+    }
     public function itemCreate(Event $event)
     {
 
@@ -1270,10 +1298,6 @@ EOF;
             }
         }
     }
-
-
-
-
 
     public function resourceTemplateTeamsEdit(Event $event)
     {
@@ -1845,7 +1869,7 @@ EOF;
         );
 
         $sharedEventManager->attach(
-            ItemAdapter::class,
+            MediaAdapter::class,
             'api.execute.post',
             [$this, 'itemUpdateAddMedia']
         );
