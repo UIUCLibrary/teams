@@ -1216,9 +1216,16 @@ EOF;
                     foreach ($media_ids as $media_id):
                         if (! $em->getRepository('Teams\Entity\TeamResource')
                             ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])){
+
                         $m = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$media_id]);
-                        $mtr = new TeamResource($team, $m);
-                        $em->persist($mtr);}
+                            if ($m){
+                                $mtr = new TeamResource($team, $m);
+                                $em->persist($mtr);
+                            } else{
+                                $post_img[]  = $media_id;
+                            }
+
+                        }
                     endforeach;
                 endforeach;
                 $em->flush();
@@ -1226,7 +1233,7 @@ EOF;
         }
 
     }
-
+    public function itemUpdateAddMedia(Event $event){}
     public function itemCreate(Event $event)
     {
 
@@ -1251,7 +1258,7 @@ EOF;
                     $tr = new TeamResource($team, $resource);
                     $em->persist($tr);
 
-                    //if there is media, at those to the team as well
+                    //if there is media, add those to the team as well
                     if (count($media) > 0) {
                         foreach ($media as $m):
                             $tr = new TeamResource($team, $m);
@@ -1835,6 +1842,12 @@ EOF;
             ItemAdapter::class,
             'api.hydrate.post',
             [$this, 'itemUpdate']
+        );
+
+        $sharedEventManager->attach(
+            ItemAdapter::class,
+            'api.execute.post',
+            [$this, 'itemUpdateAddMedia']
         );
 
         $sharedEventManager->attach(
