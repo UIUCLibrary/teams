@@ -1240,14 +1240,16 @@ EOF;
         $response = $event->getParam('response');
         $resource =  $response->getContent();
 
-        //media id
-        $m_id = $resource->getId();
 
-        //id of item to which media belongs
-        $i_id = $resource->getItem()->getId();
 
 
         if ($operation == 'update' or $operation == 'create'){
+
+            //media id
+            $m_id = $resource->getId();
+
+            //id of item to which media belongs
+            $i_id = $resource->getItem()->getId();
             $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $i_id]);
             foreach ($team_resources as $team_resource){
                 $team = $team_resource->getTeam();
@@ -1259,7 +1261,6 @@ EOF;
                     $em->flush();
                 }
             }
-
         }
     }
     public function itemCreate(Event $event)
