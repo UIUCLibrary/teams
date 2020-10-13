@@ -1504,6 +1504,7 @@ EOF;
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $user = $this->getUser();
 
+        //if the user isn't logged in, use the default settings
         if (!$user){
 
             return true;
