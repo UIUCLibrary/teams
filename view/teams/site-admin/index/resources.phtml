@@ -32,16 +32,16 @@ $rowTemplate = '
 </tr>';
 ?>
 
-<div><p>Item pools are functionally replaced by the Teams module. </p>
+<div><p>Item pools are functionally replaced by the Teams module.</p>
 
 </div>
 
 <?php echo $this->pageTitle($this->translate('Resources'), 1, $this->translate('Sites')); ?>
 <?php echo $this->sectionNav([
     'resource-pool-section' => $this->translate('Resource pool'),
-    'item-section' => $this->translate('Items'),
-    'item-sets-section' => $this->translate('Item sets'),
-    'media-section' => $this->translate('Media'),
+//    'item-section' => $this->translate('Items'),
+//    'item-sets-section' => $this->translate('Item sets'),
+//    'media-section' => $this->translate('Media'),
     'team-section' => $this->translate('Teams'),
 
 
@@ -57,7 +57,7 @@ $rowTemplate = '
 
 <div id="resource-pool-section" class="active section">
     <p><?php echo sprintf(
-        $this->translate('There are currently %s resources in this site’s pool, contributed by these teams: '),
+        $this->translate('There are currently %s resources that this site has access to, contributed by these teams: '),
 
 
         //TODO either this should link to a new view that has the site's resources (an acl nightmare) or shouldn't link
@@ -67,6 +67,13 @@ $rowTemplate = '
             ?><li><?php echo $site_team->getTeam()->getName(); ?></li><?php         endforeach;
         ?>
     </ul>
+    <p>View these resources in the
+        <?php echo $this->hyperlink('Item', $this->url('admin', ['item'])); ?>,
+        <?php echo $this->hyperlink('Item set', $this->url('admin', ['item-set'])); ?>, and
+        <?php echo $this->hyperlink('Media', $this->url('admin', ['media'])); ?>
+        pages
+
+    </p>
 <!--    <div id="advanced-search">--><?php //echo $this->partial(
 //        'common/advanced-search',
 //        ['query' => $site->itemPool(), 'resourceType' => 'item']
@@ -75,7 +82,7 @@ $rowTemplate = '
 
 <div id="item-section" class="section">
 
-<?php echo $section_nav_template ?>
+<?php //echo $section_nav_template ?>
     <table id="site-items" class="tablesaw tablesaw-stack">
         <thead>
         <tr>
@@ -106,7 +113,7 @@ $rowTemplate = '
 </div>
 
 <div id="item-sets-section" class="section">
-    <?php echo $section_nav_template ?>
+<!--    --><?php //echo $section_nav_template ?>
     <table id="site-items" class="tablesaw tablesaw-stack">
         <thead>
         <tr>
@@ -137,7 +144,7 @@ $rowTemplate = '
 </div>
 
 <div id="media-section" class="section">
-    <?php echo $section_nav_template ?>
+<!--    --><?php //echo $section_nav_template ?>
 
     <table id="site-media" class="tablesaw tablesaw-stack">
         <thead>
