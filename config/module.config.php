@@ -11,6 +11,12 @@ use Teams\Controller\CurrentTeamController;
 //$teamname = (new Controller\CurrentTeamController)->getCurrentTeam();
 $teamname = 'Example Team';
 return [
+    'block_layouts' => [
+        'invokables'  => [
+            'listOfSites' => Site\BlockLayout\ListOfSites::class,
+
+        ]
+    ],
     'navigation' => [
 
         'AdminResource' => [
@@ -362,6 +368,22 @@ return [
                             ],
                         ],
                     ],
+                    'perm_del'  => [
+                        'type' => Segment::class,
+                        'options' => [
+                            'route' => '/item/:id/perm-delete-confirm',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                //need to make a anew action for the delete function?
+                                'controller' => 'Delete',
+                                'action' => 'perm-delete',
+                            ],
+                            'constraints' => [
+                                'id' => '\d+',
+                            ],
+                        ],
+                    ],
+
                     'trash' => [
                         'type' => Segment::class,
                         'options' => [
