@@ -809,29 +809,42 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
             return;
         }
+
+        //Omeka sets up a way to specifically assign item sets to sites for the Browse by Item Set block.
+        //for now just ignoring team filter on that
+        //TODO replace the site_item_set with TR join itemset
         if (isset($query['site_id'])) {
-
-            $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-            $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
-            foreach ($team_site as $ts):
-                $team_id[] = $ts->getTeam()->getId();
-            endforeach;
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_si', Expr\Join::WITH, $alias . '.id = tr_si.resource')
-                ->andWhere('tr_si.team = :team_id')
-                ->setParameter('team_id', $team_id[0]);
-
-            if (count($team_id) > 1) {
-                $orX = $qb->expr()->orX();
-                $i = 0;
-                foreach ($team_id as $value) {
-                    $orX->add($qb->expr()->eq('tr_si.team', ':name' . $i));
-                    $qb->setParameter('name' . $i, $value);
-                    $i++;
-                }
-                $qb->orWhere($orX);
+            if ($entityClass == 'Omeka\Entity\ItemSet'){
                 return;
-
             }
+            else{
+                $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+                $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
+                foreach ($team_site as $ts):
+                    $team_id[] = $ts->getTeam()->getId();
+                endforeach;
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr_si', Expr\Join::WITH, $alias . '.id = tr_si.resource')
+                    ->andWhere('tr_si.team = :team_id')
+                    ->setParameter('team_id', $team_id[0]);
+
+                if (count($team_id) > 1) {
+                    $orX = $qb->expr()->orX();
+                    $i = 0;
+                    foreach ($team_id as $value) {
+                        $orX->add($qb->expr()->eq('tr_si.team', ':name' . $i));
+                        $qb->setParameter('name' . $i, $value);
+                        $i++;
+                    }
+                    $qb->orWhere($orX);
+                    return;
+
+                }
+            }
+
+
+
+
+
         }
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
