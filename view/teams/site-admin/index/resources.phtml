@@ -16,7 +16,10 @@ $rowTemplate = '
     </td>
 </tr>';
 ?>
+<div><p>Item pools are functionally replaced by the Teams module. But you still must select the item sets you'd
+        like to show up in in the "Browse by Item Set" block.</p>
 
+</div>
 <?php echo $this->pageTitle($translate('Resources'), 1, $translate('Sites')); ?>
 <?php echo $this->sectionNav([
     'item-pool-section' => $translate('Item pool'),
@@ -53,6 +56,7 @@ $rowTemplate = '
 </div>
 
 <div id="item-sets-section" class="section">
+<p>This only controls what item sets are displayed in the "Browse by Item Set" Block</p>
     <table id="site-item-sets" class="tablesaw tablesaw-stack"
            data-tablesaw-mode="stack"
            data-item-sets="<?php echo $this->escapeHtml(json_encode($itemSets)); ?>"
