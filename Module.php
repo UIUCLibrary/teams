@@ -133,23 +133,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     protected function addAclRules()
     {
 
-        /*
-         *
-         */
-        //db get the roles table
-        //for each role, make an acl
-        //    public function addRoleLabel($roleId, $roleLabel)
-        //    {
-        //        $this->roleLabels[$roleId] = $roleLabel;
-        //    }
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
 
-        // Everybody can read groups, but not view them.
         $roles = $acl->getRoles();
         //entity rights are the actions of controllers
-        $entityRights = ['read', 'create', 'update', 'delete', 'assign'];
-        $adapterRights = ['read', 'create', 'update', 'delete', 'assign'];
+        $entityRights = ['read', 'create', 'update', 'delete'];
+        $adapterRights = ['read', 'create', 'update', 'delete'];
 
         //allow everyone to see their teams
         $acl->allow(
@@ -198,14 +188,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ],
             $entityRights
         );
-        // Deny access to the api for non admin.
-        /*
-        $acl->deny(
-            null,
-            [\Group\Api\Adapter\GroupAdapter::class],
-            null
-        );
-        */
 
         // Only admin can manage groups.
         $adminRoles = [
@@ -337,71 +319,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
      */
     public function addTab(Event $event)
     {
-
-
-//        $params = $event->getParam('section_nav');
-//        foreach ($params as $p):
-//            echo $p;
-////            foreach ($p as $ar):
-////                echo $ar . "<br>";
-////                foreach ($ar as $what):
-////                    echo gettype($what);
-////                endforeach;
-////            endforeach;
-//        endforeach;
-//        $value = null;
-//
-//        $values = $event->getParam('Values');
-//        echo $values;
-//
-//        $event->setParam('Metadata', $value);
-
-
         $sectionNav = $event->getParam('section_nav');
         $sectionNav['teams'] = 'Teams'; // @translate
         $event->setParam('section_nav', $sectionNav);
-
-
-    }
-
-    public function removeTab(Event $event)
-    {
-//        $sectionNav = $event->getParam('section_nav');
-//        $sectionNav['item-pool'] = 'Do Not Use'; // @translate
-//        unset($sectionNav['item-pool']);
-//
-//        //adding a tab that says Site Pool to add explanation to users who are used to the feature
-//        $sectionNav['team'] = 'Site Pool'; // @translate
-//
-//        $event->setParam('section_nav', $sectionNav);
-
-    }
-
-    public function viewShowAfterResource(Event $event)
-    {
-        echo '<div id="teams" class="section">';
-        $resource = $event->getTarget()->vars()->resource;
-        $this->adminShowTeams($event);
-        echo '</div>';
-    }
-
-    public function filterResource(Event $event)
-    {
-        $resource = $event->getTarget()->vars()->sites;
-    }
-//copied this into teamSelectorNav because for some reason the two were coming into conflict
-    public function addAsset(Event $event){
-
-        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            $view = $event->getTarget();
-
-            echo '<style> #content {min-height: 50vh;} </style>';
-            $view->headLink()->appendStylesheet($view->assetUrl('css/iopn_header.css', 'Teams'));
-            echo $view->partial('teams/partial/overload-footer');
-        }
-
-
-
     }
 
     //content under the Teams tab for resources
@@ -466,31 +386,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
-//    public function teamDACL(Event $event)
-//    {
-//        $resource = $event->getTarget()->item->id();
-//        $identity = $this->getUser();
-//        $user_id = $identity->getId();
-//
-//        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-//        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
-//        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
-//        $team_id = $current_team->getTeam()->getId();
-//        if ($current_team){
-//            if($entityManager->getREpository('Teams\Entity\TeamResource')->findOneBy(['team'=>$team_id, 'resource'=>100000])){
-//                echo 'yes, do what you like';
-//            }else echo 'nopy, not here';
-//
-//
-//
-//        }else $current_team = null;
-//
-//
-//
-//
-//
-//
-//    }
     public function teamSelectorAdvancedSearch(Event $event)
 
     {
@@ -515,33 +410,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
 
         /*
-         * TODO: this function goes through *every* resource associated with a team, needs optimized into something like a db search with WHERE
+         * TODO: this function goes through *every* resource associated with a team,
+         * needs optimized into something like a db search with WHERE
          *
          */
 
-        //
-//        $messanger = new Messenger();
-//        $messanger->addError('this is an error');
-//        $messanger->addWarning('THIS is an warning');
-//        $messanger->addNotice("you got this");
-//        $messanger->addSuccess('yup');
         $result = [];
 
         //get all the teams
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-//        $teams = $entityManager->getRepository('Teams\Entity\Team')->findAll();
-//
-//        //for every team, get the team resources
-//        foreach ($teams as $team):
-//            $team_resources = $team->getTeamResources();
-//
-//            //for each of those resources
-//            foreach ($team_resources as $team_resource):
-//                //check to see if the resource id == the resource_id passed in to the function
-//                if ($team_resource->getResource()->getId() == $resource->id()){
-//                    $result[$team->getName()] = $team;}
-//                endforeach;
-//        endforeach;
+
         $team_resource = $entityManager->getRepository('Teams\Entity\TeamResource')
             ->findBy(['resource'=>$resource->id()]);
 
@@ -552,40 +430,26 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return  $result;
     }
 
-//    public function addBrowseBefore(Event $event)
-//    {
-//        $browse_before = $event->getParam('before');
-//        $browse_before['team'] = 'testing';
-//        $event->setParam('before', $browse_before);
-//    }
 
     protected function checkAcl($resourceClass, $privilege)
-{
+    {
     $acl = $this->getServiceLocator()->get('Omeka\Acl');
     $groupEntity = $resourceClass == User::class
         ? TeamUser::class
         : TeamResource::class;
     return $acl->userIsAllowed($groupEntity, $privilege);
-}
+    }
 
 
     public function displayUserForm(Event $event)
     {
-
         $vars = $event->getTarget()->vars();
-
-
         $vars->offsetSet('team-members', 'test');
-
-
-
     }
 
 
     public function displayTeamForm(Event $event)
     {
-
-
         $vars = $event->getTarget()->vars();
         // Manage add/edit form.
         if (isset($vars->item)) {
@@ -609,8 +473,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function displayTeamFormNoId(Event $event)
     {
-
-
         $vars = $event->getTarget()->vars();
         // Manage add/edit form.
         if (isset($vars->item)) {
@@ -651,13 +513,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 
-    public function advancedSearch(Event $event){
+    public function advancedSearch(Event $event)
+    {
         $partials = $event->getParams()['partials'];
         $partials[] = 'teams/partial/advanced-search';
         $event->setParam('partials', $partials);
-
-
-
     }
 
 
@@ -688,17 +548,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
         }
 
-//        $view = $event->getTarget();
-//
-//        echo '<style> #content {min-height: 50vh;} </style>';
-//        $view->headLink()->appendStylesheet($view->assetUrl('css/iopn_header.css', 'Teams'));
-//        echo $view->partial('teams/partial/overload-footer');
+
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
-
-
-
     public function currentTeam()
     {
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -743,7 +596,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function getTeamContext($query, Event $event)
     {
-        $entityClass = $event->getTarget()->getEntityClass();
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             foreach ($query['team_id'] as $id):
@@ -765,7 +617,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $team = $entityManager->getRepository('Teams\Entity\TeamSite')
                     ->findBy(['site' => $query['site_id']]);
                 if ($team){
-//                    $team_id = $team->getTeam()->getId();
                     foreach ($team as $t):
                         $team_id[] = $t->getTeam()->getId();
                     endforeach;
@@ -791,17 +642,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
     public function filterByTeam(Event $event){
 
-//        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-//            return true;
-//        }
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
         $alias = 'omeka_root';
-
-
-
 
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
@@ -916,8 +760,6 @@ EOF;
             }
             else{
                 //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
-
-
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr_else', Expr\Join::WITH, $alias .'.id = tr_else.resource')
                     ->andWhere('tr_else.team = :team_id')
                     ->setParameter('team_id', $team_id[0])
@@ -1367,20 +1209,6 @@ EOF;
         echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids'=>$team_id]);
     }
 
-//    public function siteAddPermission(Event $event){
-//
-//        $user = $this->getUser();
-//        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-//        $is_glob_admin = ($user->getRole() == 'global_admin');
-//
-//        if ($globalSettings->get('teams_site_admin_make_site') ||$is_glob_admin ){
-//            return;
-//        } else {
-//
-//            echo "<script>$('a').filter(function(index) { return $(this).text() === 'Add site'; });</script>";
-//        }
-//
-//    }
 
     public function siteEdit(Event $event)
     {
@@ -1395,8 +1223,6 @@ EOF;
             $team_ids[] = $site_team->getTeam()->getId();
         endforeach;
         echo $view->partial('teams/partial/site-admin/edit', ['site_teams' => $site_teams, 'team_ids' => $team_ids]);
-
-
 
     }
 
@@ -1524,6 +1350,7 @@ EOF;
         }
 
         //if it is the 'super' global admin, bypass any team controls
+        //TODO: this needs to be formalized in the module config
         if ($user->getId() === 1 && $user->getRole() === 'global_admin'){
             return true;
         }
@@ -1910,11 +1737,6 @@ EOF;
             [$this, 'displayTeamForm']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\ResourceTemplate',
-//            'view.edit.form.after',
-//            [$this, 'displayTeamForm']
-//        );
 
             //ItemSet//
         $sharedEventManager->attach(
@@ -2052,12 +1874,6 @@ EOF;
             [$this, 'addTab']
         );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\SiteAdmin\Index',
-            'view.add.section_nav',
-            [$this, 'removeTab']
-
-        );
 
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
@@ -2105,12 +1921,6 @@ EOF;
             'view.edit.after',
             [$this, 'siteEdit']
         );
-
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\SiteAdmin\Index',
-//            'view.browse.before',
-//            [$this, 'siteAddPermission']
-//        );
 
         //put the roles data in the user page
 
@@ -2243,26 +2053,10 @@ EOF;
 
             $view->headScript()->prependFile($view->assetUrl('js/chosen-trigger.js', 'Teams'));
 
-
-
-
         }
-
-
     }
 
-    public function addUserFormValue(Event $event)
-    {
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
 
-
-
-        $user = $event->getTarget()->vars()->user;
-        $form = $event->getParam('form');
-        $values = $this->listTeams($user, 'reference');
-        $form->get('user-information')->get('o-module-teams:Team')
-            ->setAttribute('value', array_keys($values));
-    }
 
     public function teamItems($resource_type, $query, $user_id, $active = true, $team_id = null)
     {
