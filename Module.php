@@ -27,6 +27,7 @@ use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
 use Zend\EventManager\Event;
 use Zend\EventManager\SharedEventManagerInterface;
+use Zend\Form\Element\Checkbox;
 use Zend\Mvc\Controller\AbstractController;
 use Zend\Mvc\MvcEvent;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -875,7 +876,6 @@ EOF;
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-
         if ($operation == 'create'){
 
             $response = $event->getParam('response');
@@ -892,7 +892,16 @@ EOF;
 
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
-                $team = $teams->findOneBy(['id'=> $team_id]);
+                if ($team_id === 0){
+                    $team = new Team();
+                    $u_name = $request->getContent()['o:name'];
+                    $team->setName(sprintf("%s's team", $u_name));
+                    $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                    $em->persist($team);
+                    $em->flush();
+                } else {
+                    $team = $teams->findOneBy(['id'=> $team_id]);
+                }
                 $role_id = $team_role_ids[$team_id];
                 $role = $em->getRepository('Teams\Entity\TeamRole')
                     ->findOneBy(['id'=>$role_id]);
@@ -1995,9 +2004,6 @@ EOF;
                     'multiple' => true,
                     'id' => 'team',
 //                    'required' => true,
-
-
-
                 ],
             ]);
 
@@ -2052,7 +2058,6 @@ EOF;
             $view = $event->getTarget();
 
             $view->headScript()->prependFile($view->assetUrl('js/chosen-trigger.js', 'Teams'));
-
         }
     }
 
