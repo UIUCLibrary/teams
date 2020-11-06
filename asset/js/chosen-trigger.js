@@ -31,7 +31,17 @@ function makeRoleElement(team_name, team_id, role = 1){
 
     let label = document.createElement('label');
     label.setAttribute('for', `${team_name} role`);
-    label.innerText = team_name + ' Role';
+    let user_name = document.getElementById('name').value;
+    if (team_name ==="~~Add New Team~~"){
+        if (user_name !== ''){
+            label.innerText = `"${user_name}'s" Team (new team)`
+        } else{
+            label.innerText = 'New Team Role';
+        }
+    } else {
+        label.innerText = team_name + ' Role';
+
+    }
 
     fieldMeta.appendChild(label);
 
