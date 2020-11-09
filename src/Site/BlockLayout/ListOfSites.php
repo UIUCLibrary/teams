@@ -137,7 +137,7 @@ class ListOfSites extends AbstractBlockLayout
                 $data['sort_by'] = 'title';
                 break;
         }
-        $data['bypass_team_filter'] = true;
+//        $data['bypass_team_filter'] = true;
 
         $response = $view->api()->search('sites', $data);
 

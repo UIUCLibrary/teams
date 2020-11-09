@@ -556,7 +556,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function currentTeam()
     {
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $identity =$this->getUser();
+        $identity = $this->getUser();
         //TODO add handeling for user not logged-in !!!this current solution would not work
         if (!$identity){
             $user_id = null;
@@ -647,6 +647,31 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $query = $event->getParam('request')->getContent();
         $entityClass = $event->getTarget()->getEntityClass();
         $alias = 'omeka_root';
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        //this is for the list-of-sites block.
+        if ($event->getParam('request')->getResource() === 'sites' &&
+            $event->getParam('request')->getOperation() === 'search'
+        ){
+            //get the id for the current site
+            $site_slug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
+            $site_id = $em->getRepository('Omeka\Entity\Site')->findOneBy(['slug' => $site_slug])->getId();
+
+            //get the teams of the current site because we only want to show sites within its teams
+            $teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site_id]);
+            $team_ids = [];
+
+            foreach ($teams as $team):
+                $team_ids[] = $team->getTeam()->getId();
+            endforeach;
+
+            //only get sites that share a team with the current sitedd
+            $qb->join('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias . '.id = ts.site')
+                ->andWhere('ts.team IN (:team_ids)')
+                ->setParameter('team_ids', $team_ids);
+            return;
+        }
+
 
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
@@ -663,7 +688,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 return;
             }
             else{
-                $em = $this->getServiceLocator()->get('Omeka\EntityManager');
                 $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
                 foreach ($team_site as $ts):
                     $team_id[] = $ts->getTeam()->getId();
@@ -685,11 +709,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                 }
             }
-
-
-
-
-
         }
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
