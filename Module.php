@@ -651,7 +651,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         //this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
-            $event->getParam('request')->getOperation() === 'search'
+            $event->getParam('request')->getOperation() === 'search' &&
+            $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()
         ){
             //get the id for the current site
             $site_slug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
