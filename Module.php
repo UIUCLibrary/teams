@@ -1017,8 +1017,16 @@ EOF;
                     $teams =  $em->getRepository('Teams\Entity\Team');
                     foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
                         $team_id = (int) $team_id;
-                        $team = $teams->findOneBy(['id'=> $team_id]);
-
+                        if ($team_id === 0){
+                            $team = new Team();
+                            $u_name = $request->getContent()['o:name'];
+                            $team->setName(sprintf("%s's team", $u_name));
+                            $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                            $em->persist($team);
+                            $em->flush();
+                        } else {
+                            $team = $teams->findOneBy(['id'=> $team_id]);
+                        }
 
                         //get it this way because the roles are added dynamically as js and not part of pre-baked form
                         $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
