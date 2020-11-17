@@ -314,7 +314,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
     /**
-     * Add the tab to section navigation.
+     * Add a tab to section navigation of a admin view.
      *
      * @param Event $event
      */
@@ -325,7 +325,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $event->setParam('section_nav', $sectionNav);
     }
 
-    //content under the Teams tab for resources
+    /**
+     * Displays the teams that a resource belongs to for admin pages.
+     *
+     * @param Event $event
+     */
     public function adminShowTeams(Event $event)
     {
 
@@ -351,6 +355,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo '</div>';
     }
 
+    /**
+     * Populates the list of teams users can choose from
+     * for the selector on top of browse/index type pages.
+     * The selector filters the results on  the page by team.
+     *
+     * @param Event $event
+     */
     public function teamSelectorBrowse(Event $event)
 
     {
@@ -366,7 +377,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }else{
             $resource_type='nothing';
         }
-
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -386,7 +396,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['user_teams'=>$user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
         );
     }
-
+//TODO need to change language on results page so it is clear which team is being searched against
+    /**
+     * Populates a team selector on the admin advanced search page for resources
+     *
+     * @param Event $event
+     */
     public function teamSelectorAdvancedSearch(Event $event)
 
     {
@@ -407,18 +422,16 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
+    /**
+     * Get all the teams a resource belongs to
+     *
+     * @param AbstractEntityRepresentation|null $resource
+     * @return array
+     */
     protected function listTeams(AbstractEntityRepresentation $resource = null)
     {
-
-        /*
-         * TODO: this function goes through *every* resource associated with a team,
-         * needs optimized into something like a db search with WHERE
-         *
-         */
-
         $result = [];
 
-        //get all the teams
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         $team_resource = $entityManager->getRepository('Teams\Entity\TeamResource')
@@ -431,23 +444,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return  $result;
     }
 
-
-    protected function checkAcl($resourceClass, $privilege)
-    {
-    $acl = $this->getServiceLocator()->get('Omeka\Acl');
-    $groupEntity = $resourceClass == User::class
-        ? TeamUser::class
-        : TeamResource::class;
-    return $acl->userIsAllowed($groupEntity, $privilege);
-    }
-
-
     public function displayUserForm(Event $event)
     {
         $vars = $event->getTarget()->vars();
         $vars->offsetSet('team-members', 'test');
     }
-
 
     public function displayTeamForm(Event $event)
     {
@@ -472,8 +473,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
+    /**
+     * Allows users to add teams to resources on edit or create.
+     * Adds the right side panel selector + options and pass selections to the submission form
+     *
+     * @param Event $event
+     */
     public function displayTeamFormNoId(Event $event)
     {
+        $view = $event->getTarget();
         $vars = $event->getTarget()->vars();
         // Manage add/edit form.
         if (isset($vars->item)) {
@@ -491,20 +499,25 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
         $identity = $this->getUser();
         $user_id = $identity->getId();
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $default_team = $this->currentTeam();
         if (! $default_team){
             $messanger = new Messenger();
             $messanger->addError("You can only make a new resource after you have been added to a team");
             echo '<script>$(\'button:contains("Add")\').prop("disabled",true);</script>';
         }
-
+        $view->headScript()->appendFile($view->assetUrl('js/add-team-to-resource.js', 'Teams'));
+        $view->headLink()->appendStylesheet($view->assetUrl('css/teams.css', 'Teams'));
         echo $event->getTarget()->partial(
             'teams/partial/team-form-no-id',
             ['user_id'=>$user_id, 'default_team' => $default_team]
         );
     }
 
+    /**
+     * Displays a message where the site pool. Not currently used.
+     *
+     * @param Event $event
+     */
     public function displaySitePoolMsg(Event $event)
     {
        echo '
@@ -513,7 +526,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
-
+    /**
+     * Adds the teams partial the the list partials for the advanced search for resources form.
+     * Each partial is a form field
+     *
+     * @param Event $event
+     */
     public function advancedSearch(Event $event)
     {
         $partials = $event->getParams()['partials'];
@@ -524,6 +542,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 //TODO: refactor to use the currentTeam() function
 //need to use the currentTeam() function
+
+    /**
+     * Adds the team selector to the admin navigation
+     *
+     * @param Event $event
+     */
     public function teamSelectorNav(Event $event)
     {
         if (!$this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
@@ -548,8 +572,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['current_team' => $ct]
         );
         }
-
-
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
@@ -595,8 +617,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return $current_team;
     }
 
+    /**
+     * Gets team ids to use for filtering that are appropriate for the context. For users browsing resources, the
+     * relevant team is the user's current team. For sites, the relevant team(s) are those that the site belongs to.
+     *
+     * @param $query
+     * @param Event $event
+     * @return array
+     */
     public function getTeamContext($query, Event $event)
     {
+        //instantiate as a team id that shouldn't exist in the db bc auto-increment constraints
+        $team_id = array(0);
+
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             foreach ($query['team_id'] as $id):
@@ -606,12 +639,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         //Logged-in or not, if it is a public site use the TeamSite
         elseif ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()){
-
-
             if (! isset($query['site_id'])){
                 return array(0);
             }
-            //do a try catch
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             if (isset($query['site_id'])){
 
@@ -625,22 +655,21 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 }
                 else{$team_id = array(0);}
             } else{ $team_id = array(0);}
-
-
-
         }
 
         elseif ($this->getUser() != null && $this->currentTeam() != null) {
-
             $team_id[] = $this->currentTeam()->getId();
             }
-        else{
-            $team_id = array(0);
-        }
 
         return $team_id;
-
     }
+
+    /**
+     *
+     * Adds a join to API calls for resources and sites to filter results by teams
+     *
+     * @param Event $event
+     */
     public function filterByTeam(Event $event){
 
         $qb = $event->getParam('queryBuilder');
@@ -801,6 +830,7 @@ EOF;
         }
     }
 
+    //TODO stopped editing here
     //add user's teams to the user detail page view/omeka/admin/user/show.phtml
     public function userTeamsView(Event $event){
         $view = $event->getTarget();
@@ -813,7 +843,7 @@ EOF;
 
 
 
-//populates user edit form with the user's current teams+roles
+    //populates user edit form with the user's current teams+roles
     public function userTeamsEdit(Event $event)
     {
         //send the form data for processing by module controller to add teamUser
@@ -1151,6 +1181,7 @@ EOF;
         }
 
     }
+
     public function itemCreate(Event $event)
     {
 
