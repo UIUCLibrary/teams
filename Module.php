@@ -1530,13 +1530,17 @@ EOF;
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $user = $this->getUser();
 
-        //if the user isn't logged in, use the default settings
+        /*
+         * first go through a couple of common cases where we don't need to judge permissions and don't bother checking
+         * any other condition
+         */
+
+        //if the user isn't logged in (e.g., the public), use the default settings
         if (!$user){
             return true;
         }
 
-        //if it is the global admin, bypass any team controls
-        //TODO: this needs to be formalized in the module config
+        //if it is the global admin, bypass any team controls.
         if ($user->getRole() === 'global_admin'){
             return true;
         }
@@ -1546,6 +1550,7 @@ EOF;
 
         $res_class = $this->getResourceClass($resource);
 
+        //TODO: stopped editing here Nov 18, 2020
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
 
