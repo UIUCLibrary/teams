@@ -1555,8 +1555,7 @@ EOF;
             return true;
         }
 
-
-        $is_glob_admin = ($user->getRole() == 'global_admin');
+        $is_glob_admin = ($user->getRole() === 'global_admin');
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         $user_id = $user->getId();
