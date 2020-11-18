@@ -1535,9 +1535,9 @@ EOF;
             return true;
         }
 
-        //if it is the 'super' global admin, bypass any team controls
+        //if it is the global admin, bypass any team controls
         //TODO: this needs to be formalized in the module config
-        if ($user->getId() === 1 && $user->getRole() === 'global_admin'){
+        if ($user->getRole() === 'global_admin'){
             return true;
         }
         $messenger = new Messenger();
