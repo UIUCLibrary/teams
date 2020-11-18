@@ -1554,10 +1554,6 @@ EOF;
         if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
             return true;
         }
-        //actually need this even less restrictive just so that public can see frontend
-        if ($user == null && $action == 'read'){
-            return true;
-        }
 
 
         $is_glob_admin = ($user->getRole() == 'global_admin');
