@@ -717,6 +717,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 return;
             }
             else{
+                echo 'site case';
                 $team_site = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $query['site_id']]);
                 foreach ($team_site as $ts):
                     $team_id[] = $ts->getTeam()->getId();
