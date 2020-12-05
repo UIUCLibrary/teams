@@ -44,6 +44,7 @@ Class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
+
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
@@ -58,16 +59,12 @@ Class AddController extends AbstractActionController
             $roles[$role['name']] = $role['id'];
         endforeach;
 
-
+        $request   = $this->getRequest();
 
         $form = $this->getForm(TeamForm::class);
-
-
-
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
         $userRoleForm = $this->getForm(TeamAddUserRole::class);
-        $request   = $this->getRequest();
         $view = new ViewModel(
             [
                 'form' => $form,
@@ -84,6 +81,7 @@ Class AddController extends AbstractActionController
             return $view;
         }
 
+
         //otherwise, set the data
         //TODO: turn the section where user+role are added into a form so it can be populated below
         $form->setData($request->getPost());
@@ -93,6 +91,7 @@ Class AddController extends AbstractActionController
 
 
         //if the form isn't valid, return it
+
         if (! $form->isValid()){
             return $view;
         }
@@ -102,163 +101,129 @@ Class AddController extends AbstractActionController
 
         $newTeam = $this->api($form)->create('team', $data);
 
-        //looks like this was a diagnostic i used to see what was in the data variable
-        $view->setVariable('post_data', $data);
-        $view->setVariable('team', $newTeam);
+        if ($newTeam) {
+            //looks like this was a diagnostic i used to see what was in the data variable
+            $view->setVariable('post_data', $data);
+            $view->setVariable('team', $newTeam);
 
-        //TODO: (DONE) to prevent duplication, add all of the resource ids to an array and get unique (or set if that exists)
-        //TODO: (DONE) For user's items and for itemsts, go through and add all of the associated media for each as well
+            $team = $this->entityManager->getRepository('Teams\Entity\Team')
+                ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
+            if ($request->getPost('user_role')) {
+                foreach ($request->getPost('user_role') as $userId => $roleId):
+                    $user = $this->entityManager->getRepository('Omeka\Entity\User')
+                        ->findOneBy(['id' => (int)$userId]);
+                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                        ->findOneBy(['id' => (int)$roleId]);
 
+                    $teamUser = new TeamUser($team, $user, $role);
+                    $teamUser->setCurrent(null);
+                    $this->entityManager->persist($teamUser);
+                endforeach;
+                $this->entityManager->flush();
+            }
 
-        $team = $this->entityManager->getRepository('Teams\Entity\Team')
-            ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
-        if ($request->getPost('user_role'))
-        {
-            foreach ($request->getPost('user_role') as $userId => $roleId):
-                $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                    ->findOneBy(['id' => (int)$userId]);
-                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                    ->findOneBy(['id' => (int)$roleId]);
+            //TODO: (Done) also add the itemset itself
 
-                $teamUser = new TeamUser($team, $user, $role);
+            $resource_array = array();
+            $resource_template_array = array();
+            if (isset($request->getPost('itemset')['itemset']['o:itemset'])) {
+                foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
+                    if ((int)$item_set_id > 0) {
+                        $item_set_id = (int)$item_set_id;
 
-                $teamUser->setCurrent(null);
+                        //add all items belonging to itemset
+                        foreach ($this->api()->search('items', ['item_set_id' => $item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
+                            $resource_array[$item->id()] = true;
 
-
-                $this->entityManager->persist($teamUser);
-            endforeach;
-            $this->entityManager->flush();}
-
-        //TODO: (Done) also add the itemset itself
-
-        $resource_array = array();
-        $resource_template_array = array();
-        if (isset($request->getPost('itemset')['itemset']['o:itemset'])){
-            foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
-                if ((int)$item_set_id>0){
-                    $item_set_id = (int)$item_set_id;
-
-                    //add all items belonging to itemset
-                    foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                        $resource_array[$item->id()] = true;
-//
-//                        $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                            ->findOneBy(['id'=>$item->id()]);
-//                        $team_resource = new TeamResource($team, $resource);
-//                        $this->entityManager->persist($team_resource);
-
-                        //add all media belonging to item
-                        foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                            $resource_array[$media->id()] = true;
-
-//                            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-//                                ->findOneBy(['id'=>$media->id()]);
-//                            $team_resource = new TeamResource($team, $resource);
-//                            $this->entityManager->persist($team_resource);
-
+                            //add all media belonging to item
+                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+                            endforeach;
                         endforeach;
 
+                    }
+                    //add itemset itself
+                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                        ->findOneBy(['id' => $item_set_id]);
+                    $team_resource = new TeamResource($team, $resource);
 
+                    $this->entityManager->persist($team_resource);
+                endforeach;
+            }
+            if (isset($request->getPost('itemset')['itemset']['o:user'])) {
+                foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
+                    if ((int)$user_id > 0) {
+                        $user_id = (int)$user_id;
 
-                    endforeach;
+                        //add all of that users items and their media
+                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $item):
+                            $resource_array[$item->id()] = true;
+                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                $resource_array[$media->id()] = true;
+                            endforeach;
+                        endforeach;
 
-                }
-                //add itemset itself
-//                $resource_array[$item_set_id] = true;
+                        //add all of that user's item sets
+                        foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $itemset):
+                            $resource_array[$itemset->id()] = true;
+                        endforeach;
+
+                        $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner' => $user_id]);
+                        foreach ($rts as $rt):
+                            $resource_template_array[$rt->getId()] = true;
+                        endforeach;
+                    }
+                endforeach;
+            }
+
+            //persist the resources, ie item, item set, media
+            foreach (array_keys($resource_array) as $resource_id):
                 $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                    ->findOneBy(['id'=>$item_set_id]);
+                    ->findOneBy(['id' => $resource_id]);
                 $team_resource = new TeamResource($team, $resource);
-
                 $this->entityManager->persist($team_resource);
             endforeach;
-        }
-        if (isset($request->getPost('itemset')['itemset']['o:user'])){
-            foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
-                if ((int)$user_id>0){
-                    $user_id = (int)$user_id;
 
-                    //add all of that users items and their media
-                    foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
-                        $resource_array[$item->id()] = true;
-                        foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                            $resource_array[$media->id()] = true;
-                        endforeach;
-                    endforeach;
-
-                    //add all of that user's item sets
-                    foreach ($this->api()->search('item_sets', ['owner_id'=> $user_id, 'bypass_team_filter'=>true])->getContent() as $itemset):
-                        $resource_array[$itemset->id()] = true;
-                    endforeach;
-
-                    //add all of that user's resource templates
-//                    foreach ($this->api()->search('resource_templates', ['owner' => $user_id, 'bypass_team_filter'=>true])->getContent() as $rt):
-//                        $resource_template_array[$rt->id()] = true;
-//                        echo $rt->id();
-//                        echo '<br>';
-//                    endforeach;
-
-                    $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner'=>$user_id]);
-                    foreach ($rts as $rt):
-                        $resource_template_array[$rt->getId()] = true;
-                    endforeach;
-                }
-            endforeach;
-        }
-
-        //persist the resources, ie item, item set, media
-        foreach (array_keys($resource_array) as $resource_id):
-            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                ->findOneBy(['id'=>$resource_id]);
-            $team_resource = new TeamResource($team, $resource);
-            $this->entityManager->persist($team_resource);
-        endforeach;
-
-        //persist the resource templates
-        foreach (array_keys($resource_template_array) as $rt_id):
-            $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
-                ->findOneBy(['id'=>$rt_id]);
-            $team_rt = new TeamResourceTemplate($team, $resource_template);
-            $this->entityManager->persist($team_rt);
-        endforeach;
-        $this->entityManager->flush();
-
-        //persist the sites (no possibility of duplicates, so don't need to save to associative array)
-        if (isset($request->getPost('site')['site']['o:site'])){
-            foreach ( $request->getPost('site')['site']['o:site'] as $site_id ):
-                $site_id = (int) $site_id;
-                $site = $this->entityManager->getRepository('Omeka\Entity\Site')
-                    ->findOneBy(['id'=>$site_id]);
-                $team_site = new TeamSite($team, $site);
-                $this->entityManager->persist($team_site);
+            //persist the resource templates
+            foreach (array_keys($resource_template_array) as $rt_id):
+                $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
+                    ->findOneBy(['id' => $rt_id]);
+                $team_rt = new TeamResourceTemplate($team, $resource_template);
+                $this->entityManager->persist($team_rt);
             endforeach;
             $this->entityManager->flush();
+
+            //persist the sites (no possibility of duplicates, so don't need to save to associative array)
+            if (isset($request->getPost('site')['site']['o:site'])) {
+                foreach ($request->getPost('site')['site']['o:site'] as $site_id):
+                    $site_id = (int)$site_id;
+                    $site = $this->entityManager->getRepository('Omeka\Entity\Site')
+                        ->findOneBy(['id' => $site_id]);
+                    $team_site = new TeamSite($team, $site);
+                    $this->entityManager->persist($team_site);
+                endforeach;
+                $this->entityManager->flush();
+            }
+
+            $successMessage = sprintf("Successfully added the team: '%s'", $data['o:name']);
+            $this->messenger()->addSuccess($successMessage);
+            return $this->redirect()->toRoute('admin/teams');
         }
+        $view = new ViewModel;
 
+//        $userForm->setData($request->getPost());
+//        $itemsetForm->setData($request->getPost());
+//        $userRoleForm->setData($request->getPost());
 
+        $view->setVariable('form', $form);
+        $view->setVariable('userForm', $userForm);
+        $view->setVariable('itemsetForm', $itemsetForm);
+        $view->setVariable('userRoleForm', $userRoleForm);
+        $view->setVariable('roles', $roles);
+        $view->setVariable('available_u_array', $all_u_array);
+        $view->setVariable('user_roles', $request->getPost('user_role'));
 
-
-//        $response = $this->api()->search('items', $params)->getContent();
-//        $team = $this->entityManager->getRepository('Teams\Entity\Team')
-//            ->findOneBy(['id' => (int)$newTeam->getContent()->id() ]);
-//        foreach ($response as $item_rep):
-//            $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $item_rep->id()]);
-//            $team_resource = new TeamResource($team, $resource);
-//            $this->entityManager->persist($team_resource);
-//        endforeach;
-//        $this->entityManager->flush();
-//        $view->setVariable('response', $response);
-//        $view->setVariable('params', $params);
-
-
-
-
-
-
-
-
-        $successMessage = sprintf("Successfully added the team: '%s'", $data['o:name']);
-        $this->messenger()->addSuccess($successMessage);
-        return $this->redirect()->toRoute('admin/teams');
+        return $view;
     }
 
     public function roleAddAction()
