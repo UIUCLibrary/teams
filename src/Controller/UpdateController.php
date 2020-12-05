@@ -106,6 +106,7 @@ Class UpdateController extends AbstractActionController
 
         return $resource_array;
     }
+
     public function processResources($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false){
         $resource_array = array();
         $resource_template_array = array();
