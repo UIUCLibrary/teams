@@ -1540,8 +1540,22 @@ EOF;
             return true;
         }
 
-        //if it is the global admin, bypass any team controls.
-        if ($user->getRole() === 'global_admin'){
+        /*
+         * This may make the previous rule redundant, but keeping both for now
+         * No matter who is looking at the front-end, don't consider team authority
+         * based on the user
+         */
+
+        //if it isn't on the backend, let the public vs private rules take over
+        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return true;
+        }
+
+        $is_glob_admin = ($user->getRole() === 'global_admin');
+
+
+        //if it is the global admin, bypass any team controls (but will still apply filters)
+        if ($is_glob_admin){
             return true;
         }
         $messenger = new Messenger();
@@ -1554,13 +1568,7 @@ EOF;
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
 
-        //should be by far the most common case
-        //if it isn't on the backend, let the public vs private rules take over
-        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            return true;
-        }
 
-        $is_glob_admin = ($user->getRole() === 'global_admin');
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         $user_id = $user->getId();
@@ -1569,7 +1577,7 @@ EOF;
         $team = $team_user->getTeam();
         $team_user_role = $team_user->getRole() ;
 
-        //don't check if in same team if a create action
+        //don't check if in same team if a create action, because items only assigned teams after creation
         if ($action != 'create'){
             //if resource not part of user's current team, no action at all
             if (! $this->inTeam($resource, $team_user)){
@@ -1640,7 +1648,6 @@ EOF;
 
             }
 
-
         }
         elseif ($res_class == 'Omeka\Entity\SitePage'){
             if ($action == 'create'){
@@ -1680,6 +1687,9 @@ EOF;
 
             }
         }
+
+        //a list of classes where we don't need to check teams
+        //TODO: this should be refactored and go with the checks in the beginning
         elseif ($res_class == 'Omeka\Entity\User'){
             return true;
         }
@@ -2140,6 +2150,11 @@ EOF;
 
     }
 
+    /**
+     * Add team element to the resource template form
+     *
+     * @param Event $event
+     */
     public function resourceTemplateForm(Event $event)
     {
         $form = $event->getTarget()->vars()->form;
@@ -2160,6 +2175,11 @@ EOF;
 
 
     }
+
+    /**
+     * Add team element to the user form
+     * @param Event $event
+     */
     public function addUserFormElement(Event $event)
     {
         $user_role = $this->getUser()
@@ -2203,6 +2223,11 @@ EOF;
         }
     }
 
+    /**
+     * Add team element to the site form
+     *
+     * @param Event $event
+     */
     public function addSiteFormElement(Event $event){
         $form = $event->getTarget();
         $form->add([
@@ -2220,6 +2245,11 @@ EOF;
 
     }
 
+    /**
+     * Add TeamRoles to from
+     *
+     * @param Event $event
+     */
     public function addRoleFormTemplate(Event $event){
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $roles = $entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
@@ -2236,45 +2266,6 @@ EOF;
 
             $view->headScript()->prependFile($view->assetUrl('js/chosen-trigger.js', 'Teams'));
         }
-    }
-
-
-
-    public function teamItems($resource_type, $query, $user_id, $active = true, $team_id = null)
-    {
-
-        $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        if ($active){
-            $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1 ]);
-
-        } else{
-            $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'team' => $team_id ]);
-        }
-
-        $resources = array();
-        if ($team_user) {
-
-            $active_team_id = $team_user->getTeam()->getId();
-
-            $team_entity = $entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $active_team_id]);
-
-
-            $per_page = 10;
-            $page = $query['page'];
-            $start_i = ($per_page * $page) - $per_page;
-            $tr = $team_entity->getTeamResources();
-            $max_i = count($tr);
-            if ($max_i < $start_i + $per_page){
-                $end_i = $max_i;
-            }else{$end_i = $start_i + $per_page;}
-
-            $tr = $team_entity->getTeamResources();
-            for ($i = $start_i; $i < $end_i; $i++) {
-                $resources[] = $this->api()->read($resource_type, $tr[$i]->getResource()->getId())->getContent();
-            }
-        }else{$tr=null;}
-
-        return array('page_resource'=>$resources, 'team_resources'=>$tr);
     }
 }
 
