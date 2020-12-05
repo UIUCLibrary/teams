@@ -17,6 +17,7 @@ use Omeka\Entity\Resource;
 use Omeka\Entity\User;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
+use Zend\Validator\EmailAddress;
 
 class TeamAdapter extends AbstractEntityAdapter
 {
@@ -303,4 +304,57 @@ class TeamAdapter extends AbstractEntityAdapter
     {
         return trim(preg_replace('/\s+/', ' ', $string));
     }
+
+    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
+    {
+        $name = $entity->getName();
+        if (!$this->isUnique($entity, ['name' => $name])) {
+            $errorStore->addError('o:name', new Message(
+                'The name "%s" is already taken.', // @translate
+                $name
+            ));
+        }
+    }
+
+    protected function validateName($name, ErrorStore $errorStore)
+    {
+        $result = true;
+        $sanitized = $this->sanitizeLightString($name);
+        if (is_string($name) && $sanitized !== '') {
+            $name = $sanitized;
+            $sanitized = $this->sanitizeString($sanitized);
+            if ($name !== $sanitized) {
+                $errorStore->addError('o:name', new Message(
+                    'The name "%s" contains forbidden characters.', // @translate
+                    $name
+                ));
+                $result = false;
+            }
+            if (preg_match('~^[\d]+$~', $name)) {
+                $errorStore->addError('o:name', 'A name can’t contain only numbers.'); // @translate
+                $result = false;
+            }
+            $reserved = [
+                'id', 'name', 'comment',
+                'show', 'browse', 'add', 'edit', 'delete', 'delete-confirm', 'batch-edit', 'batch-edit-all',
+            ];
+            if (in_array(strtolower($name), $reserved)) {
+                $errorStore->addError('o:name', 'A name cannot be a reserved word.'); // @translate
+                $result = false;
+            }
+        } else {
+            $errorStore->addError('o:name', 'A group must have a name.'); // @translate
+            $result = false;
+        }
+        return $result;
+    }
+
+    public function validateRequest(Request $request, ErrorStore $errorStore)
+    {
+        $data = $request->getContent();
+        if (array_key_exists('o:name', $data)) {
+            $result = $this->validateName($data['o:name'], $errorStore);
+        }
+    }
+
 }
