@@ -8,15 +8,8 @@ use Zend\Router\Http\Literal;
 use Zend\Router\Http\Segment;
 use Teams\Controller\CurrentTeamController;
 
-//$teamname = (new Controller\CurrentTeamController)->getCurrentTeam();
-$teamname = 'Example Team';
 return [
-    'block_layouts' => [
-        'invokables'  => [
-            'listOfSites' => Site\BlockLayout\ListOfSites::class,
 
-        ]
-    ],
     'navigation' => [
 
         'AdminResource' => [
@@ -77,10 +70,6 @@ return [
             'team-user' => Api\Adapter\TeamUserAdapter::class,
             'team-role' => Api\Adapter\TeamRoleAdapter::class,
             'team-resource' => Api\Adapter\TeamResourceAdapter::class,
-//            'items' => Api\Adapter\ItemAdapter::class,
-//            'nothing' => ItemAdapter::class,
-
-
         ],
     ],
     'view_manager' => [
@@ -126,20 +115,20 @@ return [
             'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
         ],
         'factories' => [
-            'Teams\Controller\Index' => 'Teams\Model\IndexControllerFactory',
-            'Teams\Controller\Delete' => 'Teams\Model\DeleteControllerFactory',
-            'Teams\Controller\Add' => 'Teams\Model\AddControllerFactory',
-            'Teams\Controller\Update' => 'Teams\Model\UpdateControllerFactory',
-            'Teams\Controller\Trash' => 'Teams\Model\TrashControllerFactory',
+            'Teams\Controller\Index' => 'Teams\Service\IndexControllerFactory',
+            'Teams\Controller\Delete' => 'Teams\Service\DeleteControllerFactory',
+            'Teams\Controller\Add' => 'Teams\Service\AddControllerFactory',
+            'Teams\Controller\Update' => 'Teams\Service\UpdateControllerFactory',
+            'Teams\Controller\Trash' => 'Teams\Service\TrashControllerFactory',
 
             //to make the item controlller do what I made it do by editing the Omeka ItemController, just add this
             //and route it to a different factory that invokes a controller of my design
-//            'Omeka\Controller\Admin\Item' => 'Teams\Model\ItemControllerFactory',
-//            'Omeka\Controller\Admin\ItemSet' => 'Teams\Model\ItemSetControllerFactory',
-//            'Omeka\Controller\Admin\Media' => 'Teams\Model\MediaControllerFactory',
-//            'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Model\ResourceTemplateControllerFactory',
-            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Model\SiteIndexControllerFactory',
-//            'Omeka\Controller\Admin\User' => 'Teams\Model\UserControllerFactory',
+//            'Omeka\Controller\Admin\Item' => 'Teams\Service\ItemControllerFactory',
+//            'Omeka\Controller\Admin\ItemSet' => 'Teams\Service\ItemSetControllerFactory',
+//            'Omeka\Controller\Admin\Media' => 'Teams\Service\MediaControllerFactory',
+//            'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Service\ResourceTemplateControllerFactory',
+            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Service\SiteIndexControllerFactory',
+//            'Omeka\Controller\Admin\User' => 'Teams\Service\UserControllerFactory',
 
 
 
@@ -148,10 +137,9 @@ return [
 //            'Teams\Controller\TeamResourceFilter' => 'Teams\Module\TeamResourceFilterFilter'
 
             //this error means that it is a bad route
-//            'Omeka\Controller\Admin\Teams' => 'Teams\Model\IndexControllerFactory',
+//            'Omeka\Controller\Admin\Teams' => 'Teams\Service\IndexControllerFactory',
         ]
     ],
-    // This lines opens the configuration for the RouteManager
     'router' => [
         // Open configuration for all possible routes
         'routes' => [
