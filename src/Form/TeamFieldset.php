@@ -2,6 +2,7 @@
 namespace Teams\Form;
 
 use Teams\Form\Element\AllTeamSelect;
+use Teams\Form\Element\TeamName;
 use Teams\Form\Element\TeamSelect;
 use Teams\Form\Element\UserSelect;
 use Zend\Form\Fieldset;
@@ -25,7 +26,7 @@ class TeamFieldset extends Fieldset
         $this->add([
             //extremely important  that this match what is in the API adapter: Teams\Api\Representation getJsonLd()
             'name' => 'o:name',
-            'type' => 'Text',
+            'type' => TeamName::class,
             'options' => [
                 'label' => 'Name', // @translate
             ],
