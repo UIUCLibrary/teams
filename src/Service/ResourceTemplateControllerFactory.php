@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Teams\Model;
+namespace Teams\Service;
 
 
 use Interop\Container\ContainerInterface;

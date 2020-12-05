@@ -1,5 +1,5 @@
 <?php
-namespace Teams\Model;
+namespace Teams\Service;
 
 use Teams\Controller\IndexController;
 use Interop\Container\ContainerInterface;

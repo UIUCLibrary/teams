@@ -1,5 +1,5 @@
 <?php
-namespace Teams\Model;
+namespace Teams\Service;
 
 use Teams\Controller\DeleteController;
 use Interop\Container\ContainerInterface;

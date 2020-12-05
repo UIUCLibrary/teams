@@ -1,15 +1,15 @@
 <?php
-namespace Teams\Model;
+namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
-use Teams\Controller\UserController;
+use Teams\Controller\ItemSetController;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
-class UserControllerFactory implements FactoryInterface
+class ItemSetControllerFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        return new UserController(
+        return new ItemSetController(
             $services->get('Omeka\EntityManager')
         );
     }

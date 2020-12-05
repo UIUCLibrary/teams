@@ -1,20 +1,17 @@
 <?php
-
-
-namespace Teams\Model;
-
+namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
-use Teams\Controller\ChangeTeamController;
+use Teams\Controller\ItemController;
 use Zend\ServiceManager\Factory\FactoryInterface;
 
-class ChangeTeamControllerFactory implements FactoryInterface
+class ItemControllerFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        return new ChangeTeamController(
+        return new ItemController(
+            $services->get('Omeka\Media\Ingester\Manager'),
             $services->get('Omeka\EntityManager')
         );
     }
-
 }
