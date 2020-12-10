@@ -13,7 +13,7 @@ use Teams\Module;
 use Zend\Filter\Boolean;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Teams\Model;
+use Teams\Service;
 
 class ItemController extends AbstractActionController
 {

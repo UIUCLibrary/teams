@@ -140,6 +140,8 @@ class TrashController extends AbstractActionController
         $view = new ViewModel;
         $view->setVariable('orphan', $orphans);
 
+
+
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
 
