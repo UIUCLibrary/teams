@@ -1020,6 +1020,7 @@ EOF;
                         $em->persist($team_user);
 
                         //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
+                        //TODO: catch this in chosen-trigger.js instead
                         $em->flush();
                     }
 
