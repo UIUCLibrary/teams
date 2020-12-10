@@ -927,8 +927,13 @@ EOF;
                 $role_id = $team_role_ids[$team_id];
                 $role = $em->getRepository('Teams\Entity\TeamRole')
                     ->findOneBy(['id'=>$role_id]);
-                $team_user = new TeamUser($team,$user,$role);
-                $em->persist($team_user);
+                $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
+                if (! $team_user_exists){
+                    $team_user = new TeamUser($team,$user,$role);
+                    $em->persist($team_user);
+                }
+
 
 
             endforeach;
@@ -1000,14 +1005,26 @@ EOF;
                     $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
                     $role = $em->getRepository('Teams\Entity\TeamRole')
                         ->findOneBy(['id'=>$role_id]);
-                    $team_user = new TeamUser($team,$user,$role);
 
-                    if ($team_id == $current_team_id){
-                        $team_user->setCurrent(true);
+                    $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                        ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
+
+                    if ($team_user_exists){
+                        echo $team_user_exists->getId();
+                    } else {
+                        $team_user = new TeamUser($team,$user,$role);
+                        $em->persist($team_user);
+                        if ($team_id == $current_team_id){
+                            $team_user->setCurrent(true);
+                        }
+                        $em->persist($team_user);
+
+                        //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
+                        $em->flush();
                     }
-                    $em->persist($team_user);
 
                 endforeach;
+
                 $em->flush();
 
                 //if their current team was removed, just give them a current team from the top of the list
