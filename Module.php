@@ -904,12 +904,23 @@ EOF;
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
                 if ($team_id === 0){
-                    $team = new Team();
                     $u_name = $request->getContent()['o:name'];
-                    $team->setName(sprintf("%s's team", $u_name));
-                    $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
-                    $em->persist($team);
-                    $em->flush();
+                    $team_name = sprintf("%s's team", $u_name);
+                    $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
+                    if ($team_exists){
+                        $messanger = new Messenger();
+                        $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
+                        $team = $team_exists;
+
+
+                    } else{
+                        $team = new Team();
+                        $team->setName($team_name);
+                        $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                        $em->persist($team);
+                        $em->flush();
+                    }
+
                 } else {
                     $team = $teams->findOneBy(['id'=> $team_id]);
                 }
@@ -961,13 +972,26 @@ EOF;
                 $teams =  $em->getRepository('Teams\Entity\Team');
                 foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
                     $team_id = (int) $team_id;
+
+                    //adding new team from the user form, indicated by an id of 0
                     if ($team_id === 0){
-                        $team = new Team();
                         $u_name = $request->getContent()['o:name'];
-                        $team->setName(sprintf("%s's team", $u_name));
-                        $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
-                        $em->persist($team);
-                        $em->flush();
+                        $team_name = sprintf("%s's team", $u_name);
+                        $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
+                        if ($team_exists){
+                            $messanger = new Messenger();
+                            $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
+                            $team = $team_exists;
+
+
+                        } else{
+                            $team = new Team();
+                            $team->setName($team_name);
+                            $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                            $em->persist($team);
+                            $em->flush();
+                        }
+
                     } else {
                         $team = $teams->findOneBy(['id'=> $team_id]);
                     }
