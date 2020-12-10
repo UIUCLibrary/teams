@@ -505,7 +505,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $messanger->addError("You can only make a new resource after you have been added to a team");
             echo '<script>$(\'button:contains("Add")\').prop("disabled",true);</script>';
         }
-        $view->headScript()->appendFile($view->assetUrl('js/add-team-to-resource.js', 'Teams'));
+        $view->headScript()->appendFile($view->assetUrl('js/teams.js', 'Teams'));
         $view->headLink()->appendStylesheet($view->assetUrl('css/teams.css', 'Teams'));
         echo $event->getTarget()->partial(
             'teams/partial/team-form-no-id',
@@ -1564,7 +1564,6 @@ EOF;
 
         $res_class = $this->getResourceClass($resource);
 
-        //TODO: stopped editing here Nov 18, 2020
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
 
