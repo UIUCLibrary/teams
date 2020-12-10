@@ -34,7 +34,7 @@ function makeRoleElement(team_name, team_id, role = 1){
     let user_name = document.getElementById('name').value;
     if (team_name ==="~~Add New Team~~"){
         if (user_name !== ''){
-            label.innerText = `"${user_name}'s" Team (new team)`
+            label.innerText = `${user_name}'s Team (new team) Role`
         } else{
             label.innerText = 'New Team Role';
         }
