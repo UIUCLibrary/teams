@@ -14,6 +14,7 @@ use Omeka\Permissions\Acl;
 use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
+use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
 use Teams\Form\Element\AllTeamSelect;
@@ -149,6 +150,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['index', 'teamDetail']
 
         );
+
 
         //allow everyone to change their current team
         $acl->allow(
@@ -936,6 +938,31 @@ EOF;
 
 
 
+            endforeach;
+            $em->flush();
+        }
+    }
+
+    public function siteCreate(Event $event)
+    {
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        if ($operation === 'create'){
+            $response = $event->getParam('response');
+            $resource =  $response->getContent();
+            $site_id =  $resource->getId();
+            $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site_id]);
+            $teams =  $em->getRepository('Teams\Entity\Team');
+
+            $team_ids = $request->getContent()['team'];
+
+
+            foreach ($team_ids as $team_id):
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                $trt = new TeamSite($team, $site);
+                $em->persist($trt);
             endforeach;
             $em->flush();
         }
@@ -1906,6 +1933,12 @@ EOF;
             UserAdapter::class,
             'api.execute.post',
             [$this, 'userCreate']
+        );
+
+        $sharedEventManager->attach(
+            SiteAdapter::class,
+            'api.execute.post',
+            [$this, 'siteCreate']
         );
 
         //only make changes after checking team authority . . . should these two be combined?
