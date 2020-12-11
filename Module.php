@@ -1069,6 +1069,34 @@ EOF;
 
     }
 
+    public function siteUpdate(Event $event)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation==='update'){
+
+            $site_id = $request->getId();
+            $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+            foreach ($team_sites as $team_site):
+                $em->remove($team_site);
+            endforeach;
+            $em->flush();
+
+            $team_ids = $request->getContent()['team'];
+            //add teams to the site for each team listed in the form
+            foreach ($team_ids as $team):
+                $team_site = new TeamSite($em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
+                    $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
+                $em->persist($team_site);
+            endforeach;
+            $em->flush();
+
+        }
+    }
 
 //Handle Item Sets
 
@@ -1948,6 +1976,12 @@ EOF;
             ItemSetAdapter::class,
             'api.hydrate.post',
             [$this, 'itemSetUpdate']
+        );
+
+        $sharedEventManager->attach(
+            SiteAdapter::class,
+            'api.hydrate.post',
+            [$this, 'siteUpdate']
         );
 
         $sharedEventManager->attach(
