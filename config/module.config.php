@@ -114,7 +114,6 @@ return [
     ],
     'controllers' => [
         'invokables' => [
-            'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
             'Teams\Controller\SiteAdmin\Index' => 'Teams\Controller\SiteAdmin\IndexController'
         ],
         'factories' => [
@@ -366,32 +365,6 @@ return [
                                                 '__NAMESPACE__' => 'Teams\Controller',
                                                 'controller' => 'Index',
                                                 'action' => 'resources',
-                                            ],
-                                        ],
-                                    ],
-                                    'page' => [
-                                        'type' => \Zend\Router\Http\Segment::class,
-                                        'options' => [
-                                            'route' => '/page',
-                                            'defaults' => [
-                                                'controller' => 'Page',
-                                                'action' => 'index',
-                                            ],
-                                        ],
-                                        'may_terminate' => true,
-                                        'child_routes' => [
-                                            'default' => [
-                                                'type' => \Zend\Router\Http\Segment::class,
-                                                'options' => [
-                                                    'route' => '/:page-slug[/:action]',
-                                                    'constraints' => [
-                                                        'page-slug' => '[a-zA-Z0-9_-]+',
-                                                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                                                    ],
-                                                    'defaults' => [
-                                                        'action' => 'edit',
-                                                    ],
-                                                ],
                                             ],
                                         ],
                                     ],
