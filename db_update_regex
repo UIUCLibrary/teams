@@ -1,7 +1,0 @@
-Use this to convert the sql statements produced by doctrine into commands for the install function in Module.php
-Capture group
-(^.*;)
-
-Replace
-        \$conn->exec('
-$1');

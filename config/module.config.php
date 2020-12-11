@@ -1,12 +1,8 @@
 <?php
 namespace Teams;
 
-use Omeka\Api\Adapter\ItemAdapter;
-use Teams\Controller\UpdateController;
-use Zend\Db\Sql\Sql;
 use Zend\Router\Http\Literal;
 use Zend\Router\Http\Segment;
-use Teams\Controller\CurrentTeamController;
 
 return [
 
@@ -61,8 +57,6 @@ return [
             Controller\DeleteController::class,
             Controller\ItemController::class,
             Controller\UpdateController::class,
-            Controller\SiteAdmin\IndexController::class
-
         ],
     ],
     'api_adapters' => [
@@ -122,24 +116,6 @@ return [
             'Teams\Controller\Add' => 'Teams\Service\AddControllerFactory',
             'Teams\Controller\Update' => 'Teams\Service\UpdateControllerFactory',
             'Teams\Controller\Trash' => 'Teams\Service\TrashControllerFactory',
-
-            //to make the item controlller do what I made it do by editing the Omeka ItemController, just add this
-            //and route it to a different factory that invokes a controller of my design
-//            'Omeka\Controller\Admin\Item' => 'Teams\Service\ItemControllerFactory',
-//            'Omeka\Controller\Admin\ItemSet' => 'Teams\Service\ItemSetControllerFactory',
-//            'Omeka\Controller\Admin\Media' => 'Teams\Service\MediaControllerFactory',
-//            'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Service\ResourceTemplateControllerFactory',
-//            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Service\SiteIndexControllerFactory',
-//            'Omeka\Controller\Admin\User' => 'Teams\Service\UserControllerFactory',
-
-
-
-
-
-//            'Teams\Controller\TeamResourceFilter' => 'Teams\Module\TeamResourceFilterFilter'
-
-            //this error means that it is a bad route
-//            'Omeka\Controller\Admin\Teams' => 'Teams\Service\IndexControllerFactory',
         ]
     ],
     'router' => [
@@ -331,6 +307,7 @@ return [
                             ],
                         ],
                     ],
+                    //need to make a route for the resource page because there are no events inside the view
                     'site' => [
                         'type' => \Zend\Router\Http\Literal::class,
                         'options' => [
@@ -356,6 +333,8 @@ return [
                                     ],
                                 ],
                                 'may_terminate' => true,
+
+                                //this is the child route for the new site resources page
                                 'child_routes' => [
                                     'resources' => [
                                         'type' => \Zend\Router\Http\Literal::class,
