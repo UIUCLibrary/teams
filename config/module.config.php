@@ -61,6 +61,7 @@ return [
             Controller\DeleteController::class,
             Controller\ItemController::class,
             Controller\UpdateController::class,
+            Controller\SiteAdmin\IndexController::class
 
         ],
     ],
@@ -114,6 +115,7 @@ return [
     'controllers' => [
         'invokables' => [
             'Omeka\Controller\SiteAdmin\Page' => 'Teams\Controller\SiteAdmin\PageController',
+            'Teams\Controller\SiteAdmin\Index' => 'Teams\Controller\SiteAdmin\IndexController'
         ],
         'factories' => [
             'Teams\Controller\Index' => 'Teams\Service\IndexControllerFactory',
@@ -330,6 +332,83 @@ return [
                             ],
                         ],
                     ],
+                    'site' => [
+                        'type' => \Zend\Router\Http\Literal::class,
+                        'options' => [
+                            'route' => '/site',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Omeka\Controller\SiteAdmin',
+                                '__SITEADMIN__' => true,
+                                'controller' => 'Index',
+                                'action' => 'index',
+                            ],
+                        ],
+                        'may_terminate' => true,
+                        'child_routes' => [
+                            'slug' => [
+                                'type' => \Zend\Router\Http\Segment::class,
+                                'options' => [
+                                    'route' => '/s/:site-slug',
+                                    'constraints' => [
+                                        'site-slug' => '[a-zA-Z0-9_-]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'edit',
+                                    ],
+                                ],
+                                'may_terminate' => true,
+                                'child_routes' => [
+                                    'resources' => [
+                                        'type' => \Zend\Router\Http\Literal::class,
+                                        'options' => [
+                                            'route' => '/resources',
+                                            'defaults' => [
+                                                '__NAMESPACE__' => 'Teams\Controller',
+                                                'controller' => 'Index',
+                                                'action' => 'resources',
+                                            ],
+                                        ],
+                                    ],
+                                    'page' => [
+                                        'type' => \Zend\Router\Http\Segment::class,
+                                        'options' => [
+                                            'route' => '/page',
+                                            'defaults' => [
+                                                'controller' => 'Page',
+                                                'action' => 'index',
+                                            ],
+                                        ],
+                                        'may_terminate' => true,
+                                        'child_routes' => [
+                                            'default' => [
+                                                'type' => \Zend\Router\Http\Segment::class,
+                                                'options' => [
+                                                    'route' => '/:page-slug[/:action]',
+                                                    'constraints' => [
+                                                        'page-slug' => '[a-zA-Z0-9_-]+',
+                                                        'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                                    ],
+                                                    'defaults' => [
+                                                        'action' => 'edit',
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            'add' => [
+                                'type' => \Zend\Router\Http\Literal::class,
+                                'options' => [
+                                    'route' => '/add',
+                                    'defaults' => [
+                                        'action' => 'add',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+
                     //okay, this seems like a super bad way to do this but I'm not sure what else to do
                     'del' => [
                         'type' => 'Segment',
@@ -370,7 +449,6 @@ return [
                             ],
                         ],
                     ],
-
                     'trash' => [
                         'type' => Segment::class,
                         'options' => [

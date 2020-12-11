@@ -7,6 +7,7 @@ use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
 use Omeka\Stdlib\DateTime;
 use Zend\EventManager\Event;
+use Zend\Form\Form;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Model\ViewModel;
@@ -32,6 +33,121 @@ class IndexController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
+    public function resourcesAction()
+    {
+        $site = $this->currentSite();
+        $site_id = $site->id();
+        $em = $this->entityManager;
+        $site_teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+        $site_resources = array();
+        $site_resource_templates = array();
+        $get_item_sets = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\ItemSet");
+        $get_items = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
+        $get_media = $this->entityManager->createQuery("SELECT resource.id FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Media");
+
+        //thought that a scalar would be easier but from what I can tell in this case getScalarResult===getArrayResult===getResult
+        //leaving it this way because it sounds closest to the kind of data I actually want to get out
+        $all_item_sets = $get_item_sets->getScalarResult();
+        $all_items = $get_items->getScalarResult();
+        $all_media = $get_media->getScalarResult();
+
+        //combine all of the resources from all of the teams the site is associated with
+        //maintaining the distinction between resources and resource templates from core omeka
+        foreach ($site_teams as $site_team):
+            $team_resources = $site_team->getTeam()->getTeamResources()->toArray();
+            $team_resource_templates = $site_team->getTeam()->getTeamResourceTemplates()->toArray();
+            $site_resources = array_merge($site_resources, $team_resources);
+            $site_resource_templates = array_merge($site_resource_templates, $team_resource_templates);
+
+        endforeach;
+
+        //returns the id when either a TeamResource object or row from a doctrine result set is provided
+        $getIds = function ($resource){
+            if (is_object($resource)){
+                return $resource->getResource()->getId();
+            }elseif(is_array($resource)){
+                return $resource['id'];
+            }else{return null;}
+        };
+
+        //if there is a way to do this by testing TeamResources with INSTANCE OF it would be simpler, but I was not
+        //able to get that to work. So using an array of Omeka itemsets as discriminator
+
+        //get just the resource ids from TeamResources associated with the site
+        $team_res_ids = array_map($getIds, $site_resources);
+
+        //get the ids from all omeka item sets
+        $all_item_set_ids = array_map($getIds, $all_item_sets);
+
+        //get the ids from all omeka items
+        $all_item_ids = array_map($getIds, $all_items);
+
+        //get the ids from all omeka media
+        $all_media_ids = array_map($getIds, $all_media);
+
+        //filter out just the site's itemsets
+        $site_item_sets = array_intersect($all_item_set_ids, $team_res_ids);
+
+        //filterout just the site's items
+        $site_items = array_intersect($all_item_ids, $team_res_ids);
+
+        //filter out just the site's media
+        $site_media = array_intersect($all_media_ids, $team_res_ids);
+
+
+
+
+        $form = $this->getForm(Form::class)->setAttribute('id', 'site-form');
+
+        if ($this->getRequest()->isPost()) {
+            $formData = $this->params()->fromPost();
+            $form->setData($formData);
+            if ($form->isValid()) {
+                $itemPool = $formData;
+                unset($itemPool['form_csrf']);
+                unset($itemPool['site_item_set']);
+
+                $itemSets = isset($formData['o:site_item_set']) ? $formData['o:site_item_set'] : [];
+
+                $updateData = ['o:item_pool' => $itemPool, 'o:site_item_set' => $itemSets];
+                $response = $this->api($form)->update('sites', $site->id(), $updateData, [], ['isPartial' => true]);
+                if ($response) {
+                    $this->messenger()->addSuccess('Site resources successfully updated'); // @translate
+                    return $this->redirect()->refresh();
+                }
+            } else {
+                $this->messenger()->addFormErrors($form);
+            }
+        }
+
+        $itemCount = $this->api()
+            ->search('items', ['limit' => 0, 'site_id' => $site->id()])
+            ->getTotalResults();
+        $itemSets = [];
+        foreach ($site->siteItemSets() as $siteItemSet) {
+            $itemSet = $siteItemSet->itemSet();
+            $owner = $itemSet->owner();
+            $itemSets[] = [
+                'id' => $itemSet->id(),
+                'title' => $itemSet->displayTitle(),
+                'email' => $owner ? $owner->email() : null,
+            ];
+        }
+
+        $view = new ViewModel;
+        $view->setVariable('site', $site);
+        $view->setVariable('form', $form);
+        $view->setVariable('itemCount', $itemCount);
+        $view->setVariable('itemSets', $itemSets);
+        $view->setVariable('site_resources', $site_resources);
+        $view->setVariable('site_media', $site_media);
+        $view->setVariable('site_items', $site_items);
+        $view->setVariable('site_item_sets', $site_item_sets);
+        $view->setVariable('site_teams', $site_teams);
+        return $view;
+    }
+
+
     public function allAction(){
 
         $view = new ViewModel;
@@ -48,6 +164,12 @@ class IndexController extends AbstractActionController
         return $view;
 
 
+
+
+    }
+    public function permDeleteAction()
+    {
+        echo 'nothing went wrong';
 
 
     }
