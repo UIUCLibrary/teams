@@ -25,9 +25,6 @@ class AllTeamSelect extends TeamSelect
             $valueOptions[$team_id] = $team_name;
         endforeach;
 
-
-
-
         $prependValueOptions = $this->getOption('prepend_value_options');
         if (is_array($prependValueOptions)) {
             $valueOptions = $prependValueOptions + $valueOptions;

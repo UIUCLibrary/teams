@@ -8,7 +8,6 @@ use Zend\Form\Element\Select;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Helper\Url;
 
-//TODO add filter so only shows teams that the user should be able to see and use
 class TeamSelect extends Select
 {
 
