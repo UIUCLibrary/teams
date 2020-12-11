@@ -130,7 +130,7 @@ return [
 //            'Omeka\Controller\Admin\ItemSet' => 'Teams\Service\ItemSetControllerFactory',
 //            'Omeka\Controller\Admin\Media' => 'Teams\Service\MediaControllerFactory',
 //            'Omeka\Controller\Admin\ResourceTemplate' => 'Teams\Service\ResourceTemplateControllerFactory',
-            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Service\SiteIndexControllerFactory',
+//            'Omeka\Controller\SiteAdmin\Index' => 'Teams\Service\SiteIndexControllerFactory',
 //            'Omeka\Controller\Admin\User' => 'Teams\Service\UserControllerFactory',
 
 
