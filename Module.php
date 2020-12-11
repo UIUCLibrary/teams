@@ -327,6 +327,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $event->setParam('section_nav', $sectionNav);
     }
 
+    public function removeTab(Event $event)
+    {
+        $sectionNav = $event->getParam('section_nav');
+        unset($sectionNav['item-pool']);
+        $event->setParam('section_nav', $sectionNav);
+
+    }
+
     /**
      * Displays the teams that a resource belongs to for admin pages.
      *
@@ -2039,6 +2047,12 @@ EOF;
             'Omeka\Controller\Admin\Item',
             'view.edit.form.after',
             [$this, 'displayTeamForm']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.add.section_nav',
+            [$this, 'removeTab']
         );
 
 
