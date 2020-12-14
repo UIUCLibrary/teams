@@ -1816,6 +1816,10 @@ EOF;
             return true;
         }
 
+        elseif ($res_class == "Omeka\Entity\Asset"){
+            return true;
+        }
+
         if (!$authorized){
 
             $authorized = false;
