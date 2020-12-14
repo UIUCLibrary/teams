@@ -1582,6 +1582,15 @@ EOF;
         {
             return true;
         }
+
+        elseif (strpos($res_class, 'Mapping\Entity') === 0){
+            return true;
+        }
+
+        elseif ($res_class == "Omeka\Entity\Asset"){
+            return true;
+        }
+
         else{
             $messanger = new Messenger();
             $msg = sprintf(
