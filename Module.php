@@ -1602,7 +1602,7 @@ EOF;
                 ,
                 $res_class, $resource->getId()
             );
-            $messanger->addError('this is an error');
+            $messanger->addError($msg);
 
             throw new Exception\PermissionDeniedException($msg);
 
