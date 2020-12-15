@@ -1510,7 +1510,8 @@ EOF;
     /*
      * TODO: need to add some way to automatically handle classes from other modules.
      * Default should be to allow access because they end up being things like adding a piece of metadata to an item
-     * usually
+     * usually. In fact, for things that don't exist in a Team table, I think we can just pass true. Or in some other
+     * way indicate that the Teams filter isn't relevant. Or, maybe check that before calling this function?
     */
 
     /**
@@ -1594,11 +1595,8 @@ EOF;
         else{
             $messanger = new Messenger();
             $msg = sprintf(
-//                $this->getTranslator()->translate(
                 'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
                     so by default action here is not permitted. Resource "%1$s: %2$s" .'
-
-//                )
                 ,
                 $res_class, $resource->getId()
             );
