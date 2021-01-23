@@ -93,11 +93,11 @@ $sectionNavs = [
                            </a>
                         </td>
                         <td><?php echo $team_user->getRole()->getName(); ?></td>
-                        <?php if ($team_user->getCurrent()){ ?>
+                        <?php if ($team_user->getCurrent()): ?>
                             <td>Yes</td>
-                        <?php } else { ?>
+                        <?php else: ?>
                             <td>No</td>
-                       <?php } ?>
+                        <?php endif; ?>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
