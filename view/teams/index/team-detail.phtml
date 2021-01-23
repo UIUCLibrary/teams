@@ -76,11 +76,9 @@ $sectionNavs = [
                    <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                 <thead>
                     <tr>
-                        <th>
-                            <?php echo $translate('Name'); ?>
-                        </th>
+                        <th><?php echo $translate('Name'); ?></th>
                         <th><?php echo $translate('Role'); ?></th>
-                        <th><?php echo $translate('Created'); ?></th>
+                        <th><?php echo $translate('Last active in this team'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,7 +93,11 @@ $sectionNavs = [
                            </a>
                         </td>
                         <td><?php echo $team_user->getRole()->getName(); ?></td>
-                        <td><?php echo 'need to make this or put some info that makes more sense here'; ?></td>
+                        <?php if ($team_user->getCurrent()){ ?>
+                            <td>Yes</td>
+                        <?php } else { ?>
+                            <td>No</td>
+                       <?php } ?>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
