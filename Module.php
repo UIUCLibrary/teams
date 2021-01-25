@@ -1085,7 +1085,7 @@ EOF;
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
-        if ($operation==='update'){
+        if ($operation==='update' && $request->getContent()['team']){
 
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
