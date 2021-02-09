@@ -787,21 +787,21 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                     //TODO:This needs to be moved to its own fuction and only fire when on the site index page, which
                     //is where it belongs
-                        if ($team_id !=[0]){
-                            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-                            $team_name = $entityManager->getRepository('Teams\Entity\Team')
-                                ->findOneBy(['id'=> $team_id])
-                                ->getName();
-                            echo
-                            <<<EOF
-<script>
-    window.addEventListener("load", function () {
-    $(".site-list-heading").text("Sites for Team: '$team_name'")
-        }
-    );
-</script>
-EOF;
-                        }
+//                        if ($team_id !=[0]){
+//                            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+//                            $team_name = $entityManager->getRepository('Teams\Entity\Team')
+//                                ->findOneBy(['id'=> $team_id])
+//                                ->getName();
+//                            echo
+//                            <<<EOF
+//<script>
+//    window.addEventListener("load", function () {
+//    $(".site-list-heading").text("Sites for Team: '$team_name'")
+//        }
+//    );
+//</script>
+//EOF;
+//                        }
                 }
             }
             elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class){
