@@ -20,10 +20,10 @@ use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Teams\Form\TeamUserForm;
-use Zend\Authentication\AuthenticationServiceInterface;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Laminas\Authentication\AuthenticationServiceInterface;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 
 
 Class AddController extends AbstractActionController

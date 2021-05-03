@@ -6,7 +6,7 @@ namespace Teams\Controller;
 
 
 use Doctrine\ORM\EntityManager;
-use Zend\Mvc\Controller\AbstractActionController;
+use Laminas\Mvc\Controller\AbstractActionController;
 
 class ChangeTeamController extends AbstractActionController
 {

@@ -3,10 +3,10 @@ namespace Teams\Form\Element;
 
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Manager as ApiManager;
-use Zend\Authentication\AuthenticationService;
-use Zend\Form\Element\Select;
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\View\Helper\Url;
+use Laminas\Authentication\AuthenticationService;
+use Laminas\Form\Element\Select;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\View\Helper\Url;
 
 class TeamSelect extends Select
 {

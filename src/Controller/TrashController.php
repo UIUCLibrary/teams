@@ -8,8 +8,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Form\ConfirmForm;
 use Teams\Form\TrashForms\DeleteAllForm;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class TrashController extends AbstractActionController
 {

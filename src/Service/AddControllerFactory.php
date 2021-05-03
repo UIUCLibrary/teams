@@ -3,7 +3,7 @@ namespace Teams\Service;
 
 use Teams\Controller\AddController;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 
 class AddControllerFactory implements FactoryInterface

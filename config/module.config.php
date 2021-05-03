@@ -1,8 +1,8 @@
 <?php
 namespace Teams;
 
-use Zend\Router\Http\Literal;
-use Zend\Router\Http\Segment;
+use Laminas\Router\Http\Literal;
+use Laminas\Router\Http\Segment;
 
 return [
 
@@ -309,7 +309,7 @@ return [
                     ],
                     //need to make a route for the resource page because there are no events inside the view
                     'site' => [
-                        'type' => \Zend\Router\Http\Literal::class,
+                        'type' => \Laminas\Router\Http\Literal::class,
                         'options' => [
                             'route' => '/site',
                             'defaults' => [
@@ -322,7 +322,7 @@ return [
                         'may_terminate' => true,
                         'child_routes' => [
                             'slug' => [
-                                'type' => \Zend\Router\Http\Segment::class,
+                                'type' => \Laminas\Router\Http\Segment::class,
                                 'options' => [
                                     'route' => '/s/:site-slug',
                                     'constraints' => [
@@ -337,7 +337,7 @@ return [
                                 //this is the child route for the new site resources page
                                 'child_routes' => [
                                     'resources' => [
-                                        'type' => \Zend\Router\Http\Literal::class,
+                                        'type' => \Laminas\Router\Http\Literal::class,
                                         'options' => [
                                             'route' => '/resources',
                                             'defaults' => [
@@ -350,7 +350,7 @@ return [
                                 ],
                             ],
                             'add' => [
-                                'type' => \Zend\Router\Http\Literal::class,
+                                'type' => \Laminas\Router\Http\Literal::class,
                                 'options' => [
                                     'route' => '/add',
                                     'defaults' => [

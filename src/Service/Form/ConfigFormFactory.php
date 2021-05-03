@@ -3,7 +3,7 @@ namespace Teams\Service\Form;
 
 use Interop\Container\ContainerInterface;
 use Teams\Form\ConfigForm;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 
 class ConfigFormFactory implements FactoryInterface

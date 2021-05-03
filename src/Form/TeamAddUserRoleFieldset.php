@@ -6,7 +6,7 @@ namespace Teams\Form;
 
 use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\UserSelect;
-use Zend\Form\Fieldset;
+use Laminas\Form\Fieldset;
 
 class TeamAddUserRoleFieldset extends Fieldset
 {

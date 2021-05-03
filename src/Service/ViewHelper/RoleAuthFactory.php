@@ -3,7 +3,7 @@ namespace Teams\Service\ViewHelper;
 
 
 use Teams\View\Helper\RoleAuth;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Interop\Container\ContainerInterface;
 
 class RoleAuthFactory implements FactoryInterface

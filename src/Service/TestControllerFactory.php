@@ -5,7 +5,7 @@ namespace Teams\Service;
 
 
 use Teams\Controller\TestController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Interop\Container\ContainerInterface;
 
 

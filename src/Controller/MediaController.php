@@ -9,8 +9,8 @@ use Omeka\Form\ConfirmForm;
 use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Form\ResourceForm;
 use Teams\Entity\TeamResource;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class MediaController extends AbstractActionController
 {

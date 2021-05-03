@@ -3,7 +3,7 @@ namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
 use Teams\Controller\SiteAdmin\IndexController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class SiteIndexControllerFactory implements FactoryInterface
 {

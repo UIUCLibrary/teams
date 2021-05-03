@@ -6,7 +6,7 @@ namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
 use Teams\Controller\MediaController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class MediaControllerFactory implements FactoryInterface
 {

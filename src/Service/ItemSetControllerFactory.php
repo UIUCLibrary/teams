@@ -3,7 +3,7 @@ namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
 use Teams\Controller\ItemSetController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ItemSetControllerFactory implements FactoryInterface
 {

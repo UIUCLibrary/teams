@@ -1,7 +1,7 @@
 <?php
 namespace Teams\Form\TrashForms;
 
-use Zend\Form\Form;
+use Laminas\Form\Form;
 
 /**
  * General form for confirming an irreversable action in a sidebar.

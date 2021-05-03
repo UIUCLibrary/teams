@@ -26,13 +26,13 @@ use Omeka\Api\Adapter\MediaAdapter;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
-use Zend\EventManager\Event;
-use Zend\EventManager\SharedEventManagerInterface;
-use Zend\Form\Element\Checkbox;
-use Zend\Mvc\Controller\AbstractController;
-use Zend\Mvc\MvcEvent;
-use Zend\ServiceManager\ServiceLocatorInterface;
-use Zend\View\Renderer\PhpRenderer;
+use Laminas\EventManager\Event;
+use Laminas\EventManager\SharedEventManagerInterface;
+use Laminas\Form\Element\Checkbox;
+use Laminas\Mvc\Controller\AbstractController;
+use Laminas\Mvc\MvcEvent;
+use Laminas\ServiceManager\ServiceLocatorInterface;
+use Laminas\View\Renderer\PhpRenderer;
 
 class Module extends AbstractModule
 {

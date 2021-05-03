@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\OneToMany;
 use Omeka\Entity\AbstractEntity;
 use phpDocumentor\Reflection\Types\Boolean;
-use Zend\Form\Annotation\Name;
+use Laminas\Form\Annotation\Name;
 
 /**
  *

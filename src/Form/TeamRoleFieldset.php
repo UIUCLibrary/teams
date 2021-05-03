@@ -3,8 +3,8 @@
 
 namespace Teams\Form;
 
-use Zend\Form\Fieldset;
-use Zend\Form\Element\Checkbox;
+use Laminas\Form\Fieldset;
+use Laminas\Form\Element\Checkbox;
 
 class TeamRoleFieldset extends Fieldset
 {

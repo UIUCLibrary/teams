@@ -6,7 +6,7 @@ namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
 use Teams\Controller\TrashController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class TrashControllerFactory implements FactoryInterface
 {

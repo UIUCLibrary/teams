@@ -13,10 +13,10 @@ use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamUpdateForm;
 use Teams\Form\TeamUserForm;
-use Zend\EventManager\Event;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\Stdlib\ArrayObject;
-use Zend\View\Model\ViewModel;
+use Laminas\EventManager\Event;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\Stdlib\ArrayObject;
+use Laminas\View\Model\ViewModel;
 
 
 Class UpdateController extends AbstractActionController

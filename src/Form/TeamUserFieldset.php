@@ -5,7 +5,7 @@ namespace Teams\Form;
 
 
 use Teams\Form\Element\UserSelect;
-use Zend\Form\Fieldset;
+use Laminas\Form\Fieldset;
 
 class TeamUserFieldset extends Fieldset
 {

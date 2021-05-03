@@ -5,7 +5,7 @@ namespace Teams\Service;
 
 
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 use Teams\Controller\ResourceTemplateController;
 
 class ResourceTemplateControllerFactory implements FactoryInterface

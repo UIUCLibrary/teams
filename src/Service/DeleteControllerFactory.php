@@ -3,7 +3,7 @@ namespace Teams\Service;
 
 use Teams\Controller\DeleteController;
 use Interop\Container\ContainerInterface;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class DeleteControllerFactory implements FactoryInterface
 {

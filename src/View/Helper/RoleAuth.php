@@ -6,7 +6,7 @@ namespace Teams\View\Helper;
 
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 class RoleAuth extends AbstractHelper
 {

@@ -5,9 +5,9 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
 use Omeka\Api\Request;
-use Zend\EventManager\Event;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\EventManager\Event;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class DeleteController extends AbstractActionController
 {

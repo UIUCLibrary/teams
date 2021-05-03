@@ -17,7 +17,7 @@ use Omeka\Entity\Resource;
 use Omeka\Entity\User;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use Zend\Validator\EmailAddress;
+use Laminas\Validator\EmailAddress;
 
 class TeamAdapter extends AbstractEntityAdapter
 {

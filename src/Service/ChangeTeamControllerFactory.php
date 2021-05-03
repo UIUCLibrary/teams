@@ -6,7 +6,7 @@ namespace Teams\Service;
 
 use Interop\Container\ContainerInterface;
 use Teams\Controller\ChangeTeamController;
-use Zend\ServiceManager\Factory\FactoryInterface;
+use Laminas\ServiceManager\Factory\FactoryInterface;
 
 class ChangeTeamControllerFactory implements FactoryInterface
 {

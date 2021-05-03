@@ -5,8 +5,8 @@ use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\TeamName;
 use Teams\Form\Element\TeamSelect;
 use Teams\Form\Element\UserSelect;
-use Zend\Form\Fieldset;
-use Zend\Form\Element;
+use Laminas\Form\Fieldset;
+use Laminas\Form\Element;
 
 
 class TeamFieldset extends Fieldset

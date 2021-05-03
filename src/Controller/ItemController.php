@@ -10,9 +10,9 @@ use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use Teams\Entity\TeamResource;
 use Teams\Module;
-use Zend\Filter\Boolean;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Filter\Boolean;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 use Teams\Service;
 
 class ItemController extends AbstractActionController

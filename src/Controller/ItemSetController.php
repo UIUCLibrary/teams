@@ -7,8 +7,8 @@ use Omeka\Form\ResourceForm;
 use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Stdlib\Message;
 use Teams\Entity\TeamResource;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class ItemSetController extends  \Omeka\Controller\Admin\ItemSetController
 {

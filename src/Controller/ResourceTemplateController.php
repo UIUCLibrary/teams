@@ -13,7 +13,7 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Form\TeamFieldset;
 use Teams\Form\TeamSelect;
 use Teams\Form\TeamUpdateForm;
-use Zend\View\Model\ViewModel;
+use Laminas\View\Model\ViewModel;
 
 class ResourceTemplateController extends \Omeka\Controller\Admin\ResourceTemplateController
 {

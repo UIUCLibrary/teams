@@ -7,9 +7,9 @@ use Omeka\Form\ResourceForm;
 use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
-use Zend\Filter\Boolean;
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
+use Laminas\Filter\Boolean;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
 
 class TeamResourceFilterController extends AbstractActionController
 {
