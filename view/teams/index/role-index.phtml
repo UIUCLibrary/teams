@@ -33,7 +33,6 @@ $response = $this->response;
             <th><?php echo $translate('Teams Where You Have This Role'); ?></th>
             <th><?php echo $translate('Add Team Members?'); ?></th>
             <th><?php echo $translate('Add Resources?'); ?></th>
-            <th><strike><?php echo $translate('Add Item Sets?'); ?></strike> Disabled</th>
             <th><?php echo $translate('Modify Site?'); ?></th>
             <th><?php echo $translate('Modify Team Resources?'); ?></th>
             <th><?php echo $translate('Delete Team Resources?'); ?></th>
@@ -67,7 +66,6 @@ $response = $this->response;
 
                 <td><input type="checkbox" disabled <?php if($role->getCanAddUsers()){?> checked <?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->getCanAddItems()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddItemsets()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->getCanAddSitePages()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->getCanModifyResources()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->getCanDeleteResources()){?> checked<?php }; ?>></td>
