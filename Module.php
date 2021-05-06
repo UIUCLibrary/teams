@@ -951,6 +951,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
     }
 
+    /**
+     * Sets the default value for AutoAssignNewItems to false
+     * @param Event $event
+     */
+    public function siteCreateAutoAssignValue(Event $event)
+    {
+        $entity = $event->getParam('entity');
+        $entity->setAssignNewItems(false);
+        $event->setParam('entity', $entity);
+
+    }
     public function siteCreate(Event $event)
     {
         $request = $event->getParam('request');
@@ -1986,6 +1997,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             SiteAdapter::class,
             'api.execute.post',
             [$this, 'siteCreate']
+        );
+
+        $sharedEventManager->attach(
+            SiteAdapter::class,
+            'api.hydrate.post',
+            [$this, 'siteCreateAutoAssignValue']
         );
 
         //only make changes after checking team authority . . . should these two be combined?
