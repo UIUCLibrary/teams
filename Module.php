@@ -1903,6 +1903,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    /**
+     * Disable the auto-add field on the site edit form. Teams manages this by automatically adding items to the
+     * appropriate team.
+     * @param Event $event
+     */
+    public function siteSettingsRemoveAutoAssign(Event $event)
+    {
+        $event->getTarget()->get('general')->get('o:assign_new_items')->setAttribute('disabled', 'disabled');
+        $event->getTarget()->get('general')
+            ->get('o:assign_new_items')
+            ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
+
+    }
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -2238,6 +2251,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
             [$this, 'advancedSearch']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Form\SiteSettingsForm',
+            'form.add_elements',
+            [$this, 'siteSettingsRemoveAutoAssign']
         );
 
         $sharedEventManager->attach(
