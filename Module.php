@@ -141,7 +141,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $roles = $acl->getRoles();
         //entity rights are the actions of controllers
         $entityRights = ['read', 'create', 'update', 'delete'];
-        $adapterRights = ['read', 'create', 'update', 'delete'];
 
         //allow everyone to see their teams
         $acl->allow(
@@ -194,7 +193,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         // Only admin can manage groups.
         $adminRoles = [
-            Acl::ROLE_RESEARCHER,
+            Acl::ROLE_GLOBAL_ADMIN,
             Acl::ROLE_SITE_ADMIN,
 
         ];
@@ -523,6 +522,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
+//    public function addItemSite(Event $event)
+//    {
+//        echo $event->getTarget()->partial(
+//            'teams/partial/item/add/add-item-site',
+//            ['team' => $this->currentTeam()]
+//        );
+//
+//    }
+
     /**
      * Displays a message where the site pool. Not currently used.
      *
@@ -672,7 +680,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         return $team_id;
     }
-
     /**
      *
      * Adds a join to API calls for resources and sites to filter results by teams
@@ -1004,83 +1011,91 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         if ($operation == 'update' ){
             $user_id = $request->getId();
 
-            //array of team ids
-            if ($user_role = $this->getUser()->getRole() == 'global_admin') {//remove the user's teams
-                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
+            //stop if teams aren't part of the update
+            if (array_key_exists('o-module-teams:Team', $request->getContent())){
+                //array of team ids
 
-                $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+                if ($user_role = $this->getUser()->getRole() == 'global_admin') {//remove the user's teams
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
 
-                foreach ($pre_teams as $pre_team):
-                    if ($pre_team->getCurrent()){
-                        $current_team_id = $pre_team->getTeam()->getId();
-                    }
-                    $em->remove($pre_team);
-                endforeach;
-                $em->flush();
-                $current_team_id = isset($current_team_id )? $current_team_id : 0;
+                    $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
 
-                //add the teams from the form
-                $teams =  $em->getRepository('Teams\Entity\Team');
-                foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
-                    $team_id = (int) $team_id;
+                    foreach ($pre_teams as $pre_team):
+                        if ($pre_team->getCurrent()){
+                            $current_team_id = $pre_team->getTeam()->getId();
+                        }
+                        $em->remove($pre_team);
+                    endforeach;
+                    $em->flush();
+                    $current_team_id = isset($current_team_id )? $current_team_id : 0;
 
-                    //adding new team from the user form, indicated by an id of 0
-                    if ($team_id === 0){
-                        $u_name = $request->getContent()['o:name'];
-                        $team_name = sprintf("%s's team", $u_name);
-                        $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
-                        if ($team_exists){
-                            $messanger = new Messenger();
-                            $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
-                            $team = $team_exists;
+                    //add the teams from the form
+                    $teams =  $em->getRepository('Teams\Entity\Team');
+                    foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                        $team_id = (int) $team_id;
+
+                        //adding new team from the user form, indicated by an id of 0
+                        if ($team_id === 0){
+                            $u_name = $request->getContent()['o:name'];
+                            $team_name = sprintf("%s's team", $u_name);
+                            $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
+                            if ($team_exists){
+                                $messanger = new Messenger();
+                                $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
+                                $team = $team_exists;
 
 
-                        } else{
-                            $team = new Team();
-                            $team->setName($team_name);
-                            $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
-                            $em->persist($team);
+                            } else{
+                                $team = new Team();
+                                $team->setName($team_name);
+                                $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                                $em->persist($team);
+                                $em->flush();
+                            }
+
+                        } else {
+                            $team = $teams->findOneBy(['id'=> $team_id]);
+                        }
+
+                        //get it this way because the roles are added dynamically as js and not part of pre-baked form
+                        $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
+                        $role = $em->getRepository('Teams\Entity\TeamRole')
+                            ->findOneBy(['id'=>$role_id]);
+
+                        $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                            ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
+
+                        if ($team_user_exists){
+                            echo $team_user_exists->getId();
+                        } else {
+                            $team_user = new TeamUser($team,$user,$role);
+                            $em->persist($team_user);
+                            if ($team_id == $current_team_id){
+                                $team_user->setCurrent(true);
+                            }
+                            $em->persist($team_user);
+
+                            //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
+                            //TODO: catch this in chosen-trigger.js instead
                             $em->flush();
                         }
 
-                    } else {
-                        $team = $teams->findOneBy(['id'=> $team_id]);
-                    }
+                    endforeach;
 
-                    //get it this way because the roles are added dynamically as js and not part of pre-baked form
-                    $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
-                    $role = $em->getRepository('Teams\Entity\TeamRole')
-                        ->findOneBy(['id'=>$role_id]);
-
-                    $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
-                        ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
-
-                    if ($team_user_exists){
-                        echo $team_user_exists->getId();
-                    } else {
-                        $team_user = new TeamUser($team,$user,$role);
-                        $em->persist($team_user);
-                        if ($team_id == $current_team_id){
-                            $team_user->setCurrent(true);
-                        }
-                        $em->persist($team_user);
-
-                        //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
-                        //TODO: catch this in chosen-trigger.js instead
-                        $em->flush();
-                    }
-
-                endforeach;
-
-                $em->flush();
-
-                //if their current team was removed, just give them a current team from the top of the list
-                if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
-                    $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
-                        ->setCurrent(true);
                     $em->flush();
 
+                    //if their current team was removed, just give them a current team from the top of the list
+                    if (array_key_exists('o-module-teams:Team', $request->getContent())){
+                        if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
+                            $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
+                                ->setCurrent(true);
+                            $em->flush();
+
+                        }
+                    }
+
                 }
+
             }
 
         }
@@ -1910,7 +1925,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
      */
     public function siteSettingsRemoveAutoAssign(Event $event)
     {
-        $event->getTarget()->get('general')->get('o:assign_new_items')->setAttribute('disabled', 'disabled');
+//        $event->getTarget()->get('general')->get('o:assign_new_items')->setAttribute('disabled', 'disabled');
         $event->getTarget()->get('general')
             ->get('o:assign_new_items')
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
@@ -2245,6 +2260,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'view.add.form.after',
             [$this, 'displayTeamFormNoId']
         );
+
+//        $sharedEventManager->attach(
+//            'Omeka\Controller\Admin\Item',
+//            'view.add.form.after',
+//            [$this, 'addItemSite']
+//        );
+
 
         //Advanced Search//
         $sharedEventManager->attach(
