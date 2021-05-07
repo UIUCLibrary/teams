@@ -470,8 +470,6 @@ Class UpdateController extends AbstractActionController
     public function currentTeamAction()
     {
         $user_id = $this->identity()->getId();
-        $team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
-
         $request = $this->getRequest();
 
         if ($request->isPost()){
@@ -491,12 +489,19 @@ Class UpdateController extends AbstractActionController
             $team = $new_current->getTeam();
 
             //the sites for the team the user just switched to
-            $sites = $team->getTeamSites();
+
+            $team_sites = $team->getTeamSites();
+            $site_ids = [];
+            foreach ($team_sites as $team_site):
+                $site_ids[] = strval($team_site->getSite()->getId());
+            endforeach;
 
             //update so those are the user's default sites for items
             $settingId = 'default_item_sites';
-            $settingValue = $sites;
+            $settingValue = $site_ids;
             $this->userSettings()->set($settingId, $settingValue, $user_id);
+
+//            $em->flush();
 
 
             return $this->redirect()->toUrl($data['return_url']);
