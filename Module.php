@@ -384,7 +384,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }elseif (is_array($vars->sites) && count($vars->sites)){
             $resource_type ='sites';
         }else{
-            $resource_type='nothing';
+            $resource_type= null;
         }
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -1934,6 +1934,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     public function removeDefaultSite(Event $event)
     {
+
         //pre-fill with the sites that should be default based on that user's team.
 //        $team_sites = $this->currentTeam()->getTeamSites();
 //        $site_ids = [];
@@ -2008,6 +2009,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             '*',
             'api.find.post',
             [$this, 'teamAuthorizeOnRead']
+        );
+
+        $sharedEventManager->attach(
+            'Teams\Controller\Index',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
         );
 
         //on api calls, make sure the users has the team authority to do action as well.
