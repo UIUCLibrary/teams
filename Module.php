@@ -1931,6 +1931,20 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
 
     }
+
+    public function removeDefaultSite(Event $event)
+    {
+        //pre-fill with the sites that should be default based on that user's team.
+//        $team_sites = $this->currentTeam()->getTeamSites();
+//        $site_ids = [];
+//        foreach ($team_sites as $team_site):
+//            $site_ids[] = $team_site->getSite()->getId();
+//        endforeach;
+//        $event->getTarget()->get('user-settings')
+//            ->get('default_item_sites')
+//            ->setAttribute('value', $site_ids);
+    }
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -2104,6 +2118,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'view.edit.form.after',
             [$this, 'displayTeamForm']
         );
+
 
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
@@ -2325,11 +2340,18 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         );
 
-        // Add the team element form to the user form.
+//         Add the team element form to the user form.
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
             'form.add_elements',
             [$this, 'addUserFormElement']
+        );
+
+
+        $sharedEventManager->attach(
+            \Omeka\Form\UserForm::class,
+            'form.add_elements',
+            [$this, 'removeDefaultSite']
         );
 
         $sharedEventManager->attach(
