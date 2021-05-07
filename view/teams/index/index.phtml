@@ -31,6 +31,7 @@ $escape = $this->plugin('escapeHtml');
 
 
 
+<?php $this->trigger('view.browse.before'); ?>
 
 <?php
 if ($this->user_teams): ?>
@@ -39,22 +40,6 @@ if ($this->user_teams): ?>
     ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
-            <tr>
-                <td colspan="6">
-                <form id="change_team">
-
-                    <label for="team_options"></label>
-                    <select id="team_options" name="team_id" form="change_team">
-                        <?php foreach ($this->user_teams as $team):
-                            ?><option <?php if ($team->getTeam()->getName() == $this->current_team->getName()){?>selected <?php }?> value="<?php  echo $team->getTeam()->getId();?>"><?php echo $team->getTeam()->getName();?></option><?php                         endforeach;
-
-                        ?>
-
-                    </select>
-                    <button form="change_team" formaction="<?php $this->url('admin/teams')?>" formmethod="post">Change Team</button>
-                </form>
-                </td>
-            </tr>
             <tr>
 <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
 <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
