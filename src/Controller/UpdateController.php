@@ -488,6 +488,17 @@ Class UpdateController extends AbstractActionController
             }
             $new_current->setCurrent(true);
             $em->flush();
+            $team = $new_current->getTeam();
+
+            //the sites for the team the user just switched to
+            $sites = $team->getTeamSites();
+
+            //update so those are the user's default sites for items
+            $settingId = 'default_item_sites';
+            $settingValue = $sites;
+            $this->userSettings()->set($settingId, $settingValue, $user_id);
+
+
             return $this->redirect()->toUrl($data['return_url']);
 
 
