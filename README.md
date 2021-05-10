@@ -34,3 +34,7 @@ While Teams will not grant extra privileges, it does help you provide finer-grai
 
 When users delete resources, they are not permanently deleted to prevent. Instead, that resource is removed from the user’s current team. This is primarily for situations where multiple teams share certain resources.  Global Admins can see resources that no longer belong to any teams in the Trash section of the Admin menu.
 
+
+### Global Toggles
+
+We have found that global admins may want to change some permissions globally or often. It would be cumbersome to make these changes through Team Roles, so they are instead part of a global toggle in the Teams configuration page. Currently, the only global toggle changes who can make new sites. Admins can turn on or off the ability to make new sites for Site Admins and Editors.
