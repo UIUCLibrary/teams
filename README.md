@@ -12,7 +12,7 @@ Teams helps global admins organize work by controlling what resources users see 
 ### Methods
 
 #### Teams
-Users, sites and resources (items, media, item sets and resource templates) are attached to teams. When logged in, users only see the sites and resources that are part of their current team. 
+Users, sites and resources (items, media, item sets and resource templates) are attached to teams. When logged in, users only see the sites and resources that are part of their current team. Visitors to sites can only browse or search resources that belong to the site's team(s). 
 
 #### Team Roles
 Within a team, a user is given a team role. These establish additional restrictions on user permissions on top of the permissions granted by the core Omeka-s user profile. It also allows a single user to have different roles and permissions in different teams to which they belong.
