@@ -678,7 +678,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $team_id[] = $this->currentTeam()->getId();
             }
 
-        return $team_id;
+        if (isset($team_id)) {
+            return $team_id;
+        } else {
+            return array(0);
+        }
     }
     /**
      *
