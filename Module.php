@@ -1115,7 +1115,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
-        if ($operation==='update' && $request->getContent()['team']){
+        if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
