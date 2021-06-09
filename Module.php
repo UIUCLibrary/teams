@@ -1026,20 +1026,26 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $em->flush();
 
             //handle user sites
-            if ($request->getContent()['user-settings:update_default_sites']){
+            $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
+
+            //handle user sites
+            if ($request->getContent()['update_default_sites']){
 
                 $site_ids = [];
-                foreach ($teams as $team):
+                foreach ($team_ids as $team_id):
+                    $team = $em->getRepository('Teams\Entity\Team')
+                        ->findOneBy(['id'=>$team_id]);
                     $team_sites = $team->getTeamSites();
                     foreach ($team_sites as $team_site):
                         $site_ids[] = strval($team_site->getSite()->getId());
                     endforeach;
                 endforeach;
 
+
                 //update so those are the user's default sites for items
                 $settingId = 'default_item_sites';
                 $settingValue = $site_ids;
-                $this->userSettings()->set($settingId, $settingValue, $user_id);
+                $userSettings->set($settingId, $settingValue, $user_id);
             }
         }
 
