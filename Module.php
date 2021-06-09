@@ -330,6 +330,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $settingsFieldset = $form->get('user-settings');
         $userId = $form->getOption('user_id');
         $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
+        $informationFieldset = $form->get('user-information');
 
 
         $settingsFieldset->remove('default_item_sites');
@@ -350,7 +351,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'empty_option' => '',
             ],
         ]);
-        $settingsFieldset->add([
+        $informationFieldset->add([
             'name' => 'update_default_sites',
             'type' => 'checkbox',
             'options' => [
@@ -961,6 +962,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //    }
 
 
+
     //TODO: make at least one team the user's 'active' team.
     /**
      *
@@ -1025,31 +1027,40 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
             $em->flush();
 
-            //handle user sites
-            $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
 
             //handle user sites
             if ($request->getContent()['update_default_sites']){
 
-                $site_ids = [];
-                foreach ($team_ids as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')
-                        ->findOneBy(['id'=>$team_id]);
-                    $team_sites = $team->getTeamSites();
-                    foreach ($team_sites as $team_site):
-                        $site_ids[] = strval($team_site->getSite()->getId());
-                    endforeach;
-                endforeach;
-
-
-                //update so those are the user's default sites for items
-                $settingId = 'default_item_sites';
-                $settingValue = $site_ids;
-                $userSettings->set($settingId, $settingValue, $user_id);
+                //handle user sites
+                $this->updateUserSites($team_ids, $user_id);
             }
         }
 
 
+
+    }
+
+    public function updateUserSites($team_ids, $user_id)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        //handle user sites
+        $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
+        $site_ids = [];
+        foreach ($team_ids as $team_id):
+            $team = $em->getRepository('Teams\Entity\Team')
+                ->findOneBy(['id'=>$team_id]);
+            $team_sites = $team->getTeamSites();
+            foreach ($team_sites as $team_site):
+                $site_ids[] = strval($team_site->getSite()->getId());
+            endforeach;
+        endforeach;
+
+
+        //update so those are the user's default sites for items
+        $settingId = 'default_item_sites';
+        $settingValue = $site_ids;
+        $userSettings->set($settingId, $settingValue, $user_id);
 
     }
 
@@ -1126,8 +1137,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                     //add the teams from the form
                     $teams =  $em->getRepository('Teams\Entity\Team');
+                    $team_ids = [];
                     foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
                         $team_id = (int) $team_id;
+                        $team_ids[] = (int) $team_id;
 
                         //adding new team from the user form, indicated by an id of 0
                         if ($team_id === 0){
@@ -1178,6 +1191,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     endforeach;
 
                     $em->flush();
+                    //handle user sites
+                    if ($request->getContent()['update_default_sites']){
+
+                        //handle user sites
+                        $this->updateUserSites($team_ids, $user_id);
 
                     //if their current team was removed, just give them a current team from the top of the list
                     if (array_key_exists('o-module-teams:Team', $request->getContent())){
@@ -1193,7 +1211,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             }
 
+            }
         }
+
         return;
 
     }
@@ -2079,6 +2099,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\User',
             'view.add.before',
+            [$this, 'defaultSitesOverride']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.edit.before',
             [$this, 'defaultSitesOverride']
         );
 
