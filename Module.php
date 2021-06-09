@@ -17,6 +17,8 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
+use Teams\Form\Element\AllSiteSelect;
+use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\TeamSelect;
@@ -149,6 +151,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['index', 'teamDetail']
 
         );
+
 
 
         //allow everyone to change their current team
@@ -309,6 +312,59 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Teams\Controller\Trash',
             'update'
         );
+
+
+    }
+
+
+    /**
+     * @param Event $event
+     * The default teams behavior is to filter API class, including the ones that populate the available sites in forms.
+     * This replaces the default site selector with one that is fully populated with all sites on the user form and adds
+     * an option to use teams for default sites instead of manually selecting them.
+     */
+    public function addDefaultSitesUserForm(Event $event)
+    {
+
+        $form = $event->getTarget();
+        $settingsFieldset = $form->get('user-settings');
+        $userId = $form->getOption('user_id');
+        $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
+
+
+        $settingsFieldset->remove('default_item_sites');
+
+        //ideally we would just swap out the 'type' from the original element, if possible.
+        $settingsFieldset->add([
+            'name' => 'default_item_sites',
+            'type' => AllSiteSelectOrdered::class,
+            'attributes' => [
+                'value' => $userId ? $userSettings->get('default_item_sites', null, $userId) : [],
+                'class' => 'chosen-select',
+                'data-placeholder' => 'Select sites', // @translate
+                'multiple' => true,
+                'id' => 'default_sites',
+            ],
+            'options' => [
+                'label' => 'Default sites for items', // @translate
+                'empty_option' => '',
+            ],
+        ]);
+        $settingsFieldset->add([
+            'name' => 'update_default_sites',
+            'type' => 'checkbox',
+            'options' => [
+                'label' => 'Use Teams for default sites?', // @translate
+                'info' => 'Default sites for this user will be those in the selected teams(s) above.', // @translate
+
+            ],
+            'attributes' => [
+                'id' => 'update_default_sites',
+                'value' => true,
+
+            ],
+        ]);
+
 
 
     }
@@ -480,6 +536,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         echo $event->getTarget()->partial(
             'teams/partial/team-form'
         );
+    }
+
+    public function defaultSitesOverride(Event $event)
+    {
+        $view = $event->getTarget();
+        $view->headScript()->appendFile($view->assetUrl('js/user-default-sites.js', 'Teams'));
+        $view->headScript()->prependFile($view->assetUrl('js/user-default-sites.js', 'Teams'));
     }
 
     /**
@@ -694,6 +757,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
+
+
         $entityClass = $event->getTarget()->getEntityClass();
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -959,7 +1024,27 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             endforeach;
             $em->flush();
+
+            //handle user sites
+            if ($request->getContent()['user-settings:update_default_sites']){
+
+                $site_ids = [];
+                foreach ($teams as $team):
+                    $team_sites = $team->getTeamSites();
+                    foreach ($team_sites as $team_site):
+                        $site_ids[] = strval($team_site->getSite()->getId());
+                    endforeach;
+                endforeach;
+
+                //update so those are the user's default sites for items
+                $settingId = 'default_item_sites';
+                $settingValue = $site_ids;
+                $this->userSettings()->set($settingId, $settingValue, $user_id);
+            }
         }
+
+
+
     }
 
     /**
@@ -1955,6 +2040,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $services = $this->getServiceLocator();
 
         $sharedEventManager->attach(
+            \Omeka\Form\UserForm::class,
+            'form.add_elements',
+            [$this, 'addDefaultSitesUserForm']
+
+        );
+        $sharedEventManager->attach(
             '*',
             'view.layout',
             [$this, 'teamSelectorNav']
@@ -1977,6 +2068,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Omeka\Controller\Admin\User',
             'view.show.after',
             [$this, 'userTeamsView']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.add.before',
+            [$this, 'defaultSitesOverride']
         );
 
         $sharedEventManager->attach(
