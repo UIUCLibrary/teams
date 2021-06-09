@@ -91,6 +91,7 @@ return [
             Form\Element\AllItemSetSelect::class => Service\Form\Element\AllItemSetSelectFactory::class,
             Form\Element\RoleSelect::class => Service\Form\Element\RoleSelectFactor::class,
             Form\Element\AllSiteSelect::class => Service\Form\Element\AllSiteSelectFactory::class,
+            Form\Element\AllSiteSelectOrdered::class => Service\Form\Element\AllSiteSelectOrderedFactory::class,
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
             Form\Element\TeamName::class => Service\Form\Element\TeamNameFactory::class,
         ],
