@@ -1092,9 +1092,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
             foreach ($team_ids as $team_id):
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                $trt = new TeamSite($team, $site);
-                $em->persist($trt);
+                $team = $teams->findOneBy(['id' => $team_id]);
+                $team_site = new TeamSite($team, $site);
+                $em->persist($team_site);
             endforeach;
             $em->flush();
         }
