@@ -1090,13 +1090,30 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             $team_ids = $request->getContent()['team'];
 
+            $teams_users = [];
 
+            //add team sites
             foreach ($team_ids as $team_id):
                 $team = $teams->findOneBy(['id' => $team_id]);
                 $team_site = new TeamSite($team, $site);
                 $em->persist($team_site);
+
+                //get team users
+                $teams_users[] = $team->getTeamUsers();
+
             endforeach;
             $em->flush();
+
+            //update team users to include new site in their default sites
+            foreach ($teams_users as $team_users):
+                foreach ($team_users as $team_user):
+                    $user_id = $team_user->getUser()->getId();
+                    $this->updateUserSites($team_ids, $user_id);
+                endforeach;
+            endforeach;
+
+
+
         }
     }
 
