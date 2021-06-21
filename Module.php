@@ -1104,11 +1104,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
             $em->flush();
 
-            //update team users to include new site in their default sites
+            //update current team users to include new site in their default sites
             foreach ($teams_users as $team_users):
                 foreach ($team_users as $team_user):
-                    $user_id = $team_user->getUser()->getId();
-                    $this->updateUserSites($team_ids, $user_id);
+                    if ($team_user->getCurrent()){
+                        $user_id = $team_user->getUser()->getId();
+                        $this->updateUserSites($team_ids, $user_id);
+                    }
+
                 endforeach;
             endforeach;
 
