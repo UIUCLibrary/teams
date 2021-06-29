@@ -1090,7 +1090,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             $team_ids = $request->getContent()['team'];
 
-            $teams_users = [];
+            $all_teams_users = [];
 
             //add team sites
             foreach ($team_ids as $team_id):
@@ -1099,16 +1099,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $em->persist($team_site);
 
                 //get team users
-                $teams_users[] = $team->getTeamUsers();
+                $all_teams_users[] = $team->getTeamUsers();
 
             endforeach;
             $em->flush();
 
-            //update team users to include new site in their default sites
-            foreach ($teams_users as $team_users):
+            //update current team users to include new site in their default sites
+            foreach ($all_teams_users as $team_users):
                 foreach ($team_users as $team_user):
-                    $user_id = $team_user->getUser()->getId();
-                    $this->updateUserSites($team_ids, $user_id);
+                    if ($team_user->getCurrent()){
+                        $user_id = $team_user->getUser()->getId();
+                        $this->updateUserSites($team_ids, $user_id);
+                    }
+
                 endforeach;
             endforeach;
 
@@ -1133,6 +1136,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ($operation == 'update' ){
             $user_id = $request->getId();
+            $response = $event->getParam('response');
+
 
             //stop if teams aren't part of the update
             if (array_key_exists('o-module-teams:Team', $request->getContent())){
@@ -1156,7 +1161,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     $teams =  $em->getRepository('Teams\Entity\Team');
                     $team_ids = [];
                     foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
-                        $team_id = (int) $team_id;
                         $team_ids[] = (int) $team_id;
 
                         //adding new team from the user form, indicated by an id of 0
@@ -1208,11 +1212,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     endforeach;
 
                     $em->flush();
-                    //handle user sites
-                    if ($request->getContent()['update_default_sites']){
-
-                        //handle user sites
-                        $this->updateUserSites($team_ids, $user_id);
 
                     //if their current team was removed, just give them a current team from the top of the list
                     if (array_key_exists('o-module-teams:Team', $request->getContent())){
@@ -1227,9 +1226,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 }
 
             }
-
-            }
         }
+
 
         return;
 
@@ -2221,7 +2219,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $sharedEventManager->attach(
             UserAdapter::class,
-            'api.hydrate.post',
+            'api.execute.post',
             [$this, 'userUpdate']
         );
 
