@@ -4,17 +4,44 @@ window.addEventListener("load", function () {
         if (params.selected){
             let id = params.selected;
             makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
-
-
+            updateDefaultSites();
         }else{
             $(`#role_el_for_${params.deselected}`).remove();
-
+            updateDefaultSites();
         }
 
-        // can now use params.selected and params.deselected
     });
 });
 
+function updateDefaultSites() {
+    //get all of the currently selected team ids
+    let $all_selected_ids = $('#team').chosen().val();
+
+    //get all of the currently selected team names
+    let $all_selected_labels = $.map($all_selected_ids, function ( id ) {
+        return $('#team').find('option[value="'+id+'"]').text()
+    });
+
+    //clear all of the sites
+    $('#default_sites').chosen().val([]).trigger('chosen:updated');
+
+    //update sites based on team selection
+    $all_selected_labels.forEach(selectSites)
+}
+
+function selectSites($label) {
+
+    $current_sites = $('#default_sites').val();
+
+    //get all of the sites for the label
+    let $group = $.map( $('#default_sites optgroup[label="'+$label+'"] option'), function( n ) { return n.value; });
+    // alert($group);
+
+    $group = $group.concat($current_sites);
+
+    $('#default_sites').val($group).trigger('chosen:updated');
+
+}
 
 //generate role field
 function makeRoleElement(team_name, team_id, role = 1){
