@@ -4,12 +4,34 @@
 namespace Teams\Form\Element;
 
 
+use Doctrine\ORM\EntityManager;
 use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Form\Element\SiteSelect;
+use Teams\Entity\Team;
+use Teams\Entity\TeamSite;
 
 class AllSiteSelectOrdered extends SiteSelect
-
 {
+    /**
+     * @var EntityManager
+     */
+    protected $entityManager;
+
+    /**
+     * @return EntityManager
+     */
+    public function getEntityManager()
+    {
+        return $this->entityManager;
+    }
+
+    /**
+     * @param EntityManager $entityManager
+     */
+    public function setEntityManager(EntityManager $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
 
     public function getValueOptions()
     {
@@ -23,6 +45,9 @@ class AllSiteSelectOrdered extends SiteSelect
         }
 
         $response = $this->getApiManager()->search($this->getResourceName(), $query);
+
+        $em = $this->getEntityManager();
+        $all_teams_sites = $em->getRepository('Teams\Entity\TeamSite')->findAll();
 
         if ($this->getOption('disable_group_by_owner')) {
             // Group alphabetically by resource label without grouping by owner.
@@ -40,9 +65,9 @@ class AllSiteSelectOrdered extends SiteSelect
         } else {
             // Group alphabetically by owner email.
             $resourceOwners = [];
-            foreach ($response->getContent() as $resource) {
-                $owner = $resource->owner();
-                $index = $owner ? $owner->email() : null;
+            foreach ($all_teams_sites as $resource) {
+                $owner = $resource->getTeam();
+                $index = $owner ? $owner->getName() : null;
                 $resourceOwners[$index]['owner'] = $owner;
                 $resourceOwners[$index]['resources'][] = $resource;
             }
@@ -52,16 +77,16 @@ class AllSiteSelectOrdered extends SiteSelect
             foreach ($resourceOwners as $resourceOwner) {
                 $options = [];
                 foreach ($resourceOwner['resources'] as $resource) {
-                    $options[$resource->id()] = $this->getValueLabel($resource);
+                    $options[$resource->getSite()->getId()] = $resource->getSite()->getTitle();
                     if (!$options) {
                         continue;
                     }
                 }
                 $owner = $resourceOwner['owner'];
-                if ($owner instanceof UserRepresentation) {
-                    $label = sprintf('%s (%s)', $owner->name(), $owner->email());
+                if ($owner instanceof Team) {
+                    $label = $owner->getName();
                 } else {
-                    $label = '[No owner]';
+                    $label = '[No Team]';
                 }
                 $valueOptions[] = ['label' => $label, 'options' => $options];
             }
