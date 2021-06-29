@@ -29,15 +29,12 @@ class TeamSelect extends Select
 
     protected $data_base_url = ['resource' => 'team'];
 
-//TODO remove any value as name options
     public function getValueOptions()
     {
 
 
         $valueOptions = [];
 
-        //TODO get user id         $identity = $this->getServiceLocator()
-        //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
         $user_id = $this->authenticationService->getIdentity();
         $em = $this->getEntityManager();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
