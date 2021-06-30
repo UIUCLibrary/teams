@@ -1028,36 +1028,32 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             if ($request->getContent()['update_default_sites']){
 
                 //handle user sites
-                $this->updateUserSites($team_ids, $user_id);
+                $this->updateUserSites($user_id);
             }
         }
-
-
-
     }
 
-    public function updateUserSites($team_ids, $user_id)
+    public function updateUserSites($user_id)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-        //handle user sites
         $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
+
         $site_ids = [];
-        foreach ($team_ids as $team_id):
-            $team = $em->getRepository('Teams\Entity\Team')
-                ->findOneBy(['id'=>$team_id]);
-            $team_sites = $team->getTeamSites();
-            foreach ($team_sites as $team_site):
-                $site_ids[] = strval($team_site->getSite()->getId());
-            endforeach;
+        $settingId = 'default_item_sites';
+
+        $active_team = $em->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user'=>$user_id, 'is_current'=>true])
+            ->getTeam();
+
+        $team_sites = $active_team->getTeamSites();
+
+        foreach ($team_sites as $team_site):
+            $site_ids[] = $team_site->getSite()->getId();
         endforeach;
 
-
-        //update so those are the user's default sites for items
-        $settingId = 'default_item_sites';
-        $settingValue = $site_ids;
-        $userSettings->set($settingId, $settingValue, $user_id);
-
+        //update default sites
+        $userSettings->set($settingId, $site_ids, $user_id);
     }
 
     /**
@@ -1105,7 +1101,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 foreach ($team_users as $team_user):
                     if ($team_user->getCurrent()){
                         $user_id = $team_user->getUser()->getId();
-                        $this->updateUserSites($team_ids, $user_id);
+                        $this->updateUserSites($user_id);
                     }
 
                 endforeach;
@@ -1247,13 +1243,30 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $em->flush();
 
             $team_ids = $request->getContent()['team'];
+
+            $all_teams_users = [];
+
             //add teams to the site for each team listed in the form
             foreach ($team_ids as $team):
                 $team_site = new TeamSite($em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                     $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
                 $em->persist($team_site);
+                $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
+
             endforeach;
             $em->flush();
+
+            //update current team users to include new site in their default sites
+            foreach ($all_teams_users as $team_users):
+                foreach ($team_users as $team_user):
+                    if ($team_user->getCurrent()){
+                        $user_id = $team_user->getUser()->getId();
+                        $this->updateUserSites($user_id);
+                    }
+
+                endforeach;
+            endforeach;
+
 
         }
     }
