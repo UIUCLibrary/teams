@@ -540,12 +540,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
-    public function defaultSitesOverride(Event $event)
-    {
-        $view = $event->getTarget();
-        $view->headScript()->appendFile($view->assetUrl('js/user-default-sites.js', 'Teams'));
-        $view->headScript()->prependFile($view->assetUrl('js/user-default-sites.js', 'Teams'));
-    }
+
 
     /**
      * Allows users to add teams to resources on edit or create.
@@ -2110,18 +2105,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'Omeka\Controller\Admin\User',
             'view.show.after',
             [$this, 'userTeamsView']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\User',
-            'view.add.before',
-            [$this, 'defaultSitesOverride']
-        );
-
-        $sharedEventManager->attach(
-            'Omeka\Controller\Admin\User',
-            'view.edit.before',
-            [$this, 'defaultSitesOverride']
         );
 
         $sharedEventManager->attach(
