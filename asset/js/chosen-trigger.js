@@ -5,10 +5,6 @@ window.addEventListener("load", function () {
     $("#update_default_sites").click(function() {
         if($(this).is(":checked")) {
             updateDefaultSites();
-            $("#default_sites").prop('disabled', true).trigger("chosen:updated");
-        }
-        else {
-            $("#default_sites").prop('disabled', false).trigger("chosen:updated");
         }
     });
 
