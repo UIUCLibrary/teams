@@ -349,6 +349,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'options' => [
                 'label' => 'Default sites for items', // @translate
                 'empty_option' => '',
+
             ],
         ]);
         $informationFieldset->add([
@@ -361,7 +362,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ],
             'attributes' => [
                 'id' => 'update_default_sites',
-                'value' => true,
+                'value' => false,
 
             ],
         ]);
