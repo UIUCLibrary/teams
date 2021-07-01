@@ -1,33 +1,44 @@
 //create or destroy role element after a selector event
 window.addEventListener("load", function () {
 
-    //add selected team to the default team options
+    //disable the options for default
+    $("#default_team option").attr('disabled','disabled');
+
 
 
     //if user checks the box, update default sites based on currently selected teams
-    $("#update_default_sites").click(function() {
-        if($(this).is(":checked")) {
-            updateDefaultSites();
-        }
-    });
+    // $("#update_default_sites").click(function() {
+    //     if($(this).is(":checked")) {
+    //         updateDefaultSites();
+    //     }
+    // });
 
     //update default sites upon adding/removing teams if #update_default_sites box is checked
     $('#team').on('change', function(evt, params) {
         let id = params.selected;
-        makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
+        if (params.selected){
+            let team_name = $(`#team option[value=${id}]`).text();
+            //enable team to be selected as the default team options
+            $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
+            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
-        if ($("#update_default_sites").is(":checked")){
-            if (params.selected){
-                updateDefaultSites();
-            }else{
-                updateDefaultSites();
-            }
-
-        }else{
+        } else{
             $(`#role_el_for_${params.deselected}`).remove();
+            $(`#default_team option[value=${id}]`).attr('disabled', 'disabled').trigger("chosen:updated");
+
 
         }
+
+    // if ($("#update_default_sites").is(":checked")){
+    //         if (params.selected){
+    //             updateDefaultSites();
+    //         }else{
+    //             updateDefaultSites();
+    //         }
+    //     }else{
+    //
+    //     }
     });
 });
 

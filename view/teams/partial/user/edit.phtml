@@ -33,8 +33,8 @@ endforeach;
                     select.options[i].setAttribute('selected', true);
                     makeRoleElement(select.options[i].innerText, current_teams[j], current_roles[j])
 
-                    //add the team to the options for default team
-                    $("#default_team").append(`<option value="${current_teams[j]}">${select.options[i].innerText}</option>`).trigger("chosen:updated");
+                    //enable the team to be selected as default
+                    $(`#default_team option[value=${current_teams[j]}]`).removeAttr('disabled').trigger("chosen:updated");
 
                 }
             }
