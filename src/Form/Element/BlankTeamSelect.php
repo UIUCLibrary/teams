@@ -14,6 +14,8 @@ class BlankTeamSelect extends TeamSelect
         $teams = $em->getRepository('Teams\Entity\Team')->findAll();
 
 
+        //initialize with a blank value so the default message shows up
+        $valueOptions[0] = '';
         foreach ($teams as $team):
             $valueOptions[$team->getId()] = $team->getName();
         endforeach;
