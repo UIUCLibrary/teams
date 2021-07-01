@@ -355,20 +355,20 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             ],
         ]);
-        $informationFieldset->add([
-            'name' => 'update_default_sites',
-            'type' => 'checkbox',
-            'options' => [
-                'label' => 'Use Teams for default sites?', // @translate
-                'info' => 'Default sites for this user will be those in the selected teams(s) above.', // @translate
-
-            ],
-            'attributes' => [
-                'id' => 'update_default_sites',
-                'value' => false,
-
-            ],
-        ]);
+//        $informationFieldset->add([
+//            'name' => 'update_default_sites',
+//            'type' => 'checkbox',
+//            'options' => [
+//                'label' => 'Use Teams for default sites?', // @translate
+//                'info' => 'Default sites for this user will be those in the selected teams(s) above.', // @translate
+//
+//            ],
+//            'attributes' => [
+//                'id' => 'update_default_sites',
+//                'value' => false,
+//
+//            ],
+//        ]);
 
 
 
@@ -2609,6 +2609,21 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     'id' => 'default_team',
                 ],
             ]);
+            $form->get('user-information')->add([
+                'name' => 'update_default_sites',
+                'type' => 'checkbox',
+                'options' => [
+                    'label' => 'Use Teams for default sites?', // @translate
+                    'info' => 'Default sites for this user will be those in their default team, above.', // @translate
+
+                ],
+                'attributes' => [
+                    'id' => 'update_default_sites',
+                    'value' => false,
+
+                ],
+            ]);
+
 
 
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
