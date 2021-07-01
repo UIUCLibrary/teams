@@ -1,10 +1,15 @@
 <?php
 $role = array();
 $team = array();
+$default_id = '';
+$team_names = [];
 foreach ($this->user_teams as $tu):
     $role[] = $tu->getRole()->getId();
     $team[] = $tu->getTeam()->getId();
-
+    $team_names[$tu->getTeam()->getId()] = $tu->getTeam()->getName();
+    if ($tu->getCurrent()){
+        $default_id =  $tu->getTeam()->getId();
+    }
 endforeach;
 
 ?>
@@ -13,21 +18,33 @@ endforeach;
 
     window.addEventListener("load", function () {
 
-
         let current_teams = <?php echo json_encode($team)?>;
         let current_roles = <?php echo json_encode($role)?>;
 
 
         let select = document.getElementById('team');
 
+        //go through all of the team options
         for (let i=0; i < select.options.length; i++){
+
+            //if it matches one of the user's teams, select it and make a role element with user's team role
             for (let j=0; j < current_teams.length; j++){
                 if (current_teams[j] == select.options[i].value){
                     select.options[i].setAttribute('selected', true);
                     makeRoleElement(select.options[i].innerText, current_teams[j], current_roles[j])
+
+                    //add the team to the options for default team
+                    $("#default_team").append(`<option value="${current_teams[j]}">${select.options[i].innerText}</option>`).trigger("chosen:updated");
+
                 }
             }
         }
         $("#team").trigger("chosen:updated");
+
+        <?php if($default_id){ ?>
+            $("#default_team").chosen().val([<?php echo $default_id ?>]).trigger("chosen:updated");
+        <?php } ?>
+
+
     });
 </script>
