@@ -6,12 +6,12 @@ window.addEventListener("load", function () {
 
 
 
-    //if user checks the box, update default sites based on currently selected teams
-    // $("#update_default_sites").click(function() {
-    //     if($(this).is(":checked")) {
-    //         updateDefaultSites();
-    //     }
-    // });
+    // if user checks the box, update default sites based on currently selected default
+    $("#update_default_sites").click(function() {
+        if($(this).is(":checked")) {
+            updateDefaultSites();
+        }
+    });
 
     //update default sites upon adding/removing teams if #update_default_sites box is checked
     $('#team').on('change', function(evt, params) {
@@ -26,47 +26,28 @@ window.addEventListener("load", function () {
         } else{
             $(`#role_el_for_${params.deselected}`).remove();
             $(`#default_team option[value=${id}]`).attr('disabled', 'disabled').trigger("chosen:updated");
-
-
         }
-
-    // if ($("#update_default_sites").is(":checked")){
-    //         if (params.selected){
-    //             updateDefaultSites();
-    //         }else{
-    //             updateDefaultSites();
-    //         }
-    //     }else{
-    //
-    //     }
     });
 });
 
 function updateDefaultSites() {
     //get all of the currently selected team ids
-    let $all_selected_ids = $('#team').chosen().val();
+    let $default_team_id = $('#default_team').chosen().val();
 
     //get all of the currently selected team names
-    let $all_selected_labels = $.map($all_selected_ids, function ( id ) {
-        return $('#team').find('option[value="'+id+'"]').text()
-    });
+    let $default_team_name = $('#team').find('option[value="'+$default_team_id+'"]').text();
 
     //clear all of the sites
     $('#default_sites').chosen().val([]).trigger('chosen:updated');
 
     //update sites based on team selection
-    $all_selected_labels.forEach(selectSites)
+    selectSites($default_team_name);
 }
 
 function selectSites($label) {
 
-    $current_sites = $('#default_sites').val();
-
     //get all of the sites for the label
     let $group = $.map( $('#default_sites optgroup[label="'+$label+'"] option'), function( n ) { return n.value; });
-    // alert($group);
-
-    $group = $group.concat($current_sites);
 
     $('#default_sites').val($group).trigger('chosen:updated');
 
