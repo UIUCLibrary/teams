@@ -1,6 +1,9 @@
 //create or destroy role element after a selector event
 window.addEventListener("load", function () {
 
+    //add selected team to the default team options
+
+
     //if user checks the box, update default sites based on currently selected teams
     $("#update_default_sites").click(function() {
         if($(this).is(":checked")) {
@@ -10,16 +13,19 @@ window.addEventListener("load", function () {
 
     //update default sites upon adding/removing teams if #update_default_sites box is checked
     $('#team').on('change', function(evt, params) {
+        let id = params.selected;
+        makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
+
 
         if ($("#update_default_sites").is(":checked")){
             if (params.selected){
-                let id = params.selected;
-                makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
                 updateDefaultSites();
             }else{
-                $(`#role_el_for_${params.deselected}`).remove();
                 updateDefaultSites();
             }
+
+        }else{
+            $(`#role_el_for_${params.deselected}`).remove();
 
         }
     });
