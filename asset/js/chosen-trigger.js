@@ -13,7 +13,7 @@ window.addEventListener("load", function () {
         }
     });
 
-    //update default sites upon adding/removing teams if #update_default_sites box is checked
+    //manage the role elements and options for default teams as teams are added/removed
     $('#team').on('change', function(evt, params) {
         let id = params.selected;
 
@@ -28,6 +28,12 @@ window.addEventListener("load", function () {
             $(`#default_team option[value=${id}]`).attr('disabled', 'disabled').trigger("chosen:updated");
         }
     });
+
+    $("#default_team").on('change',function () {
+        if($("#update_default_sites").is(":checked")) {
+            updateDefaultSites();
+        }
+    })
 });
 
 function updateDefaultSites() {
