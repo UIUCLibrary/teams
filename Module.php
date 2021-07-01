@@ -20,6 +20,7 @@ use Teams\Form\ConfigForm;
 use Teams\Form\Element\AllSiteSelect;
 use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\Element\AllTeamSelect;
+use Teams\Form\Element\BlankTeamSelect;
 use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\TeamSelect;
 use Omeka\Api\Adapter\ItemAdapter;
@@ -1017,8 +1018,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     $team_user = new TeamUser($team,$user,$role);
                     $em->persist($team_user);
                 }
-
-
 
             endforeach;
             $em->flush();
@@ -2568,6 +2567,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //                    'required' => true,
                 ],
             ]);
+            $form->get('user-information')->add([
+                'name' => 'o-module-teams:DefaultTeam',
+                'type' => BlankTeamSelect::class,
+                'options' => [
+                    'label' => 'Default Team', // @translate
+                    'chosen' => true,
+                    'info' => 'This is the team the user will see next time they log in'
+                ],
+                'attributes' => [
+                    'id' => 'default_team',
+                ],
+            ]);
+
 
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
             $form->get('user-information')->add([
