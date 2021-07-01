@@ -1,7 +1,9 @@
 <?php
 namespace Teams;
 
+use Laminas\Validator\InArray;
 use Omeka\Api\Adapter\UserAdapter;
+use Omeka\File\Validator;
 use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
@@ -1205,12 +1207,37 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     $em->flush();
 
                     //if their current team was removed, just give them a current team from the top of the list
-                    if (array_key_exists('o-module-teams:Team', $request->getContent())){
-                        if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
-                            $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
-                                ->setCurrent(true);
-                            $em->flush();
+//                    if (array_key_exists('o-module-teams:Team', $request->getContent())){
+//                        if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
+//                            $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
+//                                ->setCurrent(true);
+//                            $em->flush();
+//
+//                        }
+//                    }
+                    //update current team
+                    if(array_key_exists('o-module-teams:DefaultTeam',$request->getContent())){
+                        $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
+                        $new_default_team = $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'team'=>$default_team]);
+                        if($new_default_team){
+                            if($new_default_team->getCurrent() == null){
 
+                                //unset the current default team
+                                $old_default_team = $em->getRepository('Teams\Entity\TeamUser')
+                                    ->findOneBy(['user'=>$user_id, 'is_current'=>true]);
+
+                                if($old_default_team){
+                                //must use null instead of false to keep integrity check for unique user_id+is_current
+                                $old_default_team->setCurrent(null);
+                                $em->persist($old_default_team);
+                                $em->flush();}
+
+                                //set new default
+                                $new_default_team->setCurrent(true);
+                                $em->persist($new_default_team);
+                                $em->flush();
+
+                            }
                         }
                     }
 
@@ -2551,6 +2578,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         ;
 
         if ($user_role === 'global_admin'){
+
+
+
             //TODO: only add if the user is superuser
             $form = $event->getTarget();
             $form->get('user-information')->add([
@@ -2573,7 +2603,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'options' => [
                     'label' => 'Default Team', // @translate
                     'chosen' => true,
-                    'info' => 'This is the team the user will see next time they log in'
+                    'info' => 'This is the team the user will see next time they log in',
                 ],
                 'attributes' => [
                     'id' => 'default_team',
