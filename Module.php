@@ -1561,6 +1561,54 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    //for batch update, just use the owner of the resource to get the team
+    public function itemBatchCreate(Event $event)
+    {
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        if ($operation == 'batch_create'){
+
+            $response = $event->getParam('response');
+            $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+            $resource =  $response->getContent();
+            foreach ($resource as $r){
+
+                $res = $entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$r->getId()]);
+                $owner = $r->getOwner()->getId();
+                $team = $entityManager->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['user' => $owner, 'is_current'=>1])->getTeam();
+
+                $tr = new TeamResource($team, $res);
+                $em->persist($tr);
+
+
+
+                $media = $r->getMedia();
+
+
+                        //if there is media, add those to the team as well
+                        if (count($media) > 0) {
+                            foreach ($media as $m):
+                                $tr = new TeamResource($team, $m);
+                                $em->persist($tr);
+                            endforeach;
+                        }
+
+                    $em->flush();
+
+
+
+            }
+
+        }
+
+
+
+    }
+
     /**
      *
      * On create, add TeamResource entities for item and associated media based on form data
@@ -2206,6 +2254,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'api.execute.post',
             [$this, 'itemCreate']
         );
+
+        $sharedEventManager->attach(
+            ItemAdapter::class,
+            'api.execute.post',
+            [$this, 'itemBatchCreate']
+        );
+
+
 
         $sharedEventManager->attach(
             UserAdapter::class,
