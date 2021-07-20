@@ -1581,32 +1581,23 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $team = $entityManager->getRepository('Teams\Entity\TeamUser')
                     ->findOneBy(['user' => $owner, 'is_current'=>1])->getTeam();
 
-                $tr = new TeamResource($team, $res);
-                $em->persist($tr);
-
-
-
-                $media = $r->getMedia();
-
-
-                        //if there is media, add those to the team as well
-                        if (count($media) > 0) {
-                            foreach ($media as $m):
-                                $tr = new TeamResource($team, $m);
-                                $em->persist($tr);
-                            endforeach;
-                        }
+                //todo: don't fail silently
+                if ($res && $owner && $team) {
+                    $tr = new TeamResource($team, $res);
+                    $em->persist($tr);
+                    $media = $r->getMedia();
+                    //if there is media, add those to the team as well
+                    if (count($media) > 0) {
+                        foreach ($media as $m):
+                            $tr = new TeamResource($team, $m);
+                            $em->persist($tr);
+                        endforeach;
+                    }
 
                     $em->flush();
-
-
-
+                }
             }
-
         }
-
-
-
     }
 
     /**
