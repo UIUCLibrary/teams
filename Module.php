@@ -105,6 +105,25 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
     }
 
+    public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
+    {
+        if (version_compare($oldVersion, '1.0.0', '<')) {
+            $connection = $serviceLocator->get('Omeka\Connection');
+            $sql = <<<'SQL'
+replace item_site (item_id, site_id) 
+
+select resource_id, site_id from team_resource tr 
+join team_site ts on tr.team_id = ts.team_id
+where resource_id in (select * from item);
+SQL;
+            $sqls = array_filter(array_map('trim', explode(';', $sql)));
+            foreach ($sqls as $sql) {
+                $connection->exec($sql);
+            }
+        }
+    }
+
+
     public function handleConfigForm(AbstractController $controller)
     {
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
