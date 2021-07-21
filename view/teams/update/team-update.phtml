@@ -26,6 +26,7 @@ $sectionNavs = [
 'team-info' => $translate('Info'),
 'team-members' => $translate('Users'),
 'team-resources' => $translate('Resources'),
+'team-sites' => $translate('Sites')
 ];
 ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
@@ -44,19 +45,11 @@ $form->prepare();
 echo $this->form()->openTag($form);?>
 
 <div id="team-info" class="active section">
-    <div class="meta-group"><?php
-
-        echo $this->formCollection($form);
-
-
-        ?>
+    <div class="meta-group">
+        <?php echo $this->formCollection($form); ?>
     </div>
-
-
 </div>
-<?php
-
-echo $this->form()->openTag($form);?>
+<?php echo $this->form()->openTag($form);?>
 
 <div id="team-members" class="section">
     <div class="meta-group">
@@ -85,26 +78,9 @@ echo $this->form()->openTag($form);?>
             </div>
             <div class="input" id="role">
                 <input class="btn btn-default"  style="margin-left: 20px;" type="submit" name="addUser" value="Add User" />
-
             </div>
-
-
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
         </div>
-
         <div class="field">
             <div class="field-meta">
                 Current Users:
@@ -187,10 +163,7 @@ echo $this->form()->openTag($form);?>
 
     </div>
 <div id="team-resources" class="section">
-
-
     <div class="selection-criteria">
-
         <div class="select-by-item-set-content">
 
 
@@ -199,23 +172,12 @@ echo $this->form()->openTag($form);?>
             $fs = $itemsetForm->getFieldsets();
             $fs['addCollections']->setLabel('Add resources to team');
             $fs['rmCollections']->setLabel('Remove resources from team');
-            $reEls = $fs['rmCollections']->getElements();
-
-            $reEls['o:itemset']->setPlaceholder('Test');
-
-//            foreach ($fs['rmCollections']->getElements() as $key => $element):
-//                echo $key;
-//            endforeach;
-
-
-
 
             $itemsetForm->prepare();
 
             echo $this->form()->openTag($itemsetForm);
 
             echo $this->formCollection($itemsetForm);
-            echo $this->form()->closeTag($itemsetForm)
             ?>
 
         </div>
@@ -227,6 +189,36 @@ echo $this->form()->openTag($form);?>
     </div>
 
 </div>
+<div id="team-sites" class="section">
+    <div class="selection-criteria">
+        <div class="select-by-item-set-content">
+
+
+            <?php
+            $sitesForm = $this->sitesForm;
+
+            $fs = $sitesForm->getFieldsets();
+            $fs['teamSites']->setLabel('Add or Remove Sites ');
+
+            $sitesForm->prepare();
+
+            echo $this->form()->openTag($sitesForm);
+
+            echo $this->formCollection($sitesForm);
+            echo $this->form()->closeTag($sitesForm)
+            ?>
+
+        </div>
+
+
+
+
+
+    </div>
+
+</div>
+
+
 
 <?php
 echo $this->form()->closeTag();

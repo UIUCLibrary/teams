@@ -8,9 +8,13 @@ use Omeka\Api\Exception\InvalidArgumentException;
 use Omeka\Api\Request;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
+use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
+use Teams\Form\Element\AllSiteSelect;
+use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamItemSetForm;
+use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamUpdateForm;
 use Teams\Form\TeamUserForm;
 use Laminas\EventManager\Event;
@@ -216,12 +220,55 @@ Class UpdateController extends AbstractActionController
     public function teamUpdateAction()
     {
 
+        $id = $this->params()->fromRoute('id');
+
+        $team_sites = $this->entityManager
+            ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);
+
+        $current_sites = [];
+        $valueOptions = [];
+
+//        get current sites for the team and populate the sites chosen select element
+        foreach ($team_sites as $team_site){
+            $current_sites[] = $team_site->getSite()->getId();
+            echo $team_site->getSite()->getId();
+        }
+
+        $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
+        //this is set to display the teams for the current user. This works in many contexts for
+        //normal users, but not for admins doing maintenance or adding new users to a team
+        foreach ($all_sites as $site){
+            if ($site->owner()){
+                $owner = $site->owner()->name();
+            }else{
+                $owner = 'No One';
+            }
+            $site_name = $site->title() . ' (' . $owner . ')';
+            $site_id = $site->id();
+
+
+            $valueOption = [];
+            $valueOption['value'] = $site_id;
+            $valueOption['label'] = $site_name;
+            if (in_array($site_id, $current_sites)){
+                $valueOption['attributes'] = ['selected' => true];
+            }
+            $valueOptions[] = $valueOption;
+
+        }
+
+        $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class);
+        $sites = $sitesForm->get('teamSites')->get('o:site');
+        $sites->setAttribute('multiple', true);
+        $sites->setAttribute('id', 'sites');
+
+        $sites->setEmptyOption('None');
+        $sites->setValueOptions($valueOptions);
+
+
         $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
         $form = $this->getForm(TeamUpdateForm::class);
-        //should this really be necessary?
-        $id = $this->params()->fromRoute('id');
-        $id = (int) $id;
 
 
         //is a team associated with that id
@@ -304,6 +351,7 @@ Class UpdateController extends AbstractActionController
                 'available_u_array'=>$available_u_array,
                 'ident' => $userId,
                 'itemsetForm' => $itemsetForm,
+                'sitesForm' => $sitesForm,
             ]);
         }
 
@@ -391,6 +439,26 @@ Class UpdateController extends AbstractActionController
             //first delete then add resources to team
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
+
+            //handle new sites
+            foreach ($post_data['teamSites'] as $site){
+                if (!in_array($site, $current_sites)){
+                    $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
+                    $ts = new TeamSite($team, $site);
+                    $em->persist($ts);
+                }
+            }
+
+            //handle removed sites
+            foreach ($current_sites as $site){
+                if (!in_array($site, $post_data['teamSites'])){
+                    $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
+                    $em->remove($ts);
+                }
+            }
+            $em->flush();
+
+
 
 
 
