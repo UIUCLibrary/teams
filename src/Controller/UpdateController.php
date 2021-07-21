@@ -441,7 +441,7 @@ Class UpdateController extends AbstractActionController
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
 
             //handle new sites
-            foreach ($post_data['teamSites'] as $site){
+            foreach ($post_data['teamSites']['o:site'] as $site){
                 if (!in_array($site, $current_sites)){
                     $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
                     $ts = new TeamSite($team, $site);
@@ -451,7 +451,7 @@ Class UpdateController extends AbstractActionController
 
             //handle removed sites
             foreach ($current_sites as $site){
-                if (!in_array($site, $post_data['teamSites'])){
+                if (!in_array($site, $post_data['teamSites']['o:site'])){
                     $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
                     $em->remove($ts);
                 }
