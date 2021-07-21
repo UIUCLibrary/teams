@@ -231,7 +231,6 @@ Class UpdateController extends AbstractActionController
 //        get current sites for the team and populate the sites chosen select element
         foreach ($team_sites as $team_site){
             $current_sites[] = $team_site->getSite()->getId();
-            echo $team_site->getSite()->getId();
         }
 
         $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();

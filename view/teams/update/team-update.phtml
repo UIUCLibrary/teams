@@ -90,12 +90,8 @@ echo $this->form()->openTag($form);?>
                 <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                     <thead>
                     <tr>
-                        <th>
-
-                        </th>
-                        <th>
-                            <?php echo $translate('Name'); ?>
-                        </th>
+                        <th><?php echo $translate('Remove'); ?></th>
+                        <th><?php echo $translate('Name'); ?></th>
                         <th><?php echo $translate('Role'); ?></th>
                         <th><?php echo $translate('Current?'); ?></th>
                     </tr>
@@ -106,7 +102,8 @@ echo $this->form()->openTag($form);?>
                         $user_id = $team_user->getUser()->getId();
                         $role_name = $team_user->getRole()->getName();
                         $role_id = $team_user->getRole()->getid();
-                        $is_active = $team_user->getCurrent()
+                        $is_active = $team_user->getCurrent();
+                        $is_active_str = $is_active ?  'yes':  'no';
 
                         ?>
 
@@ -148,7 +145,7 @@ echo $this->form()->openTag($form);?>
 
 
                             </td>
-                            <td><?php echo $is_active ?></td>
+                            <td><?php echo $is_active_str ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
