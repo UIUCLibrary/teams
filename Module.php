@@ -171,17 +171,13 @@ SQL;
             $roles,
             'Teams\Controller\Index',
             ['index', 'teamDetail']
-
         );
-
-
 
         //allow everyone to change their current team
         $acl->allow(
             $roles,
             'Teams\Controller\Update',
             ['currentTeam']
-
         );
 
         $acl->allow(
@@ -1526,8 +1522,6 @@ SQL;
                 //array of media ids
                 $media_ids = [];
                 foreach ($entity->getMedia() as $media):
-                    error_log('found a media. Id: ' . $media->getId());
-
                     $media_ids[] = $media->getId();
                 endforeach;
 
@@ -1561,7 +1555,6 @@ SQL;
 
 
                     foreach ($media_ids as $media_id):
-                        error_log('this is a media id:' . $media_id);
                         if (! $em->getRepository('Teams\Entity\TeamResource')
                             ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])){
 
