@@ -116,10 +116,9 @@ select resource_id, site_id from team_resource tr
 join team_site ts on tr.team_id = ts.team_id
 where resource_id in (select * from item);
 SQL;
-            $sqls = array_filter(array_map('trim', explode(';', $sql)));
-            foreach ($sqls as $sql) {
-                $connection->exec($sql);
-            }
+
+            $connection->exec($sql);
+
         }
     }
 
