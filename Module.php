@@ -111,13 +111,22 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $connection = $serviceLocator->get('Omeka\Connection');
 // use replace because it is possible for an item and a site to belong to two teams and therefore show up together twice
 // in the join and result in an integrity constraint violation on duplicate primary key in team_site table using insert
+//
 
             $userSettings = $serviceLocator->get('Omeka\Settings\User');
             $team_users = $connection->fetchAll('select user_id, site_id from team_user tu join team_site ts on ts.team_id = tu.team_id where tu.is_current = true;');
+            $user_sites = [];
             foreach($team_users as $user){
-                echo $user['user_id'] . ' : ' . $user['site_id'];
-                echo '<br>';
-                $userSettings->set('default_item_sites', $user['site_id'], $user['user_id']);
+                if (array_key_exists($user['user_id'], $user_sites)){
+                    array_push($user_sites[$user['user_id']],$user['site_id'] );
+                } else{
+                    $user_sites[$user['user_id']] = [$user['site_id']];
+                }
+
+            }
+
+            foreach ($user_sites as $user => $sites){
+                $userSettings->set('default_item_sites', $sites, $user);
 
             }
                 $connection->exec('replace item_site select resource_id, site_id from team_resource tr join team_site ts on tr.team_id = ts.team_id where resource_id in (select * from item)');
