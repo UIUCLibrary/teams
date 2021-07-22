@@ -118,13 +118,29 @@ select resource_id, site_id from team_resource tr
 join team_site ts on tr.team_id = ts.team_id
 where resource_id in (select * from item);
 SQL;
+            $userSettings = $serviceLocator->get('Omeka\Settings\User');
+            $team_users = $connection->fetchAll('select user_id, site_id from team_user tu join team_site ts on ts.team_id = tu.team_id where tu.is_current = true;');
+            foreach($team_users as $user){
+                echo $user['user_id'] . ' : ' . $user['site_id'];
+                echo '<br>';
+                $userSettings->set('default_item_sites', $user['site_id'], $user['user_id']);
 
-            $connection->exec($sql);
+            }
+                $connection->exec($sql);
 
         }
     }
 
+    public function updateAllUserSites()
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $active_users = $em->getRepository('Teams\Entity\TeamUser')->findAllBy(['is_active'=>true]);
 
+
+        foreach ($active_users as $user){
+            $this->updateUserSites($user->getUser()->getId());
+        }
+    }
     public function handleConfigForm(AbstractController $controller)
     {
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
