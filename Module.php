@@ -109,6 +109,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         if (version_compare($oldVersion, '1.0.0', '<')) {
             $connection = $serviceLocator->get('Omeka\Connection');
+// use replace because it is possible for an item and a site to belong to two teams and therefore show up together twice
+// in the join and result in an integrity constraint violation on duplicate primary key in team_site table using insert
             $sql = <<<'SQL'
 replace item_site (item_id, site_id) 
 
