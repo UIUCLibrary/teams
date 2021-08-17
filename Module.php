@@ -1849,6 +1849,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif (strpos($res_class, 'Mapping\Entity') === 0){
             return true;
         }
+        elseif (strpos($res_class, 'CSVImport\Entity') === 0){
+            return true;
+        }
 
         elseif ($res_class == "Omeka\Entity\Asset"){
             return true;
@@ -2085,6 +2088,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             return true;
         }
 
+        elseif (strpos($res_class, 'CSVImport\Entity') === 0){
+            return true;
+        }
+
         elseif ($res_class == "Omeka\Entity\Asset"){
             return true;
         }
@@ -2111,25 +2118,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             $messenger->addError($msg);
             $messenger->addError($diagnostic);
-//            $str = <<<EOD
-//                <script>
-//                    window.addEventListener("load", function() {
-//                      let msg = "$msg";
-//                      let content = document.getElementById("content");
-//                      let ul = document.createElement("ul")
-//                      ul.className = "messages";
-//                      let li = document.createElement("li");
-//                      li.className = "error";
-//                      li.innerText = msg;
-//                      ul.appendChild(li);
-//                      content.prepend(ul);
-//                      })
-//                      </script>
-//EOD;
-//            echo $str;
-
-
-
             throw new Exception\PermissionDeniedException($msg);
 
         }
