@@ -620,14 +620,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
     }
 
-//    public function addItemSite(Event $event)
-//    {
-//        echo $event->getTarget()->partial(
-//            'teams/partial/item/add/add-item-site',
-//            ['team' => $this->currentTeam()]
-//        );
-//
-//    }
 
     /**
      * Displays a message where the site pool. Not currently used.
@@ -1621,7 +1613,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     //if there is media, add those to the team as well
                     if (count($media) > 0) {
                         foreach ($media as $m):
-                            $tr = new TeamResource($team, $m);
+                            $r = $entityManager->getRepository('Omeka\Entity\Resource')
+                                ->findOneBy(['id' => $m->getId()]);
+                            $tr = new TeamResource($team, $r);
                             $em->persist($tr);
                         endforeach;
                     }
@@ -1769,6 +1763,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return $res_class;
     }
 
+    public function getModules()
+    {
+        $manager = $this->getServiceLocator()->get('Omeka\ModuleManager');
+
+    }
     /*
      * TODO: need to add some way to automatically handle classes from other modules.
      * Default should be to allow access because they end up being things like adding a piece of metadata to an item
