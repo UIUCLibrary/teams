@@ -1822,52 +1822,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif ($res_class == 'Teams\Entity\Team' ){
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
-            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];        }
-        elseif ($res_class == 'Omeka\Entity\User'){
-
-            return true;
+            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];
         }
-        elseif ($res_class == 'Teams\Entity\TeamRole'){
-
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Job'){
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Property'){
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Property'){
-            return true;
-        }
-        elseif ($res_class == 'CustomVocab\Entity\CustomVocab')
-        {
-            return true;
-        }
-
-        elseif (strpos($res_class, 'Mapping\Entity') === 0){
-            return true;
-        }
-        elseif (strpos($res_class, 'CSVImport\Entity') === 0){
-            return true;
-        }
-
-        elseif ($res_class == "Omeka\Entity\Asset"){
-            return true;
-        }
+        /*
+         * TeamRole is only accessible by global admin so doesn't need to be checked.
+         * Other classes should be controlled by their respective modules and components.
+        */
 
         else{
-            $messanger = new Messenger();
-            $msg = sprintf(
-                'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
-                    so by default action here is not permitted. Resource "%1$s: %2$s" .'
-                ,
-                $res_class, $resource->getId()
-            );
-            $messanger->addError($msg);
-
-            throw new Exception\PermissionDeniedException($msg);
-
+            return true;
         }
 
         if ($team_resource = $em->getRepository($teamsRepo)
