@@ -6,41 +6,19 @@ namespace Teams\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
+//legacy from deciding how much of the module to expose to the API
 class TeamResourceRepresentation extends AbstractEntityRepresentation
 {
-
-
-//    /**
-//     * Cache for the counts of resources.
-//     *
-//     * @var array
-//     */
-//    protected $cacheCounts = [];
-
-//    public function getControllerName()
-//    {
-//        return 'team';
-//    }
-
-    //Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be declared
-    // abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLdType)
     public function getJsonLdType()
     {
         return 'o-module-teams:TeamResource';
     }
 
-    //Fatal error: Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be
-    // declared abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLd)
     public function getJsonLd()
     {
         return [
             'team' => $this->team(),
             'resource' => $this->resource(),
-//            'o:item_sets' => $this->urlEntities('item-set'),
-//            'o:items' => $this->urlEntities('item'),
-//            'o:media' => $this->urlEntities('media'),
         ];
     }
 
@@ -54,18 +32,10 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
         return $this->resource->getTeam();
     }
 
-    //Call to undefined method Teams\Api\Representation\TeamRepresentation::description()
     public function resource()
     {
         return $this->resource->getResource();
     }
-
-
-//    public function newUser($user)
-//    {
-//        $this->resource->setTeamUsers($user);
-//    }
-
 
 
 //    /**

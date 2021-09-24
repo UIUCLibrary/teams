@@ -5,6 +5,7 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\UserRepresentation;
 
+//legacy from deciding how much of the module to expose to the API
 /**
  * TeamRole representation.
  */
@@ -17,17 +18,12 @@ class TeamRoleRepresentation extends AbstractEntityRepresentation
         return 'team-role';
     }
 
-    //Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be declared
-    // abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLdType)
     public function getJsonLdType()
     {
         return 'o-module-teams:team-role';
     }
 
-    //Fatal error: Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be
-    // declared abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLd)
+
     public function getJsonLd()
     {
         return [

@@ -7,6 +7,7 @@ use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Entity\User;
 use Teams\Api\Representation\TeamUserReference;
 
+//legacy from deciding how much of the module to expose to the API
 /**
  * TeamUserRepresentation representation.
  */
