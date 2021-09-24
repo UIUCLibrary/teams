@@ -9,6 +9,8 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 
+//legacy from deciding how much of the module to expose to the API
+
 class TeamUserAdapter extends AbstractEntityAdapter
 {
     use QueryBuilderTrait;
@@ -17,15 +19,6 @@ class TeamUserAdapter extends AbstractEntityAdapter
             'id' => 'team'.'user',
         'team' => 'team',
         'user' => 'user',
-
-        // For info.
-        // 'count' => 'count',
-        // 'users' => 'users',
-        // 'resources' => 'resources',
-        // 'item_sets' => 'item_sets',
-        // 'items' => 'items',
-        // 'media' => 'media',
-        // 'recent' => 'recent',
     ];
 
 

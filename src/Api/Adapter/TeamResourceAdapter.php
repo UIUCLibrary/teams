@@ -12,41 +12,30 @@ use Omeka\Stdlib\ErrorStore;
 use Teams\Api\Representation\TeamResourceRepresentation;
 use Teams\Entity\TeamResource;
 
+//legacy from deciding how much of the module to expose to the API
 class TeamResourceAdapter extends AbstractEntityAdapter
 {
-
-//    use QueryBuilderTrait;
-
     protected $sortFields = [
         'resource_id' => 'resource_id',
         'team_id' => 'team_id',
-        // For info.
-        // 'count' => 'count',
-        // 'users' => 'users',
-        // 'resources' => 'resources',
-        // 'item_sets' => 'item_sets',
-        // 'items' => 'items',
-        // 'media' => 'media',
-        // 'recent' => 'recent',
+
     ];
 
-// Class Teams\Api\Adapter\TeamAdapter contains 1 abstract method and must therefore be declared abstract or implement
-// the remaining methods (Omeka\Api\Adapter\AdapterInterface::getResourceName)
     public function getResourceName()
     {
         return 'team-resource';
     }
-//needed for delete
+
     public function getRepresentationClass()
     {
         return TeamResourceRepresentation::class;
     }
-//needed for read
+
     public function getEntityClass()
     {
         return TeamResource::class;
     }
-//two ifs permits create
+
     public function hydrate(Request $request, EntityInterface $entity,
                             ErrorStore $errorStore
     ) {

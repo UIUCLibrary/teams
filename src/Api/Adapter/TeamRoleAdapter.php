@@ -18,6 +18,7 @@ use Omeka\Entity\User;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
 
+//legacy from deciding how much of the module to expose to the API
 class TeamRoleAdapter extends AbstractEntityAdapter
 {
     use QueryBuilderTrait;
@@ -26,33 +27,24 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         'id' => 'id',
         'name' => 'name',
         'comment' => 'comment',
-        // For info.
-        // 'count' => 'count',
-        // 'users' => 'users',
-        // 'resources' => 'resources',
-        // 'item_sets' => 'item_sets',
-        // 'items' => 'items',
-        // 'media' => 'media',
-        // 'recent' => 'recent',
+
     ];
 
-// Class Teams\Api\Adapter\TeamAdapter contains 1 abstract method and must therefore be declared abstract or implement
-// the remaining methods (Omeka\Api\Adapter\AdapterInterface::getResourceName)
+
     public function getResourceName()
     {
         return 'team-role';
     }
-//needed for delete
     public function getRepresentationClass()
     {
         return TeamRoleRepresentation::class;
     }
-//needed for read
+
     public function getEntityClass()
     {
         return TeamRole::class;
     }
-//two ifs permits create
+
     public function hydrate(Request $request, EntityInterface $entity,
                             ErrorStore $errorStore
     ) {
