@@ -1768,12 +1768,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $manager = $this->getServiceLocator()->get('Omeka\ModuleManager');
 
     }
-    /*
-     * TODO: need to add some way to automatically handle classes from other modules.
-     * Default should be to allow access because they end up being things like adding a piece of metadata to an item
-     * usually. In fact, for things that don't exist in a Team table, I think we can just pass true. Or in some other
-     * way indicate that the Teams filter isn't relevant. Or, maybe check that before calling this function?
-    */
+
 
     /**
      *
