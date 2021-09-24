@@ -1,10 +1,7 @@
 <?php
 namespace Teams;
 
-use Laminas\Validator\InArray;
 use Omeka\Api\Adapter\UserAdapter;
-use Omeka\File\Validator;
-use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
@@ -19,7 +16,6 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
-use Teams\Form\Element\AllSiteSelect;
 use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\BlankTeamSelect;
@@ -29,11 +25,9 @@ use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
 use Omeka\Api\Adapter\MediaAdapter;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
-use Laminas\Form\Element\Checkbox;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
@@ -109,9 +103,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         if (version_compare($oldVersion, '1.0.0', '<')) {
             $connection = $serviceLocator->get('Omeka\Connection');
-// use replace because it is possible for an item and a site to belong to two teams and therefore show up together twice
-// in the join and result in an integrity constraint violation on duplicate primary key in team_site table using insert
-//
+            /*
+             * use replace because it is possible for an item and a site to belong to two teams and therefore show up
+             * together twice in the join and result in an integrity constraint violation on duplicate primary key in
+             * team_site table using insert
+             */
 
             $userSettings = $serviceLocator->get('Omeka\Settings\User');
             $team_users = $connection->fetchAll('select user_id, site_id from team_user tu join team_site ts on ts.team_id = tu.team_id where tu.is_current = true;');
@@ -122,15 +118,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 } else{
                     $user_sites[$user['user_id']] = [$user['site_id']];
                 }
-
             }
 
             foreach ($user_sites as $user => $sites){
                 $userSettings->set('default_item_sites', $sites, $user);
-
             }
                 $connection->exec('replace item_site select resource_id, site_id from team_resource tr join team_site ts on tr.team_id = ts.team_id where resource_id in (select * from item)');
-
         }
     }
 
@@ -144,6 +137,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $this->updateUserSites($user->getUser()->getId());
         }
     }
+
     public function handleConfigForm(AbstractController $controller)
     {
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
@@ -176,9 +170,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         return ":$placeholder";
     }
 
+    //TODO need to refactor to normalize and condense
     protected function addAclRules()
     {
-
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
 
@@ -208,12 +202,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'Teams\Controller\Update',
             ],
             [
-
                 'index',
                 'teamAdd',
                 'teamDetail',
                 'teamUpdate',
-
             ]
         );
         $acl->allow(
