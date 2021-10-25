@@ -1280,6 +1280,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
+
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
             foreach ($team_sites as $team_site):
@@ -1311,6 +1312,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                 endforeach;
             endforeach;
+
+            //TODO: update the team items to include this site in their sites
+
 
 
         }
@@ -1500,7 +1504,33 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 //Handle Items
+    //if user selects to use teams for item sites, update sites data from TeamSite before API executes on form data
+    public function itemPre(Event $event){
 
+        //get request content
+        $request = $event->getParam('request');
+        $content = $request->getContent();
+
+        //get team(s)
+        $teams = $content['team'];
+
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        //get sites associated with teams(s)
+        $site_ids = [];
+        foreach ($teams as $team_id):
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+            $team_sites = $team->getTeamSites();
+            foreach ($team_sites as $team_site):
+                $site_ids[] = $team_site->getSite()->getId();
+            endforeach;
+        endforeach;
+
+        //update request content
+        $content['o:site'] = $site_ids;
+        $request->setContent($content);
+        $event->setParam('request', $request);
+    }
     /**
      *
      * On update, remove all TeamResources associated with item and associated media, and generate new TeamResources
@@ -1521,8 +1551,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             if (array_key_exists('team', $request->getContent())){
 
                 //array of team ids
-                $teams = $request->getContent()['team'];
 
+                $teams = $request->getContent()['team'];
                 //array of media ids
                 $media_ids = [];
                 foreach ($entity->getMedia() as $media):
@@ -1567,7 +1597,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                                 $mtr = new TeamResource($team, $m);
                                 $em->persist($mtr);
                             }
-
                         }
                     endforeach;
                 endforeach;
@@ -2281,9 +2310,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         );
 
         $sharedEventManager->attach(
+        ItemAdapter::class,
+        'api.hydrate.post',
+        [$this, 'itemUpdate']
+    );
+
+        $sharedEventManager->attach(
             ItemAdapter::class,
-            'api.hydrate.post',
-            [$this, 'itemUpdate']
+            'api.hydrate.pre',
+            [$this, 'itemPre']
         );
 
 
