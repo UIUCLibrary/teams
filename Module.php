@@ -1504,6 +1504,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
 //Handle Items
+    //TODO: NEED TO ADD BUTTON TO USE TEAMS FOR SITES (or not, operation is VERY disordered if they arne't in sync)
+    //TODO: NEED TO ADD SOME TEXT OR FIND ANOTHER SOLUTION FOR THE ITEM SITES THAT DONT BELONG TO THE USERS CURRENT TEAM
     //if user selects to use teams for item sites, update sites data from TeamSite before API executes on form data
     public function itemPre(Event $event){
 
