@@ -2647,7 +2647,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
-//                    'required' => true,
+                    'required' => true,
                 ],
             ]);
             $form->get('user-information')->add([
@@ -2656,10 +2656,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'options' => [
                     'label' => 'Default Team', // @translate
                     'chosen' => true,
-                    'info' => 'This is the team the user will see next time they log in',
+                    'info' => 'This is the team the user will see next time they log in. Options are available only after adding Team(s) for the the user.',
                 ],
                 'attributes' => [
                     'id' => 'default_team',
+                    'required' => true,
+
                 ],
             ]);
             $form->get('user-information')->add([
