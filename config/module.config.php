@@ -310,58 +310,58 @@ return [
                         ],
                     ],
                     //need to make a route for the resource page because there are no events inside the view
-//                    'site' => [
-//                        'type' => \Laminas\Router\Http\Literal::class,
-//                        'options' => [
-//                            'route' => '/site',
-//                            'defaults' => [
-//                                '__NAMESPACE__' => 'Omeka\Controller\SiteAdmin',
-//                                '__SITEADMIN__' => true,
-//                                'controller' => 'Index',
-//                                'action' => 'index',
-//                            ],
-//                        ],
-//                        'may_terminate' => true,
-//                        'child_routes' => [
-//                            'slug' => [
-//                                'type' => \Laminas\Router\Http\Segment::class,
-//                                'options' => [
-//                                    'route' => '/s/:site-slug',
-//                                    'constraints' => [
-//                                        'site-slug' => '[a-zA-Z0-9_-]+',
-//                                    ],
-//                                    'defaults' => [
-//                                        'action' => 'edit',
-//                                    ],
-//                                ],
-//                                'may_terminate' => true,
-//
-//                                //this is the child route for the new site resources page
-//                                'child_routes' => [
-//                                    'resources' => [
-//                                        'type' => \Laminas\Router\Http\Literal::class,
-//                                        'options' => [
-//                                            'route' => '/resources',
-//                                            'defaults' => [
-//                                                '__NAMESPACE__' => 'Teams\Controller',
-//                                                'controller' => 'Index',
-//                                                'action' => 'resources',
-//                                            ],
-//                                        ],
-//                                    ],
-//                                ],
-//                            ],
-//                            'add' => [
-//                                'type' => \Laminas\Router\Http\Literal::class,
-//                                'options' => [
-//                                    'route' => '/add',
-//                                    'defaults' => [
-//                                        'action' => 'add',
-//                                    ],
-//                                ],
-//                            ],
-//                        ],
-//                    ],
+                    'site' => [
+                        'type' => \Laminas\Router\Http\Literal::class,
+                        'options' => [
+                            'route' => '/site',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Omeka\Controller\SiteAdmin',
+                                '__SITEADMIN__' => true,
+                                'controller' => 'Index',
+                                'action' => 'index',
+                            ],
+                        ],
+                        'may_terminate' => true,
+                        'child_routes' => [
+                            'slug' => [
+                                'type' => \Laminas\Router\Http\Segment::class,
+                                'options' => [
+                                    'route' => '/s/:site-slug',
+                                    'constraints' => [
+                                        'site-slug' => '[a-zA-Z0-9_-]+',
+                                    ],
+                                    'defaults' => [
+                                        'action' => 'edit',
+                                    ],
+                                ],
+                                'may_terminate' => true,
+
+                                //this is the child route for the new site resources page
+                                'child_routes' => [
+                                    'resources' => [
+                                        'type' => \Laminas\Router\Http\Literal::class,
+                                        'options' => [
+                                            'route' => '/resources',
+                                            'defaults' => [
+                                                '__NAMESPACE__' => 'Teams\Controller',
+                                                'controller' => 'Index',
+                                                'action' => 'resources',
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            'add' => [
+                                'type' => \Laminas\Router\Http\Literal::class,
+                                'options' => [
+                                    'route' => '/add',
+                                    'defaults' => [
+                                        'action' => 'add',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
 
                     //okay, this seems like a super bad way to do this but I'm not sure what else to do
                     'del' => [
