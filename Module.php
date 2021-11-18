@@ -1043,13 +1043,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
             $em->flush();
 
-
-            //handle user sites
-            if ($request->getContent()['update_default_sites']){
-
-                //handle user sites
-                $this->updateUserSites($user_id);
-            }
         }
     }
 
