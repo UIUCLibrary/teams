@@ -1062,6 +1062,31 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
     }
 
+    public function updateItemSites($item_id, $action, $sites){
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $item = $em->getRepository('Omeka\Entity\Item')
+            ->findOneBy(['id'=>$item_id]);
+        $current_item_sites = $item->getSites();
+        foreach ($sites as $target_id){
+            $target_site = $current_item_sites->get($target_id);
+
+            if ($action == 'remove'){
+                $current_item_sites->removeElement($target_site);
+            } elseif ($action == 'add'){
+                $siteAdapter = $this->getServiceLocator()
+                    ->get('Omeka\ApiAdapterManager')
+                    ->get('sites');
+                $add_site = $siteAdapter->findEntity($target_id);
+                $current_item_sites->set($add_site->getId(), $add_site);
+
+            }
+
+        }
+
+
+
+    }
+
     public function updateUserSites($user_id)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -1323,6 +1348,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
 
             //TODO: update the team items to include this site in their sites
+            //test data
+            $this->updateItemSites(886,'add',[$site_id]);
 
 
 
@@ -1558,6 +1585,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ($operation == 'update' ){
             $resource_id = $request->getId();
+
+            $om_resource = $em->getRepository('Omeka\Entity\Item')->findBy(['id' => $resource_id]);
+//            $om_resource->
 
             if (array_key_exists('team', $request->getContent())){
 
