@@ -2672,7 +2672,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 ],
                 'attributes' => [
                     'id' => 'update_default_sites',
-                    'value' => false,
+                    'value' => true,
 
                 ],
             ]);
