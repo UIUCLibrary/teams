@@ -1006,6 +1006,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             //format is  {team_id => role_id}
             $team_role_ids = $request->getContent()['o-module-teams:TeamRole'];
+            $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
 
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
@@ -1042,7 +1043,22 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             endforeach;
             $em->flush();
+            if ($default_team){
+                $em->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['team'=>$default_team, 'user'=>$user_id])
+                    ->setCurrent(true)
+                ;
+                $em->flush();
 
+            }
+
+
+            //handle user sites
+            if ($request->getContent()['update_default_sites']){
+
+                //handle user sites
+                $this->updateUserSites($user_id);
+            }
         }
     }
 
