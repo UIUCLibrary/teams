@@ -1312,27 +1312,61 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
-
+            $new_teams = $request->getContent()['team'];
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
-            foreach ($team_sites as $team_site):
-                $em->remove($team_site);
-            endforeach;
-            $em->flush();
+            $existing_teams = array_map(function ($team_site) {return $team_site->getTeam()->getId();}, $team_sites);
 
-            $team_ids = $request->getContent()['team'];
+            $added_teams = array_diff($new_teams, $existing_teams);
+            $removed_teams = array_diff($existing_teams, $new_teams);
 
             $all_teams_users = [];
 
-            //add teams to the site for each team listed in the form
-            foreach ($team_ids as $team):
+            foreach ($removed_teams as $team_id){
+                $remove_item_site[] = $em->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id'=>$team_id])
+                    ->getTeamResources();
+                $remove_user_site[] = $em->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id'=>$team_id])
+                    ->getTeamUsers();
+            }
+
+            //remove existing team sites and relationships for teams not in form
+            foreach ($team_sites as $team_site):
+                if (in_array($team_site->getTeam()->getId(), $removed_teams)){
+
+                    $team_items = $team_site->getTeam()->getTeamResources();
+                    $this->updateItemSites($team_items,'remove',[$site_id]);
+                    $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
+                    $em->remove($team_site);
+                }
+            endforeach;
+            $em->flush();
+
+            //add teams to the site for each new team listed in the form
+            foreach ($added_teams as $team):
                 $team_site = new TeamSite($em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                     $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
                 $em->persist($team_site);
+                $team_items = $team_site->getTeam()->getTeamResources();
+                $this->updateItemSites($team_items,'add',[$site_id]);
+
+                //get users of that team to add update their default sites
                 $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
 
             endforeach;
             $em->flush();
+
+            foreach ($added_teams as $team_id){
+                $add_item_site[] = $em->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id'=>$team_id])
+                    ->getTeamResources();
+                $add_user_site[] = $em->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id'=>$team_id])
+                    ->getTeamUsers();
+            }
+
+
 
             //update current team users to include new site in their default sites
             foreach ($all_teams_users as $team_users):
@@ -1341,12 +1375,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                         $user_id = $team_user->getUser()->getId();
                         $this->updateUserSites($user_id);
                     }
-
                 endforeach;
             endforeach;
 
             //TODO: update the team items to include this site in their sites
             //test data
+
+
+
+
             $this->updateItemSites(886,'add',[$site_id]);
 
 
