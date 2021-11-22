@@ -1063,6 +1063,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     }
 
     public function updateItemSites($item_id, $action, $site_ids){
+
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $item = $em->getRepository('Omeka\Entity\Item')
             ->findOneBy(['id'=>$item_id]);
@@ -1336,7 +1337,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 if (in_array($team_site->getTeam()->getId(), $removed_teams)){
 
                     $team_items = $team_site->getTeam()->getTeamResources();
-                    $this->updateItemSites($team_items,'remove',[$site_id]);
+                    echo get_class($team_items);
+//                    echo $fake->fake();
+                    foreach ($team_items as $team_item){
+                        echo get_class($team_item) . '<br>';
+                        echo $team_item->getResource()->getId();
+                        $this->updateItemSites($team_item->getResource()->getId(),'remove',[$site_id]);
+                    }
                     $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
                     $em->remove($team_site);
                 }
@@ -1348,8 +1355,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $team_site = new TeamSite($em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                     $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
                 $em->persist($team_site);
-                $team_items = $team_site->getTeam()->getTeamResources();
-                $this->updateItemSites($team_items,'add',[$site_id]);
 
                 //get users of that team to add update their default sites
                 $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
@@ -1364,6 +1369,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $add_user_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
                     ->getTeamUsers();
+            }
+
+            foreach ($add_item_site as $team_item_collection){
+                foreach ($team_item_collection as $team_item){
+                    $this->updateItemSites($team_item->getResource()->getId(),'add', [$site_id]);
+                }
             }
 
 
@@ -1384,7 +1395,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
 
-            $this->updateItemSites(886,'add',[$site_id]);
+//            $this->updateItemSites(886,'remove',[$site_id]);
 
 
 
