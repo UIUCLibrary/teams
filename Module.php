@@ -1065,24 +1065,54 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function updateItemSites($item_id, $action, $site_ids){
 
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $item = $em->getRepository('Omeka\Entity\Item')
-            ->findOneBy(['id'=>$item_id]);
-        $item_sites = $item->getSites();
-        foreach ($site_ids as $target_site_id){
-            $target_site = $item_sites->get($target_site_id);
-            if ($action == 'remove'){
-                $item_sites->removeElement($target_site);
-            } elseif ($action == 'add'){
-                $siteAdapter = $this->getServiceLocator()
-                    ->get('Omeka\ApiAdapterManager')
-                    ->get('sites');
-                $add_site = $siteAdapter->findEntity($target_site_id);
-                $item_sites->set($add_site->getId(), $add_site);
+
+        //get all teams for the item
+        //get all sites associated with those teams
+        $item_teams = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=>$item_id]);
+
+        $current_teams = [];
+        foreach ($item_teams as $team){
+            $current_teams[] =  $team->getTeam()->getId();
+        }
+
+        $current_team_sites = [];
+        foreach ($current_teams as $team){
+            $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$team]);
+
+            foreach ($team_sites as $team_site){
+                $current_team_sites[] = $team_site->getSite()->getId();
+                echo $team_site->getSite()->getId();
             }
 
         }
 
+        //sync teams and item sites
 
+        //get current item sites
+        $item = $em->getRepository('Omeka\Entity\Item')
+            ->findOneBy(['id'=>$item_id]);
+        $item_sites = $item->getSites();
+
+        $current_item_sites = [];
+
+        foreach ($item_sites as $site){
+            $current_item_sites[] = $site->getId();
+        }
+
+        $remove_sites = array_diff($current_item_sites, $current_team_sites);
+        $add_sites = array_diff($current_team_sites, $current_item_sites);
+
+        foreach ($remove_sites as $site){
+            $target_site = $item_sites->get($site);
+            $item_sites->removeElement($target_site);
+        }
+
+        $siteAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('sites');
+        foreach ($add_sites as $site){
+            $add_site = $siteAdapter->findEntity($site);
+            $item_sites->set($add_site->getId(), $add_site);
+
+        }
 
     }
 
@@ -1337,11 +1367,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 if (in_array($team_site->getTeam()->getId(), $removed_teams)){
 
                     $team_items = $team_site->getTeam()->getTeamResources();
-                    echo get_class($team_items);
-//                    echo $fake->fake();
                     foreach ($team_items as $team_item){
-                        echo get_class($team_item) . '<br>';
-                        echo $team_item->getResource()->getId();
                         $this->updateItemSites($team_item->getResource()->getId(),'remove',[$site_id]);
                     }
                     $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
@@ -1377,8 +1403,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 }
             }
 
-
-
             //update current team users to include new site in their default sites
             foreach ($all_teams_users as $team_users):
                 foreach ($team_users as $team_user):
@@ -1389,7 +1413,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 endforeach;
             endforeach;
 
-            //TODO: update the team items to include this site in their sites
+            //TODO: this update won't know about a user or item's other relationships to a site through other teams
+            //so it should just collect user ids and resource ids that need to be updated, but not declare add/remove
+            //the user update was already doing this which is what I suspect I discovered when building that function
+
             //test data
 
 
