@@ -23,37 +23,21 @@ class TeamAdapter extends AbstractEntityAdapter
 {
     use QueryBuilderTrait;
 
-//    protected $sortFields = [
-//        'id' => 'id',
-//        'name' => 'name',
-//        'description' => 'description',
-//        // For info.
-//        // 'count' => 'count',
-//        // 'users' => 'users',
-//        // 'resources' => 'resources',
-//        // 'item_sets' => 'item_sets',
-//        // 'items' => 'items',
-//        // 'media' => 'media',
-//        // 'recent' => 'recent',
-//    ];
-
-// Class Teams\Api\Adapter\TeamAdapter contains 1 abstract method and must therefore be declared abstract or implement
-// the remaining methods (Omeka\Api\Adapter\AdapterInterface::getResourceName)
     public function getResourceName()
     {
         return 'team';
     }
-//needed for delete
+
     public function getRepresentationClass()
     {
         return TeamRepresentation::class;
     }
-//needed for read
+
     public function getEntityClass()
     {
         return Team::class;
     }
-//two ifs permits create
+
     public function hydrate(Request $request, EntityInterface $entity,
         ErrorStore $errorStore
     ) {

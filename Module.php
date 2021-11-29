@@ -1,10 +1,7 @@
 <?php
 namespace Teams;
 
-use Laminas\Validator\InArray;
 use Omeka\Api\Adapter\UserAdapter;
-use Omeka\File\Validator;
-use Omeka\Media\Ingester\IngesterInterface;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
@@ -19,7 +16,6 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\ConfigForm;
-use Teams\Form\Element\AllSiteSelect;
 use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\BlankTeamSelect;
@@ -29,11 +25,9 @@ use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
 use Omeka\Api\Adapter\MediaAdapter;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Entity\User;
 use Omeka\Module\AbstractModule;
 use Laminas\EventManager\Event;
 use Laminas\EventManager\SharedEventManagerInterface;
-use Laminas\Form\Element\Checkbox;
 use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
@@ -109,20 +103,40 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     {
         if (version_compare($oldVersion, '1.0.0', '<')) {
             $connection = $serviceLocator->get('Omeka\Connection');
-            $sql = <<<'SQL'
-replace item_site (item_id, site_id) 
+            /*
+             * use replace because it is possible for an item and a site to belong to two teams and therefore show up
+             * together twice in the join and result in an integrity constraint violation on duplicate primary key in
+             * team_site table using insert
+             */
 
-select resource_id, site_id from team_resource tr 
-join team_site ts on tr.team_id = ts.team_id
-where resource_id in (select * from item);
-SQL;
-            $sqls = array_filter(array_map('trim', explode(';', $sql)));
-            foreach ($sqls as $sql) {
-                $connection->exec($sql);
+            $userSettings = $serviceLocator->get('Omeka\Settings\User');
+            $team_users = $connection->fetchAll('select user_id, site_id from team_user tu join team_site ts on ts.team_id = tu.team_id where tu.is_current = true;');
+            $user_sites = [];
+            foreach($team_users as $user){
+                if (array_key_exists($user['user_id'], $user_sites)){
+                    array_push($user_sites[$user['user_id']],$user['site_id'] );
+                } else{
+                    $user_sites[$user['user_id']] = [$user['site_id']];
+                }
             }
+
+            foreach ($user_sites as $user => $sites){
+                $userSettings->set('default_item_sites', $sites, $user);
+            }
+                $connection->exec('replace item_site select resource_id, site_id from team_resource tr join team_site ts on tr.team_id = ts.team_id where resource_id in (select * from item)');
         }
     }
 
+    public function updateAllUserSites()
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $active_users = $em->getRepository('Teams\Entity\TeamUser')->findAllBy(['is_active'=>true]);
+
+
+        foreach ($active_users as $user){
+            $this->updateUserSites($user->getUser()->getId());
+        }
+    }
 
     public function handleConfigForm(AbstractController $controller)
     {
@@ -156,9 +170,9 @@ SQL;
         return ":$placeholder";
     }
 
+    //TODO need to refactor to normalize and condense
     protected function addAclRules()
     {
-
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
 
@@ -188,12 +202,10 @@ SQL;
                 'Teams\Controller\Update',
             ],
             [
-
                 'index',
                 'teamAdd',
                 'teamDetail',
                 'teamUpdate',
-
             ]
         );
         $acl->allow(
@@ -600,14 +612,6 @@ SQL;
         );
     }
 
-//    public function addItemSite(Event $event)
-//    {
-//        echo $event->getTarget()->partial(
-//            'teams/partial/item/add/add-item-site',
-//            ['team' => $this->currentTeam()]
-//        );
-//
-//    }
 
     /**
      * Displays a message where the site pool. Not currently used.
@@ -1002,6 +1006,7 @@ SQL;
 
             //format is  {team_id => role_id}
             $team_role_ids = $request->getContent()['o-module-teams:TeamRole'];
+            $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
 
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
@@ -1038,6 +1043,14 @@ SQL;
 
             endforeach;
             $em->flush();
+            if ($default_team){
+                $em->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['team'=>$default_team, 'user'=>$user_id])
+                    ->setCurrent(true)
+                ;
+                $em->flush();
+
+            }
 
 
             //handle user sites
@@ -1276,6 +1289,7 @@ SQL;
 
         if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
+
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
             foreach ($team_sites as $team_site):
@@ -1307,6 +1321,9 @@ SQL;
 
                 endforeach;
             endforeach;
+
+            //TODO: update the team items to include this site in their sites
+
 
 
         }
@@ -1496,7 +1513,35 @@ SQL;
     }
 
 //Handle Items
+    //TODO: NEED TO ADD BUTTON TO USE TEAMS FOR SITES (or not, operation is VERY disordered if they arne't in sync)
+    //TODO: NEED TO ADD SOME TEXT OR FIND ANOTHER SOLUTION FOR THE ITEM SITES THAT DONT BELONG TO THE USERS CURRENT TEAM
+    //if user selects to use teams for item sites, update sites data from TeamSite before API executes on form data
+    public function itemPre(Event $event){
 
+        //get request content
+        $request = $event->getParam('request');
+        $content = $request->getContent();
+
+        //get team(s)
+        $teams = $content['team'];
+
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        //get sites associated with teams(s)
+        $site_ids = [];
+        foreach ($teams as $team_id):
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+            $team_sites = $team->getTeamSites();
+            foreach ($team_sites as $team_site):
+                $site_ids[] = $team_site->getSite()->getId();
+            endforeach;
+        endforeach;
+
+        //update request content
+        $content['o:site'] = $site_ids;
+        $request->setContent($content);
+        $event->setParam('request', $request);
+    }
     /**
      *
      * On update, remove all TeamResources associated with item and associated media, and generate new TeamResources
@@ -1517,8 +1562,8 @@ SQL;
             if (array_key_exists('team', $request->getContent())){
 
                 //array of team ids
-                $teams = $request->getContent()['team'];
 
+                $teams = $request->getContent()['team'];
                 //array of media ids
                 $media_ids = [];
                 foreach ($entity->getMedia() as $media):
@@ -1563,7 +1608,6 @@ SQL;
                                 $mtr = new TeamResource($team, $m);
                                 $em->persist($mtr);
                             }
-
                         }
                     endforeach;
                 endforeach;
@@ -1601,7 +1645,9 @@ SQL;
                     //if there is media, add those to the team as well
                     if (count($media) > 0) {
                         foreach ($media as $m):
-                            $tr = new TeamResource($team, $m);
+                            $r = $entityManager->getRepository('Omeka\Entity\Resource')
+                                ->findOneBy(['id' => $m->getId()]);
+                            $tr = new TeamResource($team, $r);
                             $em->persist($tr);
                         endforeach;
                     }
@@ -1749,12 +1795,12 @@ SQL;
         return $res_class;
     }
 
-    /*
-     * TODO: need to add some way to automatically handle classes from other modules.
-     * Default should be to allow access because they end up being things like adding a piece of metadata to an item
-     * usually. In fact, for things that don't exist in a Team table, I think we can just pass true. Or in some other
-     * way indicate that the Teams filter isn't relevant. Or, maybe check that before calling this function?
-    */
+    public function getModules()
+    {
+        $manager = $this->getServiceLocator()->get('Omeka\ModuleManager');
+
+    }
+
 
     /**
      *
@@ -1803,49 +1849,15 @@ SQL;
         elseif ($res_class == 'Teams\Entity\Team' ){
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
-            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];        }
-        elseif ($res_class == 'Omeka\Entity\User'){
-
-            return true;
+            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];
         }
-        elseif ($res_class == 'Teams\Entity\TeamRole'){
-
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Job'){
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Property'){
-            return true;
-        }
-        elseif ($res_class == 'Omeka\Entity\Property'){
-            return true;
-        }
-        elseif ($res_class == 'CustomVocab\Entity\CustomVocab')
-        {
-            return true;
-        }
-
-        elseif (strpos($res_class, 'Mapping\Entity') === 0){
-            return true;
-        }
-
-        elseif ($res_class == "Omeka\Entity\Asset"){
-            return true;
-        }
+        /*
+         * TeamRole is only accessible by global admin so doesn't need to be checked.
+         * Other classes should be controlled by their respective modules and components.
+        */
 
         else{
-            $messanger = new Messenger();
-            $msg = sprintf(
-                'Case not yet handled. The developer of Teams has not yet explicitly handled this resource, 
-                    so by default action here is not permitted. Resource "%1$s: %2$s" .'
-                ,
-                $res_class, $resource->getId()
-            );
-            $messanger->addError($msg);
-
-            throw new Exception\PermissionDeniedException($msg);
-
+            return true;
         }
 
         if ($team_resource = $em->getRepository($teamsRepo)
@@ -2065,6 +2077,10 @@ SQL;
             return true;
         }
 
+        elseif (strpos($res_class, 'CSVImport\Entity') === 0){
+            return true;
+        }
+
         elseif ($res_class == "Omeka\Entity\Asset"){
             return true;
         }
@@ -2091,25 +2107,6 @@ SQL;
 
             $messenger->addError($msg);
             $messenger->addError($diagnostic);
-//            $str = <<<EOD
-//                <script>
-//                    window.addEventListener("load", function() {
-//                      let msg = "$msg";
-//                      let content = document.getElementById("content");
-//                      let ul = document.createElement("ul")
-//                      ul.className = "messages";
-//                      let li = document.createElement("li");
-//                      li.className = "error";
-//                      li.innerText = msg;
-//                      ul.appendChild(li);
-//                      content.prepend(ul);
-//                      })
-//                      </script>
-//EOD;
-//            echo $str;
-
-
-
             throw new Exception\PermissionDeniedException($msg);
 
         }
@@ -2324,9 +2321,15 @@ SQL;
         );
 
         $sharedEventManager->attach(
+        ItemAdapter::class,
+        'api.hydrate.post',
+        [$this, 'itemUpdate']
+    );
+
+        $sharedEventManager->attach(
             ItemAdapter::class,
-            'api.hydrate.post',
-            [$this, 'itemUpdate']
+            'api.hydrate.pre',
+            [$this, 'itemPre']
         );
 
 
@@ -2653,7 +2656,7 @@ SQL;
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
-//                    'required' => true,
+                    'required' => true,
                 ],
             ]);
             $form->get('user-information')->add([
@@ -2662,10 +2665,12 @@ SQL;
                 'options' => [
                     'label' => 'Default Team', // @translate
                     'chosen' => true,
-                    'info' => 'This is the team the user will see next time they log in',
+                    'info' => 'This is the team the user will see next time they log in. Options are available only after adding Team(s) for the the user.',
                 ],
                 'attributes' => [
                     'id' => 'default_team',
+                    'required' => true,
+
                 ],
             ]);
             $form->get('user-information')->add([
@@ -2678,7 +2683,7 @@ SQL;
                 ],
                 'attributes' => [
                     'id' => 'update_default_sites',
-                    'value' => false,
+                    'value' => true,
 
                 ],
             ]);

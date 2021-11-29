@@ -5,6 +5,7 @@ use Omeka\Api\Adapter\AdapterInterface;
 use Omeka\Api\Representation\ResourceReference;
 use Omeka\Api\ResourceInterface;
 
+//legacy from deciding how much of the module to expose to the API
 class TeamUserReference extends ResourceReference
 {
     /**

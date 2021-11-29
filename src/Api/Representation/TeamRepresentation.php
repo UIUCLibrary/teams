@@ -5,34 +5,17 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
 use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
 use Omeka\Api\Representation\UserRepresentation;
 
+//legacy from deciding how much of the module to expose to the API
 /**
  * Team representation.
  */
 class TeamRepresentation extends AbstractEntityRepresentation
 {
-//    /**
-//     * Cache for the counts of resources.
-//     *
-//     * @var array
-//     */
-//    protected $cacheCounts = [];
-
-//    public function getControllerName()
-//    {
-//        return 'team';
-//    }
-
-    //Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be declared
-    // abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLdType)
     public function getJsonLdType()
     {
         return 'o-module-teams:Team';
     }
 
-    //Fatal error: Class Teams\Api\Representation\TeamRepresentation contains 1 abstract method and must therefore be
-    // declared abstract or implement the remaining methods
-    // (Omeka\Api\Representation\AbstractResourceRepresentation::getJsonLd)
     public function getJsonLd()
     {
         return [
@@ -40,9 +23,6 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:name' => $this->name(),
             'o:description' => $this->description(),
             'o:users' => $this->urlEntities('user'),
-//            'o:item_sets' => $this->urlEntities('item-set'),
-//            'o:items' => $this->urlEntities('item'),
-//            'o:media' => $this->urlEntities('media'),
         ];
     }
 
@@ -56,7 +36,6 @@ class TeamRepresentation extends AbstractEntityRepresentation
         return $this->resource->getName();
     }
 
-    //Call to undefined method Teams\Api\Representation\TeamRepresentation::description()
     public function description()
     {
         return $this->resource->getDescription();
@@ -68,10 +47,6 @@ class TeamRepresentation extends AbstractEntityRepresentation
         return $this->resource->getTeamUsers();
     }
 
-//    public function newUser($user)
-//    {
-//        $this->resource->setTeamUsers($user);
-//    }
 
     public function resources()
     {
