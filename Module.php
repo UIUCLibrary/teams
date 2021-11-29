@@ -1099,9 +1099,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $current_item_sites[] = $site->getId();
         }
 
+        //generate needed changes
         $remove_sites = array_diff($current_item_sites, $current_team_sites);
         $add_sites = array_diff($current_team_sites, $current_item_sites);
 
+        //update item sites
         foreach ($remove_sites as $site){
             $target_site = $item_sites->get($site);
             $item_sites->removeElement($target_site);
