@@ -1062,7 +1062,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
     }
 
-    public function updateItemSites($item_id, $action, $site_ids){
+    public function updateItemSites($item_id){
 
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
@@ -1370,7 +1370,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                     $team_items = $team_site->getTeam()->getTeamResources();
                     foreach ($team_items as $team_item){
-                        $this->updateItemSites($team_item->getResource()->getId(),'remove',[$site_id]);
+                        $this->updateItemSites($team_item->getResource()->getId());
                     }
                     $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
                     $em->remove($team_site);
@@ -1401,7 +1401,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             foreach ($add_item_site as $team_item_collection){
                 foreach ($team_item_collection as $team_item){
-                    $this->updateItemSites($team_item->getResource()->getId(),'add', [$site_id]);
+                    $this->updateItemSites($team_item->getResource()->getId());
                 }
             }
 
@@ -1414,20 +1414,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     }
                 endforeach;
             endforeach;
-
-            //TODO: this update won't know about a user or item's other relationships to a site through other teams
-            //so it should just collect user ids and resource ids that need to be updated, but not declare add/remove
-            //the user update was already doing this which is what I suspect I discovered when building that function
-
-            //test data
-
-
-
-
-//            $this->updateItemSites(886,'remove',[$site_id]);
-
-
-
         }
     }
 
