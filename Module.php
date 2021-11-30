@@ -1345,6 +1345,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
+            //Add and remove TeamSites
+            //From each of those teams,
+            // update TeamReasource=>Item->ItemSite,
+            // update TeamUser=>User->DefaultSites, update
+
+
             $new_teams = $request->getContent()['team'];
             $site_id = $request->getId();
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
@@ -1353,14 +1359,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $added_teams = array_diff($new_teams, $existing_teams);
             $removed_teams = array_diff($existing_teams, $new_teams);
 
-            foreach ($removed_teams as $team_id){
-                $remove_item_site[] = $em->getRepository('Teams\Entity\Team')
-                    ->findOneBy(['id'=>$team_id])
-                    ->getTeamResources();
-                $remove_user_site[] = $em->getRepository('Teams\Entity\Team')
-                    ->findOneBy(['id'=>$team_id])
-                    ->getTeamUsers();
-            }
+//            foreach ($removed_teams as $team_id){
+//                $remove_item_site[] = $em->getRepository('Teams\Entity\Team')
+//                    ->findOneBy(['id'=>$team_id])
+//                    ->getTeamResources();
+//                $remove_user_site[] = $em->getRepository('Teams\Entity\Team')
+//                    ->findOneBy(['id'=>$team_id])
+//                    ->getTeamUsers();
+//            }
 
             //remove existing team sites and relationships for teams not in form
             foreach ($team_sites as $team_site):
