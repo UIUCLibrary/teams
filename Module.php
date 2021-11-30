@@ -1370,7 +1370,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     foreach ($team_items as $team_item){
                         $this->updateItemSites($team_item->getResource()->getId());
                     }
-                    $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
                     $em->remove($team_site);
                 }
             endforeach;
