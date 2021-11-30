@@ -1390,8 +1390,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
             $em->flush();
 
-            foreach ($added_teams as $team_id){
-                $add_item_site[] = $em->getRepository('Teams\Entity\Team')
+            foreach (array_merge($added_teams, $removed_teams) as $team_id){
+                $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
                     ->getTeamResources();
                 $add_user_site[] = $em->getRepository('Teams\Entity\Team')
@@ -1399,11 +1399,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     ->getTeamUsers();
             }
 
-            foreach ($add_item_site as $team_item_collection){
+            foreach ($delta_item_site as $team_item_collection){
                 foreach ($team_item_collection as $team_item){
                     $this->updateItemSites($team_item->getResource()->getId());
                 }
             }
+
+
 
             //update current team users to include new site in their default sites
             foreach ($all_teams_users as $team_users):
