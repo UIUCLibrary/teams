@@ -1410,10 +1410,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //update current team users to include new site in their default sites
             foreach ($delta_user_site as $team_users):
                 foreach ($team_users as $team_user):
-                    if ($team_user->getCurrent()){
                         $user_id = $team_user->getUser()->getId();
                         $this->updateUserSites($user_id);
-                    }
                 endforeach;
             endforeach;
         }
