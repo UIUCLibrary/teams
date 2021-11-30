@@ -1353,8 +1353,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $added_teams = array_diff($new_teams, $existing_teams);
             $removed_teams = array_diff($existing_teams, $new_teams);
 
-            $all_teams_users = [];
-
             foreach ($removed_teams as $team_id){
                 $remove_item_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
@@ -1384,9 +1382,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
                 $em->persist($team_site);
 
-                //get users of that team to add update their default sites
-                $all_teams_users[] = $team_site->getTeam()->getTeamUsers();
-
             endforeach;
             $em->flush();
 
@@ -1394,7 +1389,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
                     ->getTeamResources();
-                $add_user_site[] = $em->getRepository('Teams\Entity\Team')
+                $delta_user_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
                     ->getTeamUsers();
             }
@@ -1408,7 +1403,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
 
             //update current team users to include new site in their default sites
-            foreach ($all_teams_users as $team_users):
+            foreach ($delta_user_site as $team_users):
                 foreach ($team_users as $team_user):
                     if ($team_user->getCurrent()){
                         $user_id = $team_user->getUser()->getId();
