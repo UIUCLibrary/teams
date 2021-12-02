@@ -1368,14 +1368,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //                    ->getTeamUsers();
 //            }
 
+            //Wait--can't we just loop through the $removed_teams?
+            //Also, aren't we updating the item sites below?
             //remove existing team sites and relationships for teams not in form
             foreach ($team_sites as $team_site):
                 if (in_array($team_site->getTeam()->getId(), $removed_teams)){
 
-                    $team_items = $team_site->getTeam()->getTeamResources();
-                    foreach ($team_items as $team_item){
-                        $this->updateItemSites($team_item->getResource()->getId());
-                    }
                     $em->remove($team_site);
                 }
             endforeach;
@@ -1404,8 +1402,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     $this->updateItemSites($team_item->getResource()->getId());
                 }
             }
-
-
 
             //update current team users to include new site in their default sites
             foreach ($delta_user_site as $team_users):
