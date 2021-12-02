@@ -1369,11 +1369,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 //            }
 
             //Wait--can't we just loop through the $removed_teams?
-            //Also, aren't we updating the item sites below?
-            //remove existing team sites and relationships for teams not in form
+            //We already have the hydrated teaams. Is there any value in saving a few db calls to use a different format?
             foreach ($team_sites as $team_site):
                 if (in_array($team_site->getTeam()->getId(), $removed_teams)){
-
                     $em->remove($team_site);
                 }
             endforeach;
@@ -1388,6 +1386,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             endforeach;
             $em->flush();
 
+            //get any items or users that need to be updated
+            //by either removing or adding item-sits or user default site
             foreach (array_merge($added_teams, $removed_teams) as $team_id){
                 $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
