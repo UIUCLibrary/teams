@@ -438,7 +438,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $associated_teams = $this->listTeams($resource);
 
 
-        echo '<div id="teams" class="section"><p>';
+         echo '<div id="teams" class="section"><p>';
             //get the partial and pass it whatever variables it needs
 
         echo $event->getTarget()->partial(
@@ -1081,7 +1081,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             foreach ($team_sites as $team_site){
                 $current_team_sites[] = $team_site->getSite()->getId();
-                echo $team_site->getSite()->getId();
             }
 
         }
@@ -1128,17 +1127,20 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $settingId = 'default_item_sites';
 
         $active_team = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['user'=>$user_id, 'is_current'=>true])
-            ->getTeam();
+            ->findOneBy(['user'=>$user_id, 'is_current'=>true]);
+        if ($active_team){
+            $active_team = $active_team->getTeam();
 
-        $team_sites = $active_team->getTeamSites();
+            $team_sites = $active_team->getTeamSites();
 
-        foreach ($team_sites as $team_site):
-            $site_ids[] = $team_site->getSite()->getId();
-        endforeach;
+            foreach ($team_sites as $team_site):
+                $site_ids[] = $team_site->getSite()->getId();
+            endforeach;
 
-        //update default sites
-        $userSettings->set($settingId, $site_ids, $user_id);
+            //update default sites
+            $userSettings->set($settingId, $site_ids, $user_id);
+        }
+
     }
 
     /**
@@ -1270,7 +1272,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                         $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
                             ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
-
+//TODO: review this section
                         if ($team_user_exists){
                             echo $team_user_exists->getId();
                         } else {
@@ -1359,14 +1361,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $added_teams = array_diff($new_teams, $existing_teams);
             $removed_teams = array_diff($existing_teams, $new_teams);
 
-//            foreach ($removed_teams as $team_id){
-//                $remove_item_site[] = $em->getRepository('Teams\Entity\Team')
-//                    ->findOneBy(['id'=>$team_id])
-//                    ->getTeamResources();
-//                $remove_user_site[] = $em->getRepository('Teams\Entity\Team')
-//                    ->findOneBy(['id'=>$team_id])
-//                    ->getTeamUsers();
-//            }
 
             //Wait--can't we just loop through the $removed_teams?
             //We already have the hydrated teaams. Is there any value in saving a few db calls to use a different format?
