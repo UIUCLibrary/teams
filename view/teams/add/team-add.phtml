@@ -155,18 +155,6 @@ echo $this->formCollection($form);
                     </tr>
                     </thead>
                     <tbody id="user-table">
-                    <?php
-                        $iter = 1;
-                        foreach ($this->user_roles as $key => $value):?>
-                    <tr id="u<?php echo $key?>">
-                        <input type="hidden" form="new_team" name="user_role[<?php echo $key?>]" value="<?php echo $value?>">
-                        <td>
-                            <a class="o-icon-delete row-left" onclick="removeRow('u<?php echo $key?>', '<?php echo $key?>')"></a>
-                            <span><?php echo array_search($key, $this->available_u_array)?></span></td>
-                        <td><?php echo array_search($value, $this->roles) ?></td>
-                    </tr>
-                        <?php endforeach;?>
-
                     </tbody>
                 </table>
 
