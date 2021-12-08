@@ -1382,6 +1382,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             //get any items or users that need to be updated
             //by either removing or adding item-sits or user default site
+            $delta_item_site = [];
+            $delta_user_site = [];
             foreach (array_merge($added_teams, $removed_teams) as $team_id){
                 $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$team_id])
