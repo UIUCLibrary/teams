@@ -15,7 +15,7 @@ class BlankTeamSelect extends TeamSelect
 
 
         //initialize with a blank value so the default message shows up
-        $valueOptions[0] = '';
+        $valueOptions[-1] = '';
         foreach ($teams as $team):
             $valueOptions[$team->getId()] = $team->getName();
         endforeach;
