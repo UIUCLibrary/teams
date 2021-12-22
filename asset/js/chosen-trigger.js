@@ -22,9 +22,10 @@ window.addEventListener("load", function () {
 
     //manage the role elements and options for default teams as teams are added/removed
     $('#team').on('change', function(evt, params) {
-        let id = params.selected;
 
         if (params.selected){
+            let id = params.selected;
+
             let team_name = $(`#team option[value=${id}]`).text();
             //enable team to be selected as the default team options
             $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
@@ -37,7 +38,9 @@ window.addEventListener("load", function () {
             makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
         } else{
-            $(`#role_el_for_${params.deselected}`).remove();
+            let id = params.deselected;
+
+            $(`#role_el_for_${id}`).remove();
 
             //if they removed the team which was selected as default, remove default team and find next available
             if ($('#default_team').val() == params.deselected){
