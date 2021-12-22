@@ -1016,9 +1016,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $team_role_ids = $request->getContent()['o-module-teams:TeamRole'];
             $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
 
+
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
-                if ($team_id > 0){
+
+                //handle new team added via form
+                if ($team_id === -1){
                     $u_name = $request->getContent()['o:name'];
                     $team_name = sprintf("%s's team", $u_name);
                     $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
@@ -1034,6 +1037,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                         $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
                         $em->persist($team);
                         $em->flush();
+                        if ($default_team == -1){
+                            $default_team = $team->getId();
+                        }
                     }
 
                 } else {
