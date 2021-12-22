@@ -110,12 +110,17 @@ function makeRoleElement(team_name, team_id, role = 1){
     let label = document.createElement('label');
     label.setAttribute('for', `${team_name} role`);
     let user_name = document.getElementById('name').value;
+
+    //also update the options for default team
     if (team_name ==="~~Add New Team~~"){
         if (user_name !== ''){
-            label.innerText = `${user_name}'s Team (new team) Role`
+            let team_name = `${user_name}'s Team`;
+            label.innerText = `${team_name} (new team) Role`
         } else{
-            label.innerText = 'New Team Role';
+            let team_name = 'New Team';
+            label.innerText = `${team_name} Role`
         }
+        $('#default_team').append(`<option value="foo">${team_name}</option>`).trigger('chosen:updated');
     } else {
         label.innerText = team_name + ' Role';
 
