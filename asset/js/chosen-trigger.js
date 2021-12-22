@@ -119,12 +119,14 @@ function makeRoleElement(team_name, team_id, role = 1){
         team_name = '';
         if (user_name !== ''){
             team_name = `${user_name}'s Team`;
-            label.innerText = `${team_name} (new team) Role`
+            label.innerText = `${team_name} (new team) Role`;
+            $("#default_team").find('option[value="-1"]').text(team_name).trigger("chosen:updated")
+
         } else{
             team_name = 'New Team';
             label.innerText = `${team_name} Role`
         }
-        $('#default_team').append(`<option value="-1">${team_name}</option>`).trigger('chosen:updated');
+        // $('#default_team').append(`<option value="-1">${team_name}</option>`).trigger('chosen:updated');
     } else {
         label.innerText = team_name + ' Role';
 
