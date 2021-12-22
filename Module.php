@@ -782,6 +782,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
+
+        //catch REST queries
+        if ($this->getUser() === null){
+            return;
+
+        }
+
         //this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
             $event->getParam('request')->getOperation() === 'search' &&
