@@ -30,12 +30,14 @@ window.addEventListener("load", function () {
             //enable team to be selected as the default team options
             $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
 
+
+            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
+
             //if no default is currently selected, use this team as default
             if ($('#default_team').val()===null){
 
                 $('#default_team').val(id).trigger("chosen:updated");
             }
-            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
         } else{
             let id = params.deselected;
@@ -113,11 +115,12 @@ function makeRoleElement(team_name, team_id, role = 1){
 
     //also update the options for default team
     if (team_name ==="~~Add New Team~~"){
+        team_name = '';
         if (user_name !== ''){
-            let team_name = `${user_name}'s Team`;
+            team_name = `${user_name}'s Team`;
             label.innerText = `${team_name} (new team) Role`
         } else{
-            let team_name = 'New Team';
+            team_name = 'New Team';
             label.innerText = `${team_name} Role`
         }
         $('#default_team').append(`<option value="foo">${team_name}</option>`).trigger('chosen:updated');
