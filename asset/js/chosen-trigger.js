@@ -27,6 +27,7 @@ window.addEventListener("load", function () {
             let id = params.selected;
 
             let team_name = $(`#team option[value=${id}]`).text();
+
             //enable team to be selected as the default team options
             $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
 
@@ -123,7 +124,7 @@ function makeRoleElement(team_name, team_id, role = 1){
             team_name = 'New Team';
             label.innerText = `${team_name} Role`
         }
-        $('#default_team').append(`<option value="foo">${team_name}</option>`).trigger('chosen:updated');
+        $('#default_team').append(`<option value="-1">${team_name}</option>`).trigger('chosen:updated');
     } else {
         label.innerText = team_name + ' Role';
 
