@@ -878,6 +878,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class){
 
+
                 if (!$this->getUser()){
                     return ;
                 }else{
@@ -1017,7 +1018,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             foreach ($team_ids as $team_id):
                 $team_id = (int) $team_id;
-                if ($team_id === 0){
+                if ($team_id > 0){
                     $u_name = $request->getContent()['o:name'];
                     $team_name = sprintf("%s's team", $u_name);
                     $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
