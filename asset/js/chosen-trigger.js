@@ -27,15 +27,18 @@ window.addEventListener("load", function () {
             let id = params.selected;
 
             let team_name = $(`#team option[value=${id}]`).text();
+
             //enable team to be selected as the default team options
             $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
+
+
+            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
             //if no default is currently selected, use this team as default
             if ($('#default_team').val()===null){
 
                 $('#default_team').val(id).trigger("chosen:updated");
             }
-            makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
         } else{
             let id = params.deselected;
@@ -110,12 +113,20 @@ function makeRoleElement(team_name, team_id, role = 1){
     let label = document.createElement('label');
     label.setAttribute('for', `${team_name} role`);
     let user_name = document.getElementById('name').value;
+
+    //also update the options for default team
     if (team_name ==="~~Add New Team~~"){
+        team_name = '';
         if (user_name !== ''){
-            label.innerText = `${user_name}'s Team (new team) Role`
+            team_name = `${user_name}'s Team`;
+            label.innerText = `${team_name} (new team) Role`;
+            $("#default_team").find('option[value="-1"]').text(team_name).trigger("chosen:updated")
+
         } else{
-            label.innerText = 'New Team Role';
+            team_name = 'New Team';
+            label.innerText = `${team_name} Role`
         }
+        // $('#default_team').append(`<option value="-1">${team_name}</option>`).trigger('chosen:updated');
     } else {
         label.innerText = team_name + ' Role';
 
