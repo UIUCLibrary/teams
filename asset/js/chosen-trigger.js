@@ -38,6 +38,19 @@ window.addEventListener("load", function () {
 
         } else{
             $(`#role_el_for_${params.deselected}`).remove();
+
+            //if they removed the team which was selected as default, remove default team and find next available
+            if ($('#default_team').val() == params.deselected){
+
+                //remove default
+                $('#default_team').val([]).trigger("chosen:updated");
+
+                //if there are other options, pick the first one for new default
+                if ($('#team').val().length){
+                    let default_team_id =$('#team').val()[0];
+                    $('#default_team').val(default_team_id).trigger("chosen:updated");
+                }
+            }
             $(`#default_team option[value=${id}]`).attr('disabled', 'disabled').trigger("chosen:updated");
         }
     });
