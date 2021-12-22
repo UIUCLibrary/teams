@@ -1,15 +1,22 @@
-//create or destroy role element after a selector event
+/*
+Create or destroy role element after a selector event
+Dynamically creates and adds role fields to the form for each team added
+
+Update default sites based on team selection
+
+If no default team has been selected, then upon selecting a team, use that team as default
+*/
 window.addEventListener("load", function () {
 
-    //disable the options for default
+    //disable the options for default so that the user cant select a default team where user isn't a memeber
     $("#default_team option").attr('disabled','disabled');
-
 
 
     // if user checks the box, update default sites based on currently selected default
     $("#update_default_sites").click(function() {
         if($(this).is(":checked")) {
             updateDefaultSites();
+
         }
     });
 
@@ -21,6 +28,12 @@ window.addEventListener("load", function () {
             let team_name = $(`#team option[value=${id}]`).text();
             //enable team to be selected as the default team options
             $(`#default_team option[value=${id}]`).removeAttr('disabled').trigger("chosen:updated");
+
+            //if no default is currently selected, use this team as default
+            if ($('#default_team').val()===null){
+
+                $('#default_team').val(id).trigger("chosen:updated");
+            }
             makeRoleElement($(`#team option[value=${id}]`).text(),params.selected);
 
         } else{
@@ -34,8 +47,14 @@ window.addEventListener("load", function () {
             updateDefaultSites();
         }
     })
+
+
 });
 
+/*
+As of Omeka 3.x, items can "belong" to sites, and users have default sites that their items get assigned to. This updates
+those default sites so they match the team a user is assigned to
+ */
 function updateDefaultSites() {
     //get all of the currently selected team ids
     let $default_team_id = $('#default_team').chosen().val();
@@ -117,6 +136,8 @@ function makeRoleElement(team_name, team_id, role = 1){
     teams_container.parentNode.insertBefore(fieldDiv, teams_container.nextSibling);
 
 }
+
+
 
 //populate role for each of the user's pre-existing teams (for edit views)
 //MOVED: in order to populate with the correct role, moved this to the partial: teams/partial/user/edit.phtml
