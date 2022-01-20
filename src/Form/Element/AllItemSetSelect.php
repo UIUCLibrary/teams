@@ -7,7 +7,7 @@ namespace Teams\Form\Element;
 class AllItemSetSelect extends TeamSelect
 
 {
-    protected $data_placeholder = 'Select ItemSets';
+    protected $data_placeholder = 'Select Item Sets';
 
     protected $data_base_url = ['resource' => 'item_set'];
 
