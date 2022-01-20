@@ -23,14 +23,10 @@ $sectionNavs = [
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 ?>
-
 <div id="team-info" class="active section">
     <div class="meta-group">
 
 <?php
-
-
-
 $form = $this->form;
 $form->setAttribute('id', 'new_team');
 $form->setAttribute('action', $this->url());
@@ -106,7 +102,7 @@ echo $this->formCollection($form);
                     let userNameTd = document.createElement('td');
 
                     let trashA = document.createElement('a');
-                    trashA.setAttribute("class", "o-icon-delete");
+                    trashA.setAttribute("class", "o-icon-delete icon-form");
                     trashA.classList.add("row-left");
                     trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
 
