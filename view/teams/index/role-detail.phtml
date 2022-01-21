@@ -77,20 +77,16 @@ $sectionNavs = [
 </div>
 
 <div id="role-users" class="section">
-    <?php $teams = $this->api()->search('team')->getContent();
-
-    ?>
+    <?php $teams = $this->api()->search('team')->getContent(); ?>
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
         <tr>
             <th><?php echo $translate('Team'); ?></th>
             <th><?php echo $translate('Users with '. $role->name() . ' role'); ?></th>
-
         </tr>
         </thead>
         <tbody>
-<?php foreach ($teams as $team):
-?>
+<?php foreach ($teams as $team): ?>
     <tr>
         <td><?php echo $team->name()?></td>
         <td>
@@ -98,14 +94,13 @@ $sectionNavs = [
             <?php $team_users = $team->users();
             $key = array_search($role->name(), array_column(array($team_users), 'role'));
             foreach ($team_users as $team_user):
-                if ($team_user->getRole()->getName() == $role->name()){
-
-            ?><li>
+                if ($team_user->getRole()->getName() == $role->name()){ ?>
+                    <li>
                     <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
-                        <?php echo $team_user->getUser()->getName(); ?></a> <?php             };
-            ?></li><?php         endforeach;
-
-            ?>
+                        <?php echo $team_user->getUser()->getName(); ?> </a>
+                <?php } ?>
+                </li>
+            <?php endforeach; ?>
             </ul>
         </td>
     </tr>
