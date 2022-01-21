@@ -95,6 +95,8 @@ return [
             Form\Element\AllSiteSelectOrdered::class => Service\Form\Element\AllSiteSelectOrderedFactory::class,
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
             Form\Element\TeamName::class => Service\Form\Element\TeamNameFactory::class,
+            Form\Element\RoleName::class => Service\Form\Element\RoleNameFactory::class,
+
         ],
     ],
     'view_helpers' =>[
