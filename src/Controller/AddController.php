@@ -248,9 +248,11 @@ Class AddController extends AbstractActionController
         //get the data from the post
         $data = $request->getPost('role');
 
-        $new_role = $this->api($form)->create('team-role', $data);
+        $this->api($form)->create('team-role', $data);
 
 //        return new ViewModel(['data' => $data]);
+        $successMessage = sprintf("Successfully added the role: '%s'", $data['name']);
+        $this->messenger()->addSuccess($successMessage);
         return $this->redirect()->toRoute('admin/teams/roles');
 
 
