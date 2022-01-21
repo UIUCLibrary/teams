@@ -122,8 +122,6 @@ Class AddController extends AbstractActionController
                 $this->entityManager->flush();
             }
 
-            //TODO: (Done) also add the itemset itself
-
             $resource_array = array();
             $resource_template_array = array();
             if (isset($request->getPost('itemset')['itemset']['o:itemset'])) {
@@ -237,23 +235,33 @@ Class AddController extends AbstractActionController
             return $view;
         }
 
+
         //otherwise, set the data
         $form->setData($request->getPost());
+
+
+
+        //get the data from the post
+        $data = $request->getPost('role');
 
         //if the form isn't valid, return it
         if (! $form->isValid()){
             return $view;
         }
 
-        //get the data from the post
-        $data = $request->getPost('role');
+        $newRole = $this->api($form)->create('team-role', $data);
 
-        $this->api($form)->create('team-role', $data);
+        if ($newRole){
+            //        return new ViewModel(['data' => $data]);
+            $successMessage = sprintf("Successfully added the role: '%s'", $data['o:name']);
+            $this->messenger()->addSuccess($successMessage);
+            return $this->redirect()->toRoute('admin/teams/roles');
+        }
+        else {
+            return $view;
+        }
 
-//        return new ViewModel(['data' => $data]);
-        $successMessage = sprintf("Successfully added the role: '%s'", $data['name']);
-        $this->messenger()->addSuccess($successMessage);
-        return $this->redirect()->toRoute('admin/teams/roles');
+
 
 
     }
