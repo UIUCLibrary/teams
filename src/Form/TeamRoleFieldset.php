@@ -5,6 +5,7 @@ namespace Teams\Form;
 
 use Laminas\Form\Fieldset;
 use Laminas\Form\Element\Checkbox;
+use Teams\Form\Element\RoleName;
 
 class TeamRoleFieldset extends Fieldset
 {
@@ -17,8 +18,8 @@ class TeamRoleFieldset extends Fieldset
         ]);
 
         $this->add([
-            'name' => 'name',
-            'type' => 'Text',
+            'name' => 'o:name',
+            'type' => RoleName::class,
             'options' => [
                 'label' => 'Role Title', // @translate
             ],
