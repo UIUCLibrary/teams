@@ -72,7 +72,6 @@ $sectionNavs = [
             <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
             <th><?php echo $translate('Add Team Members?'); ?></th>
             <th><?php echo $translate('Add Items?'); ?></th>
-            <th><?php echo $translate('Add Item Sets?'); ?></th>
             <th><?php echo $translate('Modify Site?'); ?></th>
             <th><?php echo $translate('Modify Team Resources?'); ?></th>
             <th><?php echo $translate('Delete Team Resources?'); ?></th>
@@ -87,7 +86,6 @@ $sectionNavs = [
 
                 <td><input type="checkbox" disabled <?php if($role->canAddUsers()){?> checked <?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->canAddItems()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddItemsets()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->canAddSitePages()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->canModifyResources()){?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if($role->canDeleteResources()){?> checked<?php }; ?>></td>

@@ -20,7 +20,7 @@ class TeamItemSetFieldset extends Fieldset
             'name' => 'o:itemset',
             'type' => AllItemSetSelect::class,
             'options' => [
-                'label' => 'ItemSet', // @translate
+                'label' => 'Item Set', // @translate
                 'chosen' => true,
             ],
             'attributes' => [
