@@ -2166,19 +2166,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $authorized = $is_glob_admin;
         }
 
-        elseif ($res_class == "CustomVocab\Entity\CustomVocab"){
-            return true;
-        }
-
-        elseif (strpos($res_class, 'Mapping\Entity') === 0){
-            return true;
-        }
-
-        elseif (strpos($res_class, 'CSVImport\Entity') === 0){
-            return true;
-        }
 
         elseif ($res_class == "Omeka\Entity\Asset"){
+            return true;
+        }
+
+        //don't police other modules by default
+        elseif (substr($res_class, 1, 12) !== 'Omeka\Entity'){
             return true;
         }
 
