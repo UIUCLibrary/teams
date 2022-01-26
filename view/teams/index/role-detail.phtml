@@ -3,7 +3,6 @@ $role = $this->response->getContent();
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 
-
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
     'item-linked' => $translate('Permissions'),
@@ -29,7 +28,6 @@ $sectionNavs = [
         <div class="value"><?php echo $escape($role->getComment()); ?></div>
     </div>
 </div>
-
 
 <div id="item-linked" class="section">
     <table class="tablesaw" data-tablesaw-mode="stack">
