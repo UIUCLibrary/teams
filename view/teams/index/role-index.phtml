@@ -15,7 +15,6 @@ $escape = $this->plugin('escapeHtml');
 </div>
 <?php
 $response = $this->response;
-
 ?>
 
 
@@ -28,7 +27,7 @@ $response = $this->response;
         <thead>
         <tr>
             <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
-            <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+            <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all');?><!--">-->
             <th><?php echo $translate('Role Name'); ?></th>
             <th><?php echo $translate('Teams Where You Have This Role'); ?></th>
             <th><?php echo $translate('Add Team Members?'); ?></th>
@@ -50,25 +49,26 @@ $response = $this->response;
                 <td>
                     <ul>
 
-                    <?php foreach ( $role->getTeamUsers() as $roleUser):
-                        if ($roleUser->getUser()->getId() == $this->identity()->getId()){
+                    <?php foreach ($role->getTeamUsers() as $roleUser):
+                        if ($roleUser->getUser()->getId() == $this->identity()->getId()) {
                             ?>
 
                        <li>
                         <a href="<?php echo $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()]) ?>">
-                            <?php                             echo $roleUser->getTeam()->getName();?>
-                            </a> </li><?php                         }
+                            <?php                             echo $roleUser->getTeam()->getName(); ?>
+                            </a> </li><?php
+                        }
 
                     endforeach;
                     ?>
                     </ul>
                 </td>
 
-                <td><input type="checkbox" disabled <?php if($role->getCanAddUsers()){?> checked <?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddItems()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanAddSitePages()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanModifyResources()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->getCanDeleteResources()){?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) {?> checked <?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) {?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddSitePages()) {?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) {?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) {?> checked<?php }; ?>></td>
 
 
 
