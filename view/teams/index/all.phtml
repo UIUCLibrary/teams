@@ -8,21 +8,25 @@ $escape = $this->plugin('escapeHtml');
     <?php endif; ?>
 </div>
 <?php
-if ($user != $super_admin){
-    ?>
-
+if (!$this->roleAuth()->teamAuthorized('add', 'team')){ ?>
     <div class="breadcrumbs">
-    Only the super admin, <?php echo $this->super_admin->getName();?>, can make changes to team they don't belong to
-</div>
-<?php
-}
+        Only the <a href="<?php echo $this->url('admin/default',
+            [
+                    'controller' => 'user',
+                    'action' => 'browse'
+            ],
+            [
+                    'query' => [
+                            'role' => 'global_admin',
+                            'active' => '1',
+            ],
+                ])?>">global admins</a> can make changes to a team they don't belong to
+    </div>
+<?php }
 $translate = $this->plugin('translate');
 echo $this->pageTitle($translate('All Teams'));
 
-if ($this->teams): ?>
-
-<?php
-    ?>
+if ($this->teams):?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
             <tr>
