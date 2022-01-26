@@ -1,25 +1,23 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-
+$response = $this->response;
 ?>
 
 <?php echo $this->pageTitle($translate('Team Roles')); ?>
 
-
 <div id="page-actions">
-    <!--  for when ACL rules are in place  -->
         <?php if ($this->roleAuth()->teamAuthorized('add', 'role')): ?>
-    <?php echo $this->hyperlink($translate('Add new role'), $this->url('admin/teams/roles/add'), ['class' => 'button']); ?>
-        <?php endif; ?>
+            <?php echo
+            $this->hyperlink(
+                $translate('Add new role'),
+                $this->url('admin/teams/roles/add'),
+                ['class' => 'button']
+            );
+            endif; ?>
 </div>
-<?php
-$response = $this->response;
-?>
-
 
 <h3><?php echo $this->setting('installation_title') . ' Team Roles'; ?>:</h3>
-
 
 <?php if ($this->response): ?>
 
@@ -35,12 +33,11 @@ $response = $this->response;
             <th><?php echo $translate('Modify Site?'); ?></th>
             <th><?php echo $translate('Modify Team Resources?'); ?></th>
             <th><?php echo $translate('Delete Team Resources?'); ?></th>
-
         </tr>
         </thead>
         <tbody>
-        <?php foreach ($response as $role): ?>
 
+        <?php foreach ($response as $role): ?>
             <tr>
                 <td>
                     <a href="<?php echo $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])?>">
@@ -48,40 +45,27 @@ $response = $this->response;
                 </td>
                 <td>
                     <ul>
-
                     <?php foreach ($role->getTeamUsers() as $roleUser):
                         if ($roleUser->getUser()->getId() == $this->identity()->getId()) {
                             ?>
-
                        <li>
                         <a href="<?php echo $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()]) ?>">
                             <?php                             echo $roleUser->getTeam()->getName(); ?>
                             </a> </li><?php
                         }
-
                     endforeach;
                     ?>
                     </ul>
                 </td>
-
                 <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) {?> checked <?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) {?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanAddSitePages()) {?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) {?> checked<?php }; ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) {?> checked<?php }; ?>></td>
-
-
-
-
             </tr>
         <?php endforeach; ?>
         </tbody>
     </table>
-
-    </form>
-
-
-
 
 <?php else: ?>
 
