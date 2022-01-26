@@ -40,18 +40,22 @@ $response = $this->response;
         <?php foreach ($response as $role): ?>
             <tr>
                 <td>
-                    <a href="<?php echo $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])?>">
-                    <?php echo $role->getName()?></a>
+                    <?php echo
+                    $this->hyperlink(
+                        $role->getName(),
+                        $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])
+                    ); ?>
                 </td>
                 <td>
                     <ul>
                     <?php foreach ($role->getTeamUsers() as $roleUser):
-                        if ($roleUser->getUser()->getId() == $this->identity()->getId()) {
-                            ?>
+                        if ($roleUser->getUser()->getId() == $this->identity()->getId()) { ?>
                        <li>
-                        <a href="<?php echo $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()]) ?>">
-                            <?php                             echo $roleUser->getTeam()->getName(); ?>
-                            </a> </li><?php
+                            <?php echo
+                            $this->hyperlink(
+                                $roleUser->getTeam()->getName(),
+                                $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()])
+                            );
                         }
                     endforeach;
                     ?>
@@ -74,7 +78,3 @@ $response = $this->response;
     </div>
 
 <?php endif; ?>
-
-
-
-
