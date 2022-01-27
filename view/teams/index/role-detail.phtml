@@ -69,7 +69,7 @@ $sectionNavs = [
                 <td>
                     <ul>
                         <?php $team_users = $team->users();
-                        $key = array_search($role->getName(), array_column(array($team_users), 'role'));
+                        $key = array_search($role->getName(), array_column([$team_users], 'role'));
                         foreach ($team_users as $team_user):
                             if ($team_user->getRole()->getName() == $role->getName()) { ?>
                                 <li>
