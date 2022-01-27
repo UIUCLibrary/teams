@@ -9,20 +9,21 @@ $escape = $this->plugin('escapeHtml');
 </div>
 <?php
 if (!$this->roleAuth()->teamAuthorized('add', 'team')) { ?>
-    <div class="breadcrumbs">
-        Only the <a href="<?php echo $this->url(
-    'admin/default',
-    [
-                    'controller' => 'user',
-                    'action' => 'browse'
-            ],
-    [
-                    'query' => [
-                            'role' => 'global_admin',
-                            'active' => '1',
-            ],
+    <?php $glob_admin_url = $this->hyperlink(
+        'global admins',
+        $this->url(
+                'admin/default',
+                [ 'controller' => 'user', 'action' => 'browse'],
+                [
+                        'query' => [
+                                'role' => 'global_admin',
+                                'active' => '1',
+                        ],
                 ]
-)?>">global admins</a> can make changes to a team they don't belong to
+            )
+    ); ?>
+    <div class="breadcrumbs">
+        Only the <?php echo $glob_admin_url ?> can make changes to a team they don't belong to
     </div>
 <?php }
 $translate = $this->plugin('translate');
@@ -49,7 +50,7 @@ if ($this->teams):?>
                 ?>
                 <tr>
                     <td>
-                        <a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php
+                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>"> <?php
                             echo $team->getName(); ?>
                         </a>
                     </td>
@@ -83,8 +84,8 @@ if ($this->teams):?>
                         endforeach;?>
                     </td>
                     <td><?php echo $team->getDescription(); ?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
+                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
+                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
