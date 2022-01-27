@@ -69,8 +69,8 @@ $sectionNavs = [
                 <td><?php echo $team->name() ?></td>
                 <td>
                     <ul>
-                        <?php if (array_key_exists($team->name(), $team_users)) {
-                            foreach ($team_users[$team->name()] as $user) { ?>
+                        <?php if (array_key_exists($team->name(), $team_users)):
+                            foreach ($team_users[$team->name()] as $user): ?>
                                 <li>
                                     <?php echo
                                     $this->hyperlink(
@@ -78,9 +78,8 @@ $sectionNavs = [
                                         $this->url('admin/id', ['controller' => 'user', 'id' => $user->getId()])
                                     ); ?>
                                 </li>
-                               <?php } ?>
-                         <?php
-                        } ?>
+                               <?php endforeach; ?>
+                         <?php endif; ?>
                     </ul>
                 </td>
             </tr>

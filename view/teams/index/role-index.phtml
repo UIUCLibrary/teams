@@ -38,7 +38,7 @@ $user_roles = $this->user_roles;
         </thead>
         <tbody>
 
-        <?php foreach ($roles as $role) { ?>
+        <?php foreach ($roles as $role): ?>
             <tr>
                 <td>
                     <?php echo $this->hyperlink($role->getName(),
@@ -51,7 +51,7 @@ $user_roles = $this->user_roles;
                 <td>
                     <?php if (array_key_exists($role->getName(), $user_roles)): ?>
                     <ul>
-                        <?php foreach ($user_roles[$role->getName()] as $team) { ?>
+                        <?php foreach ($user_roles[$role->getName()] as $team): ?>
                         <li>
                             <?php echo
                             $this->hyperlink(
@@ -59,7 +59,7 @@ $user_roles = $this->user_roles;
                                 $this->url('admin/teams/detail', [ 'id' => $team->getId()])
                             ); ?>
                         </li>
-                        <?php } ?>
+                        <?php endforeach; ?>
                     </ul>
                     <?php endif; ?>
                 </td>
@@ -69,7 +69,7 @@ $user_roles = $this->user_roles;
                 <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) {?> checked<?php } ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) {?> checked<?php } ?>></td>
             </tr>
-        <?php } ?>
+        <?php endforeach; ?>
         </tbody>
     </table>
 
