@@ -1,5 +1,6 @@
 <?php
 $role = $this->role;
+$team_users = $this->team_users;
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 
@@ -68,16 +69,18 @@ $sectionNavs = [
                 <td><?php echo $team->name() ?></td>
                 <td>
                     <ul>
-                        <?php $team_users = $team->users();
-                        $key = array_search($role->getName(), array_column([$team_users], 'role'));
-                        foreach ($team_users as $team_user):
-                            if ($team_user->getRole()->getName() == $role->getName()) { ?>
+                        <?php if (array_key_exists($team->name(), $team_users)) {
+                            foreach ($team_users[$team->name()] as $user) { ?>
                                 <li>
-                                <a href="<?php echo $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId()]) ?>">
-                                    <?php echo $team_user->getUser()->getName(); ?> </a>
-                            <?php } ?>
-                            </li>
-                        <?php endforeach; ?>
+                                    <?php echo
+                                    $this->hyperlink(
+                                        $user->getName(),
+                                        $this->url('admin/id', ['controller' => 'user', 'id' => $user->getId()])
+                                    ); ?>
+                                </li>
+                               <?php } ?>
+                         <?php
+                        } ?>
                     </ul>
                 </td>
             </tr>

@@ -432,8 +432,20 @@ class IndexController extends AbstractActionController
     {
         $view = new ViewModel;
         $role_id = $this->params()->fromRoute('id');
-        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findoneBy(['id' => $role_id]);
+        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => $role_id]);
+        //users with this role
+        $users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['role' => $role_id]);
+        $team_users = [];
+        foreach ($users as $user) {
+            $team_name = $user->getTeam()->getName();
+            if (!array_key_exists($team_name, $team_users)) {
+                $team_users[$team_name] = [$user->getUser()];
+            } else {
+                array_push($team_users[$team_name], $user->getUser());
+            }
+        }
         $view->setVariable('role', $role);
+        $view->setVariable('team_users', $team_users);
         return $view;
     }
 
