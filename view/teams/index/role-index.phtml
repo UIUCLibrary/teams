@@ -1,7 +1,8 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-$response = $this->response;
+$roles = $this->roles;
+$user_roles = $this->user_roles;
 ?>
 
 <?php echo $this->pageTitle($translate('Team Roles')); ?>
@@ -19,7 +20,7 @@ $response = $this->response;
 
 <h3><?php echo $this->setting('installation_title') . ' Team Roles'; ?>:</h3>
 
-<?php if ($this->response): ?>
+<?php if ($this->roles) { ?>
 
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
@@ -37,44 +38,45 @@ $response = $this->response;
         </thead>
         <tbody>
 
-        <?php foreach ($response as $role): ?>
+        <?php foreach ($roles as $role) { ?>
             <tr>
                 <td>
-                    <?php echo
-                    $this->hyperlink(
-                        $role->getName(),
-                        $this->url('admin/teams/roles/detail', ['id'=> $role->getId()])
+                    <?php echo $this->hyperlink($role->getName(),
+                        $this->url(
+                            'admin/teams/roles/detail',
+                            ['id' => $role->getId()]
+                        )
                     ); ?>
                 </td>
                 <td>
+                    <?php if (array_key_exists($role->getName(), $user_roles)) { ?>
                     <ul>
-                    <?php foreach ($role->getTeamUsers() as $roleUser):
-                        if ($roleUser->getUser()->getId() == $this->identity()->getId()) { ?>
-                       <li>
+                        <?php foreach ($user_roles[$role->getName()] as $team) { ?>
+                        <li>
                             <?php echo
                             $this->hyperlink(
-                                $roleUser->getTeam()->getName(),
-                                $this->url('admin/teams/detail', [ 'id' => $roleUser->getTeam()->getId()])
-                            );
-                        }
-                    endforeach;
-                    ?>
+                                $team->getName(),
+                                $this->url('admin/teams/detail', [ 'id' => $team->getId()])
+                            ); ?>
+                        </li>
+                        <?php } ?>
                     </ul>
+                    <?php } ?>
                 </td>
-                <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) {?> checked <?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) {?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if ($role->getCanAddSitePages()) {?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) {?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) {?> checked<?php }; ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) {?> checked <?php } ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) {?> checked<?php } ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanAddSitePages()) {?> checked<?php } ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) {?> checked<?php } ?>></td>
+                <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) {?> checked<?php } ?>></td>
             </tr>
-        <?php endforeach; ?>
+        <?php } ?>
         </tbody>
     </table>
 
-<?php else: ?>
+<?php } else { ?>
 
     <div class="no-resources">
         <p><?php echo $translate('Omeka could not find any roles.'); ?></p>
     </div>
 
-<?php endif; ?>
+<?php } ?>
