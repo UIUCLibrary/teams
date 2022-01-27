@@ -1,4 +1,5 @@
 <?php
+$this->headScript()->appendFile($this->assetUrl('js/team-list-selector.js', 'Teams'));
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 
@@ -11,6 +12,7 @@ $escape = $this->plugin('escapeHtml');
     tr.current-team {
         background: lightgrey;
     }
+
 </style>
 
 
@@ -43,6 +45,7 @@ if ($this->user_teams): ?>
             <tr>
 <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
 <!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+                <th><?php echo $translate('Switch'); ?></th>
                 <th><?php echo $translate('Team Name'); ?></th>
                 <th></th>
                 <th><?php echo $translate('Your Role'); ?></th>
@@ -54,15 +57,16 @@ if ($this->user_teams): ?>
             <tbody>
             <?php foreach ($this->user_teams as $team):
                 $team = $team->getTeam();
-                ?>
 
-
-                <tr<?php if ($team->getId() == $this->current_team->getId()){echo ' class="current-team" ';}?>>
-                    <td>
+                if ($team->getId() == $this->current_team->getId()):?>
+                    <tr class="team-option current-team"><td><button class="fa fa-plus"></button></td>
+                <?php else: ?>
+                    <tr class="team-option"><td><button class="fa fa-minus"></button></td>
+                <?php endif; ?>
+                <td>
                         <a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()){
                             ?> <strong><?php echo $team->getName();?></strong><?php                         }else{
                             echo $team->getName();
-
                         }?></a>
                     </td>
                     <td>
