@@ -440,13 +440,10 @@ class IndexController extends AbstractActionController
     }
     public function roleIndexAction()
     {
-
         $view = new ViewModel;
-
         $response = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
         $view->setVariable('response', $response);
         return $view;
-
     }
 
 
