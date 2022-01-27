@@ -444,8 +444,17 @@ class IndexController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $roles = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
         $user_teams = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $user_roles = [];
+        foreach ($user_teams as $user_team) {
+            $role_name = $user_team->getRole()->getName();
+            if (!array_key_exists($role_name, $user_roles)) {
+                $user_roles[$role_name] = [$user_team->getTeam()];
+            } else {
+                array_push($user_roles[$role_name], $user_team->getTeam());
+            }
+        }
         $view->setVariable('roles', $roles);
-        $view->setVariable('user_teams', $user_teams);
+        $view->setVariable('user_roles', $user_roles);
 
         return $view;
     }
