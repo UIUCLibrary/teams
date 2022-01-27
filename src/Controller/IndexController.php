@@ -444,20 +444,12 @@ class IndexController extends AbstractActionController
         $view = new ViewModel;
 
         $response = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
-//        $response = $this->api()->search('team');
-        $routeMatch = $this->getEvent()->getRouteMatch()->getMatchedRouteName();
-
         $view->setVariable('response', $response);
-        $view->setVariable('route', $routeMatch);
         return $view;
 
     }
 
-    //delete works. update, read, and create do not. Get errors like this:
-    // Doctrine\DBAL\Exception\NotNullConstraintViolationException
-    //An exception occurred while executing 'INSERT INTO team_user (team_id, user_id_id, team_user_role)
-    // VALUES (?, ?, ?)' with params [null, null, null]: SQLSTATE[23000]: Integrity constraint violation:
-    // 1048 Column 'user_id_id' cannot be null
+
     public function usersAction(){
 
 
