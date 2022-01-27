@@ -435,6 +435,7 @@ class IndexController extends AbstractActionController
         $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => $role_id]);
         //users with this role
         $users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['role' => $role_id]);
+        //list of users with role indexed by the team where they have that role
         $team_users = [];
         foreach ($users as $user) {
             $team_name = $user->getTeam()->getName();
