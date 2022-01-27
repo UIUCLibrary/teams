@@ -27,3 +27,7 @@
 .icon-form:hover {
     opacity: 1;
 }
+
+tr.current-team {
+    background: lightgrey;
+}

@@ -1,5 +1,7 @@
 <?php
 $this->headScript()->appendFile($this->assetUrl('js/team-list-selector.js', 'Teams'));
+$this->headLink()->appendStylesheet($this->assetUrl('css/teams.css', 'Teams'));
+
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 
@@ -7,14 +9,6 @@ $escape = $this->plugin('escapeHtml');
 
 <?php echo $this->pageTitle($translate('Teams'));
 ?>
-
-<style>
-    tr.current-team {
-        background: lightgrey;
-    }
-
-</style>
-
 
 <div id="page-actions">
 <!--  for when ACL rules are in place  -->
