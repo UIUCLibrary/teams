@@ -441,8 +441,12 @@ class IndexController extends AbstractActionController
     public function roleIndexAction()
     {
         $view = new ViewModel;
-        $response = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
-        $view->setVariable('response', $response);
+        $user_id = $this->identity()->getId();
+        $roles = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
+        $user_teams = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $view->setVariable('roles', $roles);
+        $view->setVariable('user_teams', $user_teams);
+
         return $view;
     }
 
