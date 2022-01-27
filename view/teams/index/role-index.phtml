@@ -20,7 +20,7 @@ $user_roles = $this->user_roles;
 
 <h3><?php echo $this->setting('installation_title') . ' Team Roles'; ?>:</h3>
 
-<?php if ($this->roles) { ?>
+<?php if ($this->roles): ?>
 
     <table class="tablesaw" data-tablesaw-mode="stack">
         <thead>
@@ -49,7 +49,7 @@ $user_roles = $this->user_roles;
                     ); ?>
                 </td>
                 <td>
-                    <?php if (array_key_exists($role->getName(), $user_roles)) { ?>
+                    <?php if (array_key_exists($role->getName(), $user_roles)): ?>
                     <ul>
                         <?php foreach ($user_roles[$role->getName()] as $team) { ?>
                         <li>
@@ -61,7 +61,7 @@ $user_roles = $this->user_roles;
                         </li>
                         <?php } ?>
                     </ul>
-                    <?php } ?>
+                    <?php endif; ?>
                 </td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) {?> checked <?php } ?>></td>
                 <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) {?> checked<?php } ?>></td>
@@ -73,7 +73,7 @@ $user_roles = $this->user_roles;
         </tbody>
     </table>
 
-<?php } else { ?>
+<?php  else: ?>
 
     <div class="no-resources">
         <p><?php echo $translate('Omeka could not find any roles.'); ?></p>
