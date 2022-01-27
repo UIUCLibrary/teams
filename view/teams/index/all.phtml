@@ -8,7 +8,7 @@ $escape = $this->plugin('escapeHtml');
     <?php endif; ?>
 </div>
 <?php
-if (!$this->roleAuth()->teamAuthorized('add', 'team')) { ?>
+if (!$this->roleAuth()->teamAuthorized('add', 'team')): ?>
     <?php $glob_admin_url = $this->hyperlink(
         'global admins',
         $this->url(
@@ -25,7 +25,7 @@ if (!$this->roleAuth()->teamAuthorized('add', 'team')) { ?>
     <div class="breadcrumbs">
         Only the <?php echo $glob_admin_url ?> can make changes to a team they don't belong to
     </div>
-<?php }
+<?php endif;
 $translate = $this->plugin('translate');
 echo $this->pageTitle($translate('All Teams'));
 
@@ -50,8 +50,8 @@ if ($this->teams):?>
                 ?>
                 <tr>
                     <td>
-                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>"> <?php
-                            echo $team->getName(); ?>
+                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">
+                            <?php echo $team->getName(); ?>
                         </a>
                     </td>
                     <td>
@@ -61,11 +61,11 @@ if ($this->teams):?>
 
                                 <a class="o-icon-edit" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
                             </li>
-                                                        <?php endif; ?>
+                                                        <?php endif  ?>
                             <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
                                 <li><a class="o-icon-delete" href="<?php echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
                                 </li>
-                            <?php endif; ?>
+                            <?php endif ?>
                             <li>
                                 <a class="o-icon-more" href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
                             </li>
@@ -77,9 +77,9 @@ if ($this->teams):?>
                         echo $team->getUsers();
                         foreach ($team->getTeamUsers() as $user):
 
-                            if ($user->getUser()->getId() == $this->identity()->getId()) {
+                            if ($user->getUser()->getId() == $this->identity()->getId()):
                                 echo $user->getRole()->getName();
-                            }
+                            endif;
 
                         endforeach;?>
                     </td>
