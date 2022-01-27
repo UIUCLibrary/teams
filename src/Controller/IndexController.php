@@ -425,16 +425,15 @@ class IndexController extends AbstractActionController
 
         $view->setVariable('response', $response);
 
-
         return $view;
     }
 
     public function roleDetailAction()
     {
         $view = new ViewModel;
-        $id = $this->params()->fromRoute('id');
-        $response = $this->api()->read('team-role', ['id' => $id]);
-        $view->setVariable('response', $response);
+        $role_id = $this->params()->fromRoute('id');
+        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findoneBy(['id' => $role_id]);
+        $view->setVariable('role', $role);
         return $view;
     }
 
