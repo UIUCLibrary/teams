@@ -430,14 +430,14 @@ class IndexController extends AbstractActionController
     }
 
     public function roleDetailAction()
-
     {
+        $view = new ViewModel;
         $id = $this->params()->fromRoute('id');
         $response = $this->api()->read('team-role', ['id' => $id]);
-        return new ViewModel(['response'=>$response]);
-
-
+        $view->setVariable('response', $response);
+        return $view;
     }
+
     public function roleIndexAction()
     {
         $view = new ViewModel;
