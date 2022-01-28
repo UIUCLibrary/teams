@@ -296,7 +296,7 @@ class IndexController extends AbstractActionController
         }
         $view = new ViewModel;
         $user_id = $this->identity()->getId();
-        $all_user_teams = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+        $team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findBy(['user' => $user_id]);
         $current = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findOneBy(['user' => $user_id, 'is_current' => true]);
@@ -314,7 +314,7 @@ class IndexController extends AbstractActionController
             $current_team = 'None';
         }
         $view->setVariable('current_team', $current_team);
-        $view->setVariable('user_teams', $all_user_teams);
+        $view->setVariable('team_users', $team_users);
         $view->setVariable('user_id', $user_id);
         return $view;
     }
