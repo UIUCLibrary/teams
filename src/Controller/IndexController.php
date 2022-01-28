@@ -1,23 +1,13 @@
 <?php
 namespace Teams\Controller;
 
-
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
-use Omeka\Mvc\Controller\Plugin\Messenger;
-use Omeka\Stdlib\DateTime;
 use Laminas\EventManager\Event;
 use Laminas\Form\Form;
 use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Model\ViewModel;
-use Omeka\Entity\User;
-use Teams\Entity\Team;
-use Teams\Entity\TeamRole;
-use Omeka\Permissions\Acl;
-
-
 
 class IndexController extends AbstractActionController
 {
@@ -148,7 +138,6 @@ class IndexController extends AbstractActionController
         return $view;
     }
 
-
     public function allAction(){
 
         $view = new ViewModel;
@@ -168,12 +157,7 @@ class IndexController extends AbstractActionController
 
 
     }
-    public function permDeleteAction()
-    {
-        echo 'nothing went wrong';
 
-
-    }
     public function deleteAction()
     {
         if ($this->getRequest()->isPost()) {
