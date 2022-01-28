@@ -23,7 +23,7 @@ $escape = $this->plugin('escapeHtml');
 
 <?php $this->trigger('view.browse.before'); ?>
 
-<?php if ($this->user_teams): ?>
+<?php if ($this->team_users): ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
             <tr>
@@ -39,8 +39,8 @@ $escape = $this->plugin('escapeHtml');
             </tr>
             </thead>
             <tbody>
-            <?php foreach ($this->user_teams as $team):
-                $team = $team->getTeam();
+            <?php foreach ($this->team_users as $team_user):
+                $team = $team_user->getTeam();
                 if ($team->getId() == $this->current_team->getId()):?>
                     <tr class="team-option current-team">
                         <td>
@@ -65,31 +65,53 @@ $escape = $this->plugin('escapeHtml');
                     <td>
                         <ul class="actions">
                             <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
-                            <li>
-                                <a class="o-icon-edit" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
-                            </li>
-                                                        <?php endif; ?>
+                                <li>
+                                    <?php echo $this->hyperlink(
+                                            "",
+                                            $this->url('admin/teams/detail/update', ['id' => $team->getId()]),
+                                            ["class" => "o-icon-edit"]
+                                    )
+                                    ?>
+                                </li>
+                            <?php endif; ?>
                             <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
-                                <li><a class="o-icon-delete" href="<?php echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
+                                <li>
+                                    <?php echo $this->hyperlink(
+                                        "",
+                                        $this->url('admin/teams/detail/delete', ['id' => $team->getId()]),
+                                        ["class" => "o-icon-delete"]
+                                    )
+                                    ?>
                                 </li>
                             <?php endif; ?>
                             <li>
-                                <a class="o-icon-more" href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
+                                <?php echo $this->hyperlink(
+                                    "",
+                                    $this->url('admin/teams/detail', ['id' => $team->getId()]),
+                                    ["class" => "o-icon-more"]
+                                )
+                                ?>
                             </li>
                         </ul>
                     </td>
                     <td>
-                        <?php foreach ($team->getTeamUsers() as $user):
-
-                            if ($user->getUser()->getId() == $this->identity()->getId()):
-                                echo $user->getRole()->getName();
-                            endif;
-
-                        endforeach;?>
+                        <?php echo $team_user->getRole()->getName(); ?>
                     </td>
                     <td><?php echo $team->getDescription(); ?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
+                    <td>
+                        <?php echo $this->hyperlink(
+                            count($team->getTeamUsers()),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users'
+                        )
+                        ?>
+                    </td>
+                    <td>
+                        <?php echo $this->hyperlink(
+                            count($team->getTeamResources()),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#team-resources'
+                        )
+                        ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
