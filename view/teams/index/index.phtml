@@ -1,14 +1,11 @@
 <?php
 $this->headScript()->appendFile($this->assetUrl('js/team-list-selector.js', 'Teams'));
 $this->headLink()->appendStylesheet($this->assetUrl('css/teams.css', 'Teams'));
-
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-
 ?>
 
-<?php echo $this->pageTitle($translate('Teams'));
-?>
+<?php echo $this->pageTitle($translate('Teams')); ?>
 
 <div id="page-actions">
 <!--  for when ACL rules are in place  -->
@@ -18,22 +15,15 @@ $escape = $this->plugin('escapeHtml');
 </div>
 
 
-<?php if ($this->current_team != "None") {?>
-<h2> Current Team: <?php echo $this->current_team->getName() ?></h2>
-<?php } else {
-    ?> <h2> Current Team: You are Not Currently Assigned to a Team</h2>
-    <?php
-} ?>
-
-
+<?php if ($this->current_team != "None"):?>
+    <h2> Current Team: <?php echo $this->current_team->getName() ?></h2>
+<?php else: ?>
+    <h2> Current Team: You are Not Currently Assigned to a Team</h2>
+<?php endif; ?>
 
 <?php $this->trigger('view.browse.before'); ?>
 
-<?php
-if ($this->user_teams): ?>
-
-<?php
-    ?>
+<?php if ($this->user_teams): ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
             <tr>
@@ -57,11 +47,11 @@ if ($this->user_teams): ?>
                     <tr class="team-option"><td><button class="fa fa-minus team-select" data-team-id="<?php echo $team->getId() ?>"></button></td>
                 <?php endif; ?>
                 <td>
-                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()) {
+                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()):
                     ?> <strong><?php echo $team->getName(); ?></strong><?php
-                } else {
-                    echo $team->getName();
-                }?></a>
+                else:
+                    echo $team->getName(); ?>
+                 <?php endif; ?></a>
                     </td>
                     <td>
                         <ul class="actions">
@@ -82,9 +72,9 @@ if ($this->user_teams): ?>
                     <td>
                         <?php foreach ($team->getTeamUsers() as $user):
 
-                            if ($user->getUser()->getId() == $this->identity()->getId()) {
+                            if ($user->getUser()->getId() == $this->identity()->getId()):
                                 echo $user->getRole()->getName();
-                            }
+                            endif;
 
                         endforeach;?>
                     </td>
