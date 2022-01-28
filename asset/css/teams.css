@@ -30,4 +30,5 @@
 
 tr.current-team {
     background: lightgrey;
+    font-weight: bold;
 }

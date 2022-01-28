@@ -42,16 +42,25 @@ $escape = $this->plugin('escapeHtml');
             <?php foreach ($this->user_teams as $team):
                 $team = $team->getTeam();
                 if ($team->getId() == $this->current_team->getId()):?>
-                    <tr class="team-option current-team"><td><button class="fa fa-plus team-select" data-team-id="<?php echo $team->getId() ?>"></button></td>
+                    <tr class="team-option current-team">
+                        <td>
+                            <button class="fa fa-plus team-select" data-team-id="<?php echo $team->getId() ?>"></button>
+                        </td>
                 <?php else: ?>
-                    <tr class="team-option"><td><button class="fa fa-minus team-select" data-team-id="<?php echo $team->getId() ?>"></button></td>
+                    <tr class="team-option">
+                        <td>
+                            <button class="fa fa-minus team-select" data-team-id="<?php echo $team->getId() ?>"></button>
+                        </td>
                 <?php endif; ?>
                 <td>
-                        <a href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()):
-                    ?> <strong><?php echo $team->getName(); ?></strong><?php
-                else:
-                    echo $team->getName(); ?>
-                 <?php endif; ?></a>
+                    <?php $current = $this->current_team->getId() == $team->getId() ?>
+                    <?php $link_text = $this->current_team->getId() == $team->getId() ?>
+
+                    <?php echo $this->hyperlink(
+                            $team->getName(),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()])
+                        )
+                    ?>
                     </td>
                     <td>
                         <ul class="actions">
