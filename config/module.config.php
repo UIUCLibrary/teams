@@ -365,19 +365,20 @@ return [
 //                        ],
 //                    ],
 
-                    //okay, this seems like a super bad way to do this but I'm not sure what else to do
+                    //TODO: move this out of the index controller
                     'del' => [
                         'type' => 'Segment',
                         'options' => [
                             'route' => '/item/:id/delete',
                             'defaults' => [
                                 '__NAMESPACE__' => 'Teams\Controller',
-                                //need to make a anew action for the delete function?
+                                //TODO make new action for the delete function
                                 'controller' => 'Index',
                                 'action' => 'delete',
                             ],
                         ],
                         ],
+                    //TODO: move this out of the index controller
                     'batch_del'  => [
                         'type' => Literal::class,
                         'options' => [
@@ -390,21 +391,23 @@ return [
                             ],
                         ],
                     ],
-                    'perm_del'  => [
-                        'type' => Segment::class,
-                        'options' => [
-                            'route' => '/item/:id/perm-delete-confirm',
-                            'defaults' => [
-                                '__NAMESPACE__' => 'Teams\Controller',
-                                //need to make a anew action for the delete function?
-                                'controller' => 'Delete',
-                                'action' => 'perm-delete',
-                            ],
-                            'constraints' => [
-                                'id' => '\d+',
-                            ],
-                        ],
-                    ],
+
+                    //this might be a cleaner route
+//                    'perm_del'  => [
+//                        'type' => Segment::class,
+//                        'options' => [
+//                            'route' => '/item/:id/perm-delete-confirm',
+//                            'defaults' => [
+//                                '__NAMESPACE__' => 'Teams\Controller',
+//                                //need to make a anew action for the delete function?
+//                                'controller' => 'Delete',
+//                                'action' => 'perm-delete',
+//                            ],
+//                            'constraints' => [
+//                                'id' => '\d+',
+//                            ],
+//                        ],
+//                    ],
                     'trash' => [
                         'type' => Segment::class,
                         'options' => [

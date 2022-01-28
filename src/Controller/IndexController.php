@@ -1,22 +1,13 @@
 <?php
 namespace Teams\Controller;
 
-
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
-use Omeka\Stdlib\DateTime;
 use Laminas\EventManager\Event;
 use Laminas\Form\Form;
 use Laminas\Mvc\Controller\AbstractActionController;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Model\ViewModel;
-use Omeka\Entity\User;
-use Teams\Entity\Team;
-use Teams\Entity\TeamRole;
-use Omeka\Permissions\Acl;
-
-
 
 class IndexController extends AbstractActionController
 {
@@ -147,13 +138,12 @@ class IndexController extends AbstractActionController
         return $view;
     }
 
-
     public function allAction(){
 
         $view = new ViewModel;
         $teams = $this->entityManager->getRepository('Teams\Entity\Team')->findAll();
         $super_admin = $this->entityManager->getRepository('Omeka\Entity\User')
-            ->findOneBy(['id' => 1, 'role' => 'global_admin']);
+            ->findOneBy(['role' => 'global_admin']);
         $user = $this->identity();
 
 
@@ -167,12 +157,7 @@ class IndexController extends AbstractActionController
 
 
     }
-    public function permDeleteAction()
-    {
-        echo 'nothing went wrong';
 
-
-    }
     public function deleteAction()
     {
         if ($this->getRequest()->isPost()) {
@@ -181,10 +166,7 @@ class IndexController extends AbstractActionController
             if ($form->isValid()) {
 
                 $entityManager = $this->entityManager;
-
-
                 $user_id = $this->identity()->getId();
-
                 $team_id = $entityManager
                     ->getRepository('Teams\Entity\TeamUser')
                     ->findOneBy(['is_current'=>true, 'user'=>$user_id])
@@ -209,8 +191,6 @@ class IndexController extends AbstractActionController
                     'request' => $request,
                 ]);
                 $this->getEventManager()->triggerEvent($event);
-
-
                 if ($entity){
                     $entity->getResource()->setModified($datetime);
                     $entityManager->remove($entity);
@@ -274,76 +254,71 @@ class IndexController extends AbstractActionController
                 ->findOneBy(['team'=>$team_id, 'resource'=>$resource_ids[$i]]);
             $entityManager->remove($entity);
     }
-
-
         $entityManager->flush();
         return $this->redirect()->toRoute('admin', ['controller'=>'item']);
-
-
     }
 
-    public function changeCurrentTeamAction($user_id)
+    public function changeCurrentTeamAction(int $user_id, int $team_id)
     {
-        $request = $this->getRequest();
-        if (!$request->isPost()) {
-            return $this->redirect()->toRoute('admin');
-        } else {
-            $data = $request->getPost();
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
-            if ($old_current){
-                $old_current->setCurrent(null);
-            }
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
+        $em = $this->entityManager;
+        $team_users = $em->getRepository('Teams\Entity\TeamUser');
+        $current = $team_users->findOneBy(['user' => $user_id, 'is_current' => true]);
+        if ($current) {
+            $current->setCurrent(null);
+        }
+        $new_current = $team_users->findOneBy(['user' => $user_id, 'team' => $team_id]);
+        if ($new_current) {
             $new_current->setCurrent(true);
             $em->flush();
-
-
+            return true;
+        } else {
+            return false;
         }
     }
 
     public function indexAction()
     {
         $user_id = $this->identity()->getId();
-
         //post requests from this page should be the user changing their team
         $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            $this->redirect()->toRoute('admin/teams');
+        if ($request->isPost()) {
+            $this->messenger()->addSuccess('Current Team Changed'); // @translate
+            $team_id = $request['team_id'];
+            if (is_int($team_id)) {
+                if ($this->changeCurrentTeamAction($user_id, $request['team_id'])) {
+                    $this->messenger()->addSuccess('Current Team Changed');
+                    $this->redirect()->toRoute('admin/teams');
+                } else {
+                    $this->messenger()->addError('Unable to update team');
+                    $this->redirect()->toRoute('admin/teams');
+                }
+            }
         }
-
-
-
         $view = new ViewModel;
         $user_id = $this->identity()->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        if ( $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])){
-            $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
-        } elseif ($team_user->findOneBy(['user'=>$user_id])){
-            $current_team = $team_user->findOneBy(['user'=>$user_id]);
-            $current_team->setCurrent(true);
+        $team_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findBy(['user' => $user_id]);
+        $current = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user' => $user_id, 'is_current' => true]);
+        if ($current) {
+            $current_team = $current->getTeam();
+        //this handles states where a user doesn't have a current team selected
+        } elseif ($this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user' => $user_id])) {
+            $current = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+                ->findOneBy(['user' => $user_id]);
+            $current->setCurrent(true);
             $this->entityManager->flush();
-            $current_team = $current_team->getTeam();
+            $current_team = $current->getTeam();
+        } else {
+            $current_team = 'None';
         }
-
-
-         else {
-             $current_team = 'None';
-        }
-
         $view->setVariable('current_team', $current_team);
-        $view->setVariable('user_teams', $user_teams);
+        $view->setVariable('team_users', $team_users);
         $view->setVariable('user_id', $user_id);
-        $view->setVariable('data', $this->getRequest()->getPost());
-
-
-
-
         return $view;
     }
+
     public function teamResources($resource_type, $query, $user_id, $active = true, $team_id = null)
     {
         if ($team_id) {
@@ -425,39 +400,53 @@ class IndexController extends AbstractActionController
 
         $view->setVariable('response', $response);
 
-
         return $view;
     }
 
     public function roleDetailAction()
-
     {
-        $id = $this->params()->fromRoute('id');
-        $response = $this->api()->read('team-role', ['id' => $id]);
-        return new ViewModel(['response'=>$response]);
-
-
+        $view = new ViewModel;
+        $role_id = $this->params()->fromRoute('id');
+        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => $role_id]);
+        //users with this role
+        $users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['role' => $role_id]);
+        //list of users with role indexed by the team where they have that role
+        $team_users = [];
+        foreach ($users as $user) {
+            $team_name = $user->getTeam()->getName();
+            if (!array_key_exists($team_name, $team_users)) {
+                $team_users[$team_name] = [$user->getUser()];
+            } else {
+                array_push($team_users[$team_name], $user->getUser());
+            }
+        }
+        $view->setVariable('role', $role);
+        $view->setVariable('team_users', $team_users);
+        return $view;
     }
+
     public function roleIndexAction()
     {
-
         $view = new ViewModel;
+        $user_id = $this->identity()->getId();
+        $roles = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
+        $user_teams = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $user_roles = [];
+        foreach ($user_teams as $user_team) {
+            $role_name = $user_team->getRole()->getName();
+            if (!array_key_exists($role_name, $user_roles)) {
+                $user_roles[$role_name] = [$user_team->getTeam()];
+            } else {
+                array_push($user_roles[$role_name], $user_team->getTeam());
+            }
+        }
+        $view->setVariable('roles', $roles);
+        $view->setVariable('user_roles', $user_roles);
 
-        $response = $this->entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
-//        $response = $this->api()->search('team');
-        $routeMatch = $this->getEvent()->getRouteMatch()->getMatchedRouteName();
-
-        $view->setVariable('response', $response);
-        $view->setVariable('route', $routeMatch);
         return $view;
-
     }
 
-    //delete works. update, read, and create do not. Get errors like this:
-    // Doctrine\DBAL\Exception\NotNullConstraintViolationException
-    //An exception occurred while executing 'INSERT INTO team_user (team_id, user_id_id, team_user_role)
-    // VALUES (?, ?, ?)' with params [null, null, null]: SQLSTATE[23000]: Integrity constraint violation:
-    // 1048 Column 'user_id_id' cannot be null
+
     public function usersAction(){
 
 

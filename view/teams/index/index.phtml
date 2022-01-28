@@ -1,18 +1,11 @@
 <?php
+$this->headScript()->appendFile($this->assetUrl('js/team-list-selector.js', 'Teams'));
+$this->headLink()->appendStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-
 ?>
 
-<?php echo $this->pageTitle($translate('Teams'));
-?>
-
-<style>
-    tr.current-team {
-        background: lightgrey;
-    }
-</style>
-
+<?php echo $this->pageTitle($translate('Teams')); ?>
 
 <div id="page-actions">
 <!--  for when ACL rules are in place  -->
@@ -22,27 +15,21 @@ $escape = $this->plugin('escapeHtml');
 </div>
 
 
-<?php if ($this->current_team != "None"){?>
-<h2> Current Team: <?php echo $this->current_team->getName() ?></h2>
-<?php } else{
-    ?> <h2> Current Team: You are Not Currently Assigned to a Team</h2>
-    <?php
-} ?>
-
-
+<?php if ($this->current_team != "None"):?>
+    <h2> Current Team: <?php echo $this->current_team->getName() ?></h2>
+<?php else: ?>
+    <h2> Current Team: You are Not Currently Assigned to a Team</h2>
+<?php endif; ?>
 
 <?php $this->trigger('view.browse.before'); ?>
 
-<?php
-if ($this->user_teams): ?>
-
-<?php
-    ?>
+<?php if ($this->team_users): ?>
         <table class="tablesaw" data-tablesaw-mode="stack">
             <thead>
             <tr>
 <!--                include below in the first <th> to include the Select All checkbox for batch edits -->
-<!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all'); ?><!--">-->
+<!--                <input type="checkbox" class="select-all" aria-label="--><?php //echo $translate('Select all');?><!--">-->
+                <th><?php echo $translate('Switch'); ?></th>
                 <th><?php echo $translate('Team Name'); ?></th>
                 <th></th>
                 <th><?php echo $translate('Your Role'); ?></th>
@@ -52,49 +39,79 @@ if ($this->user_teams): ?>
             </tr>
             </thead>
             <tbody>
-            <?php foreach ($this->user_teams as $team):
-                $team = $team->getTeam();
-                ?>
+            <?php foreach ($this->team_users as $team_user):
+                $team = $team_user->getTeam();
+                if ($team->getId() == $this->current_team->getId()):?>
+                    <tr class="team-option current-team">
+                        <td>
+                            <button class="fa fa-plus team-select" data-team-id="<?php echo $team->getId() ?>"></button>
+                        </td>
+                <?php else: ?>
+                    <tr class="team-option">
+                        <td>
+                            <button class="fa fa-minus team-select" data-team-id="<?php echo $team->getId() ?>"></button>
+                        </td>
+                <?php endif; ?>
+                <td>
+                    <?php $current = $this->current_team->getId() == $team->getId() ?>
+                    <?php $link_text = $this->current_team->getId() == $team->getId() ?>
 
-
-                <tr<?php if ($team->getId() == $this->current_team->getId()){echo ' class="current-team" ';}?>>
-                    <td>
-                        <a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()])?>"> <?php if ($team->getId() == $this->current_team->getId()){
-                            ?> <strong><?php echo $team->getName();?></strong><?php                         }else{
-                            echo $team->getName();
-
-                        }?></a>
+                    <?php echo $this->hyperlink(
+                            $team->getName(),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()])
+                        )
+                    ?>
                     </td>
                     <td>
                         <ul class="actions">
                             <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
-                            <li>
-
-                                <a class="o-icon-edit" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->getId()])?>"></a>
-                            </li>
-                                                        <?php endif; ?>
+                                <li>
+                                    <?php echo $this->hyperlink(
+                                            "",
+                                            $this->url('admin/teams/detail/update', ['id' => $team->getId()]),
+                                            ["class" => "o-icon-edit"]
+                                    )
+                                    ?>
+                                </li>
+                            <?php endif; ?>
                             <?php if ($this->roleAuth()->teamAuthorized('delete', 'team')): ?>
-                                <li><a class="o-icon-delete" href="<?php echo $this->url('admin/teams/detail/delete', ['id' => $team->getId()])?>"></a>
+                                <li>
+                                    <?php echo $this->hyperlink(
+                                        "",
+                                        $this->url('admin/teams/detail/delete', ['id' => $team->getId()]),
+                                        ["class" => "o-icon-delete"]
+                                    )
+                                    ?>
                                 </li>
                             <?php endif; ?>
                             <li>
-                                <a class="o-icon-more" href="<?php echo $this->url('admin/teams/detail', ['id' => $team->getId()])?>">    </a>
+                                <?php echo $this->hyperlink(
+                                    "",
+                                    $this->url('admin/teams/detail', ['id' => $team->getId()]),
+                                    ["class" => "o-icon-more"]
+                                )
+                                ?>
                             </li>
                         </ul>
                     </td>
                     <td>
-                        <?php foreach ($team->getTeamUsers() as $user):
-
-                            if ($user->getUser()->getId() == $this->identity()->getId())
-                            {
-                                echo $user->getRole()->getName();
-                            }
-
-                        endforeach;?>
+                        <?php echo $team_user->getRole()->getName(); ?>
                     </td>
                     <td><?php echo $team->getDescription(); ?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#users';?>"> <?php  echo count($team->getTeamUsers())?></td>
-                    <td><a href="<?php echo $this->url('admin/teams/detail', ['id'=>$team->getId()]) . '#team-resources';?>"> <?php echo count($team->getTeamResources()); ?></a></td>
+                    <td>
+                        <?php echo $this->hyperlink(
+                            count($team->getTeamUsers()),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users'
+                        )
+                        ?>
+                    </td>
+                    <td>
+                        <?php echo $this->hyperlink(
+                            count($team->getTeamResources()),
+                            $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#team-resources'
+                        )
+                        ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>

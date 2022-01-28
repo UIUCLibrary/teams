@@ -1,30 +1,8 @@
 <?php
-$role = $this->response->getContent();
+$role = $this->role;
+$team_users = $this->team_users;
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-$resourceSortHeadings = [
-    [
-        'label' => $translate('Title'),
-        'value' => 'dcterms:title'
-    ],
-    [
-        'label' => $translate('Identifier'),
-        'value' => 'dcterms:identifier'
-    ],
-    [
-        'label' => $translate('Class'),
-        'value' => 'resource_class_label'
-    ],
-    [
-        'label' => $translate('Owner'),
-        'value' => 'owner_name'
-    ],
-    [
-        'label' => $translate('Created'),
-        'value' => 'created'
-    ],
-];
-
 
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
@@ -32,26 +10,26 @@ $sectionNavs = [
     'role-users' => $translate('Users'),
 ]; ?>
 
-<?php echo $this->pageTitle("Team Role: " . $role->name()); ?>
+<?php echo $this->pageTitle("Team Role: " . $role->getName()); ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $role); ?>
 
 <div id="page-actions">
     <?php if ($this->roleAuth()->teamAuthorized('delete', 'role')): ?>
-        <a class="button" href="<?php echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->id()])?>"> Delete Role </a>
+        <a class="button" href="<?php echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->getId()]) ?>">
+            Delete Role </a>
     <?php endif; ?>
 </div>
 
 <div id="item-metadata" class="active section">
     <div class="meta-group">
         <h4><?php echo $translate('Name'); ?></h4>
-        <div class="value"><?php echo $escape($role->name()); ?></div>
+        <div class="value"><?php echo $escape($role->getName()); ?></div>
     </div>
     <div class="meta-group">
         <h4><?php echo $translate('Comment'); ?></h4>
         <div class="value"><?php echo $escape($role->getComment()); ?></div>
     </div>
 </div>
-
 
 <div id="item-linked" class="section">
     <table class="tablesaw" data-tablesaw-mode="stack">
@@ -65,13 +43,13 @@ $sectionNavs = [
         </tr>
         </thead>
         <tbody>
-            <tr>
-                <td><input type="checkbox" disabled <?php if($role->canAddUsers()){?> checked <?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddItems()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canAddSitePages()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canModifyResources()){?> checked<?php }; ?>></td>
-                <td><input type="checkbox" disabled <?php if($role->canDeleteResources()){?> checked<?php }; ?>></td>
-            </tr>
+        <tr>
+            <td><input type="checkbox" disabled <?php if ($role->getCanAddUsers()) { ?> checked <?php } ?>></td>
+            <td><input type="checkbox" disabled <?php if ($role->getCanAddItems()) { ?> checked<?php } ?>></td>
+            <td><input type="checkbox" disabled <?php if ($role->getCanAddSitePages()) { ?> checked<?php } ?>></td>
+            <td><input type="checkbox" disabled <?php if ($role->getCanModifyResources()) { ?> checked<?php } ?>></td>
+            <td><input type="checkbox" disabled <?php if ($role->getCanDeleteResources()) { ?> checked<?php } ?>></td>
+        </tr>
         </tbody>
     </table>
 </div>
@@ -82,29 +60,30 @@ $sectionNavs = [
         <thead>
         <tr>
             <th><?php echo $translate('Team'); ?></th>
-            <th><?php echo $translate('Users with '. $role->name() . ' role'); ?></th>
+            <th><?php echo $translate('Users with ' . $role->getName() . ' role'); ?></th>
         </tr>
         </thead>
         <tbody>
-<?php foreach ($teams as $team): ?>
-    <tr>
-        <td><?php echo $team->name()?></td>
-        <td>
-            <ul>
-            <?php $team_users = $team->users();
-            $key = array_search($role->name(), array_column(array($team_users), 'role'));
-            foreach ($team_users as $team_user):
-                if ($team_user->getRole()->getName() == $role->name()){ ?>
-                    <li>
-                    <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
-                        <?php echo $team_user->getUser()->getName(); ?> </a>
-                <?php } ?>
-                </li>
-            <?php endforeach; ?>
-            </ul>
-        </td>
-    </tr>
-<?php endforeach; ?>
+        <?php foreach ($teams as $team): ?>
+            <tr>
+                <td><?php echo $team->name() ?></td>
+                <td>
+                    <ul>
+                        <?php if (array_key_exists($team->name(), $team_users)):
+                            foreach ($team_users[$team->name()] as $user): ?>
+                                <li>
+                                    <?php echo
+                                    $this->hyperlink(
+                                        $user->getName(),
+                                        $this->url('admin/id', ['controller' => 'user', 'id' => $user->getId()])
+                                    ); ?>
+                                </li>
+                               <?php endforeach; ?>
+                         <?php endif; ?>
+                    </ul>
+                </td>
+            </tr>
+        <?php endforeach; ?>
         </tbody>
     </table>
 </div>

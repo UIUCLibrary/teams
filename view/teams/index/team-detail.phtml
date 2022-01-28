@@ -1,6 +1,5 @@
 <?php
 $team = $this->response->getContent();
-
 ?>
 
 <?php
@@ -10,26 +9,25 @@ $this->htmlElement('body')->appendAttribute('class', 'items browse');
 $resourceSortHeadings = [
     [
         'label' => $translate('Title'),
-        'value' => 'dcterms:title'
+        'value' => 'dcterms:title',
     ],
     [
         'label' => $translate('Identifier'),
-        'value' => 'dcterms:identifier'
+        'value' => 'dcterms:identifier',
     ],
     [
         'label' => $translate('Class'),
-        'value' => 'resource_class_label'
+        'value' => 'resource_class_label',
     ],
     [
         'label' => $translate('Owner'),
-        'value' => 'owner_name'
+        'value' => 'owner_name',
     ],
     [
         'label' => $translate('Created'),
-        'value' => 'created'
+        'value' => 'created',
     ],
 ];
-
 
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
@@ -61,10 +59,9 @@ $sectionNavs = [
         <h4><?php echo $translate('Linked Site(s)'); ?></h4>
         <div class="value">
             <?php foreach ($team->sites() as $site):?>
-            <?php echo $site->getSite()->getTitle(); ?>
-            <?php echo '<br>' ?>
+                <?php echo $site->getSite()->getTitle(); ?>
+                <?php echo '<br>' ?>
             <?php endforeach; ?>
-
         </div>
     </div>
 
@@ -72,7 +69,7 @@ $sectionNavs = [
 
 <div id="users" class="section">
 
-    <?php if (count($team->users())> 0): ?>
+    <?php if (count($team->users()) > 0): ?>
                    <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                 <thead>
                     <tr>
@@ -83,14 +80,14 @@ $sectionNavs = [
                 </thead>
                 <tbody>
 
-        <?php foreach ($team->users() as $team_user):
-
-            ?>
+        <?php foreach ($team->users() as $team_user):?>
                     <tr>
                         <td>
-                           <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
-                               <?php echo $team_user->getUser()->getName() ?>
-                           </a>
+                            <?php $this->hyperlink(
+                                $team_user->getUser()->getName(),
+                                $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
+                            )
+                            ?>
                         </td>
                         <td><?php echo $team_user->getRole()->getName(); ?></td>
                         <?php if ($team_user->getCurrent()): ?>
@@ -105,7 +102,11 @@ $sectionNavs = [
     <?php else: ?>
         <div class="no-resources o-icon-users">
             <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                        <a href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>">Add a User</a>
+            <?php $this->hyperlink(
+                    'Add a Team',
+                    $this->url('admin/teams/detail/update', ['id' => $team->id()])
+            )
+            ?>
         </div>
     <?php endif; ?>
 
@@ -113,36 +114,27 @@ $sectionNavs = [
 </div>
 
 <div id="team-resources" class="section">
-
-
         <form method="post" id="batch-form" class="disable-unsaved-warning">
-
-
             <table class="tablesaw" data-tablesaw-mode="stack">
                 <thead>
-                <tr>
-
-                    <th><?php echo $translate('Resource Type'); ?></th>
-                    <th><?php echo $translate('Count'); ?></th>
-
-                </tr>
+                    <tr>
+                        <th><?php echo $translate('Resource Type'); ?></th>
+                        <th><?php echo $translate('Count'); ?></th>
+                    </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($this->resources as $key => $values):
-
-                ?>
-                <tr>
-                    <td>
-                        <?php echo $key;?>
-                    </td>
-                    <td>
-                        <?php echo $values['count']?>
-                    </td>
-                </tr>
-                <?php endforeach;?>
+                    <?php foreach ($this->resources as $key => $values):?>
+                    <tr>
+                        <td>
+                            <?php echo $key;?>
+                        </td>
+                        <td>
+                            <?php echo $values['count']?>
+                        </td>
+                    </tr>
+                    <?php endforeach;?>
                 </tbody>
             </table>
-
         </form>
 </div>
 
