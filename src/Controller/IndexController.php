@@ -5,6 +5,7 @@ namespace Teams\Controller;
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
+use Omeka\Mvc\Controller\Plugin\Messenger;
 use Omeka\Stdlib\DateTime;
 use Laminas\EventManager\Event;
 use Laminas\Form\Form;
@@ -181,10 +182,7 @@ class IndexController extends AbstractActionController
             if ($form->isValid()) {
 
                 $entityManager = $this->entityManager;
-
-
                 $user_id = $this->identity()->getId();
-
                 $team_id = $entityManager
                     ->getRepository('Teams\Entity\TeamUser')
                     ->findOneBy(['is_current'=>true, 'user'=>$user_id])
@@ -209,8 +207,6 @@ class IndexController extends AbstractActionController
                     'request' => $request,
                 ]);
                 $this->getEventManager()->triggerEvent($event);
-
-
                 if ($entity){
                     $entity->getResource()->setModified($datetime);
                     $entityManager->remove($entity);
@@ -274,12 +270,8 @@ class IndexController extends AbstractActionController
                 ->findOneBy(['team'=>$team_id, 'resource'=>$resource_ids[$i]]);
             $entityManager->remove($entity);
     }
-
-
         $entityManager->flush();
         return $this->redirect()->toRoute('admin', ['controller'=>'item']);
-
-
     }
 
     public function changeCurrentTeamAction(int $user_id, int $team_id)
@@ -291,51 +283,58 @@ class IndexController extends AbstractActionController
             $current->setCurrent(null);
         }
         $new_current = $team_users->findOneBy(['user' => $user_id, 'team' => $team_id]);
-        $new_current->setCurrent(true);
-        $em->flush();
+        if ($new_current) {
+            $new_current->setCurrent(true);
+            $em->flush();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public function indexAction()
     {
         $user_id = $this->identity()->getId();
-
         //post requests from this page should be the user changing their team
         $request = $this->getRequest();
-        if ($request->isPost()){
-            $this->changeCurrentTeamAction($user_id);
-            $this->redirect()->toRoute('admin/teams');
+        if ($request->isPost()) {
+            $this->messenger()->addSuccess('Current Team Changed'); // @translate
+            $team_id = $request['team_id'];
+            if (is_int($team_id)) {
+                if ($this->changeCurrentTeamAction($user_id, $request['team_id'])) {
+                    $this->messenger()->addSuccess('Current Team Changed');
+                    $this->redirect()->toRoute('admin/teams');
+                } else {
+                    $this->messenger()->addError('Unable to update team');
+                    $this->redirect()->toRoute('admin/teams');
+                }
+            }
         }
-
-
-
         $view = new ViewModel;
         $user_id = $this->identity()->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        if ( $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])){
-            $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true])->getTeam();
-        } elseif ($team_user->findOneBy(['user'=>$user_id])){
-            $current_team = $team_user->findOneBy(['user'=>$user_id]);
-            $current_team->setCurrent(true);
+        $all_user_teams = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findBy(['user' => $user_id]);
+        $current = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user' => $user_id, 'is_current' => true]);
+        if ($current) {
+            $current_team = $current->getTeam();
+        //this handles states where a user doesn't have a current team selected
+        } elseif ($this->entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user' => $user_id])) {
+            $current = $this->entityManager->getRepository('Teams\Entity\TeamUser')
+                ->findOneBy(['user' => $user_id]);
+            $current->setCurrent(true);
             $this->entityManager->flush();
-            $current_team = $current_team->getTeam();
+            $current_team = $current->getTeam();
+        } else {
+            $current_team = 'None';
         }
-
-
-         else {
-             $current_team = 'None';
-        }
-
         $view->setVariable('current_team', $current_team);
-        $view->setVariable('user_teams', $user_teams);
+        $view->setVariable('user_teams', $all_user_teams);
         $view->setVariable('user_id', $user_id);
-        $view->setVariable('data', $this->getRequest()->getPost());
-
-
-
-
         return $view;
     }
+
     public function teamResources($resource_type, $query, $user_id, $active = true, $team_id = null)
     {
         if ($team_id) {
