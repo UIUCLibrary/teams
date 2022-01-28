@@ -10,26 +10,25 @@ $this->htmlElement('body')->appendAttribute('class', 'items browse');
 $resourceSortHeadings = [
     [
         'label' => $translate('Title'),
-        'value' => 'dcterms:title'
+        'value' => 'dcterms:title',
     ],
     [
         'label' => $translate('Identifier'),
-        'value' => 'dcterms:identifier'
+        'value' => 'dcterms:identifier',
     ],
     [
         'label' => $translate('Class'),
-        'value' => 'resource_class_label'
+        'value' => 'resource_class_label',
     ],
     [
         'label' => $translate('Owner'),
-        'value' => 'owner_name'
+        'value' => 'owner_name',
     ],
     [
         'label' => $translate('Created'),
-        'value' => 'created'
+        'value' => 'created',
     ],
 ];
-
 
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
@@ -72,7 +71,7 @@ $sectionNavs = [
 
 <div id="users" class="section">
 
-    <?php if (count($team->users())> 0): ?>
+    <?php if (count($team->users()) > 0): ?>
                    <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                 <thead>
                     <tr>
@@ -88,7 +87,7 @@ $sectionNavs = [
             ?>
                     <tr>
                         <td>
-                           <a href="<?php echo $this->url('admin/id', ['controller'=> 'user', 'id' =>  $team_user->getUser()->getId() ]) ?>">
+                           <a href="<?php echo $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ]) ?>">
                                <?php echo $team_user->getUser()->getName() ?>
                            </a>
                         </td>
