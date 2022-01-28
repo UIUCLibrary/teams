@@ -282,25 +282,17 @@ class IndexController extends AbstractActionController
 
     }
 
-    public function changeCurrentTeamAction($user_id)
+    public function changeCurrentTeamAction(int $user_id, int $team_id)
     {
-        $request = $this->getRequest();
-        if (!$request->isPost()) {
-            return $this->redirect()->toRoute('admin');
-        } else {
-            $data = $request->getPost();
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => true]);
-            if ($old_current){
-                $old_current->setCurrent(null);
-            }
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-            $new_current->setCurrent(true);
-            $em->flush();
-
-
+        $em = $this->entityManager;
+        $team_users = $em->getRepository('Teams\Entity\TeamUser');
+        $current = $team_users->findOneBy(['user' => $user_id, 'is_current' => true]);
+        if ($current) {
+            $current->setCurrent(null);
         }
+        $new_current = $team_users->findOneBy(['user' => $user_id, 'team' => $team_id]);
+        $new_current->setCurrent(true);
+        $em->flush();
     }
 
     public function indexAction()
