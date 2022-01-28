@@ -12,7 +12,7 @@ $( document ).ready(function() {
         $('select').val($(this).attr('data-team-id'));
         $('form#change_team').submit();
         //visual indication that something is happening while the page reloads
-        $('select#team_options').css("background-color", "lightgrey");
-        $('tr.current-team').toggleClass("current-team")
+        $('select#team_options').css("background-color", "lightgrey").css("font-weight", "bold");
+        $(this).parents('tr').siblings('.current-team').toggleClass("current-team")
     });
 });
