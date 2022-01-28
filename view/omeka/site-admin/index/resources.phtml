@@ -1,0 +1,18 @@
+<?php
+$translate = $this->plugin('translate');
+$this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
+$this->htmlElement('body')->appendAttribute('class', 'sites resources');
+?>
+
+<?php echo $this->pageTitle($translate('Resources'), 1, $translate('Sites')); ?>
+<div>
+    <p>
+        <?php
+        echo sprintf(
+            $translate('Site Resources are managed by the Teams Module')
+        ); ?>
+    </p>
+</div>
+
+

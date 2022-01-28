@@ -1,0 +1,14 @@
+<?php
+$translate = $this->plugin('translate');
+$this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
+$this->htmlElement('body')->appendAttribute('class', 'sites users');
+$escape = $this->plugin('escapeHtml'); ?>
+<?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
+<div>
+    <p>
+        <?php
+        echo sprintf(
+            $translate('Site Permissions are managed by the Teams Module')
+        ); ?>
+    </p>
+</div>
