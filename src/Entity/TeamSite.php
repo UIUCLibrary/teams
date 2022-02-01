@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Mapping\UniqueConstraint;
+use Omeka\Entity\AbstractEntity;
 use Omeka\Entity\Site;
 use Omeka\Entity\User;
 
@@ -19,7 +20,7 @@ use Omeka\Entity\User;
  * @Entity
  * @Table(uniqueConstraints={@UniqueConstraint(name="active_team", columns={"is_current", "site_id"})})
  */
-class TeamSite
+class TeamSite extends AbstractEntity
 {
     /**
      * @var Team
@@ -101,4 +102,14 @@ class TeamSite
     }
 
 
+    /**
+     * @inheritDoc
+     */
+    public function getId()
+    {
+        return [
+            'team' => $this->getTeam()->getId(),
+            'site' => $this->getSite()->getId()
+        ];
+    }
 }
