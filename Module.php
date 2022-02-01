@@ -1921,12 +1921,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $fk = 'resource';
             $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
-        elseif ($res_class == 'Teams\Entity\TeamResource'){
-            $teamsRepo = 'Teams\Entity\TeamResource';
-            $fk = 'resource';
-            $fk_id = $resource->getResource()->getId();
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
-        }
         elseif ($res_class == 'Omeka\Entity\Site'){
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
@@ -1947,6 +1941,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
             $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];
+        }
+        elseif ($res_class == 'Teams\Entity\TeamSite'){
+            $teamsRepo = 'Teams\Entity\TeamUser';
+            $fk = 'user';
+            $criteria = ['team'=>$resource->getTeam()->getId(), $fk =>$user->getId()];
+        }
+        elseif ($res_class == 'Teams\Entity\TeamResource'){
+            $teamsRepo = 'Teams\Entity\TeamResource';
+            $fk = 'resource';
+            $fk_id = $resource->getResource()->getId();
+            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
         }
         /*
          * TeamRole is only accessible by global admin so doesn't need to be checked.
@@ -1992,6 +1997,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
      */
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $user = $this->getUser();
+
 
         /*
          * first go through a couple of common cases where we don't need to judge permissions and don't bother checking
@@ -2165,7 +2171,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif ($res_class == 'Teams\Entity\TeamRole'){
             $authorized = $is_glob_admin;
         }
-
 
         elseif ($res_class == "Omeka\Entity\Asset"){
             return true;
