@@ -1998,7 +1998,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
     public function teamAuthority(EntityInterface $resource, $action, Event $event){
         $user = $this->getUser();
 
-
         /*
          * first go through a couple of common cases where we don't need to judge permissions and don't bother checking
          * any other condition
@@ -2036,9 +2035,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         //case that I don't fully understand. When selecting resource template on new item form
         //the Omeka\AuthenticationService->getIdentity() returns null
 
-
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
         $user_id = $user->getId();
         $team_user = $em->getRepository('Teams\Entity\TeamUser')
             ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
@@ -2084,11 +2081,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
             elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanModifyResources();
-
             }
             elseif ($action == 'read'){
                 $authorized = true;
-
             }
 
         }
@@ -2096,10 +2091,10 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             if ($action == 'create'){
                 $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
                 if ($globalSettings->get('teams_site_admin_make_site') && $user->getRole() == 'site_admin'){
-                    $authorized = true;
-                } elseif ($globalSettings->get('teams_editor_make_site') && $user->getRole() == 'editor'){
-		    $authorized = true;
-		} else {
+                    $authorized = true;}
+                elseif ($globalSettings->get('teams_editor_make_site') && $user->getRole() == 'editor'){
+		    $authorized = true;}
+                else {
                     $authorized = $is_glob_admin;
                 }
             }
@@ -2113,7 +2108,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
             elseif ($action == 'read'){
                 $authorized = true;
-
             }
 
         }
@@ -2128,11 +2122,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             }
             elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanAddSitePages();
-
             }
             elseif ($action == 'read'){
                 $authorized = true;
-
             }
 
 
@@ -2140,21 +2132,28 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         elseif ($res_class == 'Teams\Entity\Team' ){
             if ($action == 'create'){
                 $authorized = $is_glob_admin;
-
-            }
-            elseif ($action == 'delete' || $action == 'batch_delete'){
+            } elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $is_glob_admin;
 
-            }
-            elseif ($action == 'update'){
+            } elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanAddUsers();
 
             }
             elseif ($action == 'read'){
                 $authorized = true;
-
             }
         }
+        elseif ($res_class == 'Teams\Entity\TeamSite' ){
+            if ($action == 'read'){
+                $authorized = true;
+                //deleting a site from a team
+            }
+            //adding or removing sites from a team
+            elseif ($action == 'read'){
+                $authorized = $is_glob_admin;
+            }
+        }
+
 
         //a list of classes where we don't need to check teams
         //TODO: this should be refactored and go with the checks in the beginning
