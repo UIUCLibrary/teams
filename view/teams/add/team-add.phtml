@@ -31,16 +31,11 @@ $form = $this->form;
 $form->setAttribute('id', 'new_team');
 $form->setAttribute('action', $this->url());
 $form->prepare();
-
 echo $this->form()->openTag($form);
-
 echo $this->formCollection($form);
-
 ?>
-
     </div>
 </div>
-
 <div id="team-members" class="section">
     <div class="meta-group">
         <div class="field">
@@ -134,8 +129,6 @@ echo $this->formCollection($form);
             <div style="margin-left: 20px; ">
                 <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
             </div>
-
-
         </div>
         <div class="field">
             <div class="field-meta">
@@ -153,13 +146,9 @@ echo $this->formCollection($form);
                     <tbody id="user-table">
                     </tbody>
                 </table>
-
         </div>
-
     </div>
-
     <div id="clone">
-
     </div>
 </div>
 
