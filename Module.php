@@ -1080,53 +1080,56 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-        //get all teams for the item
-        //get all sites associated with those teams
-        $item_teams = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=>$item_id]);
-
-        $current_teams = [];
-        foreach ($item_teams as $team){
-            $current_teams[] =  $team->getTeam()->getId();
-        }
-
-        $current_team_sites = [];
-        foreach ($current_teams as $team){
-            $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$team]);
-
-            foreach ($team_sites as $team_site){
-                $current_team_sites[] = $team_site->getSite()->getId();
-            }
-
-        }
-
-        //sync teams and item sites
-
         //get current item sites
         $item = $em->getRepository('Omeka\Entity\Item')
             ->findOneBy(['id'=>$item_id]);
-        $item_sites = $item->getSites();
+        if ($item) {
 
-        $current_item_sites = [];
+            //get all teams for the item
+            //get all sites associated with those teams
+            $item_teams = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $item_id]);
 
-        foreach ($item_sites as $site){
-            $current_item_sites[] = $site->getId();
-        }
+            $current_teams = [];
+            foreach ($item_teams as $team) {
+                $current_teams[] = $team->getTeam()->getId();
+            }
 
-        //generate needed changes
-        $remove_sites = array_diff($current_item_sites, $current_team_sites);
-        $add_sites = array_diff($current_team_sites, $current_item_sites);
+            $current_team_sites = [];
+            foreach ($current_teams as $team) {
+                $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $team]);
 
-        //update item sites
-        foreach ($remove_sites as $site){
-            $target_site = $item_sites->get($site);
-            $item_sites->removeElement($target_site);
-        }
+                foreach ($team_sites as $team_site) {
+                    $current_team_sites[] = $team_site->getSite()->getId();
+                }
 
-        $siteAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('sites');
-        foreach ($add_sites as $site){
-            $add_site = $siteAdapter->findEntity($site);
-            $item_sites->set($add_site->getId(), $add_site);
+            }
 
+            //sync teams and item sites
+
+            $item_sites = $item->getSites();
+
+            $current_item_sites = [];
+
+            foreach ($item_sites as $site) {
+                $current_item_sites[] = $site->getId();
+            }
+
+            //generate needed changes
+            $remove_sites = array_diff($current_item_sites, $current_team_sites);
+            $add_sites = array_diff($current_team_sites, $current_item_sites);
+
+            //update item sites
+            foreach ($remove_sites as $site) {
+                $target_site = $item_sites->get($site);
+                $item_sites->removeElement($target_site);
+            }
+
+            $siteAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('sites');
+            foreach ($add_sites as $site) {
+                $add_site = $siteAdapter->findEntity($site);
+                $item_sites->set($add_site->getId(), $add_site);
+
+            }
         }
 
     }
@@ -1367,17 +1370,19 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             // update TeamUser=>User->DefaultSites, update
 
 
-            $new_teams = $request->getContent()['team'];
+            //teams from the form
+            $form_teams = $request->getContent()['team'];
             $site_id = $request->getId();
+
+            //teams that site is a member of
             $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+
+            //array of existing teams ids
             $existing_teams = array_map(function ($team_site) {return $team_site->getTeam()->getId();}, $team_sites);
 
-            $added_teams = array_diff($new_teams, $existing_teams);
-            $removed_teams = array_diff($existing_teams, $new_teams);
+            $added_teams = array_diff($form_teams, $existing_teams);
+            $removed_teams = array_diff($existing_teams, $form_teams);
 
-
-            //Wait--can't we just loop through the $removed_teams?
-            //We already have the hydrated teaams. Is there any value in saving a few db calls to use a different format?
             foreach ($team_sites as $team_site):
                 if (in_array($team_site->getTeam()->getId(), $removed_teams)){
                     $em->remove($team_site);
@@ -1387,10 +1392,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
             //add teams to the site for each new team listed in the form
             foreach ($added_teams as $team):
-                $team_site = new TeamSite($em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
-                    $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]));
+                $team_site = new TeamSite(
+                    $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
+                    $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id])
+                );
                 $em->persist($team_site);
-
             endforeach;
             $em->flush();
 
@@ -1406,6 +1412,8 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                     ->findOneBy(['id'=>$team_id])
                     ->getTeamUsers();
             }
+
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
             foreach ($delta_item_site as $team_item_collection){
                 foreach ($team_item_collection as $team_item){
