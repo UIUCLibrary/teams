@@ -1362,79 +1362,90 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
-        //when validation fails on the other parts of the form, errors not registering here for some reason
-        //so pushing this back to before the changes from the rest of the form are passed to the entity manager
-        //otherwise, this will flush those changes before the AbstractEntityAdapter has a chance to abort them
-//        if ($error_store->hasErrors()) {
-//            return true;
-//        }
 
-        if ($operation==='update' && array_key_exists('team', $request->getContent())){
+        //entity not validated till after this event, so to avoid flushing them with invalid changes, validate here
+        $site_entity = new SiteAdapter();
 
-            //Add and remove TeamSites
-            //From each of those teams,
-            // update TeamReasource=>Item->ItemSite,
-            // update TeamUser=>User->DefaultSites, update
+        //point to service locator
+        $site_entity->setServiceLocator($this->getServiceLocator());
+
+        //validate hydrated entity
+        $site_entity->validateEntity($entity, $error_store);
+        if ($error_store->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($error_store);
+            throw $validationException;
+        } else {
+
+            if ($operation === 'update' && array_key_exists('team', $request->getContent())) {
+
+                //Add and remove TeamSites
+                //From each of those teams,
+                // update TeamReasource=>Item->ItemSite,
+                // update TeamUser=>User->DefaultSites, update
 
 
-            //teams from the form
-            $form_teams = $request->getContent()['team'];
-            $site_id = $request->getId();
+                //teams from the form
+                $form_teams = $request->getContent()['team'];
+                $site_id = $request->getId();
 
-            //teams that site is a member of
-            $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
+                //teams that site is a member of
+                $team_sites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site_id]);
 
-            //array of existing teams ids
-            $existing_teams = array_map(function ($team_site) {return $team_site->getTeam()->getId();}, $team_sites);
+                //array of existing teams ids
+                $existing_teams = array_map(function ($team_site) {
+                    return $team_site->getTeam()->getId();
+                }, $team_sites);
 
-            $added_teams = array_diff($form_teams, $existing_teams);
-            $removed_teams = array_diff($existing_teams, $form_teams);
+                $added_teams = array_diff($form_teams, $existing_teams);
+                $removed_teams = array_diff($existing_teams, $form_teams);
 
-            foreach ($team_sites as $team_site):
-                if (in_array($team_site->getTeam()->getId(), $removed_teams)){
-                    $em->remove($team_site);
+                foreach ($team_sites as $team_site):
+                    if (in_array($team_site->getTeam()->getId(), $removed_teams)) {
+                        $em->remove($team_site);
+                    }
+                endforeach;
+                $em->flush();
+
+                //add teams to the site for each new team listed in the form
+                foreach ($added_teams as $team):
+                    $team_site = new TeamSite(
+                        $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
+                        $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id])
+                    );
+                    $em->persist($team_site);
+                endforeach;
+                $em->flush();
+
+                //get any items or users that need to be updated
+                //by either removing or adding item-sits or user default site
+                $delta_item_site = [];
+                $delta_user_site = [];
+                foreach (array_merge($added_teams, $removed_teams) as $team_id) {
+                    $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
+                        ->findOneBy(['id' => $team_id])
+                        ->getTeamResources();
+                    $delta_user_site[] = $em->getRepository('Teams\Entity\Team')
+                        ->findOneBy(['id' => $team_id])
+                        ->getTeamUsers();
                 }
-            endforeach;
-            $em->flush();
 
-            //add teams to the site for each new team listed in the form
-            foreach ($added_teams as $team):
-                $team_site = new TeamSite(
-                    $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
-                    $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id])
-                );
-                $em->persist($team_site);
-            endforeach;
-            $em->flush();
+                $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
-            //get any items or users that need to be updated
-            //by either removing or adding item-sits or user default site
-            $delta_item_site = [];
-            $delta_user_site = [];
-            foreach (array_merge($added_teams, $removed_teams) as $team_id){
-                $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
-                    ->findOneBy(['id'=>$team_id])
-                    ->getTeamResources();
-                $delta_user_site[] = $em->getRepository('Teams\Entity\Team')
-                    ->findOneBy(['id'=>$team_id])
-                    ->getTeamUsers();
-            }
-
-            $logger = $this->getServiceLocator()->get('Omeka\Logger');
-
-            foreach ($delta_item_site as $team_item_collection){
-                foreach ($team_item_collection as $team_item){
-                    $this->updateItemSites($team_item->getResource()->getId());
+                foreach ($delta_item_site as $team_item_collection) {
+                    foreach ($team_item_collection as $team_item) {
+                        $this->updateItemSites($team_item->getResource()->getId());
+                    }
                 }
-            }
 
-            //update current team users to include new site in their default sites
-            foreach ($delta_user_site as $team_users):
-                foreach ($team_users as $team_user):
+                //update current team users to include new site in their default sites
+                foreach ($delta_user_site as $team_users):
+                    foreach ($team_users as $team_user):
                         $user_id = $team_user->getUser()->getId();
                         $this->updateUserSites($user_id);
+                    endforeach;
                 endforeach;
-            endforeach;
+            }
         }
     }
 
@@ -2420,7 +2431,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $sharedEventManager->attach(
             SiteAdapter::class,
-            'api.hydrate.pre',
+            'api.hydrate.post',
             [$this, 'siteUpdate']
         );
 
