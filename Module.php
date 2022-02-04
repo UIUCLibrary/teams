@@ -1362,6 +1362,13 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
+        //when validation fails on the other parts of the form, errors not registering here for some reason
+        //so pushing this back to before the changes from the rest of the form are passed to the entity manager
+        //otherwise, this will flush those changes before the AbstractEntityAdapter has a chance to abort them
+//        if ($error_store->hasErrors()) {
+//            return true;
+//        }
+
         if ($operation==='update' && array_key_exists('team', $request->getContent())){
 
             //Add and remove TeamSites
@@ -2413,7 +2420,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
         $sharedEventManager->attach(
             SiteAdapter::class,
-            'api.hydrate.post',
+            'api.hydrate.pre',
             [$this, 'siteUpdate']
         );
 
