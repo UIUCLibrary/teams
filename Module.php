@@ -1746,15 +1746,17 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 if ($res && $owner && $team) {
                     $tr = new TeamResource($team, $res);
                     $em->persist($tr);
-                    $media = $r->getMedia();
-                    //if there is media, add those to the team as well
-                    if (count($media) > 0) {
-                        foreach ($media as $m):
-                            $r = $entityManager->getRepository('Omeka\Entity\Resource')
-                                ->findOneBy(['id' => $m->getId()]);
-                            $tr = new TeamResource($team, $r);
-                            $em->persist($tr);
-                        endforeach;
+                    if ($request->getResource() == 'item'){
+                        $media = $r->getMedia();
+                        //if there is media, add those to the team as well
+                        if (count($media) > 0) {
+                            foreach ($media as $m):
+                                $r = $entityManager->getRepository('Omeka\Entity\Resource')
+                                    ->findOneBy(['id' => $m->getId()]);
+                                $tr = new TeamResource($team, $r);
+                                $em->persist($tr);
+                            endforeach;
+                        }
                     }
 
                     $em->flush();
@@ -2382,7 +2384,11 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [$this, 'itemBatchCreate']
         );
 
-
+        $sharedEventManager->attach(
+            ItemSetAdapter::class,
+            'api.execute.post',
+            [$this, 'itemBatchCreate']
+        );
 
         $sharedEventManager->attach(
             UserAdapter::class,
