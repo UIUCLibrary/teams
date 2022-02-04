@@ -1,17 +1,10 @@
-<h1>Add New Role</h1>
-
-
 <?php
-if ($this->data){
-    foreach($data as $key => $value) {
-        echo "$key is: $value";
-        echo '<br>';
-    }
-}else{
+echo $this->pageTitle("Add New Role");
+
 $form = $this->form;
 $form->setAttribute('action', $this->url());
 $form->prepare();
 
 echo $this->form()->openTag($form);
 echo $this->formCollection($form);
-echo $this->form()->closeTag();}
+echo $this->form()->closeTag();

@@ -11,13 +11,6 @@
 <?php
 $team = $this->api()->read('team', ['id'=> $this->params()->fromRoute('id')])->getContent();
 ?>
-
-
-
-
-
-
-
 <ul class="list-group">
     <li class="list-group-item"><?= $team->name() ?></li>
 </ul>

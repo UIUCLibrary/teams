@@ -1,14 +1,14 @@
-<h1>Add New Team</h1>
 <?php
-$this->htmlElement('body')->appendAttribute('class', 'add users');
+echo $this->pageTitle("Add New Team");
+if ($this->roleAuth()->teamAuthorized('add', 'team')):
+
+$this->htmlElement('body')->appendAttribute('class', 'add');
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headScript()->appendFile($this->assetUrl('js/add-team.js', 'Teams'));
 $formElement = $this->plugin('formElement');
 ?>
 <div id="page-actions">
-    <!--    --><?php //if ($item->userIsAllowed('update')): ?>
     <button type="submit" form="new_team" value="Submit">Add Team</button>
-    <!--    --><?php //endif; ?>
 </div>
 <?php
 
@@ -31,16 +31,11 @@ $form = $this->form;
 $form->setAttribute('id', 'new_team');
 $form->setAttribute('action', $this->url());
 $form->prepare();
-
 echo $this->form()->openTag($form);
-
 echo $this->formCollection($form);
-
 ?>
-
     </div>
 </div>
-
 <div id="team-members" class="section">
     <div class="meta-group">
         <div class="field">
@@ -53,7 +48,7 @@ echo $this->formCollection($form);
                 <select class="chosen-select" data-placeholder="Username"
                          id="new-member-choice" name="add-member-choice" >
                     <?php foreach ($available_u_array as $member => $id):
-                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
+                        echo '<option value="' . $id . '" id="user' . $id . '">' . $member . '</option>';
                     endforeach;
                     ?>
                 </select>
@@ -62,7 +57,7 @@ echo $this->formCollection($form);
             <div class="input">
                 <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
                     <?php foreach ($this->roles as $role => $id):
-                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $role . '</option>';
+                        echo '<option value="' . $id . '" id="user' . $id . '">' . $role . '</option>';
                     endforeach;
                     ?>
                 </select>
@@ -134,8 +129,6 @@ echo $this->formCollection($form);
             <div style="margin-left: 20px; ">
                 <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
             </div>
-
-
         </div>
         <div class="field">
             <div class="field-meta">
@@ -153,13 +146,9 @@ echo $this->formCollection($form);
                     <tbody id="user-table">
                     </tbody>
                 </table>
-
         </div>
-
     </div>
-
     <div id="clone">
-
     </div>
 </div>
 
@@ -190,9 +179,23 @@ echo $this->form()->openTag($itemsetForm);
         </div>
     </div>
 </fieldset>
-
-
-
-
 <?php
 echo $this->form()->closeTag();
+else: ?>
+    <?php $glob_admin_url = $this->hyperlink(
+        'global admins',
+        $this->url(
+            'admin/default',
+            [ 'controller' => 'user', 'action' => 'browse'],
+            [
+                'query' => [
+                    'role' => 'global_admin',
+                    'active' => '1',
+                ],
+            ]
+        )
+    ); ?>
+    <div class="breadcrumbs">
+    Only the <?php echo $glob_admin_url ?> can add new teams.
+    </div>
+<?php endif;
