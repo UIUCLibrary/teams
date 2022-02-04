@@ -2135,6 +2135,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             } elseif ($action == 'delete' || $action == 'batch_delete'){
                 $authorized = $is_glob_admin;
 
+                //this is going to let them update the name and description
             } elseif ($action == 'update'){
                 $authorized = $team_user_role->getCanAddUsers();
 
@@ -2149,10 +2150,21 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 //deleting a site from a team
             }
             //adding or removing sites from a team
-            elseif ($action == 'read'){
+            elseif ($action == 'update'){
                 $authorized = $is_glob_admin;
             }
         }
+        elseif ($res_class == 'Teams\Entity\TeamUser' ){
+            if ($action == 'read'){
+                $authorized = true;
+                //deleting a site from a team
+            }
+            //adding or removing sites from a team
+            elseif ($action == 'update'){
+                $authorized = $team_user_role->getCanAddUsers();
+            }
+        }
+
 
 
         //a list of classes where we don't need to check teams
