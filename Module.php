@@ -2150,8 +2150,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 //deleting a site from a team
             }
             //adding or removing sites from a team
-            elseif ($action == 'update'){
+            else {
                 $authorized = $is_glob_admin;
+
             }
         }
         elseif ($res_class == 'Teams\Entity\TeamUser' ){
@@ -2159,9 +2160,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $authorized = true;
                 //deleting a site from a team
             }
-            //adding or removing sites from a team
-            elseif ($action == 'update'){
+            elseif ($action == 'create'){
                 $authorized = $team_user_role->getCanAddUsers();
+            }
+            elseif ($action == 'delete'){
+                $authorized = $team_user_role->getCanAddUsers();
+            }
+            else {
+                $authorized = $is_glob_admin;
             }
         }
 

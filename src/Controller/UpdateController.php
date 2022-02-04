@@ -444,6 +444,13 @@ Class UpdateController extends AbstractActionController
                 if (!in_array($site, $current_sites)){
                     $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
                     $ts = new TeamSite($team, $site);
+                    $request = new Request('create','team_site');
+                    $event = new Event('api.hydrate.pre', $this, [
+                        'entity' => $ts,
+                        'request' => $request,
+                    ]);
+                    $this->getEventManager()->triggerEvent($event);
+
                     $em->persist($ts);
                 }
             }
@@ -452,6 +459,12 @@ Class UpdateController extends AbstractActionController
             foreach ($current_sites as $site){
                 if (!in_array($site, $post_data['teamSites']['o:site'])){
                     $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
+                    $request = new Request('delete','team_site');
+                    $event = new Event('api.hydrate.pre', $this, [
+                        'entity' => $ts,
+                        'request' => $request,
+                    ]);
+                    $this->getEventManager()->triggerEvent($event);
                     $em->remove($ts);
                 }
             }
