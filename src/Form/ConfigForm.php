@@ -43,7 +43,7 @@ class ConfigForm extends Form
                 'label' => 'Allow site admins to create new users', // @translate
             ],
             'attributes' => [
-                'checked' => $this->globalSettings->get('teams_site_admin_make_site') ? 'checked' : '',
+                'checked' => $this->globalSettings->get('teams_site_admin_make_user') ? 'checked' : '',
                 'id' => 'teams_site_admin_make_user',
             ],
         ]);
