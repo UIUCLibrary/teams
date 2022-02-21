@@ -36,6 +36,18 @@ class ConfigForm extends Form
             ],
         ]);
 
+        $this->add([
+            'type' => 'checkbox',
+            'name' => 'teams_site_admin_make_user',
+            'options' => [
+                'label' => 'Allow site admins to create new users', // @translate
+            ],
+            'attributes' => [
+                'checked' => $this->globalSettings->get('teams_site_admin_make_site') ? 'checked' : '',
+                'id' => 'teams_site_admin_make_user',
+            ],
+        ]);
+
     }
     public function setGlobalSettings($globalSettings)
     {
