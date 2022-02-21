@@ -251,8 +251,9 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             $acl->deny(
                 'site_admin',
                 'Omeka\Entity\User',
-                ['create', 'update', 'delete', 'change-password', 'edit-keys']
+                ['create', 'delete', 'change-password', 'edit-keys']
             );
+
         }
 
         $acl->allow(
