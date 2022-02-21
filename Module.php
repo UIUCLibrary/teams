@@ -246,6 +246,15 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             ['search', 'read']
         );
 
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        if (! $globalSettings->get('teams_site_admin_make_user')){
+            $acl->deny(
+                'site_admin',
+                'Omeka\Entity\User',
+                ['create', 'update', 'delete', 'change-password', 'edit-keys']
+            );
+        }
+
         $acl->allow(
             $viewerRoles,
             [Entity\TeamResource::class],
