@@ -83,7 +83,7 @@ $sectionNavs = [
         <?php foreach ($team->users() as $team_user):?>
                     <tr>
                         <td>
-                            <?php $this->hyperlink(
+                            <?php echo $this->hyperlink(
                                 $team_user->getUser()->getName(),
                                 $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
                             )
