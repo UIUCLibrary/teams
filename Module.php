@@ -2642,6 +2642,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [$this, 'teamSelectorBrowse']
         );
 
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Asset',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
 
 
         //Add pages//
