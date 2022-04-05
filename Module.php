@@ -2519,6 +2519,12 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             [$this, 'displayTeamForm']
         );
 
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Asset',
+            'view.edit.form.before',
+            [$this, 'addAssetFormElement']
+        );
+
 
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
@@ -2647,8 +2653,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
         );
-
-
 
         //Add pages//
             //ItemSet//
@@ -2806,9 +2810,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         ;
 
         if ($user_role === 'global_admin'){
-
-
-
             //TODO: only add if the user is superuser
             $form = $event->getTarget();
             $form->get('user-information')->add([
@@ -2836,7 +2837,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'attributes' => [
                     'id' => 'default_team',
                     'required' => true,
-
                 ],
             ]);
             $form->get('user-information')->add([
@@ -2853,9 +2853,6 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
 
                 ],
             ]);
-
-
-
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
             $form->get('user-information')->add([
                 'name' => 'o-module-teams:TeamRole',
@@ -2875,6 +2872,23 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         }
     }
 
+    public function addAssetFormElement(Event $event) {
+
+        $form = $event->getTarget()->vars()->form;
+        $form->add([
+            'name' => 'o-module-teams:Team',
+            'type' => TeamSelect::class,
+            'options' => [
+                'label' => 'Teams', // @translate
+                'chosen' => true,
+            ],
+            'attributes' => [
+                'multiple' => true,
+                'id' => 'team',
+                'required' => true,
+            ],
+        ]);
+    }
     /**
      * Add team element to the site form
      *
