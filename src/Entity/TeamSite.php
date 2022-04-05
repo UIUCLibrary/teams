@@ -92,7 +92,6 @@ class TeamSite extends AbstractEntity
         $this->is_current = $bool;
     }
 
-
     public function __toString()
     {
         return json_encode([

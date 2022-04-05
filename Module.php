@@ -2876,9 +2876,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $asset  = $event->getTarget()->vars()->asset;
         $form = $event->getTarget()->vars()->form;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $assetTeams = [1,2];
-        //TODO: Once Asset is added to Teams DB, get the current teams for the asset
-        //$assetTeams = $em->getRepository('Teams\Entity\TeamAsset')->findAllBy(['asset_it' => $asset->id()]);
+        $assetTeams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset->id()]);
 
         $form->add([
             'name' => 'o-module-teams:Team',
@@ -2892,6 +2890,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 'id' => 'team',
                 'required' => true,
                 'value' => $assetTeams, //set the actual option for this element
+                'data-placeholder' => 'No Teams Assigned Yet'
 
             ],
         ]);
