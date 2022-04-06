@@ -1,6 +1,7 @@
 <?php
 namespace Teams;
 
+use Cassandra\Set;
 use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
@@ -11,6 +12,7 @@ use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\EntityInterface;
 use Omeka\Permissions\Acl;
 use Teams\Entity\Team;
+use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
@@ -51,21 +53,29 @@ class Module extends AbstractModule
         $conn = $serviceLocator->get('Omeka\Connection');
 
         $conn->exec('
-CREATE TABLE team (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(240) NOT NULL, description LONGTEXT NOT NULL, UNIQUE INDEX UNIQ_C4E0A61F5E237E06 (name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(240) NOT NULL, description LONGTEXT NOT NULL, UNIQUE INDEX UNIQ_C4E0A61F5E237E06 (name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-CREATE TABLE team_resource (team_id INT NOT NULL, resource_id INT NOT NULL, INDEX IDX_4D32868296CD8AE (team_id), INDEX IDX_4D3286889329D25 (resource_id), PRIMARY KEY(team_id, resource_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team_user (team_id INT NOT NULL, user_id INT NOT NULL, role_id INT DEFAULT NULL, is_current TINYINT(1) DEFAULT NULL, id INT NOT NULL, UNIQUE INDEX UNIQ_5C722232BF396750 (id), INDEX IDX_5C722232296CD8AE (team_id), INDEX IDX_5C722232A76ED395 (user_id), INDEX IDX_5C722232D60322AC (role_id), UNIQUE INDEX active_team (is_current, user_id), PRIMARY KEY(team_id, user_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-CREATE TABLE team_resource_template (team_id INT NOT NULL, resource_template_id INT NOT NULL, INDEX IDX_75325B72296CD8AE (team_id), INDEX IDX_75325B7216131EA (resource_template_id), PRIMARY KEY(team_id, resource_template_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team_role (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(240) NOT NULL, can_add_users TINYINT(1) DEFAULT NULL, can_add_items TINYINT(1) DEFAULT NULL, can_add_itemsets TINYINT(1) DEFAULT NULL, can_modify_resources TINYINT(1) DEFAULT NULL, can_delete_resources TINYINT(1) DEFAULT NULL, can_add_site_pages TINYINT(1) DEFAULT NULL, comment LONGTEXT DEFAULT NULL, UNIQUE INDEX UNIQ_86887E115E237E06 (name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-CREATE TABLE team_role (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(240) NOT NULL, can_add_users TINYINT(1) DEFAULT NULL, can_add_items TINYINT(1) DEFAULT NULL, can_add_itemsets TINYINT(1) DEFAULT NULL, can_modify_resources TINYINT(1) DEFAULT NULL, can_delete_resources TINYINT(1) DEFAULT NULL, can_add_site_pages TINYINT(1) DEFAULT NULL, comment LONGTEXT DEFAULT NULL, UNIQUE INDEX UNIQ_86887E115E237E06 (name), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team_asset (team_id INT NOT NULL, asset_id INT NOT NULL, INDEX IDX_C5A9131C296CD8AE (team_id), INDEX IDX_C5A9131C5DA1941 (asset_id), PRIMARY KEY(team_id, asset_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-CREATE TABLE team_site (team_id INT NOT NULL, site_id INT NOT NULL, is_current TINYINT(1) DEFAULT NULL, INDEX IDX_B8A2FD9F296CD8AE (team_id), INDEX IDX_B8A2FD9FF6BD1646 (site_id), UNIQUE INDEX active_team (is_current, site_id), PRIMARY KEY(team_id, site_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team_resource_template (team_id INT NOT NULL, resource_template_id INT NOT NULL, INDEX IDX_75325B72296CD8AE (team_id), INDEX IDX_75325B7216131EA (resource_template_id), PRIMARY KEY(team_id, resource_template_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-CREATE TABLE team_user (team_id INT NOT NULL, user_id INT NOT NULL, role_id INT DEFAULT NULL, is_current TINYINT(1) DEFAULT NULL, id INT AUTO_INCREMENT NOT NULL, UNIQUE INDEX UNIQ_5C722232BF396750 (id), INDEX IDX_5C722232296CD8AE (team_id), INDEX IDX_5C722232A76ED395 (user_id), INDEX IDX_5C722232D60322AC (role_id), UNIQUE INDEX active_team (is_current, user_id), PRIMARY KEY(team_id, user_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci ENGINE = InnoDB;');
+CREATE TABLE team_site (team_id INT NOT NULL, site_id INT NOT NULL, is_current TINYINT(1) DEFAULT NULL, INDEX IDX_B8A2FD9F296CD8AE (team_id), INDEX IDX_B8A2FD9FF6BD1646 (site_id), UNIQUE INDEX active_team (is_current, site_id), PRIMARY KEY(team_id, site_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-ALTER TABLE team_resource ADD CONSTRAINT FK_4D32868296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
+CREATE TABLE team_resource (team_id INT NOT NULL, resource_id INT NOT NULL, INDEX IDX_4D32868296CD8AE (team_id), INDEX IDX_4D3286889329D25 (resource_id), PRIMARY KEY(team_id, resource_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
         $conn->exec('
-ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resource_id) REFERENCES resource (id) ON DELETE CASCADE;');
+ALTER TABLE team_user ADD CONSTRAINT FK_5C722232296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
+        $conn->exec('
+ALTER TABLE team_user ADD CONSTRAINT FK_5C722232A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
+        $conn->exec('
+ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) REFERENCES team_role (id);');
+        $conn->exec('
+ALTER TABLE team_asset ADD CONSTRAINT FK_C5A9131C296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
+        $conn->exec('
+ALTER TABLE team_asset ADD CONSTRAINT FK_C5A9131C5DA1941 FOREIGN KEY (asset_id) REFERENCES asset (id) ON DELETE CASCADE;');
         $conn->exec('
 ALTER TABLE team_resource_template ADD CONSTRAINT FK_75325B72296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
         $conn->exec('
@@ -75,14 +85,9 @@ ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9F296CD8AE FOREIGN KEY (team_id) R
         $conn->exec('
 ALTER TABLE team_site ADD CONSTRAINT FK_B8A2FD9FF6BD1646 FOREIGN KEY (site_id) REFERENCES site (id) ON DELETE CASCADE;');
         $conn->exec('
-ALTER TABLE team_user ADD CONSTRAINT FK_5C722232296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
+ALTER TABLE team_resource ADD CONSTRAINT FK_4D32868296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
         $conn->exec('
-ALTER TABLE team_user ADD CONSTRAINT FK_5C722232A76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE;');
-        $conn->exec('
-ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) REFERENCES team_role (id);');
-
-
-
+ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resource_id) REFERENCES resource (id) ON DELETE CASCADE;');
     }
 
 
@@ -95,14 +100,14 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $conn->exec('DROP TABLE IF EXISTS team_resource_template');
         $conn->exec('DROP TABLE IF EXISTS team_site');
         $conn->exec('DROP TABLE IF EXISTS team');
-
-
+        $conn->exec('DROP TABLE IF EXISTS team_asset');
     }
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
     {
         if (version_compare($oldVersion, '1.0.0', '<')) {
             $connection = $serviceLocator->get('Omeka\Connection');
+
             /*
              * use replace because it is possible for an item and a site to belong to two teams and therefore show up
              * together twice in the join and result in an integrity constraint violation on duplicate primary key in
@@ -124,6 +129,47 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
                 $userSettings->set('default_item_sites', $sites, $user);
             }
                 $connection->exec('replace item_site select resource_id, site_id from team_resource tr join team_site ts on tr.team_id = ts.team_id where resource_id in (select * from item)');
+        }
+        if (version_compare($oldVersion, '2.0.0', '<')) {
+            //add the team asset table and foriegn keys
+            $conn = $serviceLocator->get('Omeka\Connection');
+            $conn->exec('
+CREATE TABLE team_asset (team_id INT NOT NULL, asset_id INT NOT NULL, INDEX IDX_C5A9131C296CD8AE (team_id), INDEX IDX_C5A9131C5DA1941 (asset_id), PRIMARY KEY(team_id, asset_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;');
+            $conn->exec('
+ALTER TABLE team_asset ADD CONSTRAINT FK_C5A9131C296CD8AE FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE CASCADE;');
+            $conn->exec('
+ALTER TABLE team_asset ADD CONSTRAINT FK_C5A9131C5DA1941 FOREIGN KEY (asset_id) REFERENCES asset (id) ON DELETE CASCADE;');
+
+            /*
+             * Create entries for existing assets:
+             * There are two objects that use assets as thumbnails, sites and resources. If an asset is being used as a
+             * thumbnail, then it needs to have at least one team in common with the site or resource
+            */
+            $conn = $serviceLocator->get('Omeka\Connection');
+
+            $sql = <<<'SQL'
+select asset_id, team_id
+from (select asset.id asset_id, team_site.team_id team_id 
+		from asset 
+        join site 
+        on asset.id = site.thumbnail_id 
+        join team_site 
+        on team_site.site_id = site.id) as site_assets
+union
+select asset_id, team_id
+from (select asset.id asset_id, team_resource.team_id team_id 
+		from asset 
+        join resource 
+        on asset.id = resource.thumbnail_id 
+        join team_resource 
+        on team_resource.resource_id = resource.id) as resource_assets
+        
+group by asset_id, team_id;
+SQL;
+            $res = $conn->fetchAll($sql);
+            foreach ($res as $entry){
+                $conn->insert('team_asset', $entry);
+            }
         }
     }
 
@@ -2877,6 +2923,7 @@ ALTER TABLE team_user ADD CONSTRAINT FK_5C722232D60322AC FOREIGN KEY (role_id) R
         $form = $event->getTarget()->vars()->form;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $assetTeams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset->id()]);
+        $assetTeamIds = [];
 
         $form->add([
             'name' => 'o-module-teams:Team',
