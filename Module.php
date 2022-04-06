@@ -2924,6 +2924,9 @@ SQL;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $assetTeams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset->id()]);
         $assetTeamIds = [];
+        foreach ($assetTeams as $team){
+            $assetTeamIds[] = $team->getTeam()->getId();
+        }
 
         $form->add([
             'name' => 'o-module-teams:Team',
@@ -2936,7 +2939,7 @@ SQL;
                 'multiple' => true,
                 'id' => 'team',
                 'required' => true,
-                'value' => $assetTeams, //set the actual option for this element
+                'value' => $assetTeamIds, //set the actual option for this element
                 'data-placeholder' => 'No Teams Assigned Yet'
 
             ],
