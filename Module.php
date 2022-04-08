@@ -2,6 +2,7 @@
 namespace Teams;
 
 use Cassandra\Set;
+use Omeka\Api\Adapter\AssetAdapter;
 use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
@@ -1232,6 +1233,30 @@ SQL;
         $event->setParam('entity', $entity);
 
     }
+
+    public function assetCreate(Event $event)
+    {
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $response = $event->getParam('response');
+
+        if ($operation == 'create'){
+            $resource =  $response->getContent();
+            $asset_id =  $resource->getId();
+            $asset  = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id'=>$asset_id]);
+            $teams =  $em->getRepository('Teams\Entity\Team');
+
+            //because this is a sidebar instead of a full form, keeping this simple and just using the current team
+            $team = $teams->findOneBy(['id' => $this->currentTeam()]);
+                if ($team && $asset){
+                    $team_asset = new TeamAsset($team, $asset);
+                    $em->persist($team_asset);
+                    $em->flush();
+                }
+        }
+    }
+
     public function siteCreate(Event $event)
     {
         $request = $event->getParam('request');
@@ -2479,6 +2504,12 @@ SQL;
             SiteAdapter::class,
             'api.execute.post',
             [$this, 'siteCreate']
+        );
+
+        $sharedEventManager->attach(
+            AssetAdapter::class,
+            'api.execute.post',
+            [$this, 'assetCreate']
         );
 
         $sharedEventManager->attach(
