@@ -838,17 +838,13 @@ SQL;
 
         $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
-
-
         $entityClass = $event->getTarget()->getEntityClass();
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-
         //catch REST queries
         if ($this->getUser() === null){
             return;
-
         }
 
         //this is for the list-of-sites block.
@@ -931,7 +927,6 @@ SQL;
         }
 
         if ($team_id === 0){
-
             return;
         }
         if ( is_array($team_id)){
@@ -982,6 +977,10 @@ SQL;
             elseif ($entityClass == \Omeka\Entity\Vocabulary::class){
                 return;
             }
+            elseif ($entityClass == \Omeka\Entity\Asset::class){
+                $qb->leftJoin('Teams\Entity\TeamAsset', 'ta', Expr\Join::WITH, $alias .'.id = ta.asset')->andWhere('ta.team = :team_id')
+                    ->setParameter('team_id', $team_id)
+                ;            }
             else{
                 //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
                 $qb->leftJoin('Teams\Entity\TeamResource', 'tr_else', Expr\Join::WITH, $alias .'.id = tr_else.resource')
@@ -1257,6 +1256,7 @@ SQL;
         }
     }
 
+
     public function siteCreate(Event $event)
     {
         $request = $event->getParam('request');
@@ -1491,7 +1491,6 @@ SQL;
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
-
 
         //entity not validated till after this event, so to avoid flushing them with invalid changes, validate here
         $site_entity = new SiteAdapter();
@@ -2479,6 +2478,7 @@ SQL;
             MediaAdapter::class,
             SiteAdapter::class,
             ResourceTemplateAdapter::class,
+            AssetAdapter::class,
 
         ];
         foreach ($adapters as $adapter):
