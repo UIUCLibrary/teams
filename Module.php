@@ -1440,6 +1440,50 @@ SQL;
 
     }
 
+    public function assetUpdate(Event $event)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
+
+        if ($operation === 'update' && array_key_exists('o-module-teams:Team', $request->getContent())) {
+
+            //teams from the form
+            $form_teams = $request->getContent()['o-module-teams:Team'];
+            $asset_id = $request->getId();
+
+            //teams that asset is a member of
+            $team_assets = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset_id]);
+
+            //array of existing teams ids
+            $existing_teams = array_map(function ($team_assets) {
+                return $team_assets->getTeam()->getId();
+            }, $team_assets);
+
+            $added_teams = array_diff($form_teams, $existing_teams);
+            $removed_teams = array_diff($existing_teams, $form_teams);
+
+            foreach ($team_assets as $team_asset):
+                if (in_array($team_asset->getTeam()->getId(), $removed_teams)) {
+                    $em->remove($team_asset);
+                }
+            endforeach;
+            $em->flush();
+
+            //add teams to the site for each new team listed in the form
+            foreach ($added_teams as $team):
+                $team_asset = new TeamAsset(
+                    $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
+                    $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id' => $asset_id])
+                );
+                $em->persist($team_asset);
+            endforeach;
+            $em->flush();
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        }
+    }
     public function siteUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -2531,6 +2575,12 @@ SQL;
             SiteAdapter::class,
             'api.hydrate.post',
             [$this, 'siteUpdate']
+        );
+
+        $sharedEventManager->attach(
+            AssetAdapter::class,
+            'api.hydrate.post',
+            [$this, 'assetUpdate']
         );
 
         $sharedEventManager->attach(
