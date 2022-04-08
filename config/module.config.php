@@ -5,7 +5,6 @@ use Laminas\Router\Http\Literal;
 use Laminas\Router\Http\Segment;
 
 return [
-
     'navigation' => [
 
         'AdminResource' => [
@@ -47,7 +46,6 @@ return [
         ],
 
     ],
-
     'permissions' => [
         'acl_resources' => [
             Entity\TeamUser::class,
@@ -111,9 +109,6 @@ return [
         ]
     ],
     'controllers' => [
-        'invokables' => [
-            'Teams\Controller\SiteAdmin\Index' => 'Teams\Controller\SiteAdmin\IndexController'
-        ],
         'factories' => [
             'Teams\Controller\Index' => 'Teams\Service\IndexControllerFactory',
             'Teams\Controller\Delete' => 'Teams\Service\DeleteControllerFactory',

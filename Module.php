@@ -632,8 +632,6 @@ SQL;
         );
     }
 
-
-
     /**
      * Allows users to add teams to resources on edit or create.
      * Adds the right side panel selector + options and pass selections to the submission form
@@ -673,7 +671,6 @@ SQL;
             ['user_id'=>$user_id, 'default_team' => $default_team]
         );
     }
-
 
     /**
      * Displays a message where the site pool. Not currently used.
@@ -789,8 +786,6 @@ SQL;
      */
     public function getTeamContext($query, Event $event)
     {
-
-
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])){
             foreach ($query['team_id'] as $id):
@@ -1256,6 +1251,52 @@ SQL;
         }
     }
 
+//    public function assetDelete(Event $event)
+//    {
+//        $request = $event->getParam('request');
+//        $operation = $request->getOperation();
+//        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+//        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+//
+//        $request->getId();
+//
+//        $response = $event->getParam('response');
+//
+//        if ($operation == 'delete'){
+//            $resource =  $response->getContent();
+//            $asset_id =  $resource->getId();
+//            $asset  = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id'=>$asset_id]);
+//            $teams =  $em->getRepository('Teams\Entity\Team');
+//
+//            //because this is a sidebar instead of a full form, keeping this simple and just using the current team
+//            $team = $teams->findOneBy(['id' => $this->currentTeam()]);
+//            if ($team && $asset){
+//                $team_asset = new TeamAsset($team, $asset);
+//                $em->persist($team_asset);
+//                $em->flush();
+//            }
+//        }
+//    }
+
+    public function assetDetail(Event $event)
+    {
+        $view = $event->getTarget();
+        $entity = $event->getParam('entity');
+        $asset_id = $entity->id();
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $teams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset'=>$asset_id]);
+        $sites = $em->getRepository('Omeka\Entity\Site')->findBy(['thumbnail'=>$asset_id]);
+        $resources = $em->getRepository('Omeka\Entity\Resource')->findBy(['thumbnail'=>$asset_id]);
+
+        $view->headScript()->prependFile($view->assetUrl('js/asset-delete-warning.js', 'Teams'));
+        echo $view->partial('teams/partial/asset/detail', [
+                'teams' => $teams,
+                'resources' => $resources,
+                'sites'  => $sites
+            ]
+        );
+
+    }
 
     public function siteCreate(Event $event)
     {
@@ -2530,6 +2571,18 @@ SQL;
             ItemAdapter::class,
             'api.execute.post',
             [$this, 'itemBatchCreate']
+        );
+
+//        $sharedEventManager->attach(
+//            AssetAdapter::class,
+//            'api.delete.pre',
+//            [$this, 'assetDelete']
+//        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Asset',
+            'view.details',
+            [$this, 'assetDetail']
         );
 
         $sharedEventManager->attach(
