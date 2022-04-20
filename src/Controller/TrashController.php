@@ -3,7 +3,6 @@
 
 namespace Teams\Controller;
 
-
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Form\ConfirmForm;
@@ -28,8 +27,10 @@ class TrashController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
-    public function createNamedParameter(QueryBuilder $qb, $value,
-                                         $prefix = 'omeka_'
+    public function createNamedParameter(
+        QueryBuilder $qb,
+        $value,
+        $prefix = 'omeka_'
     ) {
         $index = 0;
         $placeholder = $prefix . $index;
@@ -49,18 +50,16 @@ class TrashController extends AbstractActionController
 
     public function indexAction()
     {
-
         $qb = $this->entityManager->createQueryBuilder();
 
-        if ($this->request->isPost()){
-            if ($this->identity()->getRole() == 'global_admin'){
-                if ($this->getRequest()->getPost('submit') == 'Delete Selected'){
+        if ($this->request->isPost()) {
+            if ($this->identity()->getRole() == 'global_admin') {
+                if ($this->getRequest()->getPost('submit') == 'Delete Selected') {
                     foreach ($this->getRequest()->getPost('resource_ids') as $id):
                         $id = (int) $id;
-                        $this->api()->delete('items', ['id' =>$id]);
+                    $this->api()->delete('items', ['id' =>$id]);
                     endforeach;
-                } elseif ($this->getRequest()->getPost('submit') == 'Delete All'){
-
+                } elseif ($this->getRequest()->getPost('submit') == 'Delete All') {
                     $qb1 = $this->entityManager->createQueryBuilder();
                     $qb1->select('r')
                         ->from('Omeka\Entity\Item ', 'r')
@@ -77,16 +76,11 @@ class TrashController extends AbstractActionController
                     foreach ($orphans as $resource):
                         $this->api()->delete('items', $resource->getId());
                     endforeach;
-
-
                 }
-
             }
-
-
         }
         $params = $this->params();
-        if ($params()->fromQuery('sort_order') === 'asc'){
+        if ($params()->fromQuery('sort_order') === 'asc') {
             $order = 'asc';
         } else {
             $order = 'desc';
@@ -98,7 +92,7 @@ class TrashController extends AbstractActionController
             'owner_name' => 'owner',
             'created' => 'created',
         ];
-        if (key_exists($params->fromQuery('sort_by'), $sort_options)){
+        if (key_exists($params->fromQuery('sort_by'), $sort_options)) {
             $sort = $sort_options[$params->fromQuery('sort_by')];
         } else {
             $sort = 'created';
@@ -124,7 +118,7 @@ class TrashController extends AbstractActionController
 
         $page = $this->params()->fromQuery('page');
         $offset = ($page * 10) - 10;
-        $orphans = array_slice($orphans,$offset,10);
+        $orphans = array_slice($orphans, $offset, 10);
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute('admin/trash', ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Delete Selected'); // @translate
@@ -146,8 +140,5 @@ class TrashController extends AbstractActionController
         $view->setVariable('formDeleteAll', $formDeleteAll);
 
         return $view;
-
-
     }
-
 }

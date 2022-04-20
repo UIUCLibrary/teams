@@ -38,7 +38,9 @@ class TeamAdapter extends AbstractEntityAdapter
         return Team::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
+    public function hydrate(
+        Request $request,
+        EntityInterface $entity,
         ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'o:name')) {
@@ -117,7 +119,7 @@ class TeamAdapter extends AbstractEntityAdapter
 //        return $result;
 //    }
 
-///3 ifs permit single return via specified column
+    ///3 ifs permit single return via specified column
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['id'])) {
@@ -252,7 +254,7 @@ class TeamAdapter extends AbstractEntityAdapter
                     break;
                 case 'team':
                     $query['sort_by'] = 'name';
-                    // No break.
+                    // no break.
                 default:
                     parent::sortQuery($qb, $query);
                     break;
@@ -340,5 +342,4 @@ class TeamAdapter extends AbstractEntityAdapter
             $result = $this->validateName($data['o:name'], $errorStore);
         }
     }
-
 }

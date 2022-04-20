@@ -38,11 +38,12 @@ $rowTemplate = '
 
 <div id="item-pool-section" class="active section">
     <p><?php echo sprintf(
-            $this->translate('There are currently %s resources that this site has access to, contributed by these teams: '),
+    $this->translate('There are currently %s resources that this site has access to, contributed by these teams: '),
 
 
             //TODO either this should link to a new view that has the site's resources (an acl nightmare) or shouldn't link
-            count($this->site_items)); ?></p>
+            count($this->site_items)
+); ?></p>
     <ul>
         <?php foreach ($this->site_teams as $site_team):
             ?><li><?php echo $site_team->getTeam()->getName(); ?></li><?php         endforeach;

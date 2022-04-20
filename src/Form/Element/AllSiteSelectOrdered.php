@@ -3,7 +3,6 @@
 
 namespace Teams\Form\Element;
 
-
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Representation\UserRepresentation;
 use Omeka\Form\Element\SiteSelect;
@@ -98,5 +97,4 @@ class AllSiteSelectOrdered extends SiteSelect
         }
         return $valueOptions;
     }
-
 }

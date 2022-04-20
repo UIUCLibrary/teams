@@ -1,7 +1,6 @@
 <?php
 namespace Teams\Controller;
 
-
 use Doctrine\ORM\EntityManager;
 use Omeka\Form\ConfirmForm;
 use Omeka\Form\ResourceBatchUpdateForm;
@@ -25,8 +24,7 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 
-
-Class AddController extends AbstractActionController
+class AddController extends AbstractActionController
 {
     /**
      * @var EntityManager
@@ -44,7 +42,6 @@ Class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
-
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
@@ -77,7 +74,7 @@ Class AddController extends AbstractActionController
         );
 
         //if it is get, then give them the form
-        if (! $request->isPost()){
+        if (! $request->isPost()) {
             return $view;
         }
 
@@ -92,7 +89,7 @@ Class AddController extends AbstractActionController
 
         //if the form isn't valid, return it
 
-        if (! $form->isValid()){
+        if (! $form->isValid()) {
             return $view;
         }
 
@@ -112,12 +109,12 @@ Class AddController extends AbstractActionController
                 foreach ($request->getPost('user_role') as $userId => $roleId):
                     $user = $this->entityManager->getRepository('Omeka\Entity\User')
                         ->findOneBy(['id' => (int)$userId]);
-                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
                         ->findOneBy(['id' => (int)$roleId]);
 
-                    $teamUser = new TeamUser($team, $user, $role);
-                    $teamUser->setCurrent(null);
-                    $this->entityManager->persist($teamUser);
+                $teamUser = new TeamUser($team, $user, $role);
+                $teamUser->setCurrent(null);
+                $this->entityManager->persist($teamUser);
                 endforeach;
                 $this->entityManager->flush();
             }
@@ -133,19 +130,18 @@ Class AddController extends AbstractActionController
                         foreach ($this->api()->search('items', ['item_set_id' => $item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
                             $resource_array[$item->id()] = true;
 
-                            //add all media belonging to item
-                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                        //add all media belonging to item
+                        foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
                                 $resource_array[$media->id()] = true;
-                            endforeach;
                         endforeach;
-
+                        endforeach;
                     }
-                    //add itemset itself
-                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                //add itemset itself
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                         ->findOneBy(['id' => $item_set_id]);
-                    $team_resource = new TeamResource($team, $resource);
+                $team_resource = new TeamResource($team, $resource);
 
-                    $this->entityManager->persist($team_resource);
+                $this->entityManager->persist($team_resource);
                 endforeach;
             }
             if (isset($request->getPost('itemset')['itemset']['o:user'])) {
@@ -156,9 +152,9 @@ Class AddController extends AbstractActionController
                         //add all of that users items and their media
                         foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $item):
                             $resource_array[$item->id()] = true;
-                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                        foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
                                 $resource_array[$media->id()] = true;
-                            endforeach;
+                        endforeach;
                         endforeach;
 
                         //add all of that user's item sets
@@ -178,16 +174,16 @@ Class AddController extends AbstractActionController
             foreach (array_keys($resource_array) as $resource_id):
                 $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                     ->findOneBy(['id' => $resource_id]);
-                $team_resource = new TeamResource($team, $resource);
-                $this->entityManager->persist($team_resource);
+            $team_resource = new TeamResource($team, $resource);
+            $this->entityManager->persist($team_resource);
             endforeach;
 
             //persist the resource templates
             foreach (array_keys($resource_template_array) as $rt_id):
                 $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
                     ->findOneBy(['id' => $rt_id]);
-                $team_rt = new TeamResourceTemplate($team, $resource_template);
-                $this->entityManager->persist($team_rt);
+            $team_rt = new TeamResourceTemplate($team, $resource_template);
+            $this->entityManager->persist($team_rt);
             endforeach;
             $this->entityManager->flush();
 
@@ -195,10 +191,10 @@ Class AddController extends AbstractActionController
             if (isset($request->getPost('site')['site']['o:site'])) {
                 foreach ($request->getPost('site')['site']['o:site'] as $site_id):
                     $site_id = (int)$site_id;
-                    $site = $this->entityManager->getRepository('Omeka\Entity\Site')
+                $site = $this->entityManager->getRepository('Omeka\Entity\Site')
                         ->findOneBy(['id' => $site_id]);
-                    $team_site = new TeamSite($team, $site);
-                    $this->entityManager->persist($team_site);
+                $team_site = new TeamSite($team, $site);
+                $this->entityManager->persist($team_site);
                 endforeach;
                 $this->entityManager->flush();
             }
@@ -231,7 +227,7 @@ Class AddController extends AbstractActionController
         $view = new ViewModel(['form' => $form]);
 
         //if it is get, then give them the form
-        if (! $request->isPost()){
+        if (! $request->isPost()) {
             return $view;
         }
 
@@ -245,28 +241,19 @@ Class AddController extends AbstractActionController
         $data = $request->getPost('role');
 
         //if the form isn't valid, return it
-        if (! $form->isValid()){
+        if (! $form->isValid()) {
             return $view;
         }
 
         $newRole = $this->api($form)->create('team-role', $data);
 
-        if ($newRole){
+        if ($newRole) {
             //        return new ViewModel(['data' => $data]);
             $successMessage = sprintf("Successfully added the role: '%s'", $data['o:name']);
             $this->messenger()->addSuccess($successMessage);
             return $this->redirect()->toRoute('admin/teams/roles');
-        }
-        else {
+        } else {
             return $view;
         }
-
-
-
-
     }
-
-
-
-
 }

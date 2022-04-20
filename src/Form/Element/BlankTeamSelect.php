@@ -3,12 +3,12 @@
 
 namespace Teams\Form\Element;
 
-
 class BlankTeamSelect extends TeamSelect
 {
     protected $data_placeholder = 'Select Default Team';
 
-    public function getValueOptions() {
+    public function getValueOptions()
+    {
         $em = $this->getEntityManager();
         $valueOptions = [];
         $teams = $em->getRepository('Teams\Entity\Team')->findAll();
@@ -26,8 +26,5 @@ class BlankTeamSelect extends TeamSelect
             $valueOptions = $prependValueOptions + $valueOptions;
         }
         return $valueOptions;
-
     }
-
-
 }

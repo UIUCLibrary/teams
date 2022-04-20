@@ -23,8 +23,10 @@ class DeleteController extends AbstractActionController
     {
         $this->entityManager = $entityManager;
     }
-    public function createNamedParameter(QueryBuilder $qb, $value,
-                                         $prefix = 'omeka_'
+    public function createNamedParameter(
+        QueryBuilder $qb,
+        $value,
+        $prefix = 'omeka_'
     ) {
         $index = 0;
         $placeholder = $prefix . $index;
@@ -36,7 +38,7 @@ class DeleteController extends AbstractActionController
     {
         //is there an id?
         $id = $this->params()->fromRoute('id');
-        if (! $id){
+        if (! $id) {
             return $this->redirect()->toRoute('admin');
         }
 
@@ -64,7 +66,7 @@ class DeleteController extends AbstractActionController
         $entity = $qb->getQuery()->getOneOrNullResult();
 
 
-        $request = new Request('delete','team');
+        $request = new Request('delete', 'team');
         $event = new Event('api.hydrate.pre', $this, [
             'entity' => $entity,
             'request' => $request,
@@ -84,19 +86,17 @@ class DeleteController extends AbstractActionController
 //        ) {
 //            return $this->redirect()->toRoute('admin/teams');
 //        }
-        if ($request->getPost('confirm') == 'Delete'){
+        if ($request->getPost('confirm') == 'Delete') {
             $this->api()->delete('team', ['id'=>$id]);
             return $this->redirect()->toRoute('admin/teams');
         }
 
 
         return $this->redirect()->toRoute('admin/teams');
-
     }
 
     public function roleDeleteAction()
     {
-
         $user = $this->identity()->getRole();
         $id = $this->params()->fromRoute('id');
         $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
@@ -116,23 +116,24 @@ class DeleteController extends AbstractActionController
                 ]
             );
         }
-        if ($request->isPost()){
-            if (! $role_users){
-                if ($this->identity()->getRole() == 'global_admin' ){
-                    if ($request->getPost('confirm') == 'Delete'){
-
+        if ($request->isPost()) {
+            if (! $role_users) {
+                if ($this->identity()->getRole() == 'global_admin') {
+                    if ($request->getPost('confirm') == 'Delete') {
                         $this->entityManager->remove($role);
                         $this->entityManager->flush();
                         $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
 
                         return $this->redirect()->toRoute('admin/teams/roles');
-
-                    } else{ return $this->redirect()->toRoute('admin/teams/roles');}
-                } else {$this->messenger()->addError('Only global admins can delete roles');}
-
-            } else {$this->messenger()->addError("Can't be deleted because teams are using the role");}
+                    } else {
+                        return $this->redirect()->toRoute('admin/teams/roles');
+                    }
+                } else {
+                    $this->messenger()->addError('Only global admins can delete roles');
+                }
+            } else {
+                $this->messenger()->addError("Can't be deleted because teams are using the role");
+            }
         }
-
     }
-
 }

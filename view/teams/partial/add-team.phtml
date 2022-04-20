@@ -27,7 +27,7 @@ if (extension_loaded('mbstring')) {
                     <span><?php echo $initial; ?></span>
                     (<span class="selector-child-count"><?php echo count($teamsByInitial[$initial]); ?></span>)
                     <ul>
-                        <?php foreach($teams as $team): ?>
+                        <?php foreach ($teams as $team): ?>
                             <li class="selector-child" data-child-search="<?php echo $escape($team->name()); ?>" data-team-internal-id="<?php echo $escape($team->id()); ?>">
                                 <span><?php echo $escape($team->name()); ?></span>
                             </li>

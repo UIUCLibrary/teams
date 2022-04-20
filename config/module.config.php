@@ -284,16 +284,6 @@ return [
                                     ]
                                 ]
                             ],
-                            'change' => [
-                                'type' => Literal::class,
-                                'options' => [
-                                    'route' => '/change',
-                                    'defaults' => [
-                                        'controller' => 'ChangeTeam',
-                                        'action' => 'change'
-                                    ]
-                                ]
-                            ],
                             'all' => [
                                 'type' => Literal::class,
                                 'options' => [

@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class ConfigForm extends Form
@@ -47,7 +46,6 @@ class ConfigForm extends Form
                 'id' => 'teams_site_admin_make_user',
             ],
         ]);
-
     }
     public function setGlobalSettings($globalSettings)
     {

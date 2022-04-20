@@ -84,9 +84,9 @@ $sectionNavs = [
                     <tr>
                         <td>
                             <?php echo $this->hyperlink(
-                                $team_user->getUser()->getName(),
-                                $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
-                            )
+    $team_user->getUser()->getName(),
+    $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
+)
                             ?>
                         </td>
                         <td><?php echo $team_user->getRole()->getName(); ?></td>
@@ -103,9 +103,9 @@ $sectionNavs = [
         <div class="no-resources o-icon-users">
             <p><?php echo $translate('No users currently belong to this team.'); ?></p>
             <?php $this->hyperlink(
-                    'Add a Team',
-                    $this->url('admin/teams/detail/update', ['id' => $team->id()])
-            )
+                                'Add a Team',
+                                $this->url('admin/teams/detail/update', ['id' => $team->id()])
+                            )
             ?>
         </div>
     <?php endif; ?>

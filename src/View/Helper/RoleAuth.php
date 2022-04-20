@@ -3,7 +3,6 @@
 
 namespace Teams\View\Helper;
 
-
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\View\Helper\AbstractHelper;
@@ -41,21 +40,25 @@ class RoleAuth extends AbstractHelper
     public function teamAuthorized(string $action, string $domain)
     {
         //validate inputs
-        if (!in_array($action, $this->actions)){
+        if (!in_array($action, $this->actions)) {
             throw new InvalidArgumentException(
-                sprintf(' "%1$s" not a valid action for teamAuthorized().',
-                    $action)
+                sprintf(
+                    ' "%1$s" not a valid action for teamAuthorized().',
+                    $action
+                )
             );
         }
-        if (!in_array($domain, $this->domains)){
+        if (!in_array($domain, $this->domains)) {
             throw new InvalidArgumentException(
-                sprintf('"%1$s" not a valid domain for teamAuthorized().',
-                    $domain)
+                sprintf(
+                    '"%1$s" not a valid domain for teamAuthorized().',
+                    $domain
+                )
             );
         }
 
         //super admin should bypass team authority
-        if ($this->isSuper()){
+        if ($this->isSuper()) {
             return true;
         }
 
@@ -73,40 +76,31 @@ class RoleAuth extends AbstractHelper
             //go through each domain and determine if user is authorized for actions in that domain
 
             //only the global admin can create, delete or modify teams
-            if ($domain == 'team' || 'role'){
-                    $authorized = $this->isGlobAdmin();
+            if ($domain == 'team' || 'role') {
+                $authorized = $this->isGlobAdmin();
             }
 
             //if they can manage users of the team (including their role)
-            elseif ($domain == 'team_user'){
+            elseif ($domain == 'team_user') {
                 $authorized = $current_role->getCanAddUsers();
-            }
-
-            elseif ($domain == 'resource'){
-                if ($action == 'add'){
+            } elseif ($domain == 'resource') {
+                if ($action == 'add') {
                     $authorized = $current_role->getCanAddItems();
-                }
-                elseif ($action == 'update'){
+                } elseif ($action == 'update') {
                     $authorized = $current_role->getCanModifyResources();
-                }
-                elseif ($action == 'delete'){
+                } elseif ($action == 'delete') {
                     $authorized = $current_role->getCanDeleteResources();
                 }
-            }
-
-            elseif ($domain == 'site'){
+            } elseif ($domain == 'site') {
 
                 //only the global admin can add and delete sites
-                if ($action == 'add' || $action == 'delete'){
+                if ($action == 'add' || $action == 'delete') {
                     $authorized = $this->isGlobAdmin();
-                }
-                elseif ($action == 'update'){
+                } elseif ($action == 'update') {
                     $authorized = $current_role->getCanAddSitePages();
                 }
             }
         }
         return $authorized;
     }
-
-
 }

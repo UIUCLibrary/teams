@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Teams\Form\Element\AllItemSetSelect;
 use Teams\Form\Element\AllSiteSelect;
 use Teams\Form\Element\RoleSelect;
@@ -12,11 +11,8 @@ use Laminas\Form\Fieldset;
 
 class AddSiteToTeamFieldset extends Fieldset
 {
-
     public function init()
     {
-
-
         $this->add([
             'name' => 'o:site',
             'type' => AllSiteSelect::class,
@@ -30,6 +26,4 @@ class AddSiteToTeamFieldset extends Fieldset
 
         ]);
     }
-
-
 }

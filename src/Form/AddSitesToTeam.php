@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class AddSitesToTeam extends Form

@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\UserSelect;
 use Laminas\Form\Fieldset;
@@ -12,9 +11,6 @@ class TeamAddUserRoleFieldset extends Fieldset
 {
     public function init()
     {
-
-
-
         $this->add([
             'name' => 'o:user',
             'type' => UserSelect::class,
@@ -38,13 +34,5 @@ class TeamAddUserRoleFieldset extends Fieldset
             ],
 
         ]);
-
-
-
-
-
-
-
     }
-
 }

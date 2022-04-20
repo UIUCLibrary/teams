@@ -9,7 +9,7 @@ use Laminas\Form\Element\Text;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Helper\Url;
 
-Class RoleName extends Text
+class RoleName extends Text
 {
     /**
      * @var EntityManager

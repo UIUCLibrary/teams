@@ -15,7 +15,7 @@ class TeamUserAdapter extends AbstractEntityAdapter
 {
     use QueryBuilderTrait;
 
-        protected $sortFields = [
+    protected $sortFields = [
             'id' => 'team'.'user',
         'team' => 'team',
         'user' => 'user',
@@ -38,8 +38,10 @@ class TeamUserAdapter extends AbstractEntityAdapter
         return TeamUser::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
-                            ErrorStore $errorStore
+    public function hydrate(
+        Request $request,
+        EntityInterface $entity,
+        ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'o:team')) {
             $team_id = $request->getValue('o:team');
@@ -70,7 +72,6 @@ class TeamUserAdapter extends AbstractEntityAdapter
                 $entity->setCurrent($current);
             }
         }
-
     }
 
 
@@ -78,44 +79,47 @@ class TeamUserAdapter extends AbstractEntityAdapter
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['id'])) {
-            $qb->andWhere($qb->expr()->eq(
+            $qb->andWhere(
+                $qb->expr()->eq(
                 "Teams\Entity\TeamUser.id",
-                $this->createNamedParameter($qb, $query['id']))
+                $this->createNamedParameter($qb, $query['id'])
+            )
             );
         }
 
         if (isset($query['team_id'])) {
-            $qb->andWhere($qb->expr()->eq(
+            $qb->andWhere(
+                $qb->expr()->eq(
                 "Teams\Entity\TeamUser.team",
-                $this->createNamedParameter($qb, $query['team_id']))
-            );          }
+                $this->createNamedParameter($qb, $query['team_id'])
+            )
+            );
+        }
 
         if (isset($query['user_id'])) {
-            $qb->andWhere($qb->expr()->eq(
+            $qb->andWhere(
+                $qb->expr()->eq(
                 "Teams\Entity\TeamUser.user",
-                $this->createNamedParameter($qb, $query['user_id']))
-            );          }
+                $this->createNamedParameter($qb, $query['user_id'])
+            )
+            );
+        }
         if (isset($query['role'])) {
-            $qb->andWhere($qb->expr()->eq(
+            $qb->andWhere(
+                $qb->expr()->eq(
                 "Teams\Entity\TeamUser.role",
-                $this->createNamedParameter($qb, $query['role']))
+                $this->createNamedParameter($qb, $query['role'])
+            )
             );
         }
 
         if (isset($query['current'])) {
-            $qb->andWhere($qb->expr()->eq(
+            $qb->andWhere(
+                $qb->expr()->eq(
                 "Teams\Entity\TeamUser.is_current",
-                $this->createNamedParameter($qb, $query['is_current']))
+                $this->createNamedParameter($qb, $query['is_current'])
+            )
             );
         }
-
-
     }
-
-
-
-
-
-
-
 }

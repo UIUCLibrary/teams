@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class TeamItemsetAddRemoveForm extends Form
@@ -20,8 +19,5 @@ class TeamItemsetAddRemoveForm extends Form
             'type' => TeamItemSetFieldset::class,
 
         ]);
-
-
     }
-
 }
