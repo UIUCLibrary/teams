@@ -40,7 +40,7 @@ $sectionNavs = [
 
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $team); ?>
 <div id="page-actions">
-    <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
+    <?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
         <a class="button" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
     <?php endif; ?>
 </div>
