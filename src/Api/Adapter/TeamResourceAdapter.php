@@ -3,7 +3,6 @@
 
 namespace Teams\Api\Adapter;
 
-
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
@@ -36,8 +35,10 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         return TeamResource::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
-                            ErrorStore $errorStore
+    public function hydrate(
+        Request $request,
+        EntityInterface $entity,
+        ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'team')) {
             $name = $request->getValue('team');
@@ -115,7 +116,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 //        return $result;
 //    }
 
-///3 ifs permit single return via specified column
+    ///3 ifs permit single return via specified column
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['id'])) {
@@ -254,6 +255,4 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 //            }
 //        }
 //    }
-
-
 }

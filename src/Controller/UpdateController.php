@@ -1,7 +1,6 @@
 <?php
 namespace Teams\Controller;
 
-
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
@@ -22,8 +21,7 @@ use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
 use Laminas\View\Model\ViewModel;
 
-
-Class UpdateController extends AbstractActionController
+class UpdateController extends AbstractActionController
 {
     /**
      * @var EntityManager
@@ -38,8 +36,10 @@ Class UpdateController extends AbstractActionController
         $this->entityManager = $entityManager;
     }
 
-    public function createNamedParameter(QueryBuilder $qb, $value,
-                                         $prefix = 'omeka_'
+    public function createNamedParameter(
+        QueryBuilder $qb,
+        $value,
+        $prefix = 'omeka_'
     ) {
         $index = 0;
         $placeholder = $prefix . $index;
@@ -50,13 +50,10 @@ Class UpdateController extends AbstractActionController
 
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
-
-
-
         $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
         $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
         $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
-        $team_user = new TeamUser($team,$user,$role);
+        $team_user = new TeamUser($team, $user, $role);
         $this->entityManager->persist($team_user);
 
         //flushing here because this is a mini-form and we want to see the name pop up
@@ -74,7 +71,6 @@ Class UpdateController extends AbstractActionController
         //flushing here because this is a mini-form and we want to see the name pop up
         //more efficient solution would be to have JS handle the popping and batch update
         $em->flush();
-
     }
 
     public function updateRole(int $team_id, int $user_id, int $role_id)
@@ -89,9 +85,10 @@ Class UpdateController extends AbstractActionController
         $em->flush();
     }
 
-    public function processItemSets(int $item_set_id){
+    public function processItemSets(int $item_set_id)
+    {
         $resource_array = array();
-        if ((int)$item_set_id>0){
+        if ((int)$item_set_id>0) {
             $item_set_id = (int)$item_set_id;
 
             //TODO: why isn't this a list?
@@ -99,10 +96,10 @@ Class UpdateController extends AbstractActionController
             foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
                 $resource_array += [$item->id() => true];
 
-                //add all media belonging to to the item
-                foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+            //add all media belonging to to the item
+            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
                     $resource_array += [$media->id()=>true];
-                endforeach;
+            endforeach;
             endforeach;
         }
         //add itemset itself
@@ -111,36 +108,37 @@ Class UpdateController extends AbstractActionController
         return $resource_array;
     }
 
-    public function processResources($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false){
+    public function processResources($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false)
+    {
         $resource_array = array();
         $resource_template_array = array();
 
 
-        if ($delete == false){
+        if ($delete == false) {
             $collection = 'addCollections';
-        } else{
+        } else {
             $collection = 'rmCollections';
         }
 
-            //get ids of itemsets and their descendents
-            if (isset($request->getPost($collection)['o:itemset'])){
-                foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
+        //get ids of itemsets and their descendents
+        if (isset($request->getPost($collection)['o:itemset'])) {
+            foreach ($request->getPost($collection)['o:itemset'] as $item_set_id):
                     $resource_array += $this->processItemSets($item_set_id);
-                endforeach;
-            }
+            endforeach;
+        }
 
-            //get ids of things the user owns
-            if (isset($request->getPost($collection)['o:user'])){
-                foreach ($request->getPost($collection)['o:user'] as $user_id):
-                    if ((int)$user_id>0){
+        //get ids of things the user owns
+        if (isset($request->getPost($collection)['o:user'])) {
+            foreach ($request->getPost($collection)['o:user'] as $user_id):
+                    if ((int)$user_id>0) {
                         $user_id = (int)$user_id;
                         foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
 
                             $resource_array += [$item->id() => true];
 
-                            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                        foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
                                 $resource_array += [$media->id() => true];
-                            endforeach;
+                        endforeach;
 
                         endforeach;
 
@@ -155,71 +153,69 @@ Class UpdateController extends AbstractActionController
                             $resource_template_array[$rt->getId()] = true;
                         endforeach;
                     }
-                endforeach;
-            }
+            endforeach;
+        }
 
-            if ($delete == false){
-                //remove elements that are already part of the team to prevent integrity constraint violation
+        if ($delete == false) {
+            //remove elements that are already part of the team to prevent integrity constraint violation
 
-                //resources remove existing from the add list
-                foreach ($existing_resources as $resource):
+            //resources remove existing from the add list
+            foreach ($existing_resources as $resource):
                     $rid = $resource->getResource()->getId();
-                    if (array_key_exists($rid, $resource_array)){
-                        unset($resource_array[$rid]);
-                    }
-                endforeach;
+            if (array_key_exists($rid, $resource_array)) {
+                unset($resource_array[$rid]);
+            }
+            endforeach;
 
-                //resource templates remove existing from the add list
-                foreach ($existing_resources_templates as $resource):
+            //resource templates remove existing from the add list
+            foreach ($existing_resources_templates as $resource):
                     $rid = $resource->getResourceTemplate()->getId();
-                    if (array_key_exists($rid, $resource_template_array)){
-                        unset($resource_template_array[$rid]);
-                    }
-                endforeach;
+            if (array_key_exists($rid, $resource_template_array)) {
+                unset($resource_template_array[$rid]);
+            }
+            endforeach;
 
-                //add the resources to the team
-                foreach ($resource_array as $resource_id => $value):
+            //add the resources to the team
+            foreach ($resource_array as $resource_id => $value):
                     $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                         ->findOneBy(['id'=>$resource_id]);
-                    $team_resource = new TeamResource($team, $resource);
-                    $this->entityManager->persist($team_resource);
-                endforeach;
+            $team_resource = new TeamResource($team, $resource);
+            $this->entityManager->persist($team_resource);
+            endforeach;
 
-                //add the resource templates to the team
-                foreach ($resource_template_array as $resource_id => $value):
+            //add the resource templates to the team
+            foreach ($resource_template_array as $resource_id => $value):
                     $resource = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
                         ->findOneBy(['id'=>$resource_id]);
-                    $team_resource = new TeamResourceTemplate($team, $resource);
-                    $this->entityManager->persist($team_resource);
-                endforeach;
+            $team_resource = new TeamResourceTemplate($team, $resource);
+            $this->entityManager->persist($team_resource);
+            endforeach;
 
-                $this->entityManager->flush();
-            }
-
-
-            else {
-                //remove resources
-                foreach (array_keys($resource_array) as $resource_id):
+            $this->entityManager->flush();
+        } else {
+            //remove resources
+            foreach (array_keys($resource_array) as $resource_id):
                     $team_resource = $this->entityManager->getRepository('Teams\Entity\TeamResource')
                         ->findOneBy(['resource'=>$resource_id, 'team'=>$team]);
-                    if ($team_resource){
-                    $this->entityManager->remove($team_resource);}
-                endforeach;
+            if ($team_resource) {
+                $this->entityManager->remove($team_resource);
+            }
+            endforeach;
 
-                //remove resource templates
-                foreach (array_keys($resource_template_array) as $resource_id):
+            //remove resource templates
+            foreach (array_keys($resource_template_array) as $resource_id):
                     $team_resource_template = $this->entityManager->getRepository('Teams\Entity\TeamResourceTemplate')
                         ->findOneBy(['resource_template'=>$resource_id, 'team'=>$team]);
-                    if ($team_resource_template){
-                        $this->entityManager->remove($team_resource_template);}
-                endforeach;
-                $this->entityManager->flush();
-                }
+            if ($team_resource_template) {
+                $this->entityManager->remove($team_resource_template);
+            }
+            endforeach;
+            $this->entityManager->flush();
+        }
     }
 
     public function teamUpdateAction()
     {
-
         $id = $this->params()->fromRoute('id');
 
         $team_sites = $this->entityManager
@@ -229,17 +225,17 @@ Class UpdateController extends AbstractActionController
         $valueOptions = [];
 
 //        get current sites for the team and populate the sites chosen select element
-        foreach ($team_sites as $team_site){
+        foreach ($team_sites as $team_site) {
             $current_sites[] = $team_site->getSite()->getId();
         }
 
         $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
-        foreach ($all_sites as $site){
-            if ($site->owner()){
+        foreach ($all_sites as $site) {
+            if ($site->owner()) {
                 $owner = $site->owner()->name();
-            }else{
+            } else {
                 $owner = 'No One';
             }
             $site_name = $site->title() . ' (' . $owner . ')';
@@ -249,11 +245,10 @@ Class UpdateController extends AbstractActionController
             $valueOption = [];
             $valueOption['value'] = $site_id;
             $valueOption['label'] = $site_name;
-            if (in_array($site_id, $current_sites)){
+            if (in_array($site_id, $current_sites)) {
                 $valueOption['attributes'] = ['selected' => true];
             }
             $valueOptions[] = $valueOption;
-
         }
 
         $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class);
@@ -296,7 +291,7 @@ Class UpdateController extends AbstractActionController
 
 
         $data = $this->api()->read('team', ['id'=>$id])->getContent();
-        $request = new Request('update','team');
+        $request = new Request('update', 'team');
         $event = new Event('api.hydrate.pre', $this, [
             'entity' => $entity,
             'request' => $request,
@@ -316,7 +311,7 @@ Class UpdateController extends AbstractActionController
         //get the team's users and put them in an associative array id:name
         $team_u_array = array();
         $team_u_collection = $this->api()->read('team', ['id'=>$id])->getContent()->users();
-        foreach($team_u_collection as $team_user):
+        foreach ($team_u_collection as $team_user):
             $team_u_array[$team_user->getUser()->getId()] = $team_user->getUser()->getName();
         endforeach;
 
@@ -371,7 +366,7 @@ Class UpdateController extends AbstractActionController
             ->getQuery()
             ->getResult();
 
-        if ($request->isPost()){
+        if ($request->isPost()) {
             $post_data = $request->getPost();
 
             //first update the team name and description
@@ -390,13 +385,13 @@ Class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($post_data['addUser']){
+            if ($post_data['addUser']) {
                 $team_id = $id;
                 $user_id = $post_data['add-member'];
                 $role_id = $post_data['member-role'];
                 $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-                $successMessage = sprintf("Successfully added %s as a %s",$newMember->getUser()->getName(), $newMember->getRole()->getName() );
+                $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
                 $this->messenger()->addSuccess($successMessage);
 
                 return $this->redirect()->refresh();
@@ -412,22 +407,24 @@ Class UpdateController extends AbstractActionController
             $team_id = $id;
             $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
-            if ($post_data['UserRole']){
+            if ($post_data['UserRole']) {
                 foreach ($post_data['UserRole'] as $user_id => $role_id):
                     $user_id = (int) $user_id;
-                    $role_id = (int) $role_id;
+                $role_id = (int) $role_id;
 
-                    if ($post_data['UserCurrent'][$user_id] == 1){
-                        $current = 1;
-                    }else {$current = null;}
+                if ($post_data['UserCurrent'][$user_id] == 1) {
+                    $current = 1;
+                } else {
+                    $current = null;
+                }
 
-                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                    $new_tu = new TeamUser($team, $user, $role);
-                    $new_tu->setCurrent($current);
+                $new_tu = new TeamUser($team, $user, $role);
+                $new_tu->setCurrent($current);
 
-                    $em->persist($new_tu);
+                $em->persist($new_tu);
 
                 endforeach;
                 $em->flush();
@@ -440,11 +437,11 @@ Class UpdateController extends AbstractActionController
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
 
             //handle new sites
-            foreach ($post_data['teamSites']['o:site'] as $site){
-                if (!in_array($site, $current_sites)){
+            foreach ($post_data['teamSites']['o:site'] as $site) {
+                if (!in_array($site, $current_sites)) {
                     $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
                     $ts = new TeamSite($team, $site);
-                    $request = new Request('create','team_site');
+                    $request = new Request('create', 'team_site');
                     $event = new Event('api.hydrate.pre', $this, [
                         'entity' => $ts,
                         'request' => $request,
@@ -456,10 +453,10 @@ Class UpdateController extends AbstractActionController
             }
 
             //handle removed sites
-            foreach ($current_sites as $site){
-                if (!in_array($site, $post_data['teamSites']['o:site'])){
+            foreach ($current_sites as $site) {
+                if (!in_array($site, $post_data['teamSites']['o:site'])) {
                     $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
-                    $request = new Request('delete','team_site');
+                    $request = new Request('delete', 'team_site');
                     $event = new Event('api.hydrate.pre', $this, [
                         'entity' => $ts,
                         'request' => $request,
@@ -474,13 +471,10 @@ Class UpdateController extends AbstractActionController
 
 
 
-            $successMessage = sprintf("Successfully updated the %s team", $team->getName() );
+            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
             $this->messenger()->addSuccess($successMessage);
 
             return $this->redirect()->refresh();
-
-
-
         }
 
 
@@ -511,14 +505,10 @@ Class UpdateController extends AbstractActionController
 //        if (!empty($post_data['o:user_remove'])){
 //            $this->api()->delete('team-user', ['user_id' => $post_data['o:user_remove'], 'team_id'=> $id] );
 //        }
-
-
-
     }
 
     public function roleUpdateAction()
     {
-
     }
 
     public function userAction()
@@ -533,11 +523,11 @@ Class UpdateController extends AbstractActionController
 
             foreach ($user_teams as $team_id):
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
-                $team_user = new TeamUser($team,$user,$role);
-                $team_user->setCurrent(null);
-                $em->persist($team_user);
+            $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+            $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
+            $team_user = new TeamUser($team, $user, $role);
+            $team_user->setCurrent(null);
+            $em->persist($team_user);
             endforeach;
             $em->flush();
             $request = $this->getRequest();
@@ -552,7 +542,7 @@ Class UpdateController extends AbstractActionController
         $user_id = $this->identity()->getId();
         $request = $this->getRequest();
 
-        if ($request->isPost()){
+        if ($request->isPost()) {
             $data =  $request->getPost();
 
             $em = $this->entityManager;
@@ -560,7 +550,7 @@ Class UpdateController extends AbstractActionController
             $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => 1]);
             $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
 
-            if ($old_current){
+            if ($old_current) {
                 $old_current->setCurrent(null);
                 $em->flush();
             }
@@ -585,16 +575,6 @@ Class UpdateController extends AbstractActionController
 
 
             return $this->redirect()->toUrl($data['return_url']);
-
-
         }
-
-
-
-
     }
-
-
-
-
 }

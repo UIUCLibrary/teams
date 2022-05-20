@@ -3,12 +3,10 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class TeamUserForm extends Form
 {
-
     public function init()
     {
         $this->add([
@@ -16,5 +14,4 @@ class TeamUserForm extends Form
             'type' => TeamUserFieldset::class,
         ]);
     }
-
 }

@@ -3,7 +3,6 @@
 
 namespace Teams\Service\Form\Element;
 
-
 use Teams\Form\Element\TeamSelect;
 use Interop\Container\ContainerInterface;
 

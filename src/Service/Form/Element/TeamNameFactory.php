@@ -3,9 +3,7 @@
 
 namespace Teams\Service\Form\Element;
 
-
 use Teams\Form\Element\TeamName;
-use Teams\Form\Element\TeamSelect;
 use Interop\Container\ContainerInterface;
 
 class TeamNameFactory

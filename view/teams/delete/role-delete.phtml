@@ -8,7 +8,7 @@ echo $this->pageTitle($translate('Delete role'));
 ?>
 
 <?php
-if ($this->role_users){
+if ($this->role_users) {
     ?> You can't delete this role because it is being used by the following teams
     <ul class="list-group">
         <?php         foreach ($role_users as $user):?>
@@ -18,16 +18,15 @@ if ($this->role_users){
 
 
     <?php
-} else{
-?>
+} else {
+        ?>
 <p>
     Are you sure you want to delete the this role ?
 </p>
 <?php
 foreach ($this->role_users as $user):
     echo $user->getId();
-endforeach;
-?>
+        endforeach; ?>
 
 <ul class="list-group">
     <li class="list-group-item"><?= $role->getName() ?></li>
@@ -37,5 +36,5 @@ endforeach;
     <input class="btn btn-default" type="submit" name="confirm" value="Cancel" />
     <input class="btn btn-danger" type="submit" name="confirm" value="Delete" />
 </form>
-<?php }
-
+<?php
+    }

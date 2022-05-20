@@ -3,13 +3,10 @@
 
 namespace Teams\Form\Element;
 
-
 class AllTeamSelect extends TeamSelect
 {
     public function getValueOptions()
     {
-
-
         $valueOptions = [];
 
         //TODO get user id         $identity = $this->getServiceLocator()
@@ -21,8 +18,8 @@ class AllTeamSelect extends TeamSelect
         $valueOptions[-1] = '~~Add New Team~~';
         foreach ($teams as $team):
             $team_name = $team->getName();
-            $team_id = $team->getId();
-            $valueOptions[$team_id] = $team_name;
+        $team_id = $team->getId();
+        $valueOptions[$team_id] = $team_name;
         endforeach;
 
         $prependValueOptions = $this->getOption('prepend_value_options');
@@ -31,5 +28,4 @@ class AllTeamSelect extends TeamSelect
         }
         return $valueOptions;
     }
-
 }

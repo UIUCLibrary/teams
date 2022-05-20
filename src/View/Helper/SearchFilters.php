@@ -65,7 +65,8 @@ class SearchFilters extends AbstractHelper
                     case 'property':
                         $index = 0;
                         foreach ($value as $queryRow) {
-                            if (!(is_array($queryRow)
+                            if (!(
+                                is_array($queryRow)
                                 && array_key_exists('property', $queryRow)
                                 && array_key_exists('type', $queryRow)
                             )) {

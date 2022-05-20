@@ -74,6 +74,4 @@ class TeamFieldset extends Fieldset
 //        ]);
 
     }
-
-
 }

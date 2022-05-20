@@ -3,9 +3,7 @@
 
 namespace Teams\Form\Element;
 
-
 class AllItemSetSelect extends TeamSelect
-
 {
     protected $data_placeholder = 'Select Item Sets';
 
@@ -13,8 +11,6 @@ class AllItemSetSelect extends TeamSelect
 
     public function getValueOptions()
     {
-
-
         $valueOptions = [];
 
         //TODO get user id         $identity = $this->getServiceLocator()
@@ -25,14 +21,14 @@ class AllItemSetSelect extends TeamSelect
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
         foreach ($item_sets as $item_set):
-            if ($item_set->owner()){
+            if ($item_set->owner()) {
                 $owner = $item_set->owner()->name();
-            }else{
+            } else {
                 $owner = 'No One';
             }
-            $item_set_name = $item_set->displayTitle() . ' (' . $owner . ')';
-            $item_set_id = $item_set->id();
-            $valueOptions[$item_set_id] = $item_set_name;
+        $item_set_name = $item_set->displayTitle() . ' (' . $owner . ')';
+        $item_set_id = $item_set->id();
+        $valueOptions[$item_set_id] = $item_set_name;
         endforeach;
 
 

@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class TeamSelect extends Form
@@ -23,5 +22,4 @@ class TeamSelect extends Form
             ],
         ]);
     }
-
 }

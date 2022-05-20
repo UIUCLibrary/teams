@@ -3,7 +3,6 @@
 
 namespace Teams\Service;
 
-
 use Interop\Container\ContainerInterface;
 use Teams\Controller\TrashController;
 use Laminas\ServiceManager\Factory\FactoryInterface;
