@@ -57,9 +57,9 @@ $escape = $this->plugin('escapeHtml');
                     <?php $link_text = $this->current_team->getId() == $team->getId() ?>
 
                     <?php echo $this->hyperlink(
-                            $team->getName(),
-                            $this->url('admin/teams/detail', ['id' => $team->getId()])
-                        )
+                    $team->getName(),
+                    $this->url('admin/teams/detail', ['id' => $team->getId()])
+                )
                     ?>
                     </td>
                     <td>
@@ -67,10 +67,10 @@ $escape = $this->plugin('escapeHtml');
                             <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
                                 <li>
                                     <?php echo $this->hyperlink(
-                                            "",
-                                            $this->url('admin/teams/detail/update', ['id' => $team->getId()]),
-                                            ["class" => "o-icon-edit"]
-                                    )
+                        "",
+                        $this->url('admin/teams/detail/update', ['id' => $team->getId()]),
+                        ["class" => "o-icon-edit"]
+                    )
                                     ?>
                                 </li>
                             <?php endif; ?>
@@ -86,10 +86,10 @@ $escape = $this->plugin('escapeHtml');
                             <?php endif; ?>
                             <li>
                                 <?php echo $this->hyperlink(
-                                    "",
-                                    $this->url('admin/teams/detail', ['id' => $team->getId()]),
-                                    ["class" => "o-icon-more"]
-                                )
+                                        "",
+                                        $this->url('admin/teams/detail', ['id' => $team->getId()]),
+                                        ["class" => "o-icon-more"]
+                                    )
                                 ?>
                             </li>
                         </ul>
@@ -100,9 +100,9 @@ $escape = $this->plugin('escapeHtml');
                     <td><?php echo $team->getDescription(); ?></td>
                     <td>
                         <?php echo $this->hyperlink(
-                            count($team->getTeamUsers()),
-                            $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users'
-                        )
+                                    count($team->getTeamUsers()),
+                                    $this->url('admin/teams/detail', ['id' => $team->getId()]) . '#users'
+                                )
                         ?>
                     </td>
                     <td>

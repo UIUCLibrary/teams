@@ -3,9 +3,7 @@
 
 namespace Teams\Service\Form\Element;
 
-
 use Interop\Container\ContainerInterface;
-use Teams\Form\Element\AllItemSetSelect;
 use Teams\Form\Element\AllSiteSelect;
 
 class AllSiteSelectFactory
@@ -18,6 +16,4 @@ class AllSiteSelectFactory
         $element->setEntityManager($services->get('Omeka\EntityManager'));
         return $element;
     }
-
-
 }

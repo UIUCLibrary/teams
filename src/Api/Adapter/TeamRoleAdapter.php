@@ -45,8 +45,10 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         return TeamRole::class;
     }
 
-    public function hydrate(Request $request, EntityInterface $entity,
-                            ErrorStore $errorStore
+    public function hydrate(
+        Request $request,
+        EntityInterface $entity,
+        ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'o:name')) {
             $value = $request->getValue('o:name');
@@ -66,36 +68,31 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         if ($this->shouldHydrate($request, 'can_add_items')) {
             $value = $request->getValue('can_add_items');
             if (!is_null($value)) {
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanAddItems($value);
-                }else{
+                } else {
                     $entity->setCanAddItems(null);
                 }
-
-
             }
-
         }
 
         if ($this->shouldHydrate($request, 'can_add_users')) {
             $value = $request->getValue('can_add_users');
             if (!is_null($value)) {
-
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanAddUsers($value);
-                }else{
+                } else {
                     $entity->setCanAddUsers(null);
                 }
-
             }
         }
 
         if ($this->shouldHydrate($request, 'can_add_itemsets')) {
             $value = $request->getValue('can_add_itemsets');
             if (!is_null($value)) {
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanAddItemsets($value);
-                }else{
+                } else {
                     $entity->setCanAddItemsets(null);
                 }
             }
@@ -104,9 +101,9 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         if ($this->shouldHydrate($request, 'can_modify_resources')) {
             $value = $request->getValue('can_modify_resources');
             if (!is_null($value)) {
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanModifyResources($value);
-                }else{
+                } else {
                     $entity->setCanModifyResources(null);
                 }
             }
@@ -115,9 +112,9 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         if ($this->shouldHydrate($request, 'can_delete_resources')) {
             $value = $request->getValue('can_delete_resources');
             if (!is_null($value)) {
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanDeleteResources($value);
-                }else{
+                } else {
                     $entity->setCanDeleteResources(null);
                 }
             }
@@ -127,9 +124,9 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         if ($this->shouldHydrate($request, 'can_add_site_pages')) {
             $value = $request->getValue('can_add_site_pages');
             if (!is_null($value)) {
-                if($value == 1 || 0){
+                if ($value == 1 || 0) {
                     $entity->setCanAddSitePages($value);
-                }else{
+                } else {
                     $entity->setCanAddSitePages(null);
                 }
             }
@@ -138,7 +135,7 @@ class TeamRoleAdapter extends AbstractEntityAdapter
 
 
 
-/////3 ifs permit single return via specified column
+    /////3 ifs permit single return via specified column
 //    public function buildQuery(QueryBuilder $qb, array $query)
 //    {
 //        if (isset($query['id'])) {

@@ -3,9 +3,7 @@
 
 namespace Teams\Form\Element;
 
-
 class AllSiteSelect extends TeamSelect
-
 {
     protected $data_placeholder = 'Select Site(s)';
 
@@ -16,9 +14,9 @@ class AllSiteSelect extends TeamSelect
 
     public function getValueOptions()
     {
-        if ($this->valueOptions){
+        if ($this->valueOptions) {
             return $this->valueOptions;
-        } else{
+        } else {
             $valueOptions = [];
             //TODO get user id         $identity = $this->getServiceLocator()
             //            ->get('Omeka\AuthenticationService')->getIdentity(); $user_id = identity->getId();
@@ -28,14 +26,14 @@ class AllSiteSelect extends TeamSelect
             //this is set to display the teams for the current user. This works in many contexts for
             //normal users, but not for admins doing maintenance or adding new users to a team
             foreach ($sites as $site):
-                if ($site->owner()){
+                if ($site->owner()) {
                     $owner = $site->owner()->name();
-                }else{
+                } else {
                     $owner = 'No One';
                 }
-                $site_name = $site->title() . ' (' . $owner . ')';
-                $site_id = $site->id();
-                $valueOptions[$site_id] = $site_name;
+            $site_name = $site->title() . ' (' . $owner . ')';
+            $site_id = $site->id();
+            $valueOptions[$site_id] = $site_name;
             endforeach;
 
 
@@ -45,7 +43,6 @@ class AllSiteSelect extends TeamSelect
             }
             return $valueOptions;
         }
-
     }
 
     public function setPlaceholder($placeholder)

@@ -31,8 +31,6 @@ class TeamSelect extends Select
 
     public function getValueOptions()
     {
-
-
         $valueOptions = [];
 
         $user_id = $this->authenticationService->getIdentity();
@@ -42,8 +40,8 @@ class TeamSelect extends Select
         //normal users, but not for admins doing maintenance or adding new users to a team
         foreach ($team_users as $team_user):
             $team_name = $team_user->getTeam()->getName();
-            $team_id = $team_user->getTeam()->getId();
-            $valueOptions[$team_id] = $team_name;
+        $team_id = $team_user->getTeam()->getId();
+        $valueOptions[$team_id] = $team_name;
         endforeach;
 
 
@@ -60,7 +58,6 @@ class TeamSelect extends Select
             $defaultOptions = [
                 'resource_value_options' => [
                     'resource' => 'team',
-
                 ],
                 'name_as_value' => true,
             ];
@@ -139,8 +136,8 @@ class TeamSelect extends Select
         return $this->urlHelper;
     }
 
-
-
-
-
+    public function setPlaceholder(string $placeholder)
+    {
+        $this->data_placeholder = $placeholder;
+    }
 }

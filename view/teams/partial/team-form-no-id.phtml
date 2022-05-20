@@ -33,9 +33,8 @@ $teamTemplate = '
 
         <?php
 
-        if ($this->default_team){
-            $team = $this->default_team;
-             ?>
+        if ($this->default_team) {
+            $team = $this->default_team; ?>
                 <tr>
                     <td>
                         <span><?php echo $team->getName()?> (default)</span>
@@ -56,7 +55,8 @@ $teamTemplate = '
                 </tr>
 
 
-            <?php }?>
+            <?php
+        }?>
 
         </tbody>
     </table>
@@ -64,15 +64,15 @@ $teamTemplate = '
     //        ?>
     <!--        <div class="no-resources">-->
     <!--            <p>-->
-    <!--                --><?php //echo $this->translate('There are no teams for this resource.'); ?>
+    <!--                --><?php //echo $this->translate('There are no teams for this resource.');?>
     <!--                <br />-->
-    <!--                --><?php //echo $this->translate('Add existing teams using the interface to the right.'); ?>
+    <!--                --><?php //echo $this->translate('Add existing teams using the interface to the right.');?>
     <!--            </p>-->
     <!--        </div>-->
     <!---->
     <!---->
     <!---->
-    <!--    --><?php //endif; ?>
+    <!--    --><?php //endif;?>
 
 
     <button id="team-selector-button" class="mobile-only"><?php echo $this->translate('Add a team'); ?></button>

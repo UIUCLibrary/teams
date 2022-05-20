@@ -3,7 +3,6 @@
 
 namespace Teams\Api\Representation;
 
-
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 //legacy from deciding how much of the module to expose to the API
@@ -109,6 +108,4 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
 //        );
 //    }
 //
-
-
 }

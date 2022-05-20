@@ -3,7 +3,6 @@
 
 namespace Teams\Service\Form\Element;
 
-
 use Teams\Form\Element\RoleName;
 use Interop\Container\ContainerInterface;
 

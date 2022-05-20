@@ -18,11 +18,11 @@ class AddTeam extends AbstractHelper
         foreach ($response as $team):
 
             foreach ($team->users() as $user):
-                if ($user->getUser()->getId() == $user_id){
+                if ($user->getUser()->getId() == $user_id) {
                     $teams[] = $team;
                 }
 
-            endforeach;
+        endforeach;
         endforeach;
 //        $teams = $response->getContent();
         return $this->getView()->partial(

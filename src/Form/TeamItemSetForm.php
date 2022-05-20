@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class TeamItemSetForm extends Form
@@ -28,7 +27,5 @@ class TeamItemSetForm extends Form
             'name' => 'site',
             'type' => AddSiteToTeamFieldset::class,
         ]);
-
-
     }
 }

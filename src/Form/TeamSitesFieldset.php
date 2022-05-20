@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Fieldset;
 use Teams\Form\Element\AllSiteSelect;
 
@@ -25,5 +24,4 @@ class TeamSitesFieldset extends Fieldset
 
         ]);
     }
-
 }

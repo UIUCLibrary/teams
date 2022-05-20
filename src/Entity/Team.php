@@ -62,6 +62,38 @@ class Team extends AbstractEntity
     protected $users;
 
     /* *
+ *
+ * @var ArrayCollection|Assets[]
+ * @ManyToMany(
+ *     targetEntity="Omeka\Entity\Asset",
+ *     mappedBy="team",
+ *     inversedBy="asset"
+ * )
+ * @JoinTable(
+ *     name="team_asset",
+ *     joinColumns={
+ *         @JoinColumn(
+ *             name="team_id",
+ *             referencedColumnName="id",
+ *             onDelete="cascade",
+ *             nullable=false
+ *         )
+ *     },
+ *     inverseJoinColumns={
+ *         @JoinColumn(
+ *             name="asset_id",
+ *             referencedColumnName="id",
+ *             onDelete="cascade",
+ *             nullable=false
+ *         )
+ *     }
+ * )
+ */
+    protected $assets;
+
+
+
+    /* *
      *
      * @var ArrayCollection|Site[]
      * @ManyToMany(

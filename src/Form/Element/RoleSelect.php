@@ -3,10 +3,8 @@
 
 namespace Teams\Form\Element;
 
-
 class RoleSelect extends TeamSelect
 {
-
     protected $data_placeholder = 'Select Role';
 
     protected $data_base_url = ['resource' => 'role'];
@@ -14,8 +12,6 @@ class RoleSelect extends TeamSelect
 
     public function getValueOptions()
     {
-
-
         $valueOptions = [];
 
         //TODO get user id         $identity = $this->getServiceLocator()
@@ -26,8 +22,8 @@ class RoleSelect extends TeamSelect
         //normal users, but not for admins doing maintenance or adding new users to a team
         foreach ($users as $user):
             $user_name = $user->getName();
-            $user_id = $user->getId();
-            $valueOptions[$user_id] = $user_name;
+        $user_id = $user->getId();
+        $valueOptions[$user_id] = $user_name;
         endforeach;
 
 
@@ -37,7 +33,4 @@ class RoleSelect extends TeamSelect
         }
         return $valueOptions;
     }
-
-
-
 }

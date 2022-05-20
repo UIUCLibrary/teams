@@ -3,7 +3,6 @@
 
 namespace Teams\Service\Form\Element;
 
-
 use Interop\Container\ContainerInterface;
 use Teams\Form\Element\RoleSelect;
 

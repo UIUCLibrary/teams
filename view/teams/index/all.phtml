@@ -10,18 +10,18 @@ $escape = $this->plugin('escapeHtml');
 <?php
 if (!$this->roleAuth()->teamAuthorized('add', 'team')): ?>
     <?php $glob_admin_url = $this->hyperlink(
-        'global admins',
-        $this->url(
-                'admin/default',
-                [ 'controller' => 'user', 'action' => 'browse'],
-                [
+    'global admins',
+    $this->url(
+        'admin/default',
+        [ 'controller' => 'user', 'action' => 'browse'],
+        [
                         'query' => [
                                 'role' => 'global_admin',
                                 'active' => '1',
                         ],
                 ]
-            )
-    ); ?>
+    )
+); ?>
     <div class="breadcrumbs">
         Only the <?php echo $glob_admin_url ?> can make changes to a team they don't belong to
     </div>

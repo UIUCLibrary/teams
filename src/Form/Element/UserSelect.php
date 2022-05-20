@@ -3,8 +3,6 @@
 
 namespace Teams\Form\Element;
 
-
-
 class UserSelect extends TeamSelect
 {
     protected $data_placeholder = 'Select Users';
@@ -24,8 +22,8 @@ class UserSelect extends TeamSelect
         foreach ($users as $user):
 //            $user = $user->getUser();
             $user_name = $user->getName();
-            $user_id = $user->getId();
-            $valueOptions[$user_id] = $user_name;
+        $user_id = $user->getId();
+        $valueOptions[$user_id] = $user_name;
         endforeach;
 
 
@@ -46,5 +44,4 @@ class UserSelect extends TeamSelect
     {
         $this->valueOptions = $options;
     }
-
 }

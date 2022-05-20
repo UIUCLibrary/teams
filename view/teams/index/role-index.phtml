@@ -41,12 +41,13 @@ $user_roles = $this->user_roles;
         <?php foreach ($roles as $role): ?>
             <tr>
                 <td>
-                    <?php echo $this->hyperlink($role->getName(),
-                        $this->url(
-                            'admin/teams/roles/detail',
-                            ['id' => $role->getId()]
-                        )
-                    ); ?>
+                    <?php echo $this->hyperlink(
+                $role->getName(),
+                $this->url(
+                    'admin/teams/roles/detail',
+                    ['id' => $role->getId()]
+                )
+            ); ?>
                 </td>
                 <td>
                     <?php if (array_key_exists($role->getName(), $user_roles)): ?>

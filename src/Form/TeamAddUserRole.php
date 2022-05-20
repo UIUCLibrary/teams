@@ -3,7 +3,6 @@
 
 namespace Teams\Form;
 
-
 use Laminas\Form\Form;
 
 class TeamAddUserRole extends Form
@@ -25,6 +24,4 @@ class TeamAddUserRole extends Form
 
         ]);
     }
-
-
 }
