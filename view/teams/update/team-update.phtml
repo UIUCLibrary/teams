@@ -14,7 +14,6 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-
 $this->htmlElement('body')->appendAttribute('class', 'items edit');
 
 $sectionNavs = [
@@ -28,9 +27,7 @@ $sectionNavs = [
 
 <h1>Update Team for <?php echo $this->form->get('o:name')->getValue()?></h1>
 <div id="page-actions">
-    <!--    --><?php //if ($item->userIsAllowed('update')):?>
     <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
-    <!--    --><?php //endif;?>
 </div>
 <?php
 $form = $this->form;

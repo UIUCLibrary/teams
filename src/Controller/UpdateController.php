@@ -214,10 +214,19 @@ class UpdateController extends AbstractActionController
         }
     }
 
+    public function tempteamUpdateAction()
+    {
+        $id = $this->params()->fromRoute('id');
+        $team_id = $this->params()->fromRoute('id');
+
+        $resource_form = $this->getForm(AvailableResourcesForm::class);
+        $sites_form = $this->getForm(AvailableSitesForm::class);
+        $user_form = $this->getForm(AvailableSitesForm::class);
+    }
+
     public function teamUpdateAction()
     {
         $id = $this->params()->fromRoute('id');
-
         $team_sites = $this->entityManager
             ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);
 
@@ -225,6 +234,7 @@ class UpdateController extends AbstractActionController
         $valueOptions = [];
 
 //        get current sites for the team and populate the sites chosen select element
+//        set up the sites form TODO:refactor most of this into the form, which is only used here
         foreach ($team_sites as $team_site) {
             $current_sites[] = $team_site->getSite()->getId();
         }
@@ -232,6 +242,7 @@ class UpdateController extends AbstractActionController
         $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
+
         foreach ($all_sites as $site) {
             if ($site->owner()) {
                 $owner = $site->owner()->name();
@@ -259,13 +270,14 @@ class UpdateController extends AbstractActionController
         $sites->setEmptyOption('None');
         $sites->setValueOptions($valueOptions);
 
-
+        //set up the item set form
         $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
+        //TODO rename this to TeamDetail form or find a way to string these all together
         $form = $this->getForm(TeamUpdateForm::class);
 
-
-        //is a team associated with that id
+        //is a team associated with the id from the route
+        //TODO I'm not sure this is a realist issue
         try {
             $team = $this->api()->read('team', ['id'=>$id]);
         } catch (InvalidArgumentException $exception) {
@@ -273,6 +285,7 @@ class UpdateController extends AbstractActionController
             return $this->redirect()->toRoute('admin/teams');
         }
 
+        //TODO: get team with a one line entity manager call
         $criteria = ['id' => $id];
 
         $qb = $this->entityManager->createQueryBuilder();
@@ -429,8 +442,6 @@ class UpdateController extends AbstractActionController
                 endforeach;
                 $em->flush();
             }
-
-
 
             //first delete then add resources to team
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
