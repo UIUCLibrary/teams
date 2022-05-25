@@ -117,6 +117,11 @@ return [
             'Teams\Controller\Trash' => 'Teams\Service\TrashControllerFactory',
         ]
     ],
+    'controller_plugins' => [
+        'factories' => [
+            'teamAuth' => Service\ControllerPlugin\TeamAuthFactory::class
+        ]
+    ],
     'router' => [
         // Open configuration for all possible routes
         'routes' => [
