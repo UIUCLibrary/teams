@@ -2,6 +2,7 @@
 namespace Teams\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
+use InvalidArgumentException;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
 /**
