@@ -1,30 +1,36 @@
 <?php
-
-
-namespace Teams\View\Helper;
+namespace Teams\Mvc\Controller\Plugin;
 
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
-use Laminas\View\Helper\AbstractHelper;
+use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 
-class RoleAuth extends AbstractHelper
+/**
+ * Controller plugin for authorize the current user.
+ */
+class TeamAuth extends AbstractPlugin
 {
     public $actions = ['add', 'delete', 'update'];
     public $domains = ['resource', 'team', 'site', 'team_user', 'role'];
+
     /**
      * @var EntityManager
      */
-    protected $entityManger;
+    protected $entityManager;
 
-
+    /**
+     * Construct the plugin.
+     *
+     * @param EntityManager $entityManager
+     */
     public function __construct(EntityManager $entityManager)
     {
-        $this->entityManger = $entityManager;
+        $this->entityManager = $entityManager;
     }
 
     public function user()
     {
-        return $this->getView()->identity();
+        return $this->getController()->identity();
     }
 
     public function isGlobAdmin()
@@ -62,7 +68,7 @@ class RoleAuth extends AbstractHelper
             return true;
         }
 
-        $em = $this->entityManger;
+        $em = $this->entityManager;
         $user_id = $this->user()->getId();
         $authorized = false;
 
@@ -70,7 +76,7 @@ class RoleAuth extends AbstractHelper
         //if the user has a current team
         if ($has_role = $em->getRepository('Teams\Entity\TeamUser')
             ->findOneBy(['is_current' => true, 'user'=>$user_id])
-            ) {
+        ) {
             $current_role = $has_role->getRole();
 
             //go through each domain and determine if user is authorized for actions in that domain
@@ -105,4 +111,9 @@ class RoleAuth extends AbstractHelper
         }
         return $authorized;
     }
+
+//    public function __invoke($resource = null, $privilege = null)
+//    {
+//        return $this->userIsAllowed($resource, $privilege);
+//    }
 }

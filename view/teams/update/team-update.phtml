@@ -14,7 +14,6 @@
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-
 $this->htmlElement('body')->appendAttribute('class', 'items edit');
 
 $sectionNavs = [
@@ -28,9 +27,7 @@ $sectionNavs = [
 
 <h1>Update Team for <?php echo $this->form->get('o:name')->getValue()?></h1>
 <div id="page-actions">
-    <!--    --><?php //if ($item->userIsAllowed('update')):?>
     <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
-    <!--    --><?php //endif;?>
 </div>
 <?php
 $form = $this->form;
@@ -46,6 +43,7 @@ echo $this->form()->openTag($form);?>
 </div>
 <?php echo $this->form()->openTag($form);?>
 
+<?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
 <div id="team-members" class="section">
     <div class="meta-group">
         <div class="field">
@@ -139,6 +137,9 @@ echo $this->form()->openTag($form);?>
             <?php endif; ?>
         </div>
     </div>
+<?php endif; ?>
+
+<?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
 <div id="team-resources" class="section">
     <div class="selection-criteria">
         <div class="select-by-item-set-content">
@@ -153,23 +154,33 @@ echo $this->form()->openTag($form);?>
             ?>
         </div>
     </div>
-
 </div>
-<div id="team-sites" class="section">
-    <div class="selection-criteria">
-        <div class="select-by-item-set-content">
-            <?php
-            $sitesForm = $this->sitesForm;
-            $fs = $sitesForm->getFieldsets();
-            $fs['teamSites']->setLabel('Add or Remove Sites ');
-            $sitesForm->prepare();
-            echo $this->form()->openTag($sitesForm);
-            echo $this->formCollection($sitesForm);
-            echo $this->form()->closeTag($sitesForm)
-            ?>
+<?php else: ?>
+    <div id="team-resources" class="section">
+        <p>You are only authorized to Manage Team Users</p>
+    </div>
+<?php endif; ?>
+<?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
+    <div id="team-sites" class="section">
+        <div class="selection-criteria">
+            <div class="select-by-item-set-content">
+                <?php
+                $sitesForm = $this->sitesForm;
+                $fs = $sitesForm->getFieldsets();
+                $fs['teamSites']->setLabel('Add or Remove Sites ');
+                $sitesForm->prepare();
+                echo $this->form()->openTag($sitesForm);
+                echo $this->formCollection($sitesForm);
+                echo $this->form()->closeTag($sitesForm)
+                ?>
+            </div>
         </div>
     </div>
-</div>
+<?php else: ?>
+    <div id="team-sites" class="section">
+        <p>You are only authorized to Manage Team Users</p>
+    </div>
+<?php endif; ?>
 <?php
 echo $this->form()->closeTag();
 ?>
