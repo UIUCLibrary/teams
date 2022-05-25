@@ -226,6 +226,7 @@ class UpdateController extends AbstractActionController
 
     public function teamUpdateAction()
     {
+        echo "this is the teamAuth: " . $this->teamAuth()->teamAuthorized('update', 'team_user');
         $id = $this->params()->fromRoute('id');
         $team_sites = $this->entityManager
             ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);
@@ -381,106 +382,108 @@ class UpdateController extends AbstractActionController
 
         if ($request->isPost()) {
             $post_data = $request->getPost();
+            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+                //first update the team name and description
+                $qb = $this->entityManager->createQueryBuilder();
+                $qb->update('Teams\Entity\Team', 'team')
+                    ->set('team.name', '?1')
+                    ->set('team.description', '?2')
+                    ->where('team.id = ?3')
+                    ->setParameter(1, $post_data['o:name'])
+                    ->setParameter(2, $post_data['o:description'])
+                    ->setParameter(3, $id)
+                    ->getQuery()
+                    ->execute();
 
-            //first update the team name and description
-            $qb = $this->entityManager->createQueryBuilder();
-            $qb->update('Teams\Entity\Team', 'team')
-                ->set('team.name', '?1')
-                ->set('team.description', '?2')
-                ->where('team.id = ?3')
-                ->setParameter(1, $post_data['o:name'])
-                ->setParameter(2, $post_data['o:description'])
-                ->setParameter(3, $id)
-                ->getQuery()
-                ->execute();
+            } else {
+                $this->messenger()->addError("You aren't authorized to change the team details");
+            }
+
 
             //if they clicked the add user button, just add a member and refresh
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($post_data['addUser']) {
-                $team_id = $id;
-                $user_id = $post_data['add-member'];
-                $role_id = $post_data['member-role'];
-                $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
+            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+                if ($post_data['addUser']) {
+                    $team_id = $id;
+                    $user_id = $post_data['add-member'];
+                    $role_id = $post_data['member-role'];
+                    $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-                $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
-                $this->messenger()->addSuccess($successMessage);
+                    $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
+                    $this->messenger()->addSuccess($successMessage);
 
-                return $this->redirect()->refresh();
-            }
-
-            //remove all team users and add the ones that are active in the form
-            $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
-            foreach ($team_users as $tu):
-                $em->remove($tu);
-            endforeach;
-            $em->flush();
-
-            $team_id = $id;
-            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-
-            if ($post_data['UserRole']) {
-                foreach ($post_data['UserRole'] as $user_id => $role_id):
-                    $user_id = (int) $user_id;
-                $role_id = (int) $role_id;
-
-                if ($post_data['UserCurrent'][$user_id] == 1) {
-                    $current = 1;
-                } else {
-                    $current = null;
+                    return $this->redirect()->refresh();
                 }
 
-                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
-
-                $new_tu = new TeamUser($team, $user, $role);
-                $new_tu->setCurrent($current);
-
-                $em->persist($new_tu);
-
+                //remove all team users and add the ones that are active in the form
+                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
+                foreach ($team_users as $tu):
+                    $em->remove($tu);
                 endforeach;
                 $em->flush();
-            }
 
-            //first delete then add resources to team
-            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
-            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
+                $team_id = $id;
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
-            //handle new sites
-            foreach ($post_data['teamSites']['o:site'] as $site) {
-                if (!in_array($site, $current_sites)) {
-                    $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
-                    $ts = new TeamSite($team, $site);
-                    $request = new Request('create', 'team_site');
-                    $event = new Event('api.hydrate.pre', $this, [
-                        'entity' => $ts,
-                        'request' => $request,
-                    ]);
-                    $this->getEventManager()->triggerEvent($event);
+                if ($post_data['UserRole']) {
+                    foreach ($post_data['UserRole'] as $user_id => $role_id):
+                        $user_id = (int) $user_id;
+                    $role_id = (int) $role_id;
+                    if ($post_data['UserCurrent'][$user_id] == 1) {
+                        $current = 1;
+                    } else {
+                        $current = null;
+                    }
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                    $em->persist($ts);
+                    $new_tu = new TeamUser($team, $user, $role);
+                    $new_tu->setCurrent($current);
+                    $em->persist($new_tu);
+                    endforeach;
+                    $em->flush();
                 }
             }
 
-            //handle removed sites
-            foreach ($current_sites as $site) {
-                if (!in_array($site, $post_data['teamSites']['o:site'])) {
-                    $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
-                    $request = new Request('delete', 'team_site');
-                    $event = new Event('api.hydrate.pre', $this, [
-                        'entity' => $ts,
-                        'request' => $request,
-                    ]);
-                    $this->getEventManager()->triggerEvent($event);
-                    $em->remove($ts);
+
+            if ($this->teamAuth()->teamAuthorized('update', 'team')){
+                //first delete then add resources to team
+                $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
+                $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
+
+                //handle new sites
+                foreach ($post_data['teamSites']['o:site'] as $site) {
+                    if (!in_array($site, $current_sites)) {
+                        $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
+                        $ts = new TeamSite($team, $site);
+                        $request = new Request('create', 'team_site');
+                        $event = new Event('api.hydrate.pre', $this, [
+                            'entity' => $ts,
+                            'request' => $request,
+                        ]);
+                        $this->getEventManager()->triggerEvent($event);
+
+                        $em->persist($ts);
+                    }
                 }
+
+                //handle removed sites
+                foreach ($current_sites as $site) {
+                    if (!in_array($site, $post_data['teamSites']['o:site'])) {
+                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
+                        $request = new Request('delete', 'team_site');
+                        $event = new Event('api.hydrate.pre', $this, [
+                            'entity' => $ts,
+                            'request' => $request,
+                        ]);
+                        $this->getEventManager()->triggerEvent($event);
+                        $em->remove($ts);
+                    }
+                }
+                $em->flush();
             }
-            $em->flush();
-
-
-
-
 
             $successMessage = sprintf("Successfully updated the %s team", $team->getName());
             $this->messenger()->addSuccess($successMessage);
