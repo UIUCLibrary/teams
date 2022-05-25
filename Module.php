@@ -858,6 +858,9 @@ SQL;
         if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
             return;
         }
+        if (isset($query['bypass_team_filter']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return;
+        }
 
         //Omeka sets up a way to specifically assign item sets to sites for the Browse by Item Set block.
         //for now just ignoring team filter on that
