@@ -15,4 +15,87 @@ $this->htmlElement('body')->appendAttribute('class', 'sites resources');
     </p>
 </div>
 
+<?php if ($this->roleAuth()->teamAuthorized('update', 'team')) {?>
+    <div>
+        <p>
+            <?php
+            echo sprintf(
+                $translate('The following view is used to help admins with debugging.')
+            ); ?>
+            <hr>
+        </p>
+    </div>
+    <?php
+
+    $rowTemplate = '
+    <tr class="resource-row">
+        <td class="sortable-handle"></td>
+        <td class="data-value" data-row-key="child-search"></td>
+        <td class="data-value" data-row-key="owner-email"></td>
+        <td>
+            ' . $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $translate('Remove item set')])
+            . '<input type="hidden" class="resource-id" name="o:site_item_set[][o:item_set][o:id]">
+        </td>
+    </tr>';
+    ?>
+
+    <?php echo $this->pageTitle($translate('Resources'), 1, $translate('Sites')); ?>
+    <?php echo $this->sectionNav([
+        'items-section' => $translate('Items'),
+        'item-sets-section' => $translate('Item sets'),
+    ]); ?>
+
+    <?php echo $this->form()->openTag($form); ?>
+    <?php echo $this->formElement($form->get('siteresourcesform_csrf')); ?>
+
+    <div id="page-actions">
+        <?php echo $this->cancelButton(); ?>
+        <button><?php echo $translate('Save'); ?></button>
+    </div>
+
+    <div id="items-section" class="active section">
+        <p>
+            <?php echo sprintf(
+                $translate('There are currently %s items assigned to this site.'),
+                $this->hyperlink($itemCount, $this->url('admin/default', ['controller' => 'item'], ['query' => ['site_id' => $site->id()]]), ['target' => '_blank'])
+            ); ?>
+            <?php if ($site->assignNewItems()): ?>
+                <span class="auto-assign-setting"><?php echo sprintf(
+                        $translate('This site currently auto-assigns newly created items. Change the setting in %s.'),
+                        $this->hyperlink($translate('site admin'), $this->url(null, ['action' => 'edit'], ['fragment' => 'site-settings'], true))
+                    ); ?></span>
+            <?php endif; ?>
+        </p>
+        <div class="manual-assignment">
+            <?php echo $this->formRow($form->get('item_assignment_action')); ?>
+            <div id="item-pool-container" style="display: none;">
+                <?php echo $this->formRow($form->get('item_pool')); ?>
+                <div id="save-search">
+                    <label><?php echo $this->translate('Keep this query'); ?><?php echo $this->formElement($form->get('save_search')); ?></label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="item-sets-section" class="section">
+        <table id="site-item-sets" class="selector-table tablesaw tablesaw-stack <?php echo ((count($itemSets) > 0)) ? '' : 'empty'; ?>"
+               data-tablesaw-mode="stack"
+               data-existing-rows="<?php echo $this->escapeHtml(json_encode($itemSets)); ?>"
+               data-row-template="<?php echo $this->escapeHtml($rowTemplate); ?>">
+            <thead>
+            <tr>
+                <th></th>
+                <th><?php echo $translate('Title'); ?></th>
+                <th><?php echo $translate('Owner'); ?></th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody class="resource-rows"></tbody>
+        </table>
+        <div class="no-resources"><?php echo $translate('No item sets are assigned to this site.'); ?></div>
+        <?php echo $this->itemSetSelector(true); ?>
+    </div>
+
+    <?php echo $this->form()->closeTag(); ?>
+<?php } ?>
 
