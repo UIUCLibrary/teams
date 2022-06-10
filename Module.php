@@ -1112,7 +1112,6 @@ SQL;
         $item = $em->getRepository('Omeka\Entity\Item')
             ->findOneBy(['id'=>$item_id]);
         if ($item) {
-
             //get all teams for the item
             //get all sites associated with those teams
             $item_teams = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $item_id]);
@@ -1282,6 +1281,7 @@ SQL;
             $team_ids = $request->getContent()['team'];
 
             $all_teams_users = [];
+            $all_team_resources = [];
 
             //add team sites
             foreach ($team_ids as $team_id):
@@ -1291,6 +1291,9 @@ SQL;
 
             //get team users
             $all_teams_users[] = $team->getTeamUsers();
+
+            //get team items
+            $all_team_resources[] = $team->getTeamResources();
 
             endforeach;
             $em->flush();
@@ -1305,6 +1308,21 @@ SQL;
 
             endforeach;
             endforeach;
+
+            //update all item-site to include all items from the site's teams
+            $siteAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('sites');
+            foreach ($all_team_resources as $team_resources):
+                foreach ($team_resources as $team_resource):
+                    $item = $team_resource->getResource();
+                    if ($item->getResourceName() == 'items'){
+                        $item_sites = $item->getSites();
+                        $site = $siteAdapter->findEntity($site_id);
+                        $item_sites->set($site_id, $site);
+                    }
+                endforeach;
+            endforeach;
+            $em->flush();
+
         }
     }
 
@@ -1507,13 +1525,6 @@ SQL;
             throw $validationException;
         } else {
             if ($operation === 'update' && array_key_exists('team', $request->getContent())) {
-
-                //Add and remove TeamSites
-                //From each of those teams,
-                // update TeamReasource=>Item->ItemSite,
-                // update TeamUser=>User->DefaultSites, update
-
-
                 //teams from the form
                 $form_teams = $request->getContent()['team'];
                 $site_id = $request->getId();
