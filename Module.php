@@ -1155,6 +1155,7 @@ SQL;
                 $add_site = $siteAdapter->findEntity($site);
                 $item_sites->set($add_site->getId(), $add_site);
             }
+            $em->flush();
         }
     }
 
@@ -1570,21 +1571,22 @@ SQL;
                         ->getTeamUsers();
                 }
 
-                $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
+
+
+                //update current team users to include new site in their default sites
+                foreach ($delta_user_site as $team_users){
+                    foreach ($team_users as $team_user){
+                        $user_id = $team_user->getUser()->getId();
+                        $this->updateUserSites($user_id);
+                    }
+                }
                 foreach ($delta_item_site as $team_item_collection) {
                     foreach ($team_item_collection as $team_item) {
                         $this->updateItemSites($team_item->getResource()->getId());
                     }
                 }
 
-                //update current team users to include new site in their default sites
-                foreach ($delta_user_site as $team_users):
-                    foreach ($team_users as $team_user):
-                        $user_id = $team_user->getUser()->getId();
-                $this->updateUserSites($user_id);
-                endforeach;
-                endforeach;
             }
         }
     }
