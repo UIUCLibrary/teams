@@ -1074,7 +1074,7 @@ SQL;
                             }
                         }
                     } else {
-                        $messanger->addWarning("Only global admins can make new teams");
+                        $messanger->addError("Only global admins can make new teams");
                     }
                 } else {
                     $team = $teams->findOneBy(['id' => $team_id]);
@@ -1085,9 +1085,7 @@ SQL;
                             ->getRole()
                             ->getCanAddUsers();
                         if (!$auth) {
-//                            $logger = $this->getServiceLocator()->get('Omeka\Logger');
-//                            $logger->err(sprintf("You don't have permission to add users to team %s", $team->getName()));
-                            $messanger->addWarning(sprintf("You don't have permission to add users to that team %s", $team->getName()));
+                            $messanger->addError(sprintf("You don't have permission to add users to that team %s", $team->getName()));
                             continue;
                         }
                     }
