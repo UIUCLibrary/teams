@@ -191,6 +191,7 @@ SQL;
 
         $globalSettings->set('teams_site_admin_make_site', $params['teams_site_admin_make_site']);
         $globalSettings->set('teams_editor_make_site', $params['teams_editor_make_site']);
+        $globalSettings->set('teams_site_admin_make_user', $params['teams_site_admin_make_user']);
     }
 
     public function getConfigForm(PhpRenderer $renderer)
