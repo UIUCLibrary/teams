@@ -1035,8 +1035,10 @@ SQL;
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $global = $this->getUser()->getRole() === 'global_admin';
 
         if ($operation == 'create') {
+            $messanger = new Messenger();
             $response = $event->getParam('response');
             $resource =  $response->getContent();
             $user_id =  $resource->getId();
@@ -1050,42 +1052,56 @@ SQL;
             $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
 
 
-            foreach ($team_ids as $team_id):
-                $team_id = (int) $team_id;
-
-            //handle new team added via form
-            if ($team_id === -1) {
-                $u_name = $request->getContent()['o:name'];
-                $team_name = sprintf("%s's team", $u_name);
-                $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
-                if ($team_exists) {
-                    $messanger = new Messenger();
-                    $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
-                    $team = $team_exists;
+            foreach ($team_ids as $team_id) {
+                $team_id = (int)$team_id;
+                //handle new team added via form
+                if ($team_id === -1) {
+                    if ($global) {
+                        $u_name = $request->getContent()['o:name'];
+                        $team_name = sprintf("%s's team", $u_name);
+                        $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name' => $team_name]);
+                        if ($team_exists) {
+                            $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
+                            $team = $team_exists;
+                        } else {
+                            $team = new Team();
+                            $team->setName($team_name);
+                            $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                            $em->persist($team);
+                            $em->flush();
+                            if ($default_team == -1) {
+                                $default_team = $team->getId();
+                            }
+                        }
+                    } else {
+                        $messanger->addWarning("Only global admins can make new teams");
+                    }
                 } else {
-                    $team = new Team();
-                    $team->setName($team_name);
-                    $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
-                    $em->persist($team);
-                    $em->flush();
-                    if ($default_team == -1) {
-                        $default_team = $team->getId();
+                    $team = $teams->findOneBy(['id' => $team_id]);
+                    if (!$global) {
+                        $supervisor_id = $this->getUser()->getId();
+                        $auth = $em->getRepository('Teams\Entity\TeamUser')
+                            ->findOneBy(['user' => $supervisor_id, 'team' => $team_id])
+                            ->getRole()
+                            ->getCanAddUsers();
+                        if (!$auth) {
+//                            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+//                            $logger->err(sprintf("You don't have permission to add users to team %s", $team->getName()));
+                            $messanger->addWarning(sprintf("You don't have permission to add users to that team %s", $team->getName()));
+                            continue;
+                        }
                     }
                 }
-            } else {
-                $team = $teams->findOneBy(['id'=> $team_id]);
-            }
-            $role_id = $team_role_ids[$team_id];
-            $role = $em->getRepository('Teams\Entity\TeamRole')
-                    ->findOneBy(['id'=>$role_id]);
-            $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
-                    ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
-            if (! $team_user_exists) {
-                $team_user = new TeamUser($team, $user, $role);
-                $em->persist($team_user);
-            }
-
-            endforeach;
+                $role_id = $team_role_ids[$team_id];
+                $role = $em->getRepository('Teams\Entity\TeamRole')
+                    ->findOneBy(['id' => $role_id]);
+                $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                    ->findOneBy(['team' => $team->getId(), 'user' => $user_id]);
+                if (!$team_user_exists) {
+                    $team_user = new TeamUser($team, $user, $role);
+                    $em->persist($team_user);
+                }
+            };
             $em->flush();
             if ($default_team) {
                 $em->getRepository('Teams\Entity\TeamUser')
@@ -1316,15 +1332,14 @@ SQL;
             foreach ($all_team_resources as $team_resources):
                 foreach ($team_resources as $team_resource):
                     $item = $team_resource->getResource();
-                    if ($item->getResourceName() == 'items'){
-                        $item_sites = $item->getSites();
-                        $site = $siteAdapter->findEntity($site_id);
-                        $item_sites->set($site_id, $site);
-                    }
-                endforeach;
+            if ($item->getResourceName() == 'items') {
+                $item_sites = $item->getSites();
+                $site = $siteAdapter->findEntity($site_id);
+                $item_sites->set($site_id, $site);
+            }
+            endforeach;
             endforeach;
             $em->flush();
-
         }
     }
 
@@ -1576,8 +1591,8 @@ SQL;
 
 
                 //update current team users to include new site in their default sites
-                foreach ($delta_user_site as $team_users){
-                    foreach ($team_users as $team_user){
+                foreach ($delta_user_site as $team_users) {
+                    foreach ($team_users as $team_user) {
                         $user_id = $team_user->getUser()->getId();
                         $this->updateUserSites($user_id);
                     }
@@ -1587,7 +1602,6 @@ SQL;
                         $this->updateItemSites($team_item->getResource()->getId());
                     }
                 }
-
             }
         }
     }
@@ -2908,16 +2922,17 @@ SQL;
         $user_role = $this->getUser()
             ->getRole();
         ;
+        $global_admin = $user_role === 'global_admin';
 
-        if ($user_role === 'global_admin') {
-            //TODO: only add if the user is superuser
-            $form = $event->getTarget();
-            $form->get('user-information')->add([
+        $form = $event->getTarget();
+        $form->get('user-information')->add([
                 'name' => 'o-module-teams:Team',
-                'type' => AllTeamSelect::class,
+                'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
                 'options' => [
                     'label' => 'Teams', // @translate
+                    'add_user_auth' => true,
                     'chosen' => true,
+
 //                    'required' => 'true',
                 ],
                 'attributes' => [
@@ -2926,7 +2941,7 @@ SQL;
                     'required' => true,
                 ],
             ]);
-            $form->get('user-information')->add([
+        $form->get('user-information')->add([
                 'name' => 'o-module-teams:DefaultTeam',
                 'type' => BlankTeamSelect::class,
                 'options' => [
@@ -2939,7 +2954,7 @@ SQL;
                     'required' => true,
                 ],
             ]);
-            $form->get('user-information')->add([
+        $form->get('user-information')->add([
                 'name' => 'update_default_sites',
                 'type' => 'checkbox',
                 'options' => [
@@ -2954,7 +2969,7 @@ SQL;
                 ],
             ]);
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
-            $form->get('user-information')->add([
+        $form->get('user-information')->add([
                 'name' => 'o-module-teams:TeamRole',
                 'type' => RoleSelect::class,
                 'options' => [
@@ -2969,7 +2984,6 @@ SQL;
 
                 ],
             ]);
-        }
     }
 
     public function addAssetFormElement(Event $event)
