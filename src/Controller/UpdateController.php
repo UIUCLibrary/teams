@@ -226,7 +226,6 @@ class UpdateController extends AbstractActionController
 
     public function teamUpdateAction()
     {
-        echo "this is the teamAuth: " . $this->teamAuth()->teamAuthorized('update', 'team_user');
         $id = $this->params()->fromRoute('id');
         $team_sites = $this->entityManager
             ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);

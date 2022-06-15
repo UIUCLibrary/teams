@@ -29,6 +29,10 @@ class TeamSelect extends Select
 
     protected $data_base_url = ['resource' => 'team'];
 
+    protected $options = [
+        'add_user_auth' => false
+    ];
+
     public function getValueOptions()
     {
         $valueOptions = [];
@@ -38,11 +42,17 @@ class TeamSelect extends Select
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
-        foreach ($team_users as $team_user):
+        foreach ($team_users as $team_user) {
+            if ($this->getOption('add_user_auth')) {
+                if (!$team_user->getRole()->getCanAddUsers()) {
+                    continue;
+                }
+            }
             $team_name = $team_user->getTeam()->getName();
-        $team_id = $team_user->getTeam()->getId();
-        $valueOptions[$team_id] = $team_name;
-        endforeach;
+            $team_id = $team_user->getTeam()->getId();
+            $valueOptions[$team_id] = $team_name;
+        }
+
 
 
         $prependValueOptions = $this->getOption('prepend_value_options');
