@@ -11,7 +11,6 @@ window.addEventListener("load", function () {
     //disable the options for default so that the user cant select a default team where user isn't a memeber
     $("#default_team option").attr('disabled','disabled');
 
-
     // if user checks the box, update default sites based on currently selected default
     $("#update_default_sites").click(function() {
         if($(this).is(":checked")) {
@@ -20,7 +19,8 @@ window.addEventListener("load", function () {
         }
     });
 
-    //manage the role elements and options for default teams as teams are added/removed
+    //as teams are added and removed, manage the form elements that depend on the team to get populated
+    // including role elements, options for default teams, and sites
     $('#team').on('change', function(evt, params) {
 
         if (params.selected){
@@ -59,12 +59,16 @@ window.addEventListener("load", function () {
             }
             $(`#default_team option[value=${id}]`).attr('disabled', 'disabled').trigger("chosen:updated");
         }
+        if($("#update_default_sites").is(":checked")) {
+            updateDefaultSites();
+        }
     });
 
     $("#default_team").on('change',function () {
         if($("#update_default_sites").is(":checked")) {
             updateDefaultSites();
         }
+
     })
 
 
