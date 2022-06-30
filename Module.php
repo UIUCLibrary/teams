@@ -1700,14 +1700,19 @@ SQL;
                     $team = $teams->findOneBy(['id'=>$team_id]);
                 $trt = new TeamResourceTemplate($team, $resource_template);
                 $em->persist($trt);
+                $em->flush();
                 endforeach;
             } else { # for imports where there is no event triggered, use the users current team
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $this->currentTeam()]);
                 $trt = new TeamResourceTemplate($team, $resource_template);
                 $em->persist($trt);
+                $em->flush();
+
+                $messanger = new Messenger();
+                $messanger->addSuccess("Resource Template Imported for your current team");
             }
 
-            $em->flush();
+
         }
     }
 
