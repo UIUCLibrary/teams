@@ -1696,20 +1696,20 @@ SQL;
             $resource_template =  $event->getParam('entity');
             $teams =  $em->getRepository('Teams\Entity\Team');
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
-                foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
-                    $team = $teams->findOneBy(['id'=>$team_id]);
-                $trt = new TeamResourceTemplate($team, $resource_template);
-                $em->persist($trt);
-                $em->flush();
-                endforeach;
+                foreach ($request->getContent()['o-module-teams:Team'] as $team_id) {
+                    $team = $teams->findOneBy(['id' => $team_id]);
+                    $trt = new TeamResourceTemplate($team, $resource_template);
+                    $em->persist($trt);
+                    $em->flush();
+                }
             } else { # for imports where there is no event triggered, use the users current team
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $this->currentTeam()]);
                 $trt = new TeamResourceTemplate($team, $resource_template);
                 $em->persist($trt);
                 $em->flush();
 
-                $messanger = new Messenger();
-                $messanger->addSuccess("Resource Template Imported for your current team");
+                $messenger = new Messenger();
+                $messenger->addSuccess("Resource Template Imported for your current team");
             }
 
 
