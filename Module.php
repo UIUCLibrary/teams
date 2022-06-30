@@ -1695,11 +1695,18 @@ SQL;
         if ($operation == 'create') {
             $resource_template =  $event->getParam('entity');
             $teams =  $em->getRepository('Teams\Entity\Team');
-            foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
-                $team = $teams->findOneBy(['id'=>$team_id]);
-            $trt = new TeamResourceTemplate($team, $resource_template);
-            $em->persist($trt);
-            endforeach;
+            if (array_key_exists('o-module-teams:Team', $request->getContent())) {
+                foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                    $team = $teams->findOneBy(['id'=>$team_id]);
+                $trt = new TeamResourceTemplate($team, $resource_template);
+                $em->persist($trt);
+                endforeach;
+            } else { # for imports where there is no event triggered, use the users current team
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $this->currentTeam()]);
+                $trt = new TeamResourceTemplate($team, $resource_template);
+                $em->persist($trt);
+            }
+
             $em->flush();
         }
     }
@@ -1830,18 +1837,16 @@ SQL;
         $error_store = $event->getParam('errorStore');
 
         if ($operation == 'update') {
-            $resource_id = $request->getId();
-
             if (array_key_exists('team', $request->getContent())) {
-
-                //array of team ids
-
-                $teams = $request->getContent()['team'];
-                //array of media ids
-                $media_ids = [];
+                $resource_ids = [];
+                $resource_ids[$request->getId()] = true;
+                $resource_id = $request->getId();
                 foreach ($entity->getMedia() as $media):
-                    $media_ids[$media->getId()] = true;
+                    $resource_ids[$media->getId()] = true;
                 endforeach;
+                
+                $teams = $request->getContent()['team'];
+
 
                 //remove resource from all teams
                 $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
@@ -1850,8 +1855,8 @@ SQL;
                 endforeach;
 
                 //remove associated media from all teams
-                foreach (array_keys($media_ids) as $media_id) {
-                    $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $media_id]);
+                foreach (array_keys($resource_ids) as $resource_id) {
+                    $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
                     foreach ($team_resources as $tr) {
                         $em->remove($tr);
                     }
@@ -2658,6 +2663,11 @@ SQL;
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ResourceTemplate',
             'view.add.form.before',
+            [$this, 'resourceTemplateForm']
+        );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'view.import.form.before',
             [$this, 'resourceTemplateForm']
         );
         $sharedEventManager->attach(
