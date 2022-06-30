@@ -1832,9 +1832,6 @@ SQL;
         if ($operation == 'update') {
             $resource_id = $request->getId();
 
-            $om_resource = $em->getRepository('Omeka\Entity\Item')->findBy(['id' => $resource_id]);
-//            $om_resource->
-
             if (array_key_exists('team', $request->getContent())) {
 
                 //array of team ids
@@ -1843,7 +1840,7 @@ SQL;
                 //array of media ids
                 $media_ids = [];
                 foreach ($entity->getMedia() as $media):
-                    $media_ids[] = $media->getId();
+                    $media_ids[$media->getId()] = true;
                 endforeach;
 
                 //remove resource from all teams
@@ -1852,41 +1849,25 @@ SQL;
                     $em->remove($tr);
                 endforeach;
 
-
-
                 //remove associated media from all teams
-                foreach ($media_ids as $media_id):
+                foreach (array_keys($media_ids) as $media_id) {
                     $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $media_id]);
-                foreach ($team_resources as $tr):
+                    foreach ($team_resources as $tr) {
                         $em->remove($tr);
-                endforeach;
-                endforeach;
+                    }
+                }
                 $em->flush();
 
-                //resource represented by the item in the resource table
-                $resource = $em->getRepository('Omeka\Entity\Resource')
-                    ->findOneBy(['id' => $resource_id]);
-
-                foreach ($teams as $team_id):
+                foreach ($teams as $team_id) {
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                if (! $em->getRepository('Teams\Entity\TeamResource')
-                        ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id])) {
-                    $tr = new TeamResource($team, $resource);
+                    $tr = new TeamResource($team, $entity);
                     $em->persist($tr);
+
+                    foreach ($entity->getMedia() as $m) {
+                        $mtr = new TeamResource($team, $m);
+                        $em->persist($mtr);
+                    }
                 }
-
-
-                foreach ($media_ids as $media_id):
-                        if (! $em->getRepository('Teams\Entity\TeamResource')
-                            ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])) {
-                            $m = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$media_id]);
-                            if ($m) {
-                                $mtr = new TeamResource($team, $m);
-                                $em->persist($mtr);
-                            }
-                        }
-                endforeach;
-                endforeach;
                 $em->flush();
             }
         }
