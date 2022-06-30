@@ -1860,18 +1860,10 @@ SQL;
                 endforeach;
                 $em->flush();
 
-                //resource represented by the item in the resource table
-                $resource = $em->getRepository('Omeka\Entity\Resource')
-                    ->findOneBy(['id' => $resource_id]);
-
                 foreach ($teams as $team_id):
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                if (! $em->getRepository('Teams\Entity\TeamResource')
-                        ->findOneBy(['team'=>$team_id, 'resource'=>$resource_id     ])) {
-                    $tr = new TeamResource($team, $resource);
+                    $tr = new TeamResource($team, $entity);
                     $em->persist($tr);
-                }
-
 
                 foreach ($entity->getMedia() as $m):
 
