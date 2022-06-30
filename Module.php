@@ -1873,15 +1873,12 @@ SQL;
                 }
 
 
-                foreach (array_keys($media_ids) as $media_id):
-                        if (! $em->getRepository('Teams\Entity\TeamResource')
-                            ->findOneBy(['team'=>$team_id, 'resource'=>$media_id])) {
-                            $m = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$media_id]);
-                            if ($m) {
-                                $mtr = new TeamResource($team, $m);
-                                $em->persist($mtr);
-                            }
-                        }
+                foreach ($entity->getMedia() as $m):
+
+                    $mtr = new TeamResource($team, $m);
+                    $em->persist($mtr);
+
+
                 endforeach;
                 endforeach;
                 $em->flush();
