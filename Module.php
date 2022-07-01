@@ -863,6 +863,13 @@ SQL;
             return;
         }
 
+        if (isset($query['resource_class_id']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return;
+        }
+        if (isset($query['resource_template_id']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return;
+        }
+
         //Omeka sets up a way to specifically assign item sets to sites for the Browse by Item Set block.
         //for now just ignoring team filter on that
         //TODO replace the site_item_set with TR join itemset

@@ -100,7 +100,6 @@ return [
     'view_helpers' =>[
         'invokables' => [
             'addTeam' => 'Teams\View\Helper\AddTeam',
-            'searchFilters' => 'Teams\View\Helper\SearchFilters',
 //            'roleAuth' => 'Teams\View\Helper\RoleAuth',
 
         ],
