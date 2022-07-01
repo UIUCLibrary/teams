@@ -1711,8 +1711,6 @@ SQL;
                 $messenger = new Messenger();
                 $messenger->addSuccess("Resource Template Imported for your current team");
             }
-
-
         }
     }
 
@@ -1839,27 +1837,18 @@ SQL;
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
-        $error_store = $event->getParam('errorStore');
 
         if ($operation == 'update') {
             if (array_key_exists('team', $request->getContent())) {
                 $resource_ids = [];
                 $resource_ids[$request->getId()] = true;
-                $resource_id = $request->getId();
-                foreach ($entity->getMedia() as $media):
+                foreach ($entity->getMedia() as $media) {
                     $resource_ids[$media->getId()] = true;
-                endforeach;
+                }
                 
                 $teams = $request->getContent()['team'];
 
-
-                //remove resource from all teams
-                $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
-                foreach ($team_resources as $tr):
-                    $em->remove($tr);
-                endforeach;
-
-                //remove associated media from all teams
+                //remove item associated media from all teams they were associated before form submission
                 foreach (array_keys($resource_ids) as $resource_id) {
                     $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
                     foreach ($team_resources as $tr) {
@@ -1868,14 +1857,13 @@ SQL;
                 }
                 $em->flush();
 
+                //add to teams from form
                 foreach ($teams as $team_id) {
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                    $tr = new TeamResource($team, $entity);
-                    $em->persist($tr);
-
-                    foreach ($entity->getMedia() as $m) {
-                        $mtr = new TeamResource($team, $m);
-                        $em->persist($mtr);
+                    foreach (array_keys($resource_ids) as $resource_id) {
+                        $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
+                        $team_resource = new TeamResource($team, $resource);
+                        $em->persist($team_resource);
                     }
                 }
                 $em->flush();
