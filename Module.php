@@ -1800,37 +1800,7 @@ SQL;
         echo $view->partial('teams/partial/resource-template/add', ['team_id' => $team_id]);
     }
 
-    //Handle Items
-    //TODO: NEED TO ADD BUTTON TO USE TEAMS FOR SITES (or not, operation is VERY disordered if they arne't in sync)
-    //TODO: NEED TO ADD SOME TEXT OR FIND ANOTHER SOLUTION FOR THE ITEM SITES THAT DONT BELONG TO THE USERS CURRENT TEAM
-    //if user selects to use teams for item sites, update sites data from TeamSite before API executes on form data
-    public function itemPre(Event $event)
-    {
 
-        //get request content
-        $request = $event->getParam('request');
-        $content = $request->getContent();
-
-        //get team(s)
-        $teams = $content['team'];
-
-        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
-        //get sites associated with teams(s)
-        $site_ids = [];
-        foreach ($teams as $team_id):
-            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-        $team_sites = $team->getTeamSites();
-        foreach ($team_sites as $team_site):
-                $site_ids[] = $team_site->getSite()->getId();
-        endforeach;
-        endforeach;
-
-        //update request content
-        $content['o:site'] = $site_ids;
-        $request->setContent($content);
-        $event->setParam('request', $request);
-    }
     /**
      *
      * On update, remove all TeamResources associated with item and associated media, and generate new TeamResources
@@ -2381,20 +2351,6 @@ SQL;
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
     }
 
-    public function removeDefaultSite(Event $event)
-    {
-
-        //pre-fill with the sites that should be default based on that user's team.
-//        $team_sites = $this->currentTeam()->getTeamSites();
-//        $site_ids = [];
-//        foreach ($team_sites as $team_site):
-//            $site_ids[] = $team_site->getSite()->getId();
-//        endforeach;
-//        $event->getTarget()->get('user-settings')
-//            ->get('default_item_sites')
-//            ->setAttribute('value', $site_ids);
-    }
-
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -2588,12 +2544,6 @@ SQL;
             ItemAdapter::class,
             'api.hydrate.post',
             [$this, 'itemUpdate']
-        );
-
-        $sharedEventManager->attach(
-            ItemAdapter::class,
-            'api.hydrate.pre',
-            [$this, 'itemPre']
         );
 
 
@@ -2862,13 +2812,6 @@ SQL;
             \Omeka\Form\UserForm::class,
             'form.add_elements',
             [$this, 'addUserFormElement']
-        );
-
-
-        $sharedEventManager->attach(
-            \Omeka\Form\UserForm::class,
-            'form.add_elements',
-            [$this, 'removeDefaultSite']
         );
 
         $sharedEventManager->attach(
