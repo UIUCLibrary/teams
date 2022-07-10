@@ -94,13 +94,13 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
         $conn = $serviceLocator->get('Omeka\Connection');
+        $conn->exec('DROP TABLE IF EXISTS team_asset');
         $conn->exec('DROP TABLE IF EXISTS team_user');
         $conn->exec('DROP TABLE IF EXISTS team_role');
         $conn->exec('DROP TABLE IF EXISTS team_resource');
         $conn->exec('DROP TABLE IF EXISTS team_resource_template');
         $conn->exec('DROP TABLE IF EXISTS team_site');
         $conn->exec('DROP TABLE IF EXISTS team');
-        $conn->exec('DROP TABLE IF EXISTS team_asset');
     }
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
