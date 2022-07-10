@@ -99,8 +99,8 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resourc
         $conn->exec('DROP TABLE IF EXISTS team_resource');
         $conn->exec('DROP TABLE IF EXISTS team_resource_template');
         $conn->exec('DROP TABLE IF EXISTS team_site');
-        $conn->exec('DROP TABLE IF EXISTS team');
         $conn->exec('DROP TABLE IF EXISTS team_asset');
+        $conn->exec('DROP TABLE IF EXISTS team');
     }
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator)
