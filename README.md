@@ -8,7 +8,7 @@ Teams helps global admins organize work by controlling what resources users see 
 ### Methods
 
 #### Teams
-Users, sites and resources (items, media, item sets and resource templates) are attached to teams. When logged in, users only see the sites and resources that are part of their current team. 
+Users, sites and resources (items, media, assets, item sets and resource templates) are attached to teams. When logged in, users only see the sites and resources that are part of their current team. 
 
 #### Team Roles
 Within a team, a user is given a team role. These establish additional restrictions on user permissions on top of the permissions granted by the core Omeka-s user profile. It also allows a single user to have different roles and permissions in different teams to which they belong.
@@ -21,23 +21,30 @@ Team roles are defined by the global administrator and global admins can establi
     Delete Resources    
     Modify Team Sites
 
-A global toggle determines who can make new sites (more on that below).
+A global toggle determines who can make new sites and who can add new users to the Omeka S application (more on that below).
 
 #### Mechanics of permission 
-A user’s permissions within a team are determined by their role. However, permissions in Team roles are subtractive, not additive, to the permissions created by their core Omeka role (e.g. Site Admin, Editor, Researcher, etc.). If the permissions of Teams and Omeka were a Venn diagram, users can only do the things in the center of the diagram—those things permitted by both their core Omeka and their team role. 
+A user’s permissions within a team are determined by their Team role. However, permissions in Team roles are subtractive, not additive, to the permissions created by their core Omeka role (e.g. Site Admin, Editor, Researcher, etc.). If the permissions of Teams and Omeka were a Venn diagram, users can only do the things in the center of the diagram—-those things permitted by both their core Omeka and their team role. 
 
 Therefore, if a user with the core Omeka role of “Author” is given a team role with the ability to modify the team’s sites, that user will be unable to do so because “Authors” in Omeka can not modify sites. The global admin would need to either change that user’s core Omeka role, or add them via the site’s User Permissions page. 
 
 While Teams will not grant extra privileges, it does help you provide finer-grained control over where they can exercise those privileges. A user who has the ability to add and delete items through their core Omeka role, a “Site Admin” for example, who also has a team role that allows them to add and delete items can only add and delete items in the context of their current team. Items belonging to another team are inaccessible to them. 
 
+#### Global Admin Team Permissions
+Global admins will see an interface similar to standard users (e.g., the list of items displayed for admin/items is limited to their current team). However, they won't be stopped from making changes on items/pages that they navigate to manually. This is to assist in troubleshooting by allowing admins to get a sense of what users are seeing without preventing them from making changes they feel are necessary.
+
 ### Deleting
 
-When users delete resources, they are not permanently deleted to prevent. Instead, that resource is removed from the user’s current team. This is primarily for situations where multiple teams share certain resources.  Global Admins can see resources that no longer belong to any teams in the Trash section of the Admin menu.
+When users delete resources, they are not permanently deleted to prevent one team member deleting a resource that is shared among more than one team. Instead, when clicking delete that resource is removed from the user’s current team. Global Admins can see resources that no longer belong to any teams in the Trash section of the Admin menu.
 
 
 ### Global Toggles
 
-We have found that global admins may want to change some permissions globally or often. It would be cumbersome to make these changes through Team Roles, so they are instead part of a global toggle in the Teams configuration page. Currently, the only global toggle changes who can make new sites. Admins can turn on or off the ability to make new sites for Site Admins and Editors.
+We have found that global admins may want to change some permissions globally or often. It would be cumbersome to make these changes through Team Roles, so they are instead part of a global toggle in the Teams configuration page. Currently, the only global toggle changes who can make new sites and who can add new users to Omeka. Admins can turn on or off the ability to make new sites for Site Admins and Editors.
+
+#### Use case for global toggles
+
+You may not want to allow users to generally make new sites, but find that when hosting a class tutorial granting that ability speeds up your prep work because you don't have to make a stub site for all your participants: You can endable site creation before the workshop and disable it after. 
 
 ### Versioning and Release Naming Conventions
 To make finding the right release more convenient, releases are named according to the Omeka version they are tested against. So a release named v3.1.0-0 was tested against Omeka version 3.1.0, and this represents the initial release of Teams tested against that version. 
@@ -45,9 +52,9 @@ To make finding the right release more convenient, releases are named according 
 ### Warning 
 Use at your own risk. 
 
-It’s always recommended to back up your files and your databases and to check your archives regularly so you can roll back if needed.
+It’s always recommended to back up your files and your databases and to check your archives regularly so you can roll back if needed. Backup before installing, uninstalling or upgrading the Teams module. 
 
-Test before installation and before any upgrades. 
+Test Teams in a development environment before installation and before any upgrades. 
 
 ## Common Workflows
 
@@ -58,7 +65,7 @@ These instructions cover the setup for some common use cases. The basic workflow
 If you were using Teams in a 2.x Omeka environment, updating to 3.x will automatically generate item-site relationships and default site settings for users based on current team configuration. No additional migration steps are needed beyond clicking "update" in the module page. The current recommended release for Omeka 3.0 and 3.1 is v3.1.0-1. 
 
 ### Installing on an Existing 3.x Installation
-If you are adding Teams to an existing installation, you will want to plan a time when your sites can experience some downtime. Because Teams filters results for the front and back end interfaces, search results for public facing sites will not function properly until that site and the resources associated with it are added to the same team. Similarly, Omeka users will not interact with items, item sets, resource templates or sites on the back end until they are added to a team with thouse resources. 
+If you are adding Teams to an existing installation, you will want to plan a time when your sites can experience some downtime. Because Teams filters results for the front and back end interfaces, search results for public facing sites will not function properly until that site and the resources associated with it are added to the same team. Similarly, Omeka users will not interact with items, item sets, resource templates or sites on the back end until they are added to a team with thouse resources.
 
 1. Before Installation 
     * You are going to want an easy way to bulk add resources to teams. Currently, admins can bulk add resources to a team based on item sets or owners. The easiest way to prepare for Teams is to make sure that all of the items that will belong to a team are in an item set. If you need another method, like via a search query or through existing item-site relationships, contact the developer or open an issue. 
