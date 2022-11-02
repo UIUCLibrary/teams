@@ -1846,6 +1846,9 @@ SQL;
                 $em->flush();
             }
 
+            //once teams are updated, sync item-site
+            $this->updateItemSites($request->getId());
+
         }
     }
 
