@@ -1,9 +1,7 @@
 <?php
 namespace Teams;
 
-use Collecting\Api\Adapter\CollectingFormAdapter;
 use Collecting\Api\Adapter\CollectingItemAdapter;
-use Collecting\Form\CollectingForm;
 use Omeka\Api\Adapter\AssetAdapter;
 use Omeka\Api\Adapter\UserAdapter;
 use Omeka\Entity\Resource;
@@ -1964,10 +1962,7 @@ SQL;
     {
         $request = $event->getParam('request');
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
         $services = $this->getServiceLocator();
-        $logger = $services->get('Omeka\Logger');
-
         $itemId = $request->getContent()['o:item']['o:id'];
         $item = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$itemId]);
         $sites = $item->getSites();
@@ -1978,7 +1973,7 @@ SQL;
                 $siteId = $site->getId();
                 $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $siteId]);
                 foreach ($teamSites as $teamSite) {
-                    $teamId = $teamSite->getTeam();
+                    $teamId = $teamSite->getTeam()->getId();
                     $teams[$teamId] = true;
                 }
             }
@@ -2504,13 +2499,11 @@ SQL;
 
         //testing for collecting
 
-
         $sharedEventManager->attach(
             CollectingItemAdapter::class,
             'api.hydrate.pre',
             [$this, 'collectingItemCreate']
         );
-
 
         $sharedEventManager->attach(
             ItemAdapter::class,
