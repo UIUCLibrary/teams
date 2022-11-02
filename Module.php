@@ -1,8 +1,12 @@
 <?php
 namespace Teams;
 
+use Collecting\Api\Adapter\CollectingFormAdapter;
+use Collecting\Api\Adapter\CollectingItemAdapter;
+use Collecting\Form\CollectingForm;
 use Omeka\Api\Adapter\AssetAdapter;
 use Omeka\Api\Adapter\UserAdapter;
+use Omeka\Entity\Resource;
 use Omeka\Mvc\Controller\Plugin\Messenger;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception;
@@ -1480,7 +1484,6 @@ SQL;
 
         return;
     }
-
     public function assetUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
@@ -1591,9 +1594,6 @@ SQL;
                         ->findOneBy(['id' => $team_id])
                         ->getTeamUsers();
                 }
-
-
-
 
                 //update current team users to include new site in their default sites
                 foreach ($delta_user_site as $team_users) {
@@ -1845,6 +1845,10 @@ SQL;
                 }
                 $em->flush();
             }
+
+            //once teams are updated, sync item-site
+            $this->updateItemSites($request->getId());
+
         }
     }
 
@@ -1906,7 +1910,6 @@ SQL;
             $response = $event->getParam('response');
 
             $resource =  $response->getContent();
-            $media = $resource->getMedia();
 
             if (array_key_exists('team', $request->getContent())) {
                 $teams = $request->getContent()['team'];
@@ -1918,16 +1921,68 @@ SQL;
                 $em->persist($tr);
 
                 //if there is media, add those to the team as well
+
+                $media = $resource->getMedia();
+
                 if (count($media) > 0) {
                     foreach ($media as $m):
-                            $tr = new TeamResource($team, $m);
+                                $tr = new TeamResource($team, $m);
                     $em->persist($tr);
                     endforeach;
                 }
-
                 endforeach;
                 $em->flush();
             }
+        }
+    }
+
+
+    public function addTeam(Resource $resource, array $teams)
+    {
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        foreach (array_keys($teams) as $team_id):
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+        $tr = new TeamResource($team, $resource);
+        $em->persist($tr);
+
+        //if there is media, add those to the team as well
+
+        $media = $resource->getMedia();
+
+        if (count($media) > 0) {
+            foreach ($media as $m):
+                    $tr = new TeamResource($team, $m);
+            $em->persist($tr);
+            endforeach;
+        }
+        endforeach;
+        $em->flush();
+    }
+
+    public function collectingItemCreate(Event $event)
+    {
+        $request = $event->getParam('request');
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+
+        $itemId = $request->getContent()['o:item']['o:id'];
+        $item = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$itemId]);
+        $sites = $item->getSites();
+        $teams = [];
+
+        if ($sites) {
+            foreach ($sites as $site) {
+                $siteId = $site->getId();
+                $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $siteId]);
+                foreach ($teamSites as $teamSite) {
+                    $teamId = $teamSite->getTeam();
+                    $teams[$teamId] = true;
+                }
+            }
+            $this->addTeam($item, $teams);
         }
     }
 
@@ -2446,6 +2501,16 @@ SQL;
             'api.execute.post',
             [$this, 'itemCreate']
         );
+
+        //testing for collecting
+
+
+        $sharedEventManager->attach(
+            CollectingItemAdapter::class,
+            'api.hydrate.pre',
+            [$this, 'collectingItemCreate']
+        );
+
 
         $sharedEventManager->attach(
             ItemAdapter::class,
