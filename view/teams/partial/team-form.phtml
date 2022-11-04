@@ -12,10 +12,10 @@ $teamTemplate = '
     <td>
         <ul class="actions">
             <li>
-                <a href="#" class="o-icon-delete disabled" title="' . $removeStr . '" aria-label="' . $removeStr . '"></a>
+                <a href="#" class="o-icon-delete new" title="' . $removeStr . '" aria-label="' . $removeStr . '"></a>
             </li>
         </ul>
-        <input type="hidden" name="team[]">
+        <input type="hidden" name="add_team[]">
     </td>
 </tr>';
 ?>
@@ -40,13 +40,13 @@ $teamTemplate = '
                 <td>
                     <span><?php echo $team->getName()?></span>
 
-                    <input type="hidden" name="team[]" value="<?php echo $escape($team->getId()) ?>">
+                    <input type="hidden" name="existing_team[]" value="<?php echo $escape($team->getId()) ?>">
                 </td>
                 <td>
                     <ul class="actions" style="float:right">
                         <li>
                             <?php if ($this->roleAuth()->teamAuthorized('delete', 'resource',$team->getId())): ?>
-                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                                <a href="#" class="o-icon-delete existing" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
                             <?php endif; ?>
                         </li>
                     </ul>
@@ -73,5 +73,6 @@ $teamTemplate = '
     <?php endif; ?>
     <button id="team-selector-button" class="mobile-only"><?php echo $this->translate('Add a team'); ?></button>
     <span id="team-template" data-template="<?php echo $escape($teamTemplate); ?>"></span>
-    <?php echo $this->addTeam(); ?>
+
+    <?php echo $this->addTeam(); //add the right sidebar control with the list of teams that can be added?>
 </fieldset>
