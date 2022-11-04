@@ -567,24 +567,27 @@ class UpdateController extends AbstractActionController
                 $old_current->setCurrent(null);
                 $em->flush();
             }
-            $new_current->setCurrent(true);
-            $em->flush();
-            $team = $new_current->getTeam();
+            if ($new_current) {
+                $new_current->setCurrent(true);
+                $em->flush();
+                $team = $new_current->getTeam();
 
-            //the sites for the team the user just switched to
+                //the sites for the team the user just switched to
 
-            $team_sites = $team->getTeamSites();
-            $site_ids = [];
-            foreach ($team_sites as $team_site):
-                $site_ids[] = strval($team_site->getSite()->getId());
-            endforeach;
+                $team_sites = $team->getTeamSites();
+                $site_ids = [];
+                foreach ($team_sites as $team_site):
+                    $site_ids[] = strval($team_site->getSite()->getId());
+                endforeach;
 
-            //update so those are the user's default sites for items
-            $settingId = 'default_item_sites';
-            $settingValue = $site_ids;
-            $this->userSettings()->set($settingId, $settingValue, $user_id);
+                //update so those are the user's default sites for items
+                $settingId = 'default_item_sites';
+                $settingValue = $site_ids;
+                $this->userSettings()->set($settingId, $settingValue, $user_id);
+            } else {
+                $this->messenger()->addError("Team not found");
+            }
 
-//            $em->flush();
 
 
             return $this->redirect()->toUrl($data['return_url']);
