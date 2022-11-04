@@ -22,13 +22,40 @@ $(document).ready(function() {
     });
 
 // Remove a team from the edit panel.
-    $('#team-resources').on('click', '.o-icon-delete', function(event) {
+    $('#team-resources').on('click', '.o-icon-delete.existing', function(event) {
+        event.preventDefault();
+
+        var removeLink = $(this);
+        var teamRow = $(this).closest('tr');
+        var teamInput = removeLink.closest('tr').find('input');
+        teamInput.attr('name', 'remove_team[]')
+
+        // Undo remove team link.
+        var undoRemoveLink = $('<a>', {
+            href: '#',
+            class: 'fa fa-undo',
+            title: Omeka.jsTranslate('Undo remove team'),
+            click: function(event) {
+                event.preventDefault();
+                teamInput.attr('name', 'existing_team[]');
+                teamRow.toggleClass('delete');
+                removeLink.show();
+                $(this).remove();
+            },
+        });
+
+        teamRow.toggleClass('delete');
+        undoRemoveLink.insertAfter(removeLink);
+            removeLink.hide();
+    });
+    $('#team-resources').on('click', '.o-icon-delete.new', function(event) {
         event.preventDefault();
 
         var removeLink = $(this);
         var teamRow = $(this).closest('tr');
         var teamInput = removeLink.closest('tr').find('input');
         teamInput.prop('disabled', true);
+
 
         // Undo remove team link.
         var undoRemoveLink = $('<a>', {

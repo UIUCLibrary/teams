@@ -36,6 +36,7 @@ use Laminas\Mvc\Controller\AbstractController;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
+use Teams\Mvc\Controller\Plugin\TeamAuth;
 
 class Module extends AbstractModule
 {
@@ -623,7 +624,6 @@ SQL;
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
-        //TODO: this is actually a js script and needs to just be added as such
         echo $event->getTarget()->partial(
             'teams/partial/team-form'
         );
@@ -1522,7 +1522,6 @@ SQL;
             $em->persist($team_asset);
             endforeach;
             $em->flush();
-            $logger = $this->getServiceLocator()->get('Omeka\Logger');
         }
     }
     public function siteUpdate(Event $event)
@@ -1811,41 +1810,51 @@ SQL;
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
+        $teamAuth = new TeamAuth($em, $this->getUser());
 
         if ($operation == 'update') {
-            if (array_key_exists('team', $request->getContent())) {
+            if (array_key_exists('remove_team', $request->getContent()) ||
+                array_key_exists('add_team', $request->getContent())) {
+
+                //get ids for the item and all of its media
                 $resource_ids = [];
                 $resource_ids[$request->getId()] = true;
                 foreach ($entity->getMedia() as $media) {
                     $resource_ids[$media->getId()] = true;
                 }
-                
-                $teams = $request->getContent()['team'];
 
-                //remove item associated media from all teams they were associated before form submission
-                foreach (array_keys($resource_ids) as $resource_id) {
-                    $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
-                    foreach ($team_resources as $tr) {
-                        $em->remove($tr);
+                foreach ($request->getContent()['add_team'] as $team_id) {
+                    //if the user is authorized to add items to that team
+                    if ($teamAuth->teamAuthorized('add', 'resource', $team_id)) {
+                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                        if ($team) {
+                            foreach (array_keys($resource_ids) as $resource_id) {
+                                $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
+                                if ($resource) {
+                                    $team_resource = new TeamResource($team, $resource);
+                                    $em->persist($team_resource);
+                                }
+                            }
+                        }
                     }
                 }
                 $em->flush();
 
-                //add to teams from form
-                foreach ($teams as $team_id) {
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                    foreach (array_keys($resource_ids) as $resource_id) {
-                        $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
-                        $team_resource = new TeamResource($team, $resource);
-                        $em->persist($team_resource);
+                foreach ($request->getContent()['remove_team'] as $team_id) {
+                    if ($teamAuth->teamAuthorized('delete', 'resource', $team_id)) {
+                        foreach (array_keys($resource_ids) as $resource_id) {
+                            $team_resource = $em->getRepository('Teams\Entity\TeamResource')
+                                    ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
+                            if ($team_resource) {
+                                $em->remove($team_resource);
+                            }
+                        }
                     }
+                    $em->flush();
                 }
-                $em->flush();
+                //once teams are updated, sync item-site
+                $this->updateItemSites($request->getId());
             }
-
-            //once teams are updated, sync item-site
-            $this->updateItemSites($request->getId());
-
         }
     }
 

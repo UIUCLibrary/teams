@@ -44,8 +44,9 @@ $teamTemplate = '
                     <td>
                         <ul class="actions" style="float:right">
                             <li>
-
-                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                                <?php if ($this->roleAuth()->teamAuthorized('delete', 'resource',$team->getId())): ?>
+                                    <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                                <?php endif; ?>
                             </li>
                         </ul>
                     </td>
@@ -60,21 +61,6 @@ $teamTemplate = '
 
         </tbody>
     </table>
-    <!--    --><?// else:
-    //        ?>
-    <!--        <div class="no-resources">-->
-    <!--            <p>-->
-    <!--                --><?php //echo $this->translate('There are no teams for this resource.');?>
-    <!--                <br />-->
-    <!--                --><?php //echo $this->translate('Add existing teams using the interface to the right.');?>
-    <!--            </p>-->
-    <!--        </div>-->
-    <!---->
-    <!---->
-    <!---->
-    <!--    --><?php //endif;?>
-
-
     <button id="team-selector-button" class="mobile-only"><?php echo $this->translate('Add a team'); ?></button>
     <span id="team-template" data-template="<?php echo $escape($teamTemplate); ?>"></span>
     <?php echo $this->addTeam(); ?>
