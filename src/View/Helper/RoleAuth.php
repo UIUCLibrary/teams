@@ -37,7 +37,7 @@ class RoleAuth extends AbstractHelper
         return ($this->isGlobAdmin() && $this->user()->getId() === 1);
     }
 
-    public function teamAuthorized(string $action, string $domain)
+    public function teamAuthorized(string $action, string $domain, int $context=0)
     {
         //validate inputs
         if (!in_array($action, $this->actions)) {
@@ -67,10 +67,21 @@ class RoleAuth extends AbstractHelper
         $authorized = false;
 
 
+        if ($context > 0) {
+            //determine if the user is part of that team
+            $has_role = $em->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['user' => $user_id, 'team'=>$context]);
+
+        } else {
+            //get the users current team
+            $has_role = $em->getRepository('Teams\Entity\TeamUser')
+                ->findOneBy(['is_current' => true, 'user'=>$user_id]);
+        }
+
+
+
         //if the user has a current team
-        if ($has_role = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current' => true, 'user'=>$user_id])
-            ) {
+        if ($has_role) {
             $current_role = $has_role->getRole();
 
             //go through each domain and determine if user is authorized for actions in that domain
