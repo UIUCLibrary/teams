@@ -610,6 +610,7 @@ SQL;
     public function displayTeamForm(Event $event)
     {
         $vars = $event->getTarget()->vars();
+        $view = $event->getTarget();
         // Manage add/edit form.
         if (isset($vars->item)) {
             $vars->offsetSet('resource', $vars->item);
@@ -624,6 +625,7 @@ SQL;
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
+        $view->headScript()->appendFile($view->assetUrl('js/hide-unavailable-sites.js', 'Teams'));
         echo $event->getTarget()->partial(
             'teams/partial/team-form'
         );
