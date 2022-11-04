@@ -3,7 +3,7 @@ $escape = $this->plugin('escapeHtml');
 
 // Teams are already sorted.
 $teamsByInitial = [];
-$teamCount = 0;
+$totalCount = 0;
 foreach ($this->teams as $team) {
     if ($this->roleAuth()->teamAuthorized('add', 'resource', $team->id())) {
         $teamCount+=1;
@@ -23,7 +23,7 @@ foreach ($this->teams as $team) {
     <h3><?php echo $this->translate('Click on a team to add it to the edit panel.'); ?></h3>
     <input type="text" class="selector-filter" placeholder="<?php echo $escape($this->translate('Filter teams')); ?>">
     <ul>
-        <li class="total-count-heading"><?php echo $this->translate('All teams'); ?> (<span class="selector-total-count"><?php echo $teamCount; ?></span>)
+        <li class="total-count-heading"><?php echo $this->translate('All teams'); ?> (<span class="selector-total-count"><?php echo $totalCount; ?></span>)
             <ul class="selectable-list">
                 <?php foreach ($teamsByInitial as $initial => $teams): ?>
                 <li class="selector-parent">
