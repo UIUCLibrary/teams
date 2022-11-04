@@ -6,7 +6,7 @@ $teamsByInitial = [];
 $totalCount = 0;
 foreach ($this->teams as $team) {
     if ($this->roleAuth()->teamAuthorized('add', 'resource', $team->id())) {
-        $teamCount+=1;
+        $totalCount+=1;
         if (extension_loaded('mbstring')) {
             $initial = mb_substr($team->name(), 0, 1);
             $teamsByInitial[mb_strtolower($initial)][] = $team;
