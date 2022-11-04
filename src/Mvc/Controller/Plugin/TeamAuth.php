@@ -4,6 +4,7 @@ namespace Teams\Mvc\Controller\Plugin;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use \Omeka\Entity\User;
 
 /**
  * Controller plugin for authorize the current user.
@@ -19,31 +20,33 @@ class TeamAuth extends AbstractPlugin
     protected $entityManager;
 
     /**
+     * @var \Omeka\Entity\User
+     */
+    protected $user;
+
+    /**
      * Construct the plugin.
      *
      * @param EntityManager $entityManager
      */
-    public function __construct(EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, User $user)
     {
         $this->entityManager = $entityManager;
+        $this->user = $user;
     }
 
-    public function user()
-    {
-        return $this->getController()->identity();
-    }
 
     public function isGlobAdmin()
     {
-        return $this->user()->getRole() === 'global_admin';
+        return $this->user->getRole() === 'global_admin';
     }
 
     public function isSuper()
     {
-        return ($this->isGlobAdmin() && $this->user()->getId() === 1);
+        return ($this->isGlobAdmin() && $this->user->getId() === 1);
     }
 
-    public function teamAuthorized(string $action, string $domain)
+    public function teamAuthorized(string $action, string $domain, int $context=0): bool
     {
         //validate inputs
         if (!in_array($action, $this->actions)) {
@@ -69,7 +72,7 @@ class TeamAuth extends AbstractPlugin
         }
 
         $em = $this->entityManager;
-        $user_id = $this->user()->getId();
+        $user_id = $this->user->getId();
         $authorized = false;
 
 
