@@ -12,7 +12,7 @@ $teamTemplate = '
     <td>
         <ul class="actions">
             <li>
-                <a href="#" class="o-icon-delete" title="' . $removeStr . '" aria-label="' . $removeStr . '"></a>
+                <a href="#" class="o-icon-delete disabled" title="' . $removeStr . '" aria-label="' . $removeStr . '"></a>
             </li>
         </ul>
         <input type="hidden" name="team[]">
@@ -45,8 +45,9 @@ $teamTemplate = '
                 <td>
                     <ul class="actions" style="float:right">
                         <li>
-
-                            <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                            <?php if ($this->roleAuth()->teamAuthorized('delete', 'resource',$team->getId())): ?>
+                                <a href="#" class="o-icon-delete" title="<?php echo $removeStr; ?>" aria-label="<?php echo $removeStr; ?>"></a>
+                            <?php endif; ?>
                         </li>
                     </ul>
                 </td>
