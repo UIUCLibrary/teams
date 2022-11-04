@@ -825,10 +825,6 @@ SQL;
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-        //catch REST queries
-        if ($this->getUser() === null) {
-            return;
-        }
 
         //this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
@@ -847,14 +843,17 @@ SQL;
                 $team_ids[] = $team->getTeam()->getId();
             endforeach;
 
-            //only get sites that share a team with the current sitedd
+            //only get sites that share a team with the current site
             $qb->join('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias . '.id = ts.site')
                 ->andWhere('ts.team IN (:team_ids)')
                 ->setParameter('team_ids', $team_ids);
             return;
         }
 
-
+        //catch REST queries
+        if ($this->getUser() === null) {
+            return;
+        }
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
 
