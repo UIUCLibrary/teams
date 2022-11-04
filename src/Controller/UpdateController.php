@@ -584,6 +584,8 @@ class UpdateController extends AbstractActionController
                 $settingId = 'default_item_sites';
                 $settingValue = $site_ids;
                 $this->userSettings()->set($settingId, $settingValue, $user_id);
+            } else {
+                $this->messenger()->addError("Team not found");
             }
 
 
