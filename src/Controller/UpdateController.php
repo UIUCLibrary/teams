@@ -381,7 +381,7 @@ class UpdateController extends AbstractActionController
 
         if ($request->isPost()) {
             $post_data = $request->getPost();
-            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
                 //first update the team name and description
                 $qb = $this->entityManager->createQueryBuilder();
                 $qb->update('Teams\Entity\Team', 'team')
@@ -403,7 +403,7 @@ class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
                 if ($post_data['addUser']) {
                     $team_id = $id;
                     $user_id = $post_data['add-member'];
@@ -447,7 +447,7 @@ class UpdateController extends AbstractActionController
             }
 
 
-            if ($this->teamAuth()->teamAuthorized('update', 'team')){
+            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team')){
                 //first delete then add resources to team
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
@@ -484,7 +484,7 @@ class UpdateController extends AbstractActionController
                 $em->flush();
             }
 
-            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
+//            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
             $this->messenger()->addSuccess($successMessage);
 
             return $this->redirect()->refresh();
