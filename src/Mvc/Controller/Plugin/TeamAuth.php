@@ -30,10 +30,9 @@ class TeamAuth extends AbstractPlugin
      *
      * @param EntityManager $entityManager
      */
-    public function __construct(EntityManager $entityManager, User $user, \Laminas\Log\Logger $logger)
+    public function __construct(EntityManager $entityManager, \Laminas\Log\Logger $logger)
     {
         $this->entityManager = $entityManager;
-        $this->user = $user;
         $this->logger = $logger;
     }
 
