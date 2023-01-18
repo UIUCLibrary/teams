@@ -42,6 +42,7 @@ class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
+
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
@@ -229,6 +230,7 @@ class AddController extends AbstractActionController
 
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'add', 'role')){
             $this->messenger()->addError("You aren't authorized to add roles");
+            return $view;
         } else {
 
 
