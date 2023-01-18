@@ -99,10 +99,6 @@ class AddController extends AbstractActionController
         $newTeam = $this->api($form)->create('team', $data);
 
         if ($newTeam) {
-            //looks like this was a diagnostic i used to see what was in the data variable
-            $view->setVariable('post_data', $data);
-            $view->setVariable('team', $newTeam);
-
             $team = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
             if ($request->getPost('user_role')) {
