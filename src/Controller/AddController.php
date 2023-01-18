@@ -236,30 +236,28 @@ class AddController extends AbstractActionController
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'add', 'role')){
             $this->messenger()->addError("You aren't authorized to add roles");
             return $view;
+        }
+
+        //otherwise, set the data
+        $form->setData($request->getPost());
+
+        //get the data from the post
+        $data = $request->getPost('role');
+
+        //if the form isn't valid, return it
+        if (!$form->isValid()) {
+            return $view;
+        }
+
+        $newRole = $this->api($form)->create('team-role', $data);
+
+        if ($newRole) {
+            //        return new ViewModel(['data' => $data]);
+            $successMessage = sprintf("Successfully added the role: '%s'", $data['o:name']);
+            $this->messenger()->addSuccess($successMessage);
+            return $this->redirect()->toRoute('admin/teams/roles');
         } else {
-
-
-            //otherwise, set the data
-            $form->setData($request->getPost());
-
-            //get the data from the post
-            $data = $request->getPost('role');
-
-            //if the form isn't valid, return it
-            if (!$form->isValid()) {
-                return $view;
-            }
-
-            $newRole = $this->api($form)->create('team-role', $data);
-
-            if ($newRole) {
-                //        return new ViewModel(['data' => $data]);
-                $successMessage = sprintf("Successfully added the role: '%s'", $data['o:name']);
-                $this->messenger()->addSuccess($successMessage);
-                return $this->redirect()->toRoute('admin/teams/roles');
-            } else {
-                return $view;
-            }
+            return $view;
         }
     }
 }
