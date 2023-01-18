@@ -5,7 +5,7 @@ $escape = $this->plugin('escapeHtml');
 echo $this->pageTitle($translate('Delete role'));
 ?>
 
-<?php if ($this->role_users) { ?>
+<?php if ($this->role_users): ?>
     You can't delete this role because it is being used by the following teams
     <ul class="list-group">
         <?php foreach ($role_users as $user):?>
@@ -13,7 +13,7 @@ echo $this->pageTitle($translate('Delete role'));
         <?php endforeach; ?>
     </ul>
 
-    <?php } else { ?>
+    <?php else: ?>
     <p>
         Are you sure you want to delete this role ?
     </p>
@@ -30,4 +30,4 @@ foreach ($this->role_users as $user):
     <input class="btn btn-default" type="submit" name="confirm" value="Cancel" />
     <input class="btn btn-danger" type="submit" name="confirm" value="Delete" />
 </form>
-<?php } ?>
+<?php endif; ?>
