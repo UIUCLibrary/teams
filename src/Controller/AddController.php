@@ -83,9 +83,6 @@ class AddController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to add teams");
             return $view;
         }
-
-
-        //otherwise, set the data
         //TODO: turn the section where user+role are added into a form so it can be populated below
         $form->setData($request->getPost());
         $userForm->setData($request->getPost());
@@ -93,17 +90,15 @@ class AddController extends AbstractActionController
         $userRoleForm->setData($request->getPost());
 
 
-        //if the form isn't valid, return it
-
         if (! $form->isValid()) {
             return $view;
         }
 
-        //get the data from the post
         $data = $request->getPost('team');
 
         $newTeam = $this->api($form)->create('team', $data);
 
+        //add the users, resources and sites to the team
         if ($newTeam) {
             $team = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
@@ -206,10 +201,6 @@ class AddController extends AbstractActionController
             return $this->redirect()->toRoute('admin/teams');
         }
         $view = new ViewModel;
-
-//        $userForm->setData($request->getPost());
-//        $itemsetForm->setData($request->getPost());
-//        $userRoleForm->setData($request->getPost());
 
         $view->setVariable('form', $form);
         $view->setVariable('userForm', $userForm);
