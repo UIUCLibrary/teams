@@ -39,14 +39,16 @@ class DeleteController extends AbstractActionController
         //is there an id?
         $id = $this->params()->fromRoute('id');
         if (! $id) {
-            return $this->redirect()->toRoute('admin');
+            $this->messenger()->addError("No team id found");
+            return $this->redirect()->toRoute('admin/teams');
         }
 
         //does a team have that id
         try {
             $team = $this->api()->searchOne('team', ['id'=>$id]);
         } catch (InvalidArgumentException $exception) {
-            return $this->redirect()->toRoute('admin');
+            $this->messenger()->addError("Invalid team id");
+            return $this->redirect()->toRoute('admin/teams');
         }
 
         //is it a post request?
@@ -55,12 +57,11 @@ class DeleteController extends AbstractActionController
             return new ViewModel(['team'=>$team]);
         }
 
-        //is it the right id and did they say confirm?
-//        if ($id != $request->getPost('id')
-//            || 'Delete' != $request->getPost('confirm')
-//        ) {
-//            return $this->redirect()->toRoute('admin/teams');
-//        }
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'delete', 'team')){
+            $this->messenger()->addError("You aren't authorized to delete teams");
+            return $this->redirect()->toRoute('admin/teams');
+        }
+
         if ($request->getPost('confirm') == 'Delete') {
             $this->api()->delete('team', ['id'=>$id]);
             return $this->redirect()->toRoute('admin/teams');
