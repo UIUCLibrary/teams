@@ -80,7 +80,7 @@ class DeleteController extends AbstractActionController
 
         $request = $this->getRequest();
 
-        //test to see if anyone has this role. If they do, can't delete.
+        //test to see if anyone has this role. If they do, don't delete it.
         $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findBy(['role'=>$id]);
         if (! $request->isPost()) {
@@ -91,24 +91,23 @@ class DeleteController extends AbstractActionController
                 ]
             );
         }
-        if ($request->isPost()) {
-            if (! $role_users) {
-                if ($this->identity()->getRole() == 'global_admin') {
-                    if ($request->getPost('confirm') == 'Delete') {
-                        $this->entityManager->remove($role);
-                        $this->entityManager->flush();
-                        $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+        if (! $role_users) {
+            if ($this->identity()->getRole() == 'global_admin') {
+                if ($request->getPost('confirm') == 'Delete') {
+                    $this->entityManager->remove($role);
+                    $this->entityManager->flush();
+                    $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
 
-                        return $this->redirect()->toRoute('admin/teams/roles');
-                    } else {
-                        return $this->redirect()->toRoute('admin/teams/roles');
-                    }
+                    return $this->redirect()->toRoute('admin/teams/roles');
                 } else {
-                    $this->messenger()->addError('Only global admins can delete roles');
+                    return $this->redirect()->toRoute('admin/teams/roles');
                 }
             } else {
-                $this->messenger()->addError("Can't be deleted because teams are using the role");
+                $this->messenger()->addError('Only global admins can delete roles');
             }
+        } else {
+            $this->messenger()->addError("Can't be deleted because teams are using the role");
         }
+
     }
 }
