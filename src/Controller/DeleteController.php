@@ -77,19 +77,21 @@ class DeleteController extends AbstractActionController
         $id = $this->params()->fromRoute('id');
         $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
             ->findOneBy(['id'=> $id]);
-
         $request = $this->getRequest();
 
         //test to see if anyone has this role. If they do, don't delete it.
         $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findBy(['role'=>$id]);
+
+        $view = new ViewModel(
+            [
+                'role_users' => $role_users,
+                'user' => $user,
+            ]
+        );
+
         if (! $request->isPost()) {
-            return new ViewModel(
-                [
-                    'role_users' => $role_users,
-                    'user' => $user,
-                ]
-            );
+            return $view;
         }
         if (! $role_users) {
             if ($this->identity()->getRole() == 'global_admin') {
