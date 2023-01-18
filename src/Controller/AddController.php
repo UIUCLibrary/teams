@@ -79,6 +79,11 @@ class AddController extends AbstractActionController
             return $view;
         }
 
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'add', 'team')){
+            $this->messenger()->addError("You aren't authorized to add teams");
+            return $view;
+        }
+
 
         //otherwise, set the data
         //TODO: turn the section where user+role are added into a form so it can be populated below
