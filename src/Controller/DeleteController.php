@@ -86,7 +86,6 @@ class DeleteController extends AbstractActionController
         if (! $request->isPost()) {
             return new ViewModel(
                 [
-                    'role'=>$role,
                     'role_users' => $role_users,
                     'user' => $user,
                 ]
