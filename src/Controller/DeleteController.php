@@ -44,35 +44,10 @@ class DeleteController extends AbstractActionController
 
         //does a team have that id
         try {
-            $team = $this->api()->search('team', ['id'=>$id]);
+            $team = $this->api()->searchOne('team', ['id'=>$id]);
         } catch (InvalidArgumentException $exception) {
             return $this->redirect()->toRoute('admin');
         }
-
-        $criteria = ['id' => $id];
-
-        $qb = $this->entityManager->createQueryBuilder();
-        $entityClass = 'Teams\Entity\Team';
-
-        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $qb->setMaxResults(1);
-
-        $entity = $qb->getQuery()->getOneOrNullResult();
-
-
-        $request = new Request('delete', 'team');
-        $event = new Event('api.hydrate.pre', $this, [
-            'entity' => $entity,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
-
 
         //is it a post request?
         $request = $this->getRequest();
