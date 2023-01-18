@@ -6,7 +6,10 @@ echo $this->pageTitle($translate('Delete role'));
 ?>
 
 <?php if ($this->role_users): ?>
-    You can't delete this role because it is being used by the following teams
+    <div id="page-actions">
+        <?php echo $this->hyperlink($translate('Return to Roles'), $this->url('admin/teams/roles'), ['class' => 'button']); ?>
+    </div>
+    <p>You can't delete this role because it is being used by the following teams</p>
     <ul class="list-group">
         <?php foreach ($role_users as $user):?>
             <li class="list-group-item"><?= $user->getTeam()->getName() ?> (<?= $user->getUser()->getName() ?>)</li>
