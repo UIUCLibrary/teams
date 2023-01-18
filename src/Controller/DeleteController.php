@@ -82,7 +82,6 @@ class DeleteController extends AbstractActionController
         //test to see if anyone has this role. If they do, don't delete it.
         $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findBy(['role'=>$id]);
-
         $view = new ViewModel(
             [
                 'role_users' => $role_users,
@@ -93,23 +92,21 @@ class DeleteController extends AbstractActionController
         if (! $request->isPost()) {
             return $view;
         }
-        if (! $role_users) {
-            if ($this->identity()->getRole() == 'global_admin') {
-                if ($request->getPost('confirm') == 'Delete') {
-                    $this->entityManager->remove($role);
-                    $this->entityManager->flush();
-                    $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
-
-                    return $this->redirect()->toRoute('admin/teams/roles');
-                } else {
-                    return $this->redirect()->toRoute('admin/teams/roles');
-                }
-            } else {
-                $this->messenger()->addError('Only global admins can delete roles');
-            }
-        } else {
-            $this->messenger()->addError("Can't be deleted because teams are using the role");
+        if (! $this->teamAuth($user, 'delete', 'role')){
+            $this->messenger()->addError('You are not authorized to delete roles');
+            return $view;
         }
+        if ($role_users){
+            $this->messenger()->addError('This role can not be deleted while users are assigned to it');
+            return $view;
+        }
+        if ($request->getPost('confirm') == 'Delete') {
+            $this->entityManager->remove($role);
+            $this->entityManager->flush();
+            $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+        }
+        return $this->redirect()->toRoute('admin/teams/roles');
+
 
     }
 }
