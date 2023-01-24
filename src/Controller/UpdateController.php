@@ -378,7 +378,7 @@ class UpdateController extends AbstractActionController
             ->getQuery()
             ->getResult();
 
-        if ($request->isPost()) {
+
             $post_data = $request->getPost();
             if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
                 $this->messenger()->addError("You aren't authorized to change the team details");
@@ -493,8 +493,6 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addSuccess($successMessage);
 
             return $this->redirect()->refresh();
-        }
-        return $view;
     }
 
     public function roleUpdateAction()
