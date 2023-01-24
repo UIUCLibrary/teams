@@ -46,6 +46,9 @@ class UpdateController extends AbstractActionController
 
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+
+        }
         $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
         $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
         $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
@@ -342,20 +345,21 @@ class UpdateController extends AbstractActionController
         //is it a post request?
         //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
+        $view = new ViewModel(['team'=>$team,
+            'form' => $form,
+            'id'=>$id,
+            'roles'=> $roles,
+            'roles_array' => $roles_array,
+            'all_u_collection' => $all_u_collection,
+            'team_u_collection' => $team_u_collection,
+            'team_u_array'=>$team_u_array,
+            'available_u_array'=>$available_u_array,
+            'ident' => $userId,
+            'itemsetForm' => $itemsetForm,
+            'sitesForm' => $sitesForm,
+        ]);
         if (! $request->isPost()) {
-            return new ViewModel(['team'=>$team,
-                'form' => $form,
-                'id'=>$id,
-                'roles'=> $roles,
-                'roles_array' => $roles_array,
-                'all_u_collection' => $all_u_collection,
-                'team_u_collection' => $team_u_collection,
-                'team_u_array'=>$team_u_array,
-                'available_u_array'=>$available_u_array,
-                'ident' => $userId,
-                'itemsetForm' => $itemsetForm,
-                'sitesForm' => $sitesForm,
-            ]);
+            return $view;
         }
 
 
@@ -399,7 +403,10 @@ class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
+            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
+                $this->messenger()->addError("You aren't authorized to change this team");
+                return new ViewModel();
+            } else {
                 if ($post_data['addUser']) {
                     $team_id = $id;
                     $user_id = $post_data['add-member'];
@@ -425,18 +432,18 @@ class UpdateController extends AbstractActionController
                 if ($post_data['UserRole']) {
                     foreach ($post_data['UserRole'] as $user_id => $role_id):
                         $user_id = (int) $user_id;
-                    $role_id = (int) $role_id;
-                    if ($post_data['UserCurrent'][$user_id] == 1) {
-                        $current = 1;
-                    } else {
-                        $current = null;
-                    }
-                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+                        $role_id = (int) $role_id;
+                        if ($post_data['UserCurrent'][$user_id] == 1) {
+                            $current = 1;
+                        } else {
+                            $current = null;
+                        }
+                        $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                        $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                    $new_tu = new TeamUser($team, $user, $role);
-                    $new_tu->setCurrent($current);
-                    $em->persist($new_tu);
+                        $new_tu = new TeamUser($team, $user, $role);
+                        $new_tu->setCurrent($current);
+                        $em->persist($new_tu);
                     endforeach;
                     $em->flush();
                 }
