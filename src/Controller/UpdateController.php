@@ -480,7 +480,7 @@ class UpdateController extends AbstractActionController
                 $em->flush();
             }
 
-//            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
+            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
             $this->messenger()->addSuccess($successMessage);
 
             return $this->redirect()->refresh();
