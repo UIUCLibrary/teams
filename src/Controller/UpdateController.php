@@ -362,7 +362,6 @@ class UpdateController extends AbstractActionController
             return $view;
         }
 
-
         $em = $this->entityManager;
         $qb = $em->createQueryBuilder();
         $existing_resources = $qb->select('tr')
@@ -381,7 +380,10 @@ class UpdateController extends AbstractActionController
 
         if ($request->isPost()) {
             $post_data = $request->getPost();
-            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
+            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
+                $this->messenger()->addError("You aren't authorized to change the team details");
+                return $view;
+            } else {
                 //first update the team name and description
                 $qb = $this->entityManager->createQueryBuilder();
                 $qb->update('Teams\Entity\Team', 'team')
@@ -393,11 +395,7 @@ class UpdateController extends AbstractActionController
                     ->setParameter(3, $id)
                     ->getQuery()
                     ->execute();
-
-            } else {
-                $this->messenger()->addError("You aren't authorized to change the team details");
             }
-
 
             //if they clicked the add user button, just add a member and refresh
             //TODO: return the form as filled out with whatever changes they made or use Ajax
@@ -405,7 +403,7 @@ class UpdateController extends AbstractActionController
             //if they actually click on the add user button
             if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
                 $this->messenger()->addError("You aren't authorized to change this team");
-                return new ViewModel();
+                return $view;
             } else {
                 if ($post_data['addUser']) {
                     $team_id = $id;
@@ -450,7 +448,11 @@ class UpdateController extends AbstractActionController
             }
 
 
-            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team')){
+            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team')){
+                $this->messenger()->addError("You aren't authorized to change this team");
+                return $view;
+            } else {
+
                 //first delete then add resources to team
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
@@ -492,35 +494,7 @@ class UpdateController extends AbstractActionController
 
             return $this->redirect()->refresh();
         }
-
-
-//        array_search($post_data['add-member-role'], $roles_array);
-
-        return
-            new ViewModel(['team'=>$team,
-            'form' => $form,
-            'id'=>$id,
-            'roles'=> $roles,
-            'roles_array' => $roles_array,
-            'all_u_collection' => $all_u_collection,
-            'team_u_collection' => $team_u_collection,
-            'team_u_array'=>$team_u_array,
-            'available_u_array'=>$available_u_array,
-            'ident' => $userId,
-            'post_data'=>$post_data,
-            'userForm' => $userForm,
-            'itemsetForm' => $itemsetForm,
-            ]);
-
-
-//            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
-
-//        if (!empty($post_data['o:user_add'])){
-//            $this->api()->create('team-user', ['o:user' => $post_data['o:user_add'], 'o:team'=> $id, 'o:role'=>1] );
-//        }
-//        if (!empty($post_data['o:user_remove'])){
-//            $this->api()->delete('team-user', ['user_id' => $post_data['o:user_remove'], 'team_id'=> $id] );
-//        }
+        return $view;
     }
 
     public function roleUpdateAction()
