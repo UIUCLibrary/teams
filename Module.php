@@ -1812,7 +1812,8 @@ SQL;
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
-        $teamAuth = new TeamAuth($em, $this->getUser());
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        $teamAuth = new TeamAuth($em, $logger);
 
         if ($operation == 'update') {
             if (array_key_exists('remove_team', $request->getContent()) ||
