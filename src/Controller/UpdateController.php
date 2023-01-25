@@ -227,7 +227,8 @@ class UpdateController extends AbstractActionController
     {
         $id = $this->params()->fromRoute('id');
         $team_sites = $this->entityManager
-            ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);
+            ->getRepository('Teams\Entity\TeamSite')
+            ->findBy(['team'=>$id]);
 
         $current_sites = [];
         $valueOptions = [];
@@ -401,7 +402,7 @@ class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
+            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
                 $this->messenger()->addError("You aren't authorized to change this team");
                 return $view;
             } else {
