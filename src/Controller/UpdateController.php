@@ -421,11 +421,13 @@ class UpdateController extends AbstractActionController
                     $role_id = $post_data['member-role'];
                     $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-                    if ($newMember){
-                        $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
-                        $this->messenger()->addSuccess($successMessage);
-                        return $this->redirect()->refresh();
+                    if (! $newMember){
+                        $this->messenger()->addError("Unable to update team members");
+                        return $view;
                     }
+                    $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
+                    $this->messenger()->addSuccess($successMessage);
+                    return $this->redirect()->refresh();
 
                 }
 
