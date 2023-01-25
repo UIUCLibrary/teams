@@ -65,7 +65,7 @@ class UpdateController extends AbstractActionController
 
     public function removeTeamUser(int $team, int $user)
     {
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team)){
             $this->messenger()->addError("You aren't authorized to change this team");
         } else {
             $this->messenger()->addError("removed user");
@@ -412,7 +412,7 @@ class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
+            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
                 $this->messenger()->addError("You aren't authorized to change this team");
                 return $view;
             } else {
