@@ -39,40 +39,17 @@ class DeleteController extends AbstractActionController
         //is there an id?
         $id = $this->params()->fromRoute('id');
         if (! $id) {
-            return $this->redirect()->toRoute('admin');
+            $this->messenger()->addError("No team id found");
+            return $this->redirect()->toRoute('admin/teams');
         }
 
         //does a team have that id
         try {
-            $team = $this->api()->search('team', ['id'=>$id]);
+            $team = $this->api()->searchOne('team', ['id'=>$id]);
         } catch (InvalidArgumentException $exception) {
-            return $this->redirect()->toRoute('admin');
+            $this->messenger()->addError("Invalid team id");
+            return $this->redirect()->toRoute('admin/teams');
         }
-
-        $criteria = ['id' => $id];
-
-        $qb = $this->entityManager->createQueryBuilder();
-        $entityClass = 'Teams\Entity\Team';
-
-        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $qb->setMaxResults(1);
-
-        $entity = $qb->getQuery()->getOneOrNullResult();
-
-
-        $request = new Request('delete', 'team');
-        $event = new Event('api.hydrate.pre', $this, [
-            'entity' => $entity,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
-
 
         //is it a post request?
         $request = $this->getRequest();
@@ -80,12 +57,11 @@ class DeleteController extends AbstractActionController
             return new ViewModel(['team'=>$team]);
         }
 
-        //is it the right id and did they say confirm?
-//        if ($id != $request->getPost('id')
-//            || 'Delete' != $request->getPost('confirm')
-//        ) {
-//            return $this->redirect()->toRoute('admin/teams');
-//        }
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'delete', 'team')){
+            $this->messenger()->addError("You aren't authorized to delete teams");
+            return $this->redirect()->toRoute('admin/teams');
+        }
+
         if ($request->getPost('confirm') == 'Delete') {
             $this->api()->delete('team', ['id'=>$id]);
             return $this->redirect()->toRoute('admin/teams');
@@ -101,39 +77,36 @@ class DeleteController extends AbstractActionController
         $id = $this->params()->fromRoute('id');
         $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
             ->findOneBy(['id'=> $id]);
-
         $request = $this->getRequest();
 
-        //test to see if anyone has this role. If they do, can't delete.
+        //test to see if anyone has this role. If they do, don't delete it.
         $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
             ->findBy(['role'=>$id]);
-        if (! $request->isPost()) {
-            return new ViewModel(
-                [
-                    'role'=>$role,
-                    'role_users' => $role_users,
-                    'user' => $user,
-                ]
-            );
-        }
-        if ($request->isPost()) {
-            if (! $role_users) {
-                if ($this->identity()->getRole() == 'global_admin') {
-                    if ($request->getPost('confirm') == 'Delete') {
-                        $this->entityManager->remove($role);
-                        $this->entityManager->flush();
-                        $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+        $view = new ViewModel(
+            [
+                'role_users' => $role_users,
+                'user' => $user,
+            ]
+        );
 
-                        return $this->redirect()->toRoute('admin/teams/roles');
-                    } else {
-                        return $this->redirect()->toRoute('admin/teams/roles');
-                    }
-                } else {
-                    $this->messenger()->addError('Only global admins can delete roles');
-                }
-            } else {
-                $this->messenger()->addError("Can't be deleted because teams are using the role");
-            }
+        if (! $request->isPost()) {
+            return $view;
         }
+        if (! $this->teamAuth($user, 'delete', 'role')){
+            $this->messenger()->addError('You are not authorized to delete roles');
+            return $view;
+        }
+        if ($role_users){
+            $this->messenger()->addError('This role can not be deleted while users are assigned to it');
+            return $view;
+        }
+        if ($request->getPost('confirm') == 'Delete') {
+            $this->entityManager->remove($role);
+            $this->entityManager->flush();
+            $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+        }
+        return $this->redirect()->toRoute('admin/teams/roles');
+
+
     }
 }

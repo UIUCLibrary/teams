@@ -42,6 +42,7 @@ class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
+
         $all_u_array = array();
         $all_u_collection = $this->api()->search('users')->getContent();
         foreach ($all_u_collection as $u):
@@ -78,8 +79,10 @@ class AddController extends AbstractActionController
             return $view;
         }
 
-
-        //otherwise, set the data
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'add', 'team')){
+            $this->messenger()->addError("You aren't authorized to add teams");
+            return $view;
+        }
         //TODO: turn the section where user+role are added into a form so it can be populated below
         $form->setData($request->getPost());
         $userForm->setData($request->getPost());
@@ -87,22 +90,16 @@ class AddController extends AbstractActionController
         $userRoleForm->setData($request->getPost());
 
 
-        //if the form isn't valid, return it
-
         if (! $form->isValid()) {
             return $view;
         }
 
-        //get the data from the post
         $data = $request->getPost('team');
 
         $newTeam = $this->api($form)->create('team', $data);
 
+        //add the users, resources and sites to the team
         if ($newTeam) {
-            //looks like this was a diagnostic i used to see what was in the data variable
-            $view->setVariable('post_data', $data);
-            $view->setVariable('team', $newTeam);
-
             $team = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
             if ($request->getPost('user_role')) {
@@ -205,10 +202,6 @@ class AddController extends AbstractActionController
         }
         $view = new ViewModel;
 
-//        $userForm->setData($request->getPost());
-//        $itemsetForm->setData($request->getPost());
-//        $userRoleForm->setData($request->getPost());
-
         $view->setVariable('form', $form);
         $view->setVariable('userForm', $userForm);
         $view->setVariable('itemsetForm', $itemsetForm);
@@ -231,17 +224,19 @@ class AddController extends AbstractActionController
             return $view;
         }
 
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'add', 'role')){
+            $this->messenger()->addError("You aren't authorized to add roles");
+            return $view;
+        }
 
         //otherwise, set the data
         $form->setData($request->getPost());
-
-
 
         //get the data from the post
         $data = $request->getPost('role');
 
         //if the form isn't valid, return it
-        if (! $form->isValid()) {
+        if (!$form->isValid()) {
             return $view;
         }
 

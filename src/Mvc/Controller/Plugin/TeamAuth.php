@@ -5,6 +5,7 @@ use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
 use \Omeka\Entity\User;
+use Omeka\Mvc\Controller\Plugin\Logger;
 
 /**
  * Controller plugin for authorize the current user.
@@ -15,39 +16,37 @@ class TeamAuth extends AbstractPlugin
     public $domains = ['resource', 'team', 'site', 'team_user', 'role'];
 
     /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
      * @var EntityManager
      */
     protected $entityManager;
-
-    /**
-     * @var \Omeka\Entity\User
-     */
-    protected $user;
 
     /**
      * Construct the plugin.
      *
      * @param EntityManager $entityManager
      */
-    public function __construct(EntityManager $entityManager, User $user)
+    public function __construct(EntityManager $entityManager, \Laminas\Log\Logger $logger)
     {
         $this->entityManager = $entityManager;
-        $this->user = $user;
+        $this->logger = $logger;
     }
 
 
-    public function isGlobAdmin()
+    public function isGlobAdmin(User $user): bool
     {
-        return $this->user->getRole() === 'global_admin';
+        return $user->getRole() === 'global_admin';
     }
 
-    public function isSuper()
-    {
-        return ($this->isGlobAdmin() && $this->user->getId() === 1);
-    }
 
-    public function teamAuthorized(string $action, string $domain, int $context=0): bool
+    public function teamAuthorized(User $user, string $action, string $domain, int $context=0): bool
     {
+
+
         //validate inputs
         if (!in_array($action, $this->actions)) {
             throw new InvalidArgumentException(
@@ -65,9 +64,9 @@ class TeamAuth extends AbstractPlugin
                 )
             );
         }
+//        $this->logger->err(get_class($this->identity()));
 
-        //super admin should bypass team authority
-        if ($this->isSuper()) {
+        if ($this->isGlobAdmin($user)) {
             return true;
         }
 
@@ -114,9 +113,4 @@ class TeamAuth extends AbstractPlugin
         }
         return $authorized;
     }
-
-//    public function __invoke($resource = null, $privilege = null)
-//    {
-//        return $this->userIsAllowed($resource, $privilege);
-//    }
 }

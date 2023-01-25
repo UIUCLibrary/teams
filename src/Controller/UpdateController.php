@@ -9,13 +9,9 @@ use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
-use Teams\Form\Element\AllSiteSelect;
-use Teams\Form\Element\AllSiteSelectOrdered;
 use Teams\Form\TeamItemsetAddRemoveForm;
-use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamUpdateForm;
-use Teams\Form\TeamUserForm;
 use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
@@ -50,39 +46,52 @@ class UpdateController extends AbstractActionController
 
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
-        $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
-        $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
-        $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
-        $team_user = new TeamUser($team, $user, $role);
-        $this->entityManager->persist($team_user);
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+            return null;
+        } else {
+            $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
+            $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
+            $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
+            $team_user = new TeamUser($team, $user, $role);
+            $this->entityManager->persist($team_user);
 
-        //flushing here because this is a mini-form and we want to see the name pop up
-        //more efficient solution would be to have JS handle the popping and batch update
-        $this->entityManager->flush();
-        return $team_user;
+            //flushing here because this is a mini-form and we want to see the name pop up
+            //more efficient solution would be to have JS handle the popping and batch update
+            $this->entityManager->flush();
+            return $team_user;
+        }
     }
 
-    public function removeTeamUser(int $team, int $user)
+    public function removeTeamUser(int $team_id, int $user)
     {
-        $em = $this->entityManager;
-        $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team, 'user' => $user]);
-        $em->remove($team_user);
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+        } else {
+            $this->messenger()->addError("removed user");
 
-        //flushing here because this is a mini-form and we want to see the name pop up
-        //more efficient solution would be to have JS handle the popping and batch update
-        $em->flush();
+            $em = $this->entityManager;
+            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user' => $user]);
+            $em->remove($team_user);
+
+            //flushing here because this is a mini-form and we want to see the name pop up
+            //more efficient solution would be to have JS handle the popping and batch update
+            $em->flush();
+        }
     }
 
     public function updateRole(int $team_id, int $user_id, int $role_id)
     {
-        $em = $this->entityManager;
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+        } else {
+            $em = $this->entityManager;
+            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user'=>$user_id]);
+            $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
+            $team_user->setRole($user_role);
+            $em->flush();
+        }
 
-        $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user'=>$user_id]);
-        $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
-        $team_user->setRole($user_role);
-
-
-        $em->flush();
     }
 
     public function processItemSets(int $item_set_id)
@@ -226,9 +235,10 @@ class UpdateController extends AbstractActionController
 
     public function teamUpdateAction()
     {
-        $id = $this->params()->fromRoute('id');
+        $team_id = $this->params()->fromRoute('id');
         $team_sites = $this->entityManager
-            ->getRepository('Teams\Entity\TeamSite')->findBy(['team'=>$id]);
+            ->getRepository('Teams\Entity\TeamSite')
+            ->findBy(['team'=>$team_id]);
 
         $current_sites = [];
         $valueOptions = [];
@@ -240,9 +250,6 @@ class UpdateController extends AbstractActionController
         }
 
         $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
-        //this is set to display the teams for the current user. This works in many contexts for
-        //normal users, but not for admins doing maintenance or adding new users to a team
-
         foreach ($all_sites as $site) {
             if ($site->owner()) {
                 $owner = $site->owner()->name();
@@ -277,17 +284,16 @@ class UpdateController extends AbstractActionController
         $form = $this->getForm(TeamUpdateForm::class);
 
         //is a team associated with the id from the route
-        //TODO I'm not sure this is a realist issue
+        //TODO I'm not sure this is a realistic issue
         try {
-            $team = $this->api()->read('team', ['id'=>$id]);
+            $team = $this->api()->read('team', ['id'=>$team_id]);
         } catch (InvalidArgumentException $exception) {
-            //TODO: (error_msg) this should return an error message not silently return to teams page
+            $this->messenger()->addError("There was a problem finding the team.");
             return $this->redirect()->toRoute('admin/teams');
         }
 
         //TODO: get team with a one line entity manager call
-        $criteria = ['id' => $id];
-
+        $criteria = ['id' => $team_id];
         $qb = $this->entityManager->createQueryBuilder();
         $entityClass = 'Teams\Entity\Team';
 
@@ -303,7 +309,7 @@ class UpdateController extends AbstractActionController
         $entity = $qb->getQuery()->getOneOrNullResult();
 
 
-        $data = $this->api()->read('team', ['id'=>$id])->getContent();
+        $data = $this->api()->read('team', ['id'=>$team_id])->getContent();
         $request = new Request('update', 'team');
         $event = new Event('api.hydrate.pre', $this, [
             'entity' => $entity,
@@ -323,7 +329,7 @@ class UpdateController extends AbstractActionController
 
         //get the team's users and put them in an associative array id:name
         $team_u_array = array();
-        $team_u_collection = $this->api()->read('team', ['id'=>$id])->getContent()->users();
+        $team_u_collection = $this->api()->read('team', ['id'=>$team_id])->getContent()->users();
         foreach ($team_u_collection as $team_user):
             $team_u_array[$team_user->getUser()->getId()] = $team_user->getUser()->getName();
         endforeach;
@@ -346,42 +352,45 @@ class UpdateController extends AbstractActionController
         //is it a post request?
         //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
+        $view = new ViewModel(['team'=>$team,
+            'form' => $form,
+            'id'=>$team_id,
+            'roles'=> $roles,
+            'roles_array' => $roles_array,
+            'all_u_collection' => $all_u_collection,
+            'team_u_collection' => $team_u_collection,
+            'team_u_array'=>$team_u_array,
+            'available_u_array'=>$available_u_array,
+            'ident' => $userId,
+            'itemsetForm' => $itemsetForm,
+            'sitesForm' => $sitesForm,
+        ]);
         if (! $request->isPost()) {
-            return new ViewModel(['team'=>$team,
-                'form' => $form,
-                'id'=>$id,
-                'roles'=> $roles,
-                'roles_array' => $roles_array,
-                'all_u_collection' => $all_u_collection,
-                'team_u_collection' => $team_u_collection,
-                'team_u_array'=>$team_u_array,
-                'available_u_array'=>$available_u_array,
-                'ident' => $userId,
-                'itemsetForm' => $itemsetForm,
-                'sitesForm' => $sitesForm,
-            ]);
+            return $view;
         }
-
 
         $em = $this->entityManager;
         $qb = $em->createQueryBuilder();
         $existing_resources = $qb->select('tr')
             ->from('Teams\Entity\TeamResource', 'tr')
             ->where('tr.team = :team_id')
-            ->setParameter('team_id', $id)
+            ->setParameter('team_id', $team_id)
             ->getQuery()
             ->getResult();
 
         $existing_resource_templates = $qb->select('trt')
             ->from('Teams\Entity\TeamResourceTemplate', 'trt')
             ->where('trt.team = :team_id')
-            ->setParameter('team_id', $id)
+            ->setParameter('team_id', $team_id)
             ->getQuery()
             ->getResult();
 
-        if ($request->isPost()) {
+
             $post_data = $request->getPost();
-            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+                $this->messenger()->addError("You aren't authorized to change the team details");
+                return $view;
+            } else {
                 //first update the team name and description
                 $qb = $this->entityManager->createQueryBuilder();
                 $qb->update('Teams\Entity\Team', 'team')
@@ -390,64 +399,69 @@ class UpdateController extends AbstractActionController
                     ->where('team.id = ?3')
                     ->setParameter(1, $post_data['o:name'])
                     ->setParameter(2, $post_data['o:description'])
-                    ->setParameter(3, $id)
+                    ->setParameter(3, $team_id)
                     ->getQuery()
                     ->execute();
-
-            } else {
-                $this->messenger()->addError("You aren't authorized to change the team details");
             }
-
 
             //if they clicked the add user button, just add a member and refresh
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if ($this->teamAuth()->teamAuthorized('update', 'team_user')) {
+            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+                $this->messenger()->addError("You aren't authorized to change this team");
+                return $view;
+            } else {
                 if ($post_data['addUser']) {
-                    $team_id = $id;
                     $user_id = $post_data['add-member'];
                     $role_id = $post_data['member-role'];
                     $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
+                    if (! $newMember){
+                        $this->messenger()->addError("Unable to update team members");
+                        return $view;
+                    }
                     $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
                     $this->messenger()->addSuccess($successMessage);
-
                     return $this->redirect()->refresh();
+
                 }
 
                 //remove all team users and add the ones that are active in the form
-                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
+                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$team_id]);
                 foreach ($team_users as $tu):
                     $em->remove($tu);
                 endforeach;
                 $em->flush();
 
-                $team_id = $id;
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
                 if ($post_data['UserRole']) {
                     foreach ($post_data['UserRole'] as $user_id => $role_id):
                         $user_id = (int) $user_id;
-                    $role_id = (int) $role_id;
-                    if ($post_data['UserCurrent'][$user_id] == 1) {
-                        $current = 1;
-                    } else {
-                        $current = null;
-                    }
-                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+                        $role_id = (int) $role_id;
+                        if ($post_data['UserCurrent'][$user_id] == 1) {
+                            $current = 1;
+                        } else {
+                            $current = null;
+                        }
+                        $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                        $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                    $new_tu = new TeamUser($team, $user, $role);
-                    $new_tu->setCurrent($current);
-                    $em->persist($new_tu);
+                        $new_tu = new TeamUser($team, $user, $role);
+                        $new_tu->setCurrent($current);
+                        $em->persist($new_tu);
                     endforeach;
                     $em->flush();
                 }
             }
 
 
-            if ($this->teamAuth()->teamAuthorized('update', 'team')){
+            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+                $this->messenger()->addError("You aren't authorized to change this team");
+                return $view;
+            } else {
+
                 //first delete then add resources to team
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
                 $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
@@ -471,7 +485,7 @@ class UpdateController extends AbstractActionController
                 //handle removed sites
                 foreach ($current_sites as $site) {
                     if (!in_array($site, $post_data['teamSites']['o:site'])) {
-                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
+                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
                         $request = new Request('delete', 'team_site');
                         $event = new Event('api.hydrate.pre', $this, [
                             'entity' => $ts,
@@ -488,36 +502,6 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addSuccess($successMessage);
 
             return $this->redirect()->refresh();
-        }
-
-
-//        array_search($post_data['add-member-role'], $roles_array);
-
-        return
-            new ViewModel(['team'=>$team,
-            'form' => $form,
-            'id'=>$id,
-            'roles'=> $roles,
-            'roles_array' => $roles_array,
-            'all_u_collection' => $all_u_collection,
-            'team_u_collection' => $team_u_collection,
-            'team_u_array'=>$team_u_array,
-            'available_u_array'=>$available_u_array,
-            'ident' => $userId,
-            'post_data'=>$post_data,
-            'userForm' => $userForm,
-            'itemsetForm' => $itemsetForm,
-            ]);
-
-
-//            $this->redirect()->toRoute('admin/teams/detail/update', ['id'=>$id]);
-
-//        if (!empty($post_data['o:user_add'])){
-//            $this->api()->create('team-user', ['o:user' => $post_data['o:user_add'], 'o:team'=> $id, 'o:role'=>1] );
-//        }
-//        if (!empty($post_data['o:user_remove'])){
-//            $this->api()->delete('team-user', ['user_id' => $post_data['o:user_remove'], 'team_id'=> $id] );
-//        }
     }
 
     public function roleUpdateAction()

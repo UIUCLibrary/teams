@@ -39,15 +39,6 @@ class TrashController extends AbstractActionController
         return ":$placeholder";
     }
 
-//    public function batchDeleteAllAction(){
-//        echo "batch delete all";
-//        return $this->redirect()->toRoute(null, ['action' => 'browse'], true);
-//    }
-//
-//    public function batchDeleteAction(){
-//        echo "you made it";
-//    }
-
     public function indexAction()
     {
         $qb = $this->entityManager->createQueryBuilder();
@@ -98,8 +89,6 @@ class TrashController extends AbstractActionController
             $sort = 'created';
         }
 
-
-
         $qb->select('r_trash')
             ->from('Omeka\Entity\Item ', 'r_trash')
             ->leftJoin(
@@ -112,8 +101,6 @@ class TrashController extends AbstractActionController
             ->orderBy('r_trash.' . $sort, $order);
 
         $orphans =  $qb->getQuery()->getResult();
-
-
         $this->paginator(count($orphans));
 
         $page = $this->params()->fromQuery('page');
@@ -126,16 +113,12 @@ class TrashController extends AbstractActionController
 
         $formDeleteAll = $this->getForm(DeleteAllForm::class);
         $formDeleteAll->setAttribute('action', $this->url()->fromRoute(null, ['action' => 'batch-delete-all'], true));
-        $formDeleteAll->setButtonLabel('Delete All'); // @translate
+        $formDeleteAll->setButtonLabel('Delete All'); 
         $formDeleteAll->setAttribute('id', 'confirm-delete-all');
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
-
         $view = new ViewModel;
         $view->setVariable('orphan', $orphans);
-
-
-
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
 

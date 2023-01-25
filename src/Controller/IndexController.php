@@ -147,8 +147,6 @@ class IndexController extends AbstractActionController
         $super_admin = $this->entityManager->getRepository('Omeka\Entity\User')
             ->findOneBy(['role' => 'global_admin']);
         $user = $this->identity();
-
-
         $view->setVariable('teams', $teams);
         $view->setVariable('super_admin', $super_admin);
         $view->setVariable('user', $user);
@@ -204,17 +202,10 @@ class IndexController extends AbstractActionController
                     }
                     endforeach;
                     $entityManager->flush();
-                    $this->messenger()->addSuccess('Item successfully removed from your team.'); // @translate
-                    $this->messenger()->addSuccess('Item remains available to other teams if they are linked to it.'); // @translate
-                    $this->messenger()->addSuccess('Item will be deleted after x days   '); // @translate
+                    $this->messenger()->addSuccess('Item successfully removed from your team. Item remains available to other teams if they are linked to it.'); // @translate
                 } else {
                     $this->messenger()->addError('something went wrong'); // @translate
                 }
-
-//                $response = $this->api($form)->delete('items', $this->params('id'));
-//                if ($response) {
-//                    $this->messenger()->addSuccess('Item successfully deleted'); // @translate
-//                }
             } else {
                 $this->messenger()->addFormErrors($form);
             }
@@ -314,44 +305,6 @@ class IndexController extends AbstractActionController
         return $view;
     }
 
-    public function teamResources($resource_type, $query, $user_id, $active = true, $team_id = null)
-    {
-        if ($team_id) {
-            $team_entity = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-
-
-
-
-            $q = $this->entityManager->createQuery("SELECT resource FROM Omeka\Entity\Resource resource WHERE resource INSTANCE OF Omeka\Entity\Item");
-            $item_sets = $q->getArrayResult();
-            $team_resources = array();
-            foreach ($team_entity->getTeamResources() as $team_resource):
-                //obv here would be a place where you could just use the discriminator to see if it is an item
-                if (array_search($team_resource->getResource()->getId(), array_column($item_sets, 'id'))) {
-                    $team_resources[] = $team_resource;
-                }
-            endforeach;
-            $per_page = 10;
-            $page = $query['page'];
-            $start_i = ($per_page * $page) - $per_page;
-//            $tr = $team_entity->getTeamResources();
-            $max_i = count($team_resources);
-            if ($max_i < $start_i + $per_page) {
-                $end_i = $max_i;
-            } else {
-                $end_i = $start_i + $per_page;
-            }
-//            $tr = $team_entity->getTeamResources();
-            for ($i = $start_i; $i < $end_i; $i++) {
-                $resources[] = $this->api()->read($resource_type, $team_resources[$i]->getResource()->getId())->getContent();
-            }
-        } else {
-            $team_resources=null;
-        }
-
-        return array('page_resources'=>$resources, 'team_resources'=>$team_resources);
-    }
-
     public function teamDetailAction()
     {
         $view = new ViewModel;
@@ -371,22 +324,20 @@ class IndexController extends AbstractActionController
         foreach ($resources as $key => $resource):
         //I imagine this as like a subquery that gets the list of item ids
             $sub_query = $em->createQueryBuilder();
-        $sub_query->select('r.id')
+            $sub_query->select('r.id')
                 ->from('Omeka\Entity\\' . $resource['entity'], 'r');
 
-        $ids = $sub_query->getQuery()->getArrayResult();
+            $ids = $sub_query->getQuery()->getArrayResult();
 
-        //get the count of the total number of team items
-        $qb = $em->createQueryBuilder();
-
-        $qb->select('count(tr.' . $resource['fk'] . ')')
+            //get the count of the total number of team items
+            $qb = $em->createQueryBuilder();
+            $qb->select('count(tr.' . $resource['fk'] . ')')
                 ->from('Teams\Entity\\' . $resource['team_entity'], 'tr')
                 ->where('tr.team = ?1')
                 ->andWhere('tr.' . $resource['fk'] . ' in (:ids)')
-                ->setParameter('ids', $ids)
-            ;
-        $qb->setParameter(1, $this->params('id'));
-        $resources[$key]['count'] += $qb->getQuery()->getSingleScalarResult();
+                ->setParameter('ids', $ids);
+            $qb->setParameter(1, $this->params('id'));
+            $resources[$key]['count'] += $qb->getQuery()->getSingleScalarResult();
         endforeach;
 
         $view->setVariable('resources', $resources);
@@ -440,13 +391,4 @@ class IndexController extends AbstractActionController
         return $view;
     }
 
-
-    public function usersAction()
-    {
-        $team_users = $this->api()->search('team-user');
-        $users = $this->api()->search('users');
-        $view = new ViewModel(['users'=> $users, 'team_users'=>$team_users]);
-        return $view;
-//        $view->setVariable('response', $response);
-    }
 }
