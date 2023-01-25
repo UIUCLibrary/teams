@@ -250,9 +250,6 @@ class UpdateController extends AbstractActionController
         }
 
         $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
-        //this is set to display the teams for the current user. This works in many contexts for
-        //normal users, but not for admins doing maintenance or adding new users to a team
-
         foreach ($all_sites as $site) {
             if ($site->owner()) {
                 $owner = $site->owner()->name();
@@ -287,17 +284,16 @@ class UpdateController extends AbstractActionController
         $form = $this->getForm(TeamUpdateForm::class);
 
         //is a team associated with the id from the route
-        //TODO I'm not sure this is a realist issue
+        //TODO I'm not sure this is a realistic issue
         try {
             $team = $this->api()->read('team', ['id'=>$team_id]);
         } catch (InvalidArgumentException $exception) {
-            //TODO: (error_msg) this should return an error message not silently return to teams page
+            $this->messenger()->addError("There was a problem finding the team.");
             return $this->redirect()->toRoute('admin/teams');
         }
 
         //TODO: get team with a one line entity manager call
         $criteria = ['id' => $team_id];
-
         $qb = $this->entityManager->createQueryBuilder();
         $entityClass = 'Teams\Entity\Team';
 
