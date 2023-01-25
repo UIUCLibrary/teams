@@ -235,10 +235,10 @@ class UpdateController extends AbstractActionController
 
     public function teamUpdateAction()
     {
-        $id = $this->params()->fromRoute('id');
+        $team_id = $this->params()->fromRoute('id');
         $team_sites = $this->entityManager
             ->getRepository('Teams\Entity\TeamSite')
-            ->findBy(['team'=>$id]);
+            ->findBy(['team'=>$team_id]);
 
         $current_sites = [];
         $valueOptions = [];
@@ -289,14 +289,14 @@ class UpdateController extends AbstractActionController
         //is a team associated with the id from the route
         //TODO I'm not sure this is a realist issue
         try {
-            $team = $this->api()->read('team', ['id'=>$id]);
+            $team = $this->api()->read('team', ['id'=>$team_id]);
         } catch (InvalidArgumentException $exception) {
             //TODO: (error_msg) this should return an error message not silently return to teams page
             return $this->redirect()->toRoute('admin/teams');
         }
 
         //TODO: get team with a one line entity manager call
-        $criteria = ['id' => $id];
+        $criteria = ['id' => $team_id];
 
         $qb = $this->entityManager->createQueryBuilder();
         $entityClass = 'Teams\Entity\Team';
@@ -313,7 +313,7 @@ class UpdateController extends AbstractActionController
         $entity = $qb->getQuery()->getOneOrNullResult();
 
 
-        $data = $this->api()->read('team', ['id'=>$id])->getContent();
+        $data = $this->api()->read('team', ['id'=>$team_id])->getContent();
         $request = new Request('update', 'team');
         $event = new Event('api.hydrate.pre', $this, [
             'entity' => $entity,
@@ -333,7 +333,7 @@ class UpdateController extends AbstractActionController
 
         //get the team's users and put them in an associative array id:name
         $team_u_array = array();
-        $team_u_collection = $this->api()->read('team', ['id'=>$id])->getContent()->users();
+        $team_u_collection = $this->api()->read('team', ['id'=>$team_id])->getContent()->users();
         foreach ($team_u_collection as $team_user):
             $team_u_array[$team_user->getUser()->getId()] = $team_user->getUser()->getName();
         endforeach;
@@ -358,7 +358,7 @@ class UpdateController extends AbstractActionController
         $request = $this->getRequest();
         $view = new ViewModel(['team'=>$team,
             'form' => $form,
-            'id'=>$id,
+            'id'=>$team_id,
             'roles'=> $roles,
             'roles_array' => $roles_array,
             'all_u_collection' => $all_u_collection,
@@ -378,14 +378,14 @@ class UpdateController extends AbstractActionController
         $existing_resources = $qb->select('tr')
             ->from('Teams\Entity\TeamResource', 'tr')
             ->where('tr.team = :team_id')
-            ->setParameter('team_id', $id)
+            ->setParameter('team_id', $team_id)
             ->getQuery()
             ->getResult();
 
         $existing_resource_templates = $qb->select('trt')
             ->from('Teams\Entity\TeamResourceTemplate', 'trt')
             ->where('trt.team = :team_id')
-            ->setParameter('team_id', $id)
+            ->setParameter('team_id', $team_id)
             ->getQuery()
             ->getResult();
 
@@ -403,7 +403,7 @@ class UpdateController extends AbstractActionController
                     ->where('team.id = ?3')
                     ->setParameter(1, $post_data['o:name'])
                     ->setParameter(2, $post_data['o:description'])
-                    ->setParameter(3, $id)
+                    ->setParameter(3, $team_id)
                     ->getQuery()
                     ->execute();
             }
@@ -412,12 +412,11 @@ class UpdateController extends AbstractActionController
             //TODO: return the form as filled out with whatever changes they made or use Ajax
 
             //if they actually click on the add user button
-            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $id)) {
+            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
                 $this->messenger()->addError("You aren't authorized to change this team");
                 return $view;
             } else {
                 if ($post_data['addUser']) {
-                    $team_id = $id;
                     $user_id = $post_data['add-member'];
                     $role_id = $post_data['member-role'];
                     $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
@@ -431,13 +430,12 @@ class UpdateController extends AbstractActionController
                 }
 
                 //remove all team users and add the ones that are active in the form
-                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$id]);
+                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$team_id]);
                 foreach ($team_users as $tu):
                     $em->remove($tu);
                 endforeach;
                 $em->flush();
 
-                $team_id = $id;
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
                 if ($post_data['UserRole']) {
@@ -489,7 +487,7 @@ class UpdateController extends AbstractActionController
                 //handle removed sites
                 foreach ($current_sites as $site) {
                     if (!in_array($site, $post_data['teamSites']['o:site'])) {
-                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$id, 'site'=>$site]);
+                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
                         $request = new Request('delete', 'team_site');
                         $event = new Event('api.hydrate.pre', $this, [
                             'entity' => $ts,
