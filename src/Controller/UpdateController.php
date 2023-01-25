@@ -391,7 +391,7 @@ class UpdateController extends AbstractActionController
 
 
             $post_data = $request->getPost();
-            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user')) {
+            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
                 $this->messenger()->addError("You aren't authorized to change the team details");
                 return $view;
             } else {
