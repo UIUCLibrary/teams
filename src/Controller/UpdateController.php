@@ -74,14 +74,16 @@ class UpdateController extends AbstractActionController
 
     public function updateRole(int $team_id, int $user_id, int $role_id)
     {
-        $em = $this->entityManager;
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+        } else {
+            $em = $this->entityManager;
+            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user'=>$user_id]);
+            $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
+            $team_user->setRole($user_role);
+            $em->flush();
+        }
 
-        $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user'=>$user_id]);
-        $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
-        $team_user->setRole($user_role);
-
-
-        $em->flush();
     }
 
     public function processItemSets(int $item_set_id)
