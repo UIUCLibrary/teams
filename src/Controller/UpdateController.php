@@ -63,15 +63,15 @@ class UpdateController extends AbstractActionController
         }
     }
 
-    public function removeTeamUser(int $team, int $user)
+    public function removeTeamUser(int $team_id, int $user)
     {
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team)){
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
             $this->messenger()->addError("You aren't authorized to change this team");
         } else {
             $this->messenger()->addError("removed user");
 
             $em = $this->entityManager;
-            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team, 'user' => $user]);
+            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user' => $user]);
             $em->remove($team_user);
 
             //flushing here because this is a mini-form and we want to see the name pop up
