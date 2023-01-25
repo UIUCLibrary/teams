@@ -47,29 +47,37 @@ class UpdateController extends AbstractActionController
     public function addTeamUser(int $team_id, int $user_id, int $role_id)
     {
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+            return null;
+        } else {
+            $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
+            $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
+            $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
+            $team_user = new TeamUser($team, $user, $role);
+            $this->entityManager->persist($team_user);
 
+            //flushing here because this is a mini-form and we want to see the name pop up
+            //more efficient solution would be to have JS handle the popping and batch update
+            $this->entityManager->flush();
+            return $team_user;
         }
-        $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
-        $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
-        $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
-        $team_user = new TeamUser($team, $user, $role);
-        $this->entityManager->persist($team_user);
-
-        //flushing here because this is a mini-form and we want to see the name pop up
-        //more efficient solution would be to have JS handle the popping and batch update
-        $this->entityManager->flush();
-        return $team_user;
     }
 
     public function removeTeamUser(int $team, int $user)
     {
-        $em = $this->entityManager;
-        $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team, 'user' => $user]);
-        $em->remove($team_user);
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+        } else {
+            $this->messenger()->addError("removed user");
 
-        //flushing here because this is a mini-form and we want to see the name pop up
-        //more efficient solution would be to have JS handle the popping and batch update
-        $em->flush();
+            $em = $this->entityManager;
+            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team, 'user' => $user]);
+            $em->remove($team_user);
+
+            //flushing here because this is a mini-form and we want to see the name pop up
+            //more efficient solution would be to have JS handle the popping and batch update
+            $em->flush();
+        }
     }
 
     public function updateRole(int $team_id, int $user_id, int $role_id)
@@ -414,10 +422,12 @@ class UpdateController extends AbstractActionController
                     $role_id = $post_data['member-role'];
                     $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
 
-                    $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
-                    $this->messenger()->addSuccess($successMessage);
+                    if ($newMember){
+                        $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
+                        $this->messenger()->addSuccess($successMessage);
+                        return $this->redirect()->refresh();
+                    }
 
-                    return $this->redirect()->refresh();
                 }
 
                 //remove all team users and add the ones that are active in the form
