@@ -60,7 +60,7 @@ echo $this->form()->openTag($form);?>
                 </select>
             </div>
             <div class="input" id="role">
-                <select class="chosen-select" data-placeholder="Username"
+                <select class="chosen-select" data-placeholder="Role"
                         id="new-member-choice" name="member-role" >
                     <?php foreach ($roles as $role):
                         echo '<option value="' .  $role->getId() .'" id="user' . $role->getId() . '">'.  $role->getName() . '</option>';
@@ -132,7 +132,6 @@ echo $this->form()->openTag($form);?>
             <?php else: ?>
                 <div class="-resources">
                     <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                    <!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
                 </div>
             <?php endif; ?>
         </div>
