@@ -1828,7 +1828,7 @@ SQL;
 
                 foreach ($request->getContent()['add_team'] as $team_id) {
                     //if the user is authorized to add items to that team
-                    if ($teamAuth->teamAuthorized('add', 'resource', $team_id)) {
+                    if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                         if ($team) {
                             foreach (array_keys($resource_ids) as $resource_id) {
@@ -1844,7 +1844,7 @@ SQL;
                 $em->flush();
 
                 foreach ($request->getContent()['remove_team'] as $team_id) {
-                    if ($teamAuth->teamAuthorized('delete', 'resource', $team_id)) {
+                    if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
                         foreach (array_keys($resource_ids) as $resource_id) {
                             $team_resource = $em->getRepository('Teams\Entity\TeamResource')
                                     ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
