@@ -61,11 +61,11 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function buildQuery(QueryBuilder $qb, array $query)
     {
-        if (isset($query['id'])) {
+        if (isset($query['team'])) {
             $this->buildQueryValuesItself($qb, $query['team'], 'team');
         }
 
-        if (isset($query['name'])) {
+        if (isset($query['resource'])) {
             $this->buildQueryValuesItself($qb, $query['resource'], 'resource');
         }
 
