@@ -12,19 +12,9 @@ class AddTeam extends AbstractHelper
      */
     public function __invoke()
     {
-        $response = $this->getView()->api()->search('team', ['sort_by' => 'name'])->getContent();
         $user_id = $this->getView()->identity()->getId();
-        $teams = array();
-        foreach ($response as $team):
-
-            foreach ($team->users() as $user):
-                if ($user->getUser()->getId() == $user_id) {
-                    $teams[] = $team;
-                }
-
-        endforeach;
-        endforeach;
-//        $teams = $response->getContent();
+        $response = $this->getView()->api()->search('team', ['team_user' => $user_id]);
+        $teams = $response->getContent();
         return $this->getView()->partial(
             'teams/partial/add-team',
             [
