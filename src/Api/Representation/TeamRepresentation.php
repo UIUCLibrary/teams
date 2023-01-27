@@ -22,7 +22,9 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:id' => $this->id(),
             'o:name' => $this->name(),
             'o:description' => $this->description(),
-            'o:users' => $this->urlEntities('user'),
+            //this will render an admin advanced search query like:
+            //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
+//            'o:users' => $this->urlEntities('user'),
         ];
     }
 
@@ -58,77 +60,6 @@ class TeamRepresentation extends AbstractEntityRepresentation
         return $this->resource->getTeamSites();
     }
 
-//    /**
-//     * Get the resources associated with this team.
-//     *
-//     * @return AbstractResourceEntityRepresentation[]
-//     */
-//    public function resources()
-//    {
-//        $result = [];
-//        $adapter = $this->getAdapter('resources');
-//        // Note: Use a workaround because the reverse doctrine relation cannot
-//        // be set. See the entity.
-//        // TODO Fix entities for many to many relations.
-//        // foreach ($this->resource->getResources() as $entity) {
-//        foreach ($this->resource->getTeamResources() as $teamResourceEntity) {
-//            $entity = $teamResourceEntity->getResource();
-//            $result[$entity->getId()] = $adapter->getRepresentation($entity);
-//        }
-//        return $result;
-//    }
-
-//    /**
-//     * Get the users associated with this team.
-//     *
-//     * @return UserRepresentation[]
-//     */
-//    public function users()
-//    {
-//        $result = [];
-//        $adapter = $this->getAdapter('users');
-//        // Note: Use a workaround because the reverse doctrine relation cannot
-//        // be set. See the entity.
-//        // TODO Fix entities for many to many relations.
-//        // foreach ($this->resource->getUsers() as $entity) {
-//        foreach ($this->resource->getTeamUsers() as $teamUserEntity) {
-//            $entity = $teamUserEntity->getUser();
-//            $result[$entity->getId()] = $adapter->getRepresentation($entity);
-//        }
-//        return $result;
-//    }
-
-//    /**
-//     * Get this team's specific resource count.
-//     *
-//     * @param string $resourceType
-//     * @return int
-//     */
-//    public function count($resourceType = 'resources')
-//    {
-//        if (!isset($this->cacheCounts[$resourceType])) {
-//            $response = $this->getServiceLocator()->get('Omeka\ApiManager')
-//                ->search('team', [
-//                    'id' => $this->id(),
-//                ]);
-//            $this->cacheCounts[$resourceType] = $response->getTotalResults();
-//        }
-//        return $this->cacheCounts[$resourceType];
-//    }
-
-//    public function adminUrl($action = null, $canonical = false)
-//    {
-//        $url = $this->getViewHelper('Url');
-//        return $url(
-//            'admin/team-name',
-//            [
-//                'action' => $action ?: 'show',
-//                'name' => $this->name(),
-//            ],
-//            ['force_canonical' => $canonical]
-//        );
-//    }
-//
     /**
      * Return the admin URL to the resource browse page for the team.
      *
