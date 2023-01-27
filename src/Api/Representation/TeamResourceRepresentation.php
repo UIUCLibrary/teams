@@ -35,4 +35,9 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
     {
         return $this->resource->getResource()->getId();
     }
+
+    public function id()
+    {
+        return $this->team() . '-' . $this->resource();
+    }
 }
