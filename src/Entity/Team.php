@@ -144,6 +144,17 @@ class Team extends AbstractEntity
      */
     protected $team_sites;
 
+
+    /**
+     * @var ArrayCollection|TeamAsset[]
+     * @OneToMany(
+     *     targetEntity="Teams\Entity\TeamAsset",
+     *     mappedBy="team",
+     *     cascade={"persist", "remove"}
+     * )
+     */
+    protected $team_assets;
+
     /* *
      *
      * Many Teams have Many Resources.
@@ -298,6 +309,11 @@ class Team extends AbstractEntity
     public function getSites()
     {
         return $this->sites;
+    }
+
+    public function getTeamAssets()
+    {
+        return $this->team_assets;
     }
 
 

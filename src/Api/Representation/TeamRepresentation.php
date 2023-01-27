@@ -20,8 +20,11 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:id' => $this->id(),
             'o:name' => $this->name(),
             'o:description' => $this->description(),
-            'o:sites' => $this->sites(),
-            'o:resources' => $this->resources(),
+            'o:team-sites' => $this->sites(),
+            'o:team-resources' => $this->resources(),
+            'o:team-users' => $this->users(),
+            'o:team-resource-templates' => $this->resouseTemplates(),
+            'o:team-assets' => $this->assets()
             //this will render an admin advanced search query like:
             //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
             //'o:users' => $this->urlEntities('user'),
@@ -45,10 +48,14 @@ class TeamRepresentation extends AbstractEntityRepresentation
 
     public function users()
     {
-
-        return $this->resource->getTeamUsers();
+        $users = [];
+        $userAdapter = $this->getAdapter('users');
+        foreach ($this->resource->getTeamUsers() as $teamUserEntity) {
+            $userEntity = $teamUserEntity->getUser();
+            $users[] = $userAdapter->getRepresentation($userEntity);
+        }
+        return $users;
     }
-
 
     public function resources()
     {
@@ -70,6 +77,29 @@ class TeamRepresentation extends AbstractEntityRepresentation
             $sites[] = $siteAdapter->getRepresentation($siteEntity);
         }
         return $sites;
+    }
+
+    public function resouseTemplates()
+    {
+        $templates = [];
+        $templateAdapter = $this->getAdapter('resource_templates');
+        foreach ($this->resource->getTeamResourceTemplates() as $teamTemplateEntity) {
+            $templateEntity = $teamTemplateEntity->getResourceTemplate();
+            $templates[] = $templateAdapter->getRepresentation($templateEntity);
+        }
+        return $templates;
+
+    }
+
+    public function assets()
+    {
+        $assets = [];
+        $assetAdapter = $this->getAdapter('assets');
+        foreach ($this->resource->getTeamAssets() as $teamAssetEntity) {
+            $assetEntity = $teamAssetEntity->getAsset();
+            $assets[] = $assetAdapter->getRepresentation($assetEntity);
+        }
+        return $assets;
     }
 
     /**
