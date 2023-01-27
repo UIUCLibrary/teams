@@ -204,16 +204,27 @@ class UpdateController extends AbstractActionController
             foreach ($resource_array as $resource_id => $value):
                 $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
                     ->findOneBy(['id'=>$resource_id]);
-                $team_resource = new TeamResource($team, $resource);
-                $this->entityManager->persist($team_resource);
+                if ($resource) {
+                    $team_resource = new TeamResource($team, $resource);
+                    $this->entityManager->persist($team_resource);
+                } else {
+                    $this->logger()->err('The team resource could not be generated for this request because the resource could not be found');
+                }
+
             endforeach;
 
             //add the resource templates to the team
             foreach ($resource_template_array as $resource_id => $value):
                 $resource = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
                     ->findOneBy(['id'=>$resource_id]);
-                $team_resource = new TeamResourceTemplate($team, $resource);
-                $this->entityManager->persist($team_resource);
+                if ($resource) {
+                    $team_resource = new TeamResourceTemplate($team, $resource);
+                    $this->entityManager->persist($team_resource);
+                } else {
+                    $this->logger()->err('The team resource template could not be generated for this request because the resource template could not be found');
+
+                }
+
             endforeach;
 
             //add assets to the team
