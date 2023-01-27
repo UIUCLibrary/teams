@@ -23,7 +23,7 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:team-sites' => $this->sites(),
             'o:team-resources' => $this->resources(),
             'o:team-users' => $this->users(),
-            'o:team-resource-templates' => $this->resouseTemplates(),
+            'o:team-resource-templates' => $this->resourseTemplates(),
             'o:team-assets' => $this->assets()
             //this will render an admin advanced search query like:
             //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
@@ -79,7 +79,7 @@ class TeamRepresentation extends AbstractEntityRepresentation
         return $sites;
     }
 
-    public function resouseTemplates()
+    public function resourseTemplates()
     {
         $templates = [];
         $templateAdapter = $this->getAdapter('resource_templates');
