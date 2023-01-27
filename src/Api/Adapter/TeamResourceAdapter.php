@@ -6,7 +6,9 @@ namespace Teams\Api\Adapter;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Laminas\EventManager\Event;
+use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
+use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
@@ -75,10 +77,47 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             ));        }
 
     }
+    public function buildBaseQuery(QueryBuilder $qb, array $query)
+    {
+        if (isset($query['id'])) {
+            echo $query['id'];
+            $ids = $query['id'];
+            if (!is_array($ids)) {
+                $ids = [$ids];
+            }
+            // Exclude null and empty-string ids. Previous resource-only version used
+            // is_numeric, but we want this to be able to work for possible string IDs
+            // also
+            $ids = array_filter($ids, function ($id) {
+                return !($id === null || $id === '');
+            });
+            if ($ids) {
+                $qb->andWhere($qb->expr()->in(
+                    'omeka_root.id',
+                    $this->createNamedParameter($qb, $ids)
+                ));
+            }
+        }
+    }
+
 
     public function search(Request $request)
     {
+        $search_fields = array();
+        $group_by = 'team'; //default order by
         $query = $request->getContent();
+
+        if ( array_key_exists('team', $query) ) {
+            $search_fields['team'] = $query['team'];
+            $group_by = 'resource';
+        } elseif (array_key_exists('resource', $query)) {
+            $search_fields['resource'] = $query['resource'];
+        } else {
+            throw new Exception\BadRequestException(sprintf(
+                $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),
+                $this->getEntityClass()
+            ));
+        }
 
         // Set default query parameters
         if (!isset($query['page'])) {
@@ -115,9 +154,16 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             ->createQueryBuilder()
             ->select('omeka_root')
             ->from($entityClass, 'omeka_root');
+
+            foreach ($search_fields as $field => $value) {
+                $qb->andWhere($qb->expr()->eq(
+                    "omeka_root.$field",
+                    $this->createNamedParameter($qb, $value)
+                ));
+            }
         $this->buildBaseQuery($qb, $query);
         $this->buildQuery($qb, $query);
-        $qb->groupBy("omeka_root.team");
+        $qb->groupBy("omeka_root." . $group_by);
 
         // Trigger the search.query event.
         $event = new Event('api.search.query', $this, [
@@ -198,15 +244,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function read(Request $request)
     {
-
-        $entity = $this->findEntity(['team'=>1, 'resource'=>1074], $request);
-        $this->authorize($entity, Request::READ);
-        $event = new Event('api.find.post', $this, [
-            'entity' => $entity,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
-        return new Response($entity);
+        AbstractAdapter::read($request);
     }
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
