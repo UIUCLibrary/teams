@@ -17,10 +17,11 @@ $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'items edit');
 
 $sectionNavs = [
-'team-info' => $translate('Info'),
-'team-members' => $translate('Users'),
-'team-resources' => $translate('Resources'),
-'team-sites' => $translate('Sites')
+    'team-info' => $translate('Info'),
+    'team-members' => $translate('Users'),
+    'team-resources' => $translate('Resources'),
+    'team-sites' => $translate('Sites'),
+//    'team-assets' => $translate('Assets')
 ];
 ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
@@ -60,7 +61,7 @@ echo $this->form()->openTag($form);?>
                 </select>
             </div>
             <div class="input" id="role">
-                <select class="chosen-select" data-placeholder="Username"
+                <select class="chosen-select" data-placeholder="Role"
                         id="new-member-choice" name="member-role" >
                     <?php foreach ($roles as $role):
                         echo '<option value="' .  $role->getId() .'" id="user' . $role->getId() . '">'.  $role->getName() . '</option>';
@@ -109,7 +110,6 @@ echo $this->form()->openTag($form);?>
                             </td>
                             <td>
                                 <fieldset name="user-roles" id="user-roles">
-<!--                                    <a class="o-icon-edit"></a>-->
                                     <select  id="UserRole[<?php echo $user_id?>]" name="<?php echo sprintf('UserRole[%s]', $user_id)?>">
                                         <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
                                         <?php foreach ($this->roles as $role):
@@ -132,7 +132,6 @@ echo $this->form()->openTag($form);?>
             <?php else: ?>
                 <div class="-resources">
                     <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                    <!--            <a href="--><?// echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?><!--">Add a Resource</a>-->
                 </div>
             <?php endif; ?>
         </div>
@@ -181,7 +180,5 @@ echo $this->form()->openTag($form);?>
         <p>You are only authorized to Manage Team Users</p>
     </div>
 <?php endif; ?>
-<?php
-echo $this->form()->closeTag();
-?>
+<?php echo $this->form()->closeTag(); ?>
 
