@@ -4,20 +4,11 @@ namespace Teams\Api\Adapter;
 use Doctrine\ORM\QueryBuilder;
 use Teams\Api\Representation\TeamRepresentation;
 use Teams\Entity\Team;
-use Teams\Entity\TeamRole;
-use Teams\Entity\TeamUser;
-use Teams\Entity\TeamResource;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
-use Omeka\Entity\Item;
-use Omeka\Entity\ItemSet;
-use Omeka\Entity\Media;
-use Omeka\Entity\Resource;
-use Omeka\Entity\User;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
-use Laminas\Validator\EmailAddress;
 
 class TeamAdapter extends AbstractEntityAdapter
 {
@@ -72,106 +63,6 @@ class TeamAdapter extends AbstractEntityAdapter
         if (isset($query['description'])) {
             $this->buildQueryValuesItself($qb, $query['description'], 'description');
         }
-//
-//        // All teams for these entities ("OR"). If multiple, mixed with "AND",
-//        // so, for mixed resources, use "resource_id".
-//        $mapResourceTypes = [
-//            'user_id' => User::class,
-//            'resource_id' => Resource::class,
-//            'item_set_id' => ItemSet::class,
-//            'item_id' => Item::class,
-//            'media_id' => Media::class,
-//        ];
-//        $subQueryKeys = array_intersect_key($mapResourceTypes, $query);
-//        foreach ($subQueryKeys as $queryKey => $resourceType) {
-//            if ($queryKey === 'user_id') {
-//                $teamEntity = TeamUser::class;
-//                $teamEntityColumn = 'user';
-//            } else {
-//                $teamEntity = TEamResource::class;
-//                $teamEntityColumn = 'resource';
-//            }
-//            $entities = is_array($query[$queryKey]) ? $query[$queryKey] : [$query[$queryKey]];
-//            $entities = array_filter($entities, 'is_numeric');
-//            if (empty($entities)) {
-//                continue;
-//            }
-//            $teamEntityAlias = $this->createAlias();
-//            $entityAlias = $this->createAlias();
-//            $qb
-//                // Note: This query may be used if the annotation is set in
-//                // core on Resource. In place, the relation is recreated.
-//                // ->innerJoin(
-//                //     $this->getEntityClass() . ($queryKey === 'user_id' ?  '.users' : '.resources'),
-//                //     $entityAlias, 'WITH',
-//                //     $qb->expr()->in("$entityAlias.id", $this->createNamedParameter($qb, $entities))
-//                // );
-//                ->innerJoin(
-//                    $teamEntity,
-//                    $teamEntityAlias,
-//                    'WITH',
-//                    $qb->expr()->andX(
-//                        $qb->expr()->eq($teamEntityAlias . '.team', $this->getEntityClass() . '.id'),
-//                        $qb->expr()->in(
-//                            $teamEntityAlias . '.' . $teamEntityColumn,
-//                            $this->createNamedParameter($qb, $entities)
-//                        )
-//                    )
-//                );
-//            // This check avoids bad result for bad request mixed ids.
-//            if (!in_array($queryKey, ['user_id', 'resource_id'])) {
-//                $resourceAlias = $this->createAlias();
-//                $qb
-//                    ->innerJoin(
-//                        $resourceType,
-//                        $resourceAlias,
-//                        'WITH',
-//                        $qb->expr()->eq(
-//                            $teamEntityAlias . '.resource',
-//                            $resourceAlias . '.id'
-//                        )
-//                    );
-//            }
-//        }
-//
-//        if (array_key_exists('resource_type', $query)) {
-//            $mapResourceTypes = [
-//                'users' => User::class,
-//                'resources' => Resource::class,
-//                'item_sets' => ItemSet::class,
-//                'items' => Item::class,
-//                'media' => Media::class,
-//            ];
-//            if (isset($mapResourceTypes[$query['resource_type']])) {
-//                $entityJoinClass = $query['resource_type'] === 'users'
-//                    ? TeamUser::class
-//                    : TeamResource::class;
-//                $entityJoinAlias = $this->createAlias();
-//                $qb
-//                    ->linnerJoin(
-//                        $entityJoinClass,
-//                        $entityJoinAlias,
-//                        'WITH',
-//                        $qb->expr()->eq($entityJoinAlias . '.team', Team::class)
-//                    );
-//                if (!in_array($query['resource_type'], ['users', 'resources'])) {
-//                    $entityAlias = $this->createAlias();
-//                    $qb
-//                        ->innerJoin(
-//                            $mapResourceTypes[$query['resource_type']],
-//                            $entityAlias,
-//                            'WITH',
-//                            $qb->expr()->eq(
-//                                $entityJoinClass . '.resource',
-//                                $entityAlias . '.id'
-//                            )
-//                        );
-//                }
-//            } elseif ($query['resource_type'] !== '') {
-//                $qb
-//                    ->andWhere('1 = 0');
-//            }
-//        }
     }
 
     public function sortQuery(QueryBuilder $qb, array $query)

@@ -1,6 +1,4 @@
 <?php
-
-
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
@@ -77,6 +75,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             ));        }
 
     }
+
     public function buildBaseQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['id'])) {
@@ -99,7 +98,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             }
         }
     }
-
 
     public function search(Request $request)
     {
@@ -254,6 +252,5 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             $result = $this->validateName($data['o:name'], $errorStore);
         }
     }
-
 
 }
