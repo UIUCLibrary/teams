@@ -118,6 +118,7 @@ class AddController extends AbstractActionController
 
             $resource_array = array();
             $resource_template_array = array();
+            $asset_array = array();
             if (isset($request->getPost('itemset')['itemset']['o:itemset'])) {
                 foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
                     if ((int)$item_set_id > 0) {
@@ -149,9 +150,9 @@ class AddController extends AbstractActionController
                         //add all of that users items and their media
                         foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $item):
                             $resource_array[$item->id()] = true;
-                        foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
-                        endforeach;
+                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
+                                    $resource_array[$media->id()] = true;
+                            endforeach;
                         endforeach;
 
                         //add all of that user's item sets
@@ -159,10 +160,18 @@ class AddController extends AbstractActionController
                             $resource_array[$itemset->id()] = true;
                         endforeach;
 
+                        //add all of that user's resource templates
                         $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner' => $user_id]);
                         foreach ($rts as $rt):
                             $resource_template_array[$rt->getId()] = true;
                         endforeach;
+
+                        //add all fo that user's assets
+                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id])
+                            foreach ($assets as $asset):
+                                $asset_array[$asset->getId()] = true;
+                            endforeach;
+
                     }
                 endforeach;
             }
