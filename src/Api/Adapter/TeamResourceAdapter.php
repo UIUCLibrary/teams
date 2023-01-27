@@ -62,12 +62,17 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     public function buildQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['team'])) {
-            $this->buildQueryValuesItself($qb, $query['team'], 'team');
+            $qb->andWhere($qb->expr()->eq(
+                'omeka_root' . '.' . 'team',
+                $this->createNamedParameter($qb, $query['team'])
+            ));
         }
 
         if (isset($query['resource'])) {
-            $this->buildQueryValuesItself($qb, $query['resource'], 'resource');
-        }
+            $qb->andWhere($qb->expr()->eq(
+                'omeka_root' . '.' . 'resource',
+                $this->createNamedParameter($qb, $query['resource'])
+            ));        }
 
     }
 
