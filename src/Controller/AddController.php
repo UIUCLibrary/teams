@@ -8,6 +8,7 @@ use Omeka\Form\ResourceForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
 use phpDocumentor\Reflection\Types\This;
+use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
@@ -188,10 +189,18 @@ class AddController extends AbstractActionController
             foreach (array_keys($resource_template_array) as $rt_id):
                 $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
                     ->findOneBy(['id' => $rt_id]);
-            $team_rt = new TeamResourceTemplate($team, $resource_template);
-            $this->entityManager->persist($team_rt);
+                $team_rt = new TeamResourceTemplate($team, $resource_template);
+                $this->entityManager->persist($team_rt);
             endforeach;
             $this->entityManager->flush();
+
+            //persist the assets
+            foreach (array_keys($asset_array) as $asset_id):
+                $asset = $this->entityManager->getRepository('Omeka\Entity\Asset')
+                    ->findOneBy(['id' => $asset_id]);
+                $team_asset = new TeamAsset($team, $asset);
+                $this->entityManager->persist($team_asset);
+            endforeach;
 
             //persist the sites (no possibility of duplicates, so don't need to save to associative array)
             if (isset($request->getPost('site')['site']['o:site'])) {
