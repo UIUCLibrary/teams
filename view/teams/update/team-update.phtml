@@ -21,7 +21,7 @@ $sectionNavs = [
     'team-members' => $translate('Users'),
     'team-resources' => $translate('Resources'),
     'team-sites' => $translate('Sites'),
-    'team-assets' => $translate('Assets')
+//    'team-assets' => $translate('Assets')
 ];
 ?>
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav'); ?>
@@ -180,27 +180,5 @@ echo $this->form()->openTag($form);?>
         <p>You are only authorized to Manage Team Users</p>
     </div>
 <?php endif; ?>
-<?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
-    <div id="team-assets" class="section">
-        <div class="selection-criteria">
-            <div class="select-by-item-set-content">
-                <?php
-                $assetForm = $this->assetForm;
-                $fs = $assetForm->getFieldsets();
-                $fs['teamAssets']->setLabel('Add Assets by Owner');
-                $assetForm->prepare();
-                echo $this->form()->openTag($assetForm);
-                echo $this->formCollection($assetForm);
-                echo $this->form()->closeTag($assetForm)
-                ?>
-            </div>
-        </div>
-    </div>
-<?php else: ?>
-    <div id="team-assets" class="section">
-        <p>You are only authorized to Manage Team Users</p>
-    </div>
-<?php endif; ?>
-
 <?php echo $this->form()->closeTag(); ?>
 
