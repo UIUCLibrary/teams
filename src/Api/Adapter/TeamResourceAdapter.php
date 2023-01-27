@@ -193,6 +193,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function read(Request $request)
     {
+
         $entity = $this->findEntity(['team'=>1, 'resource'=>1074], $request);
         $this->authorize($entity, Request::READ);
         $event = new Event('api.find.post', $this, [
@@ -202,5 +203,14 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         $this->getEventManager()->triggerEvent($event);
         return new Response($entity);
     }
+
+    public function validateRequest(Request $request, ErrorStore $errorStore)
+    {
+        $data = $request->getContent();
+        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
+            $result = $this->validateName($data['o:name'], $errorStore);
+        }
+    }
+
 
 }
