@@ -134,51 +134,6 @@ class TeamRoleAdapter extends AbstractEntityAdapter
     }
 
 
-
-    /////3 ifs permit single return via specified column
-//    public function buildQuery(QueryBuilder $qb, array $query)
-//    {
-//        if (isset($query['id'])) {
-//            $this->buildQueryValuesItself($qb, $query['id'], 'id');
-//        }
-//
-//        if (isset($query['o:name'])) {
-//            $this->buildQueryValuesItself($qb, $query['o:name'], 'o:name');
-//        }
-//
-//        if (isset($query['description'])) {
-//            $this->buildQueryValuesItself($qb, $query['description'], 'description');
-//        }
-//
-//    }
-
-//    public function sortQuery(QueryBuilder $qb, array $query)
-//    {
-//        if (is_string($query['sort_by'])) {
-//            // TODO Use Doctrine native queries (here: ORM query builder).
-//            switch ($query['sort_by']) {
-//                // TODO Sort by count.
-//                case 'count':
-//                    break;
-//                // TODO Sort by user ids.
-//                case 'users':
-//                    break;
-//                // TODO Sort by resource ids.
-//                case 'resources':
-//                case 'item_sets':
-//                case 'items':
-//                case 'media':
-//                    break;
-//                case 'team':
-//                    $query['sort_by'] = 'o:name';
-//                // No break.
-//                default:
-//                    parent::sortQuery($qb, $query);
-//                    break;
-//            }
-//        }
-//    }
-
     /**
      * Returns a sanitized string.
      *
