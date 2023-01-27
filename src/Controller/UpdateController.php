@@ -5,6 +5,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
 use Omeka\Api\Request;
+use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
@@ -117,10 +118,11 @@ class UpdateController extends AbstractActionController
         return $resource_array;
     }
 
-    public function processResources($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false)
+    public function processResources($request, $team, $existing_resources, $existing_resources_templates, $existing_assets, bool $delete = false)
     {
         $resource_array = array();
         $resource_template_array = array();
+        $asset_array = array();
 
 
         if ($delete == false) {
@@ -139,7 +141,7 @@ class UpdateController extends AbstractActionController
         //get ids of things the user owns
         if (isset($request->getPost($collection)['o:user'])) {
             foreach ($request->getPost($collection)['o:user'] as $user_id):
-                    if ((int)$user_id>0) {
+                    if ((int)$user_id > 0) {
                         $user_id = (int)$user_id;
                         foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter'=>true])->getContent() as $item):
 
@@ -161,6 +163,12 @@ class UpdateController extends AbstractActionController
                         foreach ($rts as $rt):
                             $resource_template_array[$rt->getId()] = true;
                         endforeach;
+
+                        //also get the user's assets
+                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id]);
+                        foreach ($assets as $asset):
+                            $asset_array[$asset->getId()] = true;
+                        endforeach;
                     }
             endforeach;
         }
@@ -171,33 +179,55 @@ class UpdateController extends AbstractActionController
             //resources remove existing from the add list
             foreach ($existing_resources as $resource):
                     $rid = $resource->getResource()->getId();
-            if (array_key_exists($rid, $resource_array)) {
-                unset($resource_array[$rid]);
-            }
+                if (array_key_exists($rid, $resource_array)) {
+                    unset($resource_array[$rid]);
+                }
             endforeach;
 
             //resource templates remove existing from the add list
             foreach ($existing_resources_templates as $resource):
                     $rid = $resource->getResourceTemplate()->getId();
-            if (array_key_exists($rid, $resource_template_array)) {
-                unset($resource_template_array[$rid]);
-            }
+                if (array_key_exists($rid, $resource_template_array)) {
+                    unset($resource_template_array[$rid]);
+                }
+            endforeach;
+
+            //assets remove existing from the add list
+            foreach ($existing_assets as $asset):
+                $asset_id = $asset->getAsset()->getId();
+                if (array_key_exists($asset_id, $asset_array)) {
+                    unset($asset_array[$asset_id]);
+                }
             endforeach;
 
             //add the resources to the team
             foreach ($resource_array as $resource_id => $value):
-                    $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                        ->findOneBy(['id'=>$resource_id]);
-            $team_resource = new TeamResource($team, $resource);
-            $this->entityManager->persist($team_resource);
+                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
+                    ->findOneBy(['id'=>$resource_id]);
+                $team_resource = new TeamResource($team, $resource);
+                $this->entityManager->persist($team_resource);
             endforeach;
 
             //add the resource templates to the team
             foreach ($resource_template_array as $resource_id => $value):
-                    $resource = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
-                        ->findOneBy(['id'=>$resource_id]);
-            $team_resource = new TeamResourceTemplate($team, $resource);
-            $this->entityManager->persist($team_resource);
+                $resource = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
+                    ->findOneBy(['id'=>$resource_id]);
+                $team_resource = new TeamResourceTemplate($team, $resource);
+                $this->entityManager->persist($team_resource);
+            endforeach;
+
+            //add assets to the team
+            foreach ($asset_array as $asset_id => $value):
+                $asset = $this->entityManager->getRepository('Omeka\Entity\Asset')
+                    ->findOneBy(['id' => $asset_id]);
+                if ($asset) {
+                    $team_asset = new TeamAsset($team, $asset);
+                    $this->entityManager->persist($team_asset);
+                } else {
+                    $this->logger()->err('The team asset could not be generated for this request because the asset could not be found');
+                }
+
+
             endforeach;
 
             $this->entityManager->flush();
@@ -220,9 +250,22 @@ class UpdateController extends AbstractActionController
             }
             endforeach;
             $this->entityManager->flush();
+
+            //remove assets
+            foreach (array_keys($asset_array) as $asset_id):
+                $team_asset = $this->entityManager->getRepository('Teams\Entity\TeamAsset')
+                    ->findOneBy(['asset'=>$asset_id, 'team'=>$team]);
+                if ($team_asset) {
+                    $this->entityManager->remove($team_asset);
+                }
+            endforeach;
         }
     }
 
+    public function processAssets($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false)
+    {
+
+    }
     public function tempteamUpdateAction()
     {
         $id = $this->params()->fromRoute('id');
@@ -385,123 +428,130 @@ class UpdateController extends AbstractActionController
             ->getQuery()
             ->getResult();
 
+        $existing_assets = $qb->select('ta')
+            ->from('Teams\Entity\TeamAsset', 'ta')
+            ->where('ta.team = :team_id')
+            ->setParameter('team_id', $team_id)
+            ->getQuery()
+            ->getResult();
 
-            $post_data = $request->getPost();
-            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
-                $this->messenger()->addError("You aren't authorized to change the team details");
-                return $view;
-            } else {
-                //first update the team name and description
-                $qb = $this->entityManager->createQueryBuilder();
-                $qb->update('Teams\Entity\Team', 'team')
-                    ->set('team.name', '?1')
-                    ->set('team.description', '?2')
-                    ->where('team.id = ?3')
-                    ->setParameter(1, $post_data['o:name'])
-                    ->setParameter(2, $post_data['o:description'])
-                    ->setParameter(3, $team_id)
-                    ->getQuery()
-                    ->execute();
+
+        $post_data = $request->getPost();
+        if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+            $this->messenger()->addError("You aren't authorized to change the team details");
+            return $view;
+        } else {
+            //first update the team name and description
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->update('Teams\Entity\Team', 'team')
+                ->set('team.name', '?1')
+                ->set('team.description', '?2')
+                ->where('team.id = ?3')
+                ->setParameter(1, $post_data['o:name'])
+                ->setParameter(2, $post_data['o:description'])
+                ->setParameter(3, $team_id)
+                ->getQuery()
+                ->execute();
+        }
+
+        //if they clicked the add user button, just add a member and refresh
+        //TODO: return the form as filled out with whatever changes they made or use Ajax
+
+        //if they actually click on the add user button
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+            $this->messenger()->addError("You aren't authorized to change this team");
+            return $view;
+        } else {
+            if ($post_data['addUser']) {
+                $user_id = $post_data['add-member'];
+                $role_id = $post_data['member-role'];
+                $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
+
+                if (! $newMember){
+                    $this->messenger()->addError("Unable to update team members");
+                    return $view;
+                }
+                $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
+                $this->messenger()->addSuccess($successMessage);
+                return $this->redirect()->refresh();
+
             }
 
-            //if they clicked the add user button, just add a member and refresh
-            //TODO: return the form as filled out with whatever changes they made or use Ajax
+            //remove all team users and add the ones that are active in the form
+            $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$team_id]);
+            foreach ($team_users as $tu):
+                $em->remove($tu);
+            endforeach;
+            $em->flush();
 
-            //if they actually click on the add user button
-            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
-                $this->messenger()->addError("You aren't authorized to change this team");
-                return $view;
-            } else {
-                if ($post_data['addUser']) {
-                    $user_id = $post_data['add-member'];
-                    $role_id = $post_data['member-role'];
-                    $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
-                    if (! $newMember){
-                        $this->messenger()->addError("Unable to update team members");
-                        return $view;
+            if ($post_data['UserRole']) {
+                foreach ($post_data['UserRole'] as $user_id => $role_id):
+                    $user_id = (int) $user_id;
+                    $role_id = (int) $role_id;
+                    if ($post_data['UserCurrent'][$user_id] == 1) {
+                        $current = 1;
+                    } else {
+                        $current = null;
                     }
-                    $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
-                    $this->messenger()->addSuccess($successMessage);
-                    return $this->redirect()->refresh();
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
+                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
 
-                }
-
-                //remove all team users and add the ones that are active in the form
-                $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$team_id]);
-                foreach ($team_users as $tu):
-                    $em->remove($tu);
+                    $new_tu = new TeamUser($team, $user, $role);
+                    $new_tu->setCurrent($current);
+                    $em->persist($new_tu);
                 endforeach;
                 $em->flush();
+            }
+        }
 
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
 
-                if ($post_data['UserRole']) {
-                    foreach ($post_data['UserRole'] as $user_id => $role_id):
-                        $user_id = (int) $user_id;
-                        $role_id = (int) $role_id;
-                        if ($post_data['UserCurrent'][$user_id] == 1) {
-                            $current = 1;
-                        } else {
-                            $current = null;
-                        }
-                        $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                        $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
+        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
+            $this->messenger()->addError("You aren't authorized to change this team");
+            return $view;
+        } else {
 
-                        $new_tu = new TeamUser($team, $user, $role);
-                        $new_tu->setCurrent($current);
-                        $em->persist($new_tu);
-                    endforeach;
-                    $em->flush();
+            //first delete then add resources to team
+            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, $existing_assets, true);
+            $this->processResources($request, $team, $existing_resources, $existing_resource_templates, $existing_assets, false);
+
+            //handle new sites
+            foreach ($post_data['teamSites']['o:site'] as $site) {
+                if (!in_array($site, $current_sites)) {
+                    $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
+                    $ts = new TeamSite($team, $site);
+                    $request = new Request('create', 'team_site');
+                    $event = new Event('api.hydrate.pre', $this, [
+                        'entity' => $ts,
+                        'request' => $request,
+                    ]);
+                    $this->getEventManager()->triggerEvent($event);
+
+                    $em->persist($ts);
                 }
             }
 
-
-            if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
-                $this->messenger()->addError("You aren't authorized to change this team");
-                return $view;
-            } else {
-
-                //first delete then add resources to team
-                $this->processResources($request, $team, $existing_resources, $existing_resource_templates, true);
-                $this->processResources($request, $team, $existing_resources, $existing_resource_templates, false);
-
-                //handle new sites
-                foreach ($post_data['teamSites']['o:site'] as $site) {
-                    if (!in_array($site, $current_sites)) {
-                        $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
-                        $ts = new TeamSite($team, $site);
-                        $request = new Request('create', 'team_site');
-                        $event = new Event('api.hydrate.pre', $this, [
-                            'entity' => $ts,
-                            'request' => $request,
-                        ]);
-                        $this->getEventManager()->triggerEvent($event);
-
-                        $em->persist($ts);
-                    }
+            //handle removed sites
+            foreach ($current_sites as $site) {
+                if (!in_array($site, $post_data['teamSites']['o:site'])) {
+                    $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
+                    $request = new Request('delete', 'team_site');
+                    $event = new Event('api.hydrate.pre', $this, [
+                        'entity' => $ts,
+                        'request' => $request,
+                    ]);
+                    $this->getEventManager()->triggerEvent($event);
+                    $em->remove($ts);
                 }
-
-                //handle removed sites
-                foreach ($current_sites as $site) {
-                    if (!in_array($site, $post_data['teamSites']['o:site'])) {
-                        $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
-                        $request = new Request('delete', 'team_site');
-                        $event = new Event('api.hydrate.pre', $this, [
-                            'entity' => $ts,
-                            'request' => $request,
-                        ]);
-                        $this->getEventManager()->triggerEvent($event);
-                        $em->remove($ts);
-                    }
-                }
-                $em->flush();
             }
+            $em->flush();
+        }
 
-            $successMessage = sprintf("Successfully updated the %s team", $team->getName());
-            $this->messenger()->addSuccess($successMessage);
+        $successMessage = sprintf("Successfully updated the %s team", $team->getName());
+        $this->messenger()->addSuccess($successMessage);
 
-            return $this->redirect()->refresh();
+        return $this->redirect()->refresh();
     }
 
     public function roleUpdateAction()
