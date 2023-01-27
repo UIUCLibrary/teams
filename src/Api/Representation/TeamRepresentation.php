@@ -2,8 +2,6 @@
 namespace Teams\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
-use Omeka\Api\Representation\UserRepresentation;
 
 //legacy from deciding how much of the module to expose to the API
 /**
@@ -22,9 +20,10 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:id' => $this->id(),
             'o:name' => $this->name(),
             'o:description' => $this->description(),
+            'o:sites' => $this->sites(),
             //this will render an admin advanced search query like:
             //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
-//            'o:users' => $this->urlEntities('user'),
+            //'o:users' => $this->urlEntities('user'),
         ];
     }
 
@@ -57,7 +56,13 @@ class TeamRepresentation extends AbstractEntityRepresentation
 
     public function sites()
     {
-        return $this->resource->getTeamSites();
+        $sites = [];
+        $siteAdapter = $this->getAdapter('sites');
+        foreach ($this->resource->getTeamSites() as $teamSiteEntity) {
+            $siteEntity = $teamSiteEntity->getSite();
+            $sites[] = $siteAdapter->getRepresentation($siteEntity);
+        }
+        return $sites;
     }
 
     /**
