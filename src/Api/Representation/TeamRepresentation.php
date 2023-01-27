@@ -112,28 +112,31 @@ class TeamRepresentation extends AbstractEntityRepresentation
      * @param bool $canonical Whether to return an absolute URL
      * @return string
      */
-    public function urlEntities($resourceType = null, $canonical = false)
-    {
-        $mapResource = [
-            null => 'item',
-            'resources' => 'resource',
-            'items' => 'item',
-            'item_sets' => 'item-set',
-            'users' => 'user',
-        ];
-        if (isset($mapResource[$resourceType])) {
-            $resourceType = $mapResource[$resourceType];
-        }
-        $routeMatch = $this->getServiceLocator()->get('Application')
-            ->getMvcEvent()->getRouteMatch();
-        $url = $this->getViewHelper('Url');
-        return $url(
-            'admin/default',
-            ['controller' => $resourceType, 'action' => 'browse'],
-            [
-                'query' => ['team' => $this->name()],
-                'force_canonical' => $canonical,
-            ]
-        );
-    }
+
+    //leaving this for now. This idea of how to return data on the elements of the team would make this call
+    //less resource intensive
+//    public function urlEntities($resourceType = null, $canonical = false)
+//    {
+//        $mapResource = [
+//            null => 'item',
+//            'resources' => 'resource',
+//            'items' => 'item',
+//            'item_sets' => 'item-set',
+//            'users' => 'user',
+//        ];
+//        if (isset($mapResource[$resourceType])) {
+//            $resourceType = $mapResource[$resourceType];
+//        }
+//        $routeMatch = $this->getServiceLocator()->get('Application')
+//            ->getMvcEvent()->getRouteMatch();
+//        $url = $this->getViewHelper('Url');
+//        return $url(
+//            'admin/default',
+//            ['controller' => $resourceType, 'action' => 'browse'],
+//            [
+//                'query' => ['team' => $this->name()],
+//                'force_canonical' => $canonical,
+//            ]
+//        );
+//    }
 }
