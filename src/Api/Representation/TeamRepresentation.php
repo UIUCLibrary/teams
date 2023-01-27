@@ -21,6 +21,7 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:name' => $this->name(),
             'o:description' => $this->description(),
             'o:sites' => $this->sites(),
+            'o:resources' => $this->resources(),
             //this will render an admin advanced search query like:
             //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
             //'o:users' => $this->urlEntities('user'),
@@ -51,7 +52,13 @@ class TeamRepresentation extends AbstractEntityRepresentation
 
     public function resources()
     {
-        return $this->resource->getResources();
+        $resources = [];
+        $resourceAdapter = $this->getAdapter('resources');
+        foreach ($this->resource->getTeamResources() as $teamResourceEntity) {
+            $resourceEntity = $teamResourceEntity->getResource();
+            $resources[] = $resourceAdapter->getRepresentation($resourceEntity);
+        }
+        return $resources;
     }
 
     public function sites()
