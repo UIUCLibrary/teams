@@ -168,7 +168,7 @@ class AddController extends AbstractActionController
                         endforeach;
 
                         //add all fo that user's assets
-                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id])
+                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id]);
                             foreach ($assets as $asset):
                                 $asset_array[$asset->getId()] = true;
                             endforeach;
