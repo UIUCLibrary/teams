@@ -28,12 +28,12 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
 
     public function team()
     {
-        return $this->resource->getTeam();
+        return $this->resource->getTeam()->getId();
     }
 
     public function resource()
     {
-        return $this->resource->getResource();
+        return $this->resource->getResource()->getId();
     }
 
 
