@@ -76,6 +76,11 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         AbstractAdapter::delete($request);
     }
 
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
+    }
+
 
     public function hydrate(
         Request $request,

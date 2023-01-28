@@ -244,6 +244,30 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     {
         AbstractAdapter::read($request);
     }
+    public function create(Request $request)
+    {
+        AbstractAdapter::create($request);
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function delete(Request $request)
+    {
+        AbstractAdapter::delete($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
+    }
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
     {
