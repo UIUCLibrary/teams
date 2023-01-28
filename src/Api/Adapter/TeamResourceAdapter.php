@@ -1,11 +1,14 @@
 <?php
-
-
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
+use Laminas\EventManager\Event;
+use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
+use Omeka\Api\Exception;
 use Omeka\Api\Request;
+use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Api\Representation\TeamResourceRepresentation;
@@ -56,203 +59,222 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         }
     }
 
-//    public function validateRequest(Request $request, ErrorStore $errorStore)
-//    {
-//        $data = $request->getContent();
-//        if (array_key_exists('o:name', $data)) {
-//            $result = $this->validateName($data['o:name'], $errorStore);
-//        }
-//    }
-
-//    public function validateEntity(EntityInterface $entity, ErrorStore $errorStore)
-//    {
-//        $name = $entity->getName();
-//        $result = $this->validateName($name, $errorStore);
-//        if (!$this->isUnique($entity, ['name' => $name])) {
-//            $errorStore->addError('o:name', new Message(
-//                'The name "%s" is already taken.', // @translate
-//                $name
-//            ));
-//        }
-//    }
-//
-//    /**
-//     * Validate a name.
-//     *
-//     * @param string $name
-//     * @param ErrorStore $errorStore
-//     * @return bool
-//     */
-//    protected function validateName($name, ErrorStore $errorStore)
-//    {
-//        $result = true;
-//        $sanitized = $this->sanitizeLightString($name);
-//        if (is_string($name) && $sanitized !== '') {
-//            $name = $sanitized;
-//            $sanitized = $this->sanitizeString($sanitized);
-//            if ($name !== $sanitized) {
-//                $errorStore->addError('o:name', new Message(
-//                    'The name "%s" contains forbidden characters.', // @translate
-//                    $name
-//                ));
-//                $result = false;
-//            }
-//            if (preg_match('~^[\d]+$~', $name)) {
-//                $errorStore->addError('o:name', 'A name can’t contain only numbers.'); // @translate
-//                $result = false;
-//            }
-//            $reserved = [
-//                'id', 'name', 'description',
-//                'show', 'browse', 'add', 'edit', 'delete', 'delete-confirm', 'batch-edit', 'batch-edit-all',
-//            ];
-//            if (in_array(strtolower($name), $reserved)) {
-//                $errorStore->addError('o:name', 'A name cannot be a reserved word.'); // @translate
-//                $result = false;
-//            }
-//        } else {
-//            $errorStore->addError('o:name', 'A team must have a name.'); // @translate
-//            $result = false;
-//        }
-//        return $result;
-//    }
-
-    ///3 ifs permit single return via specified column
     public function buildQuery(QueryBuilder $qb, array $query)
     {
-        if (isset($query['id'])) {
-            $this->buildQueryValuesItself($qb, $query['team'], 'team');
+        if (isset($query['team'])) {
+            $qb->andWhere($qb->expr()->eq(
+                'omeka_root' . '.' . 'team',
+                $this->createNamedParameter($qb, $query['team'])
+            ));
         }
 
-        if (isset($query['name'])) {
-            $this->buildQueryValuesItself($qb, $query['resource'], 'resource');
-        }
+        if (isset($query['resource'])) {
+            $qb->andWhere($qb->expr()->eq(
+                'omeka_root' . '.' . 'resource',
+                $this->createNamedParameter($qb, $query['resource'])
+            ));        }
 
-//
-//        // All teams for these entities ("OR"). If multiple, mixed with "AND",
-//        // so, for mixed resources, use "resource_id".
-//        $mapResourceTypes = [
-//            'user_id' => User::class,
-//            'resource_id' => Resource::class,
-//            'item_set_id' => ItemSet::class,
-//            'item_id' => Item::class,
-//            'media_id' => Media::class,
-//        ];
-//        $subQueryKeys = array_intersect_key($mapResourceTypes, $query);
-//        foreach ($subQueryKeys as $queryKey => $resourceType) {
-//            if ($queryKey === 'user_id') {
-//                $teamEntity = TeamUser::class;
-//                $teamEntityColumn = 'user';
-//            } else {
-//                $teamEntity = TEamResource::class;
-//                $teamEntityColumn = 'resource';
-//            }
-//            $entities = is_array($query[$queryKey]) ? $query[$queryKey] : [$query[$queryKey]];
-//            $entities = array_filter($entities, 'is_numeric');
-//            if (empty($entities)) {
-//                continue;
-//            }
-//            $teamEntityAlias = $this->createAlias();
-//            $entityAlias = $this->createAlias();
-//            $qb
-//                // Note: This query may be used if the annotation is set in
-//                // core on Resource. In place, the relation is recreated.
-//                // ->innerJoin(
-//                //     $this->getEntityClass() . ($queryKey === 'user_id' ?  '.users' : '.resources'),
-//                //     $entityAlias, 'WITH',
-//                //     $qb->expr()->in("$entityAlias.id", $this->createNamedParameter($qb, $entities))
-//                // );
-//                ->innerJoin(
-//                    $teamEntity,
-//                    $teamEntityAlias,
-//                    'WITH',
-//                    $qb->expr()->andX(
-//                        $qb->expr()->eq($teamEntityAlias . '.team', $this->getEntityClass() . '.id'),
-//                        $qb->expr()->in(
-//                            $teamEntityAlias . '.' . $teamEntityColumn,
-//                            $this->createNamedParameter($qb, $entities)
-//                        )
-//                    )
-//                );
-//            // This check avoids bad result for bad request mixed ids.
-//            if (!in_array($queryKey, ['user_id', 'resource_id'])) {
-//                $resourceAlias = $this->createAlias();
-//                $qb
-//                    ->innerJoin(
-//                        $resourceType,
-//                        $resourceAlias,
-//                        'WITH',
-//                        $qb->expr()->eq(
-//                            $teamEntityAlias . '.resource',
-//                            $resourceAlias . '.id'
-//                        )
-//                    );
-//            }
-//        }
-//
-//        if (array_key_exists('resource_type', $query)) {
-//            $mapResourceTypes = [
-//                'users' => User::class,
-//                'resources' => Resource::class,
-//                'item_sets' => ItemSet::class,
-//                'items' => Item::class,
-//                'media' => Media::class,
-//            ];
-//            if (isset($mapResourceTypes[$query['resource_type']])) {
-//                $entityJoinClass = $query['resource_type'] === 'users'
-//                    ? TeamUser::class
-//                    : TeamResource::class;
-//                $entityJoinAlias = $this->createAlias();
-//                $qb
-//                    ->linnerJoin(
-//                        $entityJoinClass,
-//                        $entityJoinAlias,
-//                        'WITH',
-//                        $qb->expr()->eq($entityJoinAlias . '.team', Team::class)
-//                    );
-//                if (!in_array($query['resource_type'], ['users', 'resources'])) {
-//                    $entityAlias = $this->createAlias();
-//                    $qb
-//                        ->innerJoin(
-//                            $mapResourceTypes[$query['resource_type']],
-//                            $entityAlias,
-//                            'WITH',
-//                            $qb->expr()->eq(
-//                                $entityJoinClass . '.resource',
-//                                $entityAlias . '.id'
-//                            )
-//                        );
-//                }
-//            } elseif ($query['resource_type'] !== '') {
-//                $qb
-//                    ->andWhere('1 = 0');
-//            }
-//        }
     }
 
-//    public function sortQuery(QueryBuilder $qb, array $query)
-//    {
-//        if (is_string($query['sort_by'])) {
-//            // TODO Use Doctrine native queries (here: ORM query builder).
-//            switch ($query['sort_by']) {
-//                // TODO Sort by count.
-//                case 'count':
-//                    break;
-//                // TODO Sort by user ids.
-//                case 'users':
-//                    break;
-//                // TODO Sort by resource ids.
-//                case 'resources':
-//                case 'item_sets':
-//                case 'items':
-//                case 'media':
-//                    break;
-//                case 'team':
-//                    $query['sort_by'] = 'name';
-//                // No break.
-//                default:
-//                    parent::sortQuery($qb, $query);
-//                    break;
-//            }
-//        }
-//    }
+    public function buildBaseQuery(QueryBuilder $qb, array $query)
+    {
+        if (isset($query['id'])) {
+            echo $query['id'];
+            $ids = $query['id'];
+            if (!is_array($ids)) {
+                $ids = [$ids];
+            }
+            // Exclude null and empty-string ids. Previous resource-only version used
+            // is_numeric, but we want this to be able to work for possible string IDs
+            // also
+            $ids = array_filter($ids, function ($id) {
+                return !($id === null || $id === '');
+            });
+            if ($ids) {
+                $qb->andWhere($qb->expr()->in(
+                    'omeka_root.id',
+                    $this->createNamedParameter($qb, $ids)
+                ));
+            }
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $search_fields = array();
+        $group_by = 'team'; //default order by
+        $query = $request->getContent();
+
+        if ( array_key_exists('team', $query) ) {
+            $search_fields['team'] = $query['team'];
+            $group_by = 'resource';
+        } elseif (array_key_exists('resource', $query)) {
+            $search_fields['resource'] = $query['resource'];
+        } else {
+            throw new Exception\BadRequestException(sprintf(
+                $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),
+                $this->getEntityClass()
+            ));
+        }
+
+        // Set default query parameters
+        if (!isset($query['page'])) {
+            $query['page'] = null;
+        }
+        if (!isset($query['per_page'])) {
+            $query['per_page'] = null;
+        }
+        if (!isset($query['limit'])) {
+            $query['limit'] = null;
+        }
+        if (!isset($query['offset'])) {
+            $query['offset'] = null;
+        }
+        if (!isset($query['sort_by'])) {
+            $query['sort_by'] = null;
+        }
+        if (isset($query['sort_order'])
+            && in_array(strtoupper($query['sort_order']), ['ASC', 'DESC'])
+        ) {
+            $query['sort_order'] = strtoupper($query['sort_order']);
+        } else {
+            $query['sort_order'] = 'ASC';
+        }
+        if (!isset($query['return_scalar'])) {
+            $query['return_scalar'] = null;
+        }
+
+        // Begin building the search query.
+        $entityClass = $this->getEntityClass();
+
+        $this->index = 0;
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
+            ->select('omeka_root')
+            ->from($entityClass, 'omeka_root');
+
+            foreach ($search_fields as $field => $value) {
+                $qb->andWhere($qb->expr()->eq(
+                    "omeka_root.$field",
+                    $this->createNamedParameter($qb, $value)
+                ));
+            }
+        $this->buildBaseQuery($qb, $query);
+        $this->buildQuery($qb, $query);
+        $qb->groupBy("omeka_root." . $group_by);
+
+        // Trigger the search.query event.
+        $event = new Event('api.search.query', $this, [
+            'queryBuilder' => $qb,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
+        // Add the LIMIT clause.
+        $this->limitQuery($qb, $query);
+
+        // Before adding the ORDER BY clause, set a paginator responsible for
+        // getting the total count. This optimization excludes the ORDER BY
+        // clause from the count query, greatly speeding up response time.
+        $countQb = clone $qb;
+        $countQb->select('1')->resetDQLPart('orderBy');
+        $countPaginator = new Paginator($countQb, false);
+
+        // Add the ORDER BY clause. Always sort by entity ID in addition to any
+        // sorting the adapters add.
+        $this->sortQuery($qb, $query);
+        $qb->addOrderBy("omeka_root.team", $query['sort_order']);
+
+
+        $paginator = new Paginator($qb, false);
+        $entities = [];
+        // Don't make the request if the LIMIT is set to zero. Useful if the
+        // only information needed is total results.
+        if ($qb->getMaxResults() || null === $qb->getMaxResults()) {
+            foreach ($paginator as $entity) {
+                if (is_array($entity)) {
+                    // Remove non-entity columns added to the SELECT. You can use
+                    // "AS HIDDEN {alias}" to avoid this condition.
+                    $entity = $entity[0];
+                }
+                $entities[] = $entity;
+            }
+        }
+
+        $response = new Response($entities);
+        $response->setTotalResults($countPaginator->count());
+        return $response;
+    }
+
+    public function findEntity($criteria, $request = null)
+    {
+        if (!is_array($criteria)) {
+            $criteria = ['id' => $criteria];
+        }
+
+        $entityClass = $this->getEntityClass();
+        $this->index = 0;
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $qb->setMaxResults(1);
+
+        $event = new Event('api.find.query', $this, [
+            'queryBuilder' => $qb,
+            'request' => $request,
+        ]);
+
+        $this->getEventManager()->triggerEvent($event);
+        $entity = $qb->getQuery()->getOneOrNullResult();
+        if (!$entity) {
+            throw new Exception\NotFoundException(sprintf(
+                $this->getTranslator()->translate('%1$s entity with criteria %2$s not found'),
+                $entityClass, json_encode($criteria)
+            ));
+        }
+        return $entity;
+    }
+
+    public function read(Request $request)
+    {
+        AbstractAdapter::read($request);
+    }
+    public function create(Request $request)
+    {
+        AbstractAdapter::create($request);
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function delete(Request $request)
+    {
+        AbstractAdapter::delete($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
+    }
+
+    public function validateRequest(Request $request, ErrorStore $errorStore)
+    {
+        $data = $request->getContent();
+        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
+            $result = $this->validateName($data['o:name'], $errorStore);
+        }
+    }
+
 }

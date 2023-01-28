@@ -2,8 +2,6 @@
 namespace Teams\Api\Representation;
 
 use Omeka\Api\Representation\AbstractEntityRepresentation;
-use Omeka\Api\Representation\AbstractResourceEntityRepresentation;
-use Omeka\Api\Representation\UserRepresentation;
 
 //legacy from deciding how much of the module to expose to the API
 /**
@@ -22,7 +20,14 @@ class TeamRepresentation extends AbstractEntityRepresentation
             'o:id' => $this->id(),
             'o:name' => $this->name(),
             'o:description' => $this->description(),
-            'o:users' => $this->urlEntities('user'),
+            'o:team-sites' => $this->sites(),
+            'o:team-resources' => $this->resources(),
+            'o:team-users' => $this->users(),
+            'o:team-resource-templates' => $this->resourseTemplates(),
+            'o:team-assets' => $this->assets()
+            //this will render an admin advanced search query like:
+            //"base-url/admin/user?team=teamName" but that search feature isn't implemented yet
+            //'o:users' => $this->urlEntities('user'),
         ];
     }
 
@@ -43,92 +48,65 @@ class TeamRepresentation extends AbstractEntityRepresentation
 
     public function users()
     {
+        $users = [];
+        $userAdapter = $this->getAdapter('users');
+        foreach ($this->resource->getTeamUsers() as $teamUserEntity) {
+            $userEntity = $teamUserEntity->getUser();
+            $users[] = $userAdapter->getRepresentation($userEntity);
+        }
+        return $users;
+    }
 
+    public function teamUsers()
+    {
         return $this->resource->getTeamUsers();
     }
 
-
     public function resources()
     {
-        return $this->resource->getResources();
+        $resources = [];
+        $resourceAdapter = $this->getAdapter('resources');
+        foreach ($this->resource->getTeamResources() as $teamResourceEntity) {
+            $resourceEntity = $teamResourceEntity->getResource();
+            $resources[] = $resourceAdapter->getRepresentation($resourceEntity);
+        }
+        return $resources;
     }
 
     public function sites()
     {
-        return $this->resource->getTeamSites();
+        $sites = [];
+        $siteAdapter = $this->getAdapter('sites');
+        foreach ($this->resource->getTeamSites() as $teamSiteEntity) {
+            $siteEntity = $teamSiteEntity->getSite();
+            $sites[] = $siteAdapter->getRepresentation($siteEntity);
+        }
+        return $sites;
     }
 
-//    /**
-//     * Get the resources associated with this team.
-//     *
-//     * @return AbstractResourceEntityRepresentation[]
-//     */
-//    public function resources()
-//    {
-//        $result = [];
-//        $adapter = $this->getAdapter('resources');
-//        // Note: Use a workaround because the reverse doctrine relation cannot
-//        // be set. See the entity.
-//        // TODO Fix entities for many to many relations.
-//        // foreach ($this->resource->getResources() as $entity) {
-//        foreach ($this->resource->getTeamResources() as $teamResourceEntity) {
-//            $entity = $teamResourceEntity->getResource();
-//            $result[$entity->getId()] = $adapter->getRepresentation($entity);
-//        }
-//        return $result;
-//    }
+    public function resourseTemplates()
+    {
+        $templates = [];
+        $templateAdapter = $this->getAdapter('resource_templates');
+        foreach ($this->resource->getTeamResourceTemplates() as $teamTemplateEntity) {
+            $templateEntity = $teamTemplateEntity->getResourceTemplate();
+            $templates[] = $templateAdapter->getRepresentation($templateEntity);
+        }
+        return $templates;
 
-//    /**
-//     * Get the users associated with this team.
-//     *
-//     * @return UserRepresentation[]
-//     */
-//    public function users()
-//    {
-//        $result = [];
-//        $adapter = $this->getAdapter('users');
-//        // Note: Use a workaround because the reverse doctrine relation cannot
-//        // be set. See the entity.
-//        // TODO Fix entities for many to many relations.
-//        // foreach ($this->resource->getUsers() as $entity) {
-//        foreach ($this->resource->getTeamUsers() as $teamUserEntity) {
-//            $entity = $teamUserEntity->getUser();
-//            $result[$entity->getId()] = $adapter->getRepresentation($entity);
-//        }
-//        return $result;
-//    }
+    }
 
-//    /**
-//     * Get this team's specific resource count.
-//     *
-//     * @param string $resourceType
-//     * @return int
-//     */
-//    public function count($resourceType = 'resources')
-//    {
-//        if (!isset($this->cacheCounts[$resourceType])) {
-//            $response = $this->getServiceLocator()->get('Omeka\ApiManager')
-//                ->search('team', [
-//                    'id' => $this->id(),
-//                ]);
-//            $this->cacheCounts[$resourceType] = $response->getTotalResults();
-//        }
-//        return $this->cacheCounts[$resourceType];
-//    }
+    public function assets()
+    {
+        $assets = [];
+        $assetAdapter = $this->getAdapter('assets');
+        foreach ($this->resource->getTeamAssets() as $teamAssetEntity) {
+            $assetEntity = $teamAssetEntity->getAsset();
+            $assets[] = $assetAdapter->getRepresentation($assetEntity);
+        }
+        return $assets;
+    }
 
-//    public function adminUrl($action = null, $canonical = false)
-//    {
-//        $url = $this->getViewHelper('Url');
-//        return $url(
-//            'admin/team-name',
-//            [
-//                'action' => $action ?: 'show',
-//                'name' => $this->name(),
-//            ],
-//            ['force_canonical' => $canonical]
-//        );
-//    }
-//
     /**
      * Return the admin URL to the resource browse page for the team.
      *
@@ -139,28 +117,31 @@ class TeamRepresentation extends AbstractEntityRepresentation
      * @param bool $canonical Whether to return an absolute URL
      * @return string
      */
-    public function urlEntities($resourceType = null, $canonical = false)
-    {
-        $mapResource = [
-            null => 'item',
-            'resources' => 'resource',
-            'items' => 'item',
-            'item_sets' => 'item-set',
-            'users' => 'user',
-        ];
-        if (isset($mapResource[$resourceType])) {
-            $resourceType = $mapResource[$resourceType];
-        }
-        $routeMatch = $this->getServiceLocator()->get('Application')
-            ->getMvcEvent()->getRouteMatch();
-        $url = $this->getViewHelper('Url');
-        return $url(
-            'admin/default',
-            ['controller' => $resourceType, 'action' => 'browse'],
-            [
-                'query' => ['team' => $this->name()],
-                'force_canonical' => $canonical,
-            ]
-        );
-    }
+
+    //leaving this for now. This idea of how to return data on the elements of the team would make this call
+    //less resource intensive
+//    public function urlEntities($resourceType = null, $canonical = false)
+//    {
+//        $mapResource = [
+//            null => 'item',
+//            'resources' => 'resource',
+//            'items' => 'item',
+//            'item_sets' => 'item-set',
+//            'users' => 'user',
+//        ];
+//        if (isset($mapResource[$resourceType])) {
+//            $resourceType = $mapResource[$resourceType];
+//        }
+//        $routeMatch = $this->getServiceLocator()->get('Application')
+//            ->getMvcEvent()->getRouteMatch();
+//        $url = $this->getViewHelper('Url');
+//        return $url(
+//            'admin/default',
+//            ['controller' => $resourceType, 'action' => 'browse'],
+//            [
+//                'query' => ['team' => $this->name()],
+//                'force_canonical' => $canonical,
+//            ]
+//        );
+//    }
 }

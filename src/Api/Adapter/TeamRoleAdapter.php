@@ -2,6 +2,7 @@
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\AbstractAdapter;
 use Teams\Api\Representation\TeamRoleRepresentation;
 use Teams\Entity\Team;
 use Teams\Entity\TeamRole;
@@ -44,6 +45,42 @@ class TeamRoleAdapter extends AbstractEntityAdapter
     {
         return TeamRole::class;
     }
+
+    public function read(Request $request)
+    {
+        AbstractAdapter::read($request);
+    }
+
+    public function search(Request $request)
+    {
+        AbstractAdapter::search($request);
+    }
+
+    public function create(Request $request)
+    {
+        AbstractAdapter::create($request);
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function delete(Request $request)
+    {
+        AbstractAdapter::delete($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
+    }
+
 
     public function hydrate(
         Request $request,
@@ -132,52 +169,6 @@ class TeamRoleAdapter extends AbstractEntityAdapter
             }
         }
     }
-
-
-
-    /////3 ifs permit single return via specified column
-//    public function buildQuery(QueryBuilder $qb, array $query)
-//    {
-//        if (isset($query['id'])) {
-//            $this->buildQueryValuesItself($qb, $query['id'], 'id');
-//        }
-//
-//        if (isset($query['o:name'])) {
-//            $this->buildQueryValuesItself($qb, $query['o:name'], 'o:name');
-//        }
-//
-//        if (isset($query['description'])) {
-//            $this->buildQueryValuesItself($qb, $query['description'], 'description');
-//        }
-//
-//    }
-
-//    public function sortQuery(QueryBuilder $qb, array $query)
-//    {
-//        if (is_string($query['sort_by'])) {
-//            // TODO Use Doctrine native queries (here: ORM query builder).
-//            switch ($query['sort_by']) {
-//                // TODO Sort by count.
-//                case 'count':
-//                    break;
-//                // TODO Sort by user ids.
-//                case 'users':
-//                    break;
-//                // TODO Sort by resource ids.
-//                case 'resources':
-//                case 'item_sets':
-//                case 'items':
-//                case 'media':
-//                    break;
-//                case 'team':
-//                    $query['sort_by'] = 'o:name';
-//                // No break.
-//                default:
-//                    parent::sortQuery($qb, $query);
-//                    break;
-//            }
-//        }
-//    }
 
     /**
      * Returns a sanitized string.
