@@ -111,7 +111,7 @@ class TeamAuth extends AbstractPlugin
         return $authorized;
     }
 
-    public function canEditTeamEntity($teamEntity, User $user)  //$query_parameter = ['asset' => asset_id]
+    public function canEditTeamEntity($teamEntity, User $user)
     {
         //Determines if a given user has the authority to edit a given Team Entity (like a resource, asset, or template)
         $authorized = false;
