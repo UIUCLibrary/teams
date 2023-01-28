@@ -57,6 +57,11 @@ class TeamRepresentation extends AbstractEntityRepresentation
         return $users;
     }
 
+    public function teamUsers()
+    {
+        return $this->resource->getTeamUsers();
+    }
+
     public function resources()
     {
         $resources = [];
