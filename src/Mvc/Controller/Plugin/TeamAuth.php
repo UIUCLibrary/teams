@@ -45,8 +45,6 @@ class TeamAuth extends AbstractPlugin
 
     public function teamAuthorized(User $user, string $action, string $domain, int $context=0): bool
     {
-
-
         //validate inputs
         if (!in_array($action, $this->actions)) {
             throw new InvalidArgumentException(
@@ -64,7 +62,6 @@ class TeamAuth extends AbstractPlugin
                 )
             );
         }
-//        $this->logger->err(get_class($this->identity()));
 
         if ($this->isGlobAdmin($user)) {
             return true;
@@ -112,5 +109,29 @@ class TeamAuth extends AbstractPlugin
             }
         }
         return $authorized;
+    }
+
+    public function canEditTeamEntity($teamEntity, User $user)  //$query_parameter = ['asset' => asset_id]
+    {
+        //Determines if a given user has the authority to edit a given Team Entity (like a resource, asset, or template)
+        $authorized = false;
+        $entityClass = $teamEntity->getEntityClass();
+
+        $em = $this->entityManager;
+        $teams = [];
+        $entity_teams = $em->getRepository($entityClass)->findBy([]);
+        foreach ($entity_teams as $entity_team){
+            $teams[] = $entity_team->getTeam()->getId();
+        }
+        $user_roles = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user->getId()]);
+
+        foreach ($user_roles as $user_role) {
+            if (in_array($user_role->getTeam()->getId(), $teams) && $user_role->getRole()->getCanModifyResources()){
+                $authorized = true;
+
+            }
+        }
+        return $authorized;
+
     }
 }
