@@ -119,7 +119,7 @@ class TeamAuth extends AbstractPlugin
 
         $em = $this->entityManager;
         $teams = [];
-        $entity_teams = $em->getRepository($entityClass)->findBy([]);
+        $entity_teams = $em->getRepository($entityClass)->findBy([$teamEntity->getMappedEntityName()]);
         foreach ($entity_teams as $entity_team){
             $teams[] = $entity_team->getTeam()->getId();
         }
