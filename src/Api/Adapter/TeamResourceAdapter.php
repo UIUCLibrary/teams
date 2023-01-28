@@ -10,6 +10,7 @@ use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
+use Omeka\Entity\Resource;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Api\Representation\TeamResourceRepresentation;
 use Teams\Entity\TeamResource;
@@ -37,6 +38,16 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     public function getEntityClass()
     {
         return TeamResource::class;
+    }
+
+    public function getMappedEntityClass()
+    {
+        return Resource::class;
+    }
+
+    public function getMappedEntityName()
+    {
+        return 'resource';
     }
 
     public function hydrate(
