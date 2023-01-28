@@ -13,6 +13,7 @@ use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Api\Representation\TeamResourceRepresentation;
 use Teams\Entity\TeamResource;
+use Teams\Mvc\Controller\Plugin\TeamAuth;
 
 //legacy from deciding how much of the module to expose to the API
 class TeamResourceAdapter extends AbstractEntityAdapter
@@ -245,11 +246,105 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::read($request);
     }
 
+    public function create(Request $request)
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $entityClass = $this->getEntityClass();
+        $team = $this->getEntityManager()->find('Teams\Entity\Team', $request->getContent()['team']);
+        $resource = $this->getEntityManager()->find('Omeka\Entity\Resource', $request->getContent()['resource']);
+        $entity = new TeamResource($team, $resource);
+        //authority check
+        $this->getEntityManager()->persist($entity);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($entity);
+        }
+        return new Response($entity);
+    }
+
+    public function teamAuthority($request)
+    {
+        $em = $this->getEntityManager();
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $operation = $request->getOperation();
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $teamAuth = new TeamAuth($em, $logger);
+        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $request->getContent()['team'])){
+            throw new Exception\PermissionDeniedException(sprintf(
+                    $this->getTranslator()->translate(
+                        'Permission denied for the current user to %1$s a team resource in team_id = %2$.'
+                    ),
+                    $operation, $request['team'])
+            );
+        }
+    }
+
+
+    public function hydrateEntity(Request $request,
+                                  EntityInterface $entity, ErrorStore $errorStore
+    ) {
+
+        $operation = $request->getOperation();
+        // Before everything, check whether the current user has access to this
+        // entity in its original state.
+        $this->authorize($entity, $operation);
+
+        // Trigger the operation's api.hydrate.pre event.
+        $event = new Event('api.hydrate.pre', $this, [
+            'entity' => $entity,
+            'request' => $request,
+            'errorStore' => $errorStore,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
+        // Validate the request.
+        $this->validateRequest($request, $errorStore);
+
+        if ($errorStore->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
+
+        $this->hydrate($request, $entity, $errorStore);
+
+        // Trigger the operation's api.hydrate.post event.
+        $event = new Event('api.hydrate.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+            'errorStore' => $errorStore,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
+        // Validate the entity.
+        $this->validateEntity($entity, $errorStore);
+
+        if ($errorStore->hasErrors()) {
+            if (Request::UPDATE == $operation) {
+                // Refresh the entity from the database, overriding any local
+                // changes that have not yet been persisted
+                $this->getEntityManager()->refresh($entity);
+            }
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
+    }
+
+
     public function validateRequest(Request $request, ErrorStore $errorStore)
     {
         $data = $request->getContent();
         if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
-            $result = $this->validateName($data['o:name'], $errorStore);
+            return true;
+        } else {
+            throw new Exception\BadRequestException(
+                $this->getTranslator()->translate('Not a vaild request')
+            );
         }
     }
 
