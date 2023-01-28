@@ -270,6 +270,8 @@ class UpdateController extends AbstractActionController
                     $this->entityManager->remove($team_asset);
                 }
             endforeach;
+            $this->entityManager->flush();
+
         }
     }
 
