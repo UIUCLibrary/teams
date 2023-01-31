@@ -3,6 +3,7 @@ namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Adapter\AbstractAdapter;
+use Omeka\Entity\User;
 use Teams\Api\Representation\TeamUserRepresentation;
 use Teams\Entity\TeamUser;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
@@ -37,6 +38,17 @@ class TeamUserAdapter extends AbstractEntityAdapter
     public function getEntityClass()
     {
         return TeamUser::class;
+    }
+
+
+    public function getMappedEntityClass()
+    {
+        return User::class;
+    }
+
+    public function getMappedEntityName()
+    {
+        return 'user';
     }
 
     public function read(Request $request)
