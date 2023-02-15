@@ -43,8 +43,17 @@ class TeamAuth extends AbstractPlugin
     }
 
 
-    public function teamAuthorized(User $user, string $action, string $domain, int $context=0): bool
+    public function teamAuthorized(User $user, string $action, string $domain, int $team = 0, int $entity = 0): bool
     {
+        /*
+         * Query parameters:
+         * $user: The user whose permissions we are evaluating. Should be a User object (Omeka\Entity\User)
+         * $action: The thing they want to do, e.g. delete something. Should be among $this->actions.
+         * $domain: The type of Entity they want to do the action to, e.g. a resource. Should be among $this->domain
+         * $team: The team where they want to do this. Some actions aren't team depended, like making a role. Should
+         * be an int.
+         * $entity: The specific entity they would like to do the action too. Optional
+         */
         //validate inputs
         if (!in_array($action, $this->actions)) {
             throw new InvalidArgumentException(
@@ -63,6 +72,7 @@ class TeamAuth extends AbstractPlugin
             );
         }
 
+        //global admins can do anything
         if ($this->isGlobAdmin($user)) {
             return true;
         }
@@ -83,8 +93,7 @@ class TeamAuth extends AbstractPlugin
 
             //only the global admin can create, delete or modify teams
             if ($domain == 'team' || $domain ==  'role') {
-                $authorized = $this->isGlobAdmin();
-
+                $authorized = false;
             }
 
             //if they can manage users of the team (including their role)
