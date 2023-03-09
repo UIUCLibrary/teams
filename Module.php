@@ -1919,9 +1919,15 @@ SQL;
             $response = $event->getParam('response');
 
             $resource =  $response->getContent();
+            $team_key = '';
+            if (array_key_exists('team', $request->getContent())){
+                $team_key = 'team';
+            } elseif (array_key_exists('add_team', $request->getContent())){
+                $team_key = 'add_team';
+            }
 
-            if (array_key_exists('team', $request->getContent())) {
-                $teams = $request->getContent()['team'];
+            if ($team_key) {
+                $teams = $request->getContent()[$team_key];
 
                 //add items to team
                 foreach ($teams as $team_id):
