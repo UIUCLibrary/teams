@@ -66,10 +66,10 @@ class Team extends \Teams\Entity\Team implements \Doctrine\ORM\Proxy\Proxy
     public function __sleep()
     {
         if ($this->__isInitialized__) {
-            return ['__isInitialized__', 'id', 'name', 'description', 'users', 'assets', 'sites', 'team_users', 'team_sites', 'resources', 'resource_templates', 'team_resource_templates', 'team_resources'];
+            return ['__isInitialized__', 'id', 'name', 'description', 'users', 'assets', 'sites', 'team_users', 'team_sites', 'team_assets', 'resources', 'resource_templates', 'team_resource_templates', 'team_resources'];
         }
 
-        return ['__isInitialized__', 'id', 'name', 'description', 'users', 'assets', 'sites', 'team_users', 'team_sites', 'resources', 'resource_templates', 'team_resource_templates', 'team_resources'];
+        return ['__isInitialized__', 'id', 'name', 'description', 'users', 'assets', 'sites', 'team_users', 'team_sites', 'team_assets', 'resources', 'resource_templates', 'team_resource_templates', 'team_resources'];
     }
 
     /**
@@ -321,6 +321,17 @@ class Team extends \Teams\Entity\Team implements \Doctrine\ORM\Proxy\Proxy
         $this->__initializer__ && $this->__initializer__->__invoke($this, 'getSites', []);
 
         return parent::getSites();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getTeamAssets()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getTeamAssets', []);
+
+        return parent::getTeamAssets();
     }
 
     /**

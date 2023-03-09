@@ -59,7 +59,7 @@ $sectionNavs = [
         <h4><?php echo $translate('Linked Site(s)'); ?></h4>
         <div class="value">
             <?php foreach ($team->sites() as $site):?>
-                <?php echo $site->getSite()->getTitle(); ?>
+                <?php echo $site->title(); ?>
                 <?php echo '<br>' ?>
             <?php endforeach; ?>
         </div>
@@ -69,7 +69,7 @@ $sectionNavs = [
 
 <div id="users" class="section">
 
-    <?php if (count($team->users()) > 0): ?>
+    <?php if (count($team->teamUsers()) > 0): ?>
                    <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
                 <thead>
                     <tr>
@@ -80,7 +80,7 @@ $sectionNavs = [
                 </thead>
                 <tbody>
 
-        <?php foreach ($team->users() as $team_user):?>
+        <?php foreach ($team->teamUsers() as $team_user):?>
                     <tr>
                         <td>
                             <?php echo $this->hyperlink(

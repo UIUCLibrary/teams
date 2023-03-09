@@ -270,6 +270,8 @@ class UpdateController extends AbstractActionController
                     $this->entityManager->remove($team_asset);
                 }
             endforeach;
+            $this->entityManager->flush();
+
         }
     }
 
@@ -383,7 +385,7 @@ class UpdateController extends AbstractActionController
 
         //get the team's users and put them in an associative array id:name
         $team_u_array = array();
-        $team_u_collection = $this->api()->read('team', ['id'=>$team_id])->getContent()->users();
+        $team_u_collection = $this->api()->read('team', ['id'=>$team_id])->getContent()->teamUsers();
         foreach ($team_u_collection as $team_user):
             $team_u_array[$team_user->getUser()->getId()] = $team_user->getUser()->getName();
         endforeach;

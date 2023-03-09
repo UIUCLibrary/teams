@@ -24,11 +24,6 @@ echo $this->pageTitle($translate('Delete role'));
 foreach ($this->role_users as $user):
     echo $user->getId();
         endforeach; ?>
-
-<ul class="list-group">
-    <li class="list-group-item"><?= $role->getName() ?></li>
-</ul>
-
 <form action="<?php $this->url('admin/teams/detail/delete', ['id'=>$this->params()->fromRoute('id')])?>" method="post">
     <input class="btn btn-default" type="submit" name="confirm" value="Cancel" />
     <input class="btn btn-danger" type="submit" name="confirm" value="Delete" />
