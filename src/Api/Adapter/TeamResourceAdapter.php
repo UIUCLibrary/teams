@@ -256,10 +256,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     {
         AbstractAdapter::read($request);
     }
-    public function create(Request $request)
-    {
-        AbstractAdapter::create($request);
-    }
 
     public function batchCreate(Request $request)
     {
@@ -283,13 +279,18 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function create(Request $request)
     {
-        $services = $this->getServiceLocator();
-        $logger = $services->get('Omeka\Logger');
-        $entityClass = $this->getEntityClass();
-        $team = $this->getEntityManager()->find('Teams\Entity\Team', $request->getContent()['team']);
-        $resource = $this->getEntityManager()->find('Omeka\Entity\Resource', $request->getContent()['resource']);
+        //authorized
+        $this->teamAuthority($request);
+
+        //validate
+        //is the resource id the id of a resource
+        //is the team id the id of a team
+        //does the team resource alrady exist
+
+        //hydrate
+        $team = $this->getEntityManager()->find('Teams\Entity\Team', $request->getContent()['o:team']);
+        $resource = $this->getEntityManager()->find('Omeka\Entity\Resource', $request->getContent()['o:resource']);
         $entity = new TeamResource($team, $resource);
-        //authority check
         $this->getEntityManager()->persist($entity);
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
@@ -308,12 +309,12 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
-        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $request->getContent()['team'])){
+        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $request->getContent()['o:team'])){
             throw new Exception\PermissionDeniedException(sprintf(
                     $this->getTranslator()->translate(
-                        'Permission denied for the current user to %1$s a team resource in team_id = %2$.'
+                        'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
                     ),
-                    $operation, $request['team'])
+                    $operation, $request->getContent()['o:team'])
             );
         }
     }
