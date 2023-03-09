@@ -101,6 +101,7 @@ For example, when a user changes their current team, it will also update their d
 Teams supports limited API functionality
 
 #### Search
+Search requests are performed using the GET method.
 Team Resources
 
 To get all of the team resources for a particular team
@@ -117,3 +118,18 @@ api/team/<team_id>
 For all team (this is a potentially very expensive call)
 api/team
 
+#### Create
+
+Create requests are performed using the POST method.
+
+Teams send a post request o
+
+api/team
+
+with a json body that contains name and optionally description.
+{
+"o:name": "My Team Name",
+"o:description": "My Team Description)"
+}
+
+Team Resource 
