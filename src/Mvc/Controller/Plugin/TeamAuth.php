@@ -12,7 +12,7 @@ use Omeka\Mvc\Controller\Plugin\Logger;
  */
 class TeamAuth extends AbstractPlugin
 {
-    public $actions = ['add', 'delete', 'update'];
+    public $actions = ['create','add', 'delete', 'update'];
     public $domains = ['resource', 'team', 'site', 'team_user', 'role'];
 
     /**
@@ -63,6 +63,9 @@ class TeamAuth extends AbstractPlugin
                 )
             );
         }
+        if ($action === 'create'){
+            $action = 'add';
+        }
         if (!in_array($domain, $this->domains)) {
             throw new InvalidArgumentException(
                 sprintf(
@@ -78,43 +81,47 @@ class TeamAuth extends AbstractPlugin
         }
 
         $em = $this->entityManager;
-        $user_id = $this->user->getId();
+        $user_id = $user->getId();
         $authorized = false;
+        $role = null;
 
 
         //if the user has a current team
-        if ($has_role = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current' => true, 'user'=>$user_id])
-        ) {
-            $current_role = $has_role->getRole();
+        if ($team !== 0) {
+            $team_user = $em->getRepository('Teams\Entity\TeamUser')
+                ->findOneBy(['team' => $team, 'user'=>$user_id]);
+            if ($team_user){
+                $role = $team_user->getRole();
+            }
 
-            //go through each domain and determine if user is authorized for actions in that domain
+        } elseif ($em->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current' => true, 'user'=>$user_id])) {
+            $role = $em->getRepository('Teams\Entity\TeamUser')
+                ->findOneBy(['is_current' => true, 'user'=>$user_id])->getRole();
+        }
 
 
-            //only the global admin can create, delete or modify teams
+        if ($role){
+        //go through each domain and determine if user is authorized for actions in that domain
+
+        //only the global admin can create, delete or modify teams
             if ($domain == 'team' || $domain ==  'role') {
                 $authorized = false;
             }
 
             //if they can manage users of the team (including their role)
             elseif ($domain == 'team_user') {
-                $authorized = $current_role->getCanAddUsers();
+                $authorized = $role->getCanAddUsers();
             } elseif ($domain == 'resource') {
                 if ($action == 'add') {
-                    $authorized = $current_role->getCanAddItems();
+                    $authorized = $role->getCanAddItems();
                 } elseif ($action == 'update') {
-                    $authorized = $current_role->getCanModifyResources();
+                    $authorized = $role->getCanModifyResources();
                 } elseif ($action == 'delete') {
-                    $authorized = $current_role->getCanDeleteResources();
+                    $authorized = $role->getCanDeleteResources();
                 }
             } elseif ($domain == 'site') {
-
-                //only the global admin can add and delete sites
-                if ($action == 'add' || $action == 'delete') {
-                    $authorized = $this->isGlobAdmin();
-                } elseif ($action == 'update') {
-                    $authorized = $current_role->getCanAddSitePages();
-                }
+                $authorized = $role->getCanAddSitePages();
             }
         }
         return $authorized;
