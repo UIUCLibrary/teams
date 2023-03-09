@@ -2,6 +2,9 @@
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
+use Laminas\EventManager\Event;
+use Omeka\Api\Adapter\AbstractAdapter;
+use Omeka\Api\Response;
 use Teams\Api\Representation\TeamRepresentation;
 use Teams\Entity\Team;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
@@ -159,7 +162,40 @@ class TeamAdapter extends AbstractEntityAdapter
                 $result = false;
             }
         } else {
-            $errorStore->addError('o:name', 'A group must have a name.'); // @translate
+            $errorStore->addError('o:name', 'A team must have a valid name.'); // @translate
+            $result = false;
+        }
+        return $result;
+    }
+
+    protected function validateDescription($name, ErrorStore $errorStore)
+    {
+        $result = true;
+        $sanitized = $this->sanitizeLightString($name);
+        if (is_string($name) && $sanitized !== '') {
+            $name = $sanitized;
+            $sanitized = $this->sanitizeString($sanitized);
+            if ($name !== $sanitized) {
+                $errorStore->addError('o:name', new Message(
+                    'The name "%s" contains forbidden characters.', // @translate
+                    $name
+                ));
+                $result = false;
+            }
+            if (preg_match('~^[\d]+$~', $name)) {
+                $errorStore->addError('o:name', 'A description can’t contain only numbers.'); // @translate
+                $result = false;
+            }
+            $reserved = [
+                'id', 'name', 'comment',
+                'show', 'browse', 'add', 'edit', 'delete', 'delete-confirm', 'batch-edit', 'batch-edit-all',
+            ];
+            if (in_array(strtolower($name), $reserved)) {
+                $errorStore->addError('o:name', 'A description cannot be a reserved word.'); // @translate
+                $result = false;
+            }
+        } else {
+            $errorStore->addError('o:name', 'Team description is not valid'); // @translate
             $result = false;
         }
         return $result;
@@ -169,7 +205,14 @@ class TeamAdapter extends AbstractEntityAdapter
     {
         $data = $request->getContent();
         if (array_key_exists('o:name', $data)) {
-            $result = $this->validateName($data['o:name'], $errorStore);
+            $this->validateName($data['o:name'], $errorStore);
+        } else {
+            $errorStore->addError('o:name', "Teams must have names");
         }
+
+        if (array_key_exists('o:description', $data)) {
+            $this->validateDescription($data['o:description'], $errorStore);
+        }
+
     }
 }
