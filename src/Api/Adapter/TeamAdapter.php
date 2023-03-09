@@ -210,7 +210,7 @@ class TeamAdapter extends AbstractEntityAdapter
             $errorStore->addError('o:name', "Teams must have names");
         }
 
-        if (array_key_exists('o:description', $data)) {
+        if (array_key_exists('o:description', $data) && $data['o:description']!=='') {
             $this->validateDescription($data['o:description'], $errorStore);
         }
 
