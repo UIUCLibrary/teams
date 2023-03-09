@@ -97,3 +97,23 @@ Since we started developing Teams, Omeka has started to natively implement some 
 
 For example, when a user changes their current team, it will also update their default sites in their user profile based on the sites associated with their new current team. Likewise, when an item is added to a team, all of that team’s sites are added to that item, generating new item-site entries in the core Omeka database. Likewise, when a site is added to a team, that site is also added to all of the team's items and new item-sites are generated. That way, if you need to stop using Teams, you can uninstall it without having to re-associate all of your items with the appropriate sites.
 
+### REST API Methods
+Teams supports limited API functionality
+
+#### Search
+Team Resources
+
+To get all of the team resources for a particular team
+api/team-resource?team=<team_id>
+
+To get all of the teams for a particular resource
+api/team-resource?resource=<resource_id>
+
+Teams
+
+To get information about the team resources, team sites, team resource templates, team assets and team users of a particular team
+api/team/<team_id>
+
+For all team (this is a potentially very expensive call)
+api/team
+
