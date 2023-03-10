@@ -14,6 +14,7 @@ use Omeka\Entity\Item;
 use Omeka\Entity\ItemSet;
 use Omeka\Entity\Resource;
 use Omeka\Stdlib\ErrorStore;
+use Omeka\Stdlib\Message;
 use Teams\Api\Representation\TeamResourceRepresentation;
 use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
@@ -270,19 +271,94 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchCreate($request);
     }
 
+    public function teamResourceExists(Team $team, Resource $resource)
+    {
+        return $this->getEntityManager()
+            ->getRepository('Teams\Entity\TeamResource')
+            ->findOneBy(['team'=>$team->getId(), 'resource'=>$resource->getId()]);
+
+    }
+
+    /*
+     * Check to make sure that the team and resource ids are included,
+     * that they map to valid entities and that the requested action (delete or create)
+     * can be done
+     */
+    public function validateRequest(Request $request,ErrorStore $errorStore)
+    {
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        //does the request contain a team and resource
+        $data = [];
+        if (Request::CREATE === $request->getOperation()){
+            $data = $request->getContent();
+        } elseif (Request::DELETE === $request->getOperation()) {
+            $data = $request->getId();
+        }
+        if (!array_key_exists('o:team',$data)){
+            $errorStore->addError('o:team', 'The request lacks a team id.'); // @translate
+            $logger->err('The request lacks a team id.');
+
+        }
+        if (!array_key_exists('o:resource',$data)){
+            $errorStore->addError('o:resource', 'The request lacks a resource id.'); // @translate
+        }
+
+
+        //is that id a team
+
+        $team = $this->getEntityManager()
+            ->getRepository('Teams\Entity\Team')
+            ->findOneBy(['id'=>$data['o:team']]);
+        if (! $team) {
+            $errorStore->addError('o:team', new Message(
+                'A team with id = "%s" can not be found', // @translate
+                $data['o:team']
+            ));
+        }
+
+        //is that a resource
+        $resource = $this->getEntityManager()
+            ->find('Omeka\Entity\Resource', $data['o:resource']);
+
+        if (! $resource) {
+            $errorStore->addError('o:team', new Message(
+                'A resource with id = "%s" can not be found', // @translate
+                $data['o:resource']
+            ));
+        }
+
+        //does the team resource already exist
+        if ($team && $resource){
+            if (Request::CREATE === $request->getOperation() && $this->teamResourceExists($team, $resource)){
+                $errorStore->addError('o:resource', 'That team resource already exists.'); // @translate
+            } elseif (Request::DELETE === $request->getOperation() && ! $this->teamResourceExists($team, $resource)){
+                $errorStore->addError('o:resource', 'That team resource you are trying to delete does not exists.'); // @translate
+            }
+        }
+
+    }
+
     public function delete(Request $request)
     {
-        //       $services = $this->getServiceLocator();
-        //        $logger = $services->get('Omeka\Logger');
-        //        $logger->err($resource->getResourceName() );
+               $services = $this->getServiceLocator();
+                $logger = $services->get('Omeka\Logger');
+                $logger->err( );
 
         //authorized
         $this->teamAuthority($request);
 
         //validate
-        //is the resource id the id of a resource
-        //is the team id the id of a team
         //does the team resource already exist
+        $errorStore = new ErrorStore();
+        $this->validateRequest($request, $errorStore);
+
+        if ($errorStore->hasErrors()) {
+            echo "the error store has errors";
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
 
         //hydrate
 
@@ -381,12 +457,15 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         $this->teamAuthority($request);
 
         //validate
-        //is the resource id the id of a resource
-        //is the team id the id of a team
-        //does the team resource already exist
 
-        //is item set
+        $errorStore = new ErrorStore();
+        $this->validateRequest($request, $errorStore);
 
+        if ($errorStore->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
 
         //hydrate
 
@@ -401,6 +480,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
         //if the resource is an itemset, add the item set and explode the items it contains
         if ($resource->getResourceName() == 'item_sets'){
+
             $entity = $this->explodeItemSet($team,$resource);
         }
 
@@ -430,7 +510,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         } elseif (array_key_exists('o:team', $request->getContent())){
             $teamId = $request->getContent()['o:team'];
         }
-        echo "this is the team id: " . $teamId . '<br>';
 
         if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
             throw new Exception\PermissionDeniedException(sprintf(
@@ -495,16 +574,16 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     }
 
 
-    public function validateRequest(Request $request, ErrorStore $errorStore)
-    {
-        $data = $request->getContent();
-        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
-            return true;
-        } else {
-            throw new Exception\BadRequestException(
-                $this->getTranslator()->translate('Not a vaild request')
-            );
-        }
-    }
+//    public function validateRequest(Request $request, ErrorStore $errorStore)
+//    {
+//        $data = $request->getContent();
+//        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
+//            return true;
+//        } else {
+//            throw new Exception\BadRequestException(
+//                $this->getTranslator()->translate('Not a vaild request')
+//            );
+//        }
+//    }
 
 }
