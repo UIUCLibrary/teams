@@ -133,3 +133,12 @@ with a json body that contains name and optionally description.
 }
 
 Team Resource 
+
+api/team-resource
+
+with a json body that contains the team id and the resource id
+
+{
+"o:team": 16 ,
+"o:resource": 1099
+}
