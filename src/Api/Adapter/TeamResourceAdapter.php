@@ -272,7 +272,40 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
+        //       $services = $this->getServiceLocator();
+        //        $logger = $services->get('Omeka\Logger');
+        //        $logger->err($resource->getResourceName() );
+
+        //authorized
+        $this->teamAuthority($request);
+
+        //validate
+        //is the resource id the id of a resource
+        //is the team id the id of a team
+        //does the team resource already exist
+
+        //hydrate
+
+        $team = $this->getEntityManager()
+            ->find('Teams\Entity\Team', $request->getId()['o:team']);
+        $resource = $this->getEntityManager()
+            ->find('Omeka\Entity\Resource', $request->getId()['o:resource']);
+
+        //if the resource is an itemset, add the item set and explode the items it contains
+        if ($resource->getResourceName() == 'item_sets'){
+            $entity = $this->implodeItemSet($team,$resource);
+        }
+
+        if ($resource->getResourceName() == 'items'){
+            $entity = $this->implodeItem($team,$resource);
+        }
+
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+        }
+        return new Response($entity);
     }
 
     public function batchDelete(Request $request)
@@ -280,6 +313,32 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchDelete($request);
     }
 
+    public function deleteTeamResource(Team $team, Resource $resource)
+    {
+        $entity_exists = $this->getEntityManager()
+            ->getRepository('Teams\Entity\TeamResource')
+            ->findOneBy(['team'=>$team->getId(), 'resource'=>$resource->getId()]);
+        if ($entity_exists) {
+            $this->getEntityManager()->remove($entity_exists);
+            return $entity_exists;
+        }
+    }
+    public function implodeItem(Team $team, Item $item)
+    {
+        foreach ($item->getMedia() as $media)
+        {
+            $this->deleteTeamResource($team, $media);
+        }
+        return $this->deleteTeamResource($team,$item);
+    }
+    public function implodeItemSet(Team $team, ItemSet $itemSet)
+    {
+        foreach ($itemSet->getItems() as $item)
+        {
+            $this->implodeItem($team, $item);
+        }
+        return $this->deleteTeamResource($team,$itemSet);
+    }
     public function persistTeamResource(Team $team, Resource $resource)
     {
         $entity_exists = $this->getEntityManager()
@@ -301,7 +360,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
         foreach ($item->getMedia() as $media)
             {
-                $entity = $this->persistTeamResource($team, $media);
+                $this->persistTeamResource($team, $media);
             }
         return $this->persistTeamResource($team,$item);
 
@@ -340,7 +399,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 //        $logger = $services->get('Omeka\Logger');
 //        $logger->err($resource->getResourceName() );
 
-        $resource_ids = [];
         //if the resource is an itemset, add the item set and explode the items it contains
         if ($resource->getResourceName() == 'item_sets'){
             $entity = $this->explodeItemSet($team,$resource);
