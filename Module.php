@@ -1805,48 +1805,18 @@ SQL;
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
-        $teamAuth = new TeamAuth($em, $logger);
-
         if ($operation == 'update') {
             if (array_key_exists('remove_team', $request->getContent()) ||
                 array_key_exists('add_team', $request->getContent())) {
-
-                //get ids for the item and all of its media
-                $resource_ids = [];
-                $resource_ids[$request->getId()] = true;
-                foreach ($entity->getMedia() as $media) {
-                    $resource_ids[$media->getId()] = true;
+                $services = $this->getServiceLocator();
+                $api = $services->get('Omeka\ApiManager');
+                foreach($request->getContent()['remove_team'] as $team){
+                    $api()->delete('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
+                }
+                foreach ($request->getContent()['add_team'] as $team){
+                    $api->create('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
                 }
 
-                foreach ($request->getContent()['add_team'] as $team_id) {
-                    //if the user is authorized to add items to that team
-                    if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
-                        $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                        if ($team) {
-                            foreach (array_keys($resource_ids) as $resource_id) {
-                                $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
-                                if ($resource) {
-                                    $team_resource = new TeamResource($team, $resource);
-                                    $em->persist($team_resource);
-                                }
-                            }
-                        }
-                    }
-                }
-                $em->flush();
-
-                foreach ($request->getContent()['remove_team'] as $team_id) {
-                    if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
-                        foreach (array_keys($resource_ids) as $resource_id) {
-                            $team_resource = $em->getRepository('Teams\Entity\TeamResource')
-                                    ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
-                            if ($team_resource) {
-                                $em->remove($team_resource);
-                            }
-                        }
-                    }
-                    $em->flush();
-                }
                 //once teams are updated, sync item-site
                 $this->updateItemSites($request->getId());
             }
