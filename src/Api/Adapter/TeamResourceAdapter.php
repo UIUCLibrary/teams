@@ -284,7 +284,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
      * that they map to valid entities and that the requested action (delete or create)
      * can be done
      */
-    public function validateRequest(Request $request,ErrorStore $errorStore)
+    public function validateRequest(Request $request, ErrorStore $errorStore)
     {
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
@@ -294,6 +294,10 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             $data = $request->getContent();
         } elseif (Request::DELETE === $request->getOperation()) {
             $data = $request->getId();
+        }
+        if (!is_array($data)){
+            $errorStore->addError('o:id', 'The team resource id must be an array.'); // @translate
+            return;
         }
         if (!array_key_exists('o:team',$data)){
             $errorStore->addError('o:team', 'The request lacks a team id.'); // @translate
@@ -341,20 +345,21 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function delete(Request $request)
     {
-               $services = $this->getServiceLocator();
-                $logger = $services->get('Omeka\Logger');
-                $logger->err( );
+
 
         //authorized
         $this->teamAuthority($request);
 
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $logger->err("the id parameter is: " . $request->getId() );
         //validate
         //does the team resource already exist
         $errorStore = new ErrorStore();
         $this->validateRequest($request, $errorStore);
 
+
         if ($errorStore->hasErrors()) {
-            echo "the error store has errors";
             $validationException = new Exception\ValidationException;
             $validationException->setErrorStore($errorStore);
             throw $validationException;
