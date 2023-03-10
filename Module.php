@@ -1725,7 +1725,6 @@ SQL;
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
-
         if ($operation == 'update') {
             $resource_template_id = $request->getId();
             $resource_template  = $em->getRepository('Omeka\Entity\ResourceTemplate')
@@ -1811,7 +1810,7 @@ SQL;
                 $services = $this->getServiceLocator();
                 $api = $services->get('Omeka\ApiManager');
                 foreach($request->getContent()['remove_team'] as $team){
-                    $api()->delete('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
+                    $api->delete('team-resource', array('o:team' => $team, 'o:resource'=>$entity->getId()));
                 }
                 foreach ($request->getContent()['add_team'] as $team){
                     $api->create('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
