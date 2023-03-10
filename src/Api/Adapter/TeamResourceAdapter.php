@@ -10,9 +10,12 @@ use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
+use Omeka\Entity\Item;
+use Omeka\Entity\ItemSet;
 use Omeka\Entity\Resource;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Api\Representation\TeamResourceRepresentation;
+use Teams\Entity\Team;
 use Teams\Entity\TeamResource;
 use Teams\Mvc\Controller\Plugin\TeamAuth;
 
@@ -277,6 +280,42 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchDelete($request);
     }
 
+    public function persistTeamResource(Team $team, Resource $resource)
+    {
+        $entity_exists = $this->getEntityManager()
+            ->getRepository('Teams\Entity\TeamResource')
+            ->findOneBy(['team'=>$team->getId(), 'resource'=>$resource->getId()]);
+        if (! $entity_exists) {
+            $entity = new TeamResource($team, $resource);
+            $this->getEntityManager()->persist($entity);
+            return $entity;
+        } return $entity_exists;
+
+    }
+    /*
+     * Hydrates resource and all of the resources it contains
+     * E.g., if Item, hydrates all Media and Assets
+     */
+    public function explodeItem(Team $team, Item $item)
+    {
+
+        foreach ($item->getMedia() as $media)
+            {
+                $entity = $this->persistTeamResource($team, $media);
+            }
+        return $this->persistTeamResource($team,$item);
+
+    }
+    public function explodeItemSet(Team $team, ItemSet $itemSet)
+    {
+        foreach ($itemSet->getItems() as $item)
+        {
+            $this->explodeItem($team, $item);
+        }
+        return $this->persistTeamResource($team,$itemSet);
+
+    }
+
     public function create(Request $request)
     {
         //authorized
@@ -285,18 +324,36 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         //validate
         //is the resource id the id of a resource
         //is the team id the id of a team
-        //does the team resource alrady exist
+        //does the team resource already exist
+
+        //is item set
+
 
         //hydrate
-        $team = $this->getEntityManager()->find('Teams\Entity\Team', $request->getContent()['o:team']);
-        $resource = $this->getEntityManager()->find('Omeka\Entity\Resource', $request->getContent()['o:resource']);
-        $entity = new TeamResource($team, $resource);
-        $this->getEntityManager()->persist($entity);
+
+        $team = $this->getEntityManager()
+            ->find('Teams\Entity\Team', $request->getContent()['o:team']);
+        $resource = $this->getEntityManager()
+            ->find('Omeka\Entity\Resource', $request->getContent()['o:resource']);
+
+//        $services = $this->getServiceLocator();
+//        $logger = $services->get('Omeka\Logger');
+//        $logger->err($resource->getResourceName() );
+
+        $resource_ids = [];
+        //if the resource is an itemset, add the item set and explode the items it contains
+        if ($resource->getResourceName() == 'item_sets'){
+            $entity = $this->explodeItemSet($team,$resource);
+        }
+
+        if ($resource->getResourceName() == 'item'){
+            $entity = $this->explodeItem($team,$resource);
+        }
+
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
             // Refresh the entity on the chance that it contains associations
             // that have not been loaded.
-            $this->getEntityManager()->refresh($entity);
         }
         return new Response($entity);
     }
@@ -309,7 +366,15 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         $services = $this->getServiceLocator();
         $logger = $services->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
-        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $request->getContent()['o:team'])){
+        $teamId = 0;
+        if (array_key_exists('team',$request->getContent())){
+            $teamId = $request->getContent()['team'];
+        } elseif (array_key_exists('o:team', $request->getContent())){
+            $teamId = $request->getContent()['o:team'];
+        }
+        echo "this is the team id: " . $teamId . '<br>';
+
+        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
             throw new Exception\PermissionDeniedException(sprintf(
                     $this->getTranslator()->translate(
                         'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'

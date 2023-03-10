@@ -1655,29 +1655,21 @@ SQL;
         $error_store = $event->getParam('errorStore');
 
         if ($operation == 'update') {
-            $resource_id = $request->getId();
-            $teams = $request->getContent()['team'];
+            if (array_key_exists('remove_team', $request->getContent()) ||
+                array_key_exists('add_team', $request->getContent())) {
 
-            //remove team resources for id
-            $remove_tr  = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
-            foreach ($remove_tr as $tr):
-                $em->remove($tr);
-            endforeach;
-            $em->flush();
+                $services = $this->getServiceLocator();
+                $api = $services->get('Omeka\ApiManager');
+                foreach($request->getContent()['remove_team'] as $team){
+                    $api()->delete('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
+                }
+                foreach ($request->getContent()['add_team'] as $team){
+                    $api->create('team-resource', array('o:team'=>$team, 'o:resource'=>$entity->getId()));
+                }
 
-            //add team resources for id
-            $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource_id]);
-            foreach ($teams as $team_id):
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-            $add_tr = new TeamResource($team, $resource);
-            $em->persist($add_tr);
-            endforeach;
-            $em->flush();
-
-            //add and return errors
-//            $validationException = new Exception\ValidationException;
-//            $validationException->setErrorStore($error_store);
-//            throw $validationException;
+                //once teams are updated, sync item-site
+                $this->updateItemSites($request->getId());
+            }
         }
     }
 
