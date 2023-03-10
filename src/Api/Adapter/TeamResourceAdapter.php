@@ -346,7 +346,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             $entity = $this->explodeItemSet($team,$resource);
         }
 
-        if ($resource->getResourceName() == 'item'){
+        if ($resource->getResourceName() == 'items'){
             $entity = $this->explodeItem($team,$resource);
         }
 
