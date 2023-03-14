@@ -21,7 +21,7 @@ use Teams\Entity\TeamResource;
 use Teams\Mvc\Controller\Plugin\TeamAuth;
 
 //legacy from deciding how much of the module to expose to the API
-class TeamResourceAdapter extends AbstractEntityAdapter
+class TeamResourceAdapter extends AbstractTeamEntityAdapter
 {
     protected $sortFields = [
         'resource_id' => 'resource_id',
@@ -271,82 +271,10 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchCreate($request);
     }
 
-    public function teamResourceExists(Team $team, Resource $resource)
-    {
-        return $this->getEntityManager()
-            ->getRepository('Teams\Entity\TeamResource')
-            ->findOneBy(['team'=>$team->getId(), 'resource'=>$resource->getId()]);
 
-    }
-
-    /*
-     * Check to make sure that the team and resource ids are included,
-     * that they map to valid entities and that the requested action (delete or create)
-     * can be done
-     */
-    public function validateRequest(Request $request, ErrorStore $errorStore)
-    {
-        $services = $this->getServiceLocator();
-        $logger = $services->get('Omeka\Logger');
-        //does the request contain a team and resource
-        $data = [];
-        if (Request::CREATE === $request->getOperation()){
-            $data = $request->getContent();
-        } elseif (Request::DELETE === $request->getOperation()) {
-            $data = $request->getId();
-        }
-        if (!is_array($data)){
-            $errorStore->addError('o:id', 'The team resource id must be an array.'); // @translate
-            return;
-        }
-        if (!array_key_exists('o:team',$data)){
-            $errorStore->addError('o:team', 'The request lacks a team id.'); // @translate
-            $logger->err('The request lacks a team id.');
-
-        }
-        if (!array_key_exists('o:resource',$data)){
-            $errorStore->addError('o:resource', 'The request lacks a resource id.'); // @translate
-        }
-
-
-        //is that id a team
-
-        $team = $this->getEntityManager()
-            ->getRepository('Teams\Entity\Team')
-            ->findOneBy(['id'=>$data['o:team']]);
-        if (! $team) {
-            $errorStore->addError('o:team', new Message(
-                'A team with id = "%s" can not be found', // @translate
-                $data['o:team']
-            ));
-        }
-
-        //is that a resource
-        $resource = $this->getEntityManager()
-            ->find('Omeka\Entity\Resource', $data['o:resource']);
-
-        if (! $resource) {
-            $errorStore->addError('o:team', new Message(
-                'A resource with id = "%s" can not be found', // @translate
-                $data['o:resource']
-            ));
-        }
-
-        //does the team resource already exist
-        if ($team && $resource){
-            if (Request::CREATE === $request->getOperation() && $this->teamResourceExists($team, $resource)){
-                $errorStore->addError('o:resource', 'That team resource already exists.'); // @translate
-            } elseif (Request::DELETE === $request->getOperation() && ! $this->teamResourceExists($team, $resource)){
-                $errorStore->addError('o:resource', 'That team resource you are trying to delete does not exists.'); // @translate
-            }
-        }
-
-    }
 
     public function delete(Request $request)
     {
-
-
         //authorized
         $this->teamAuthority($request);
 
