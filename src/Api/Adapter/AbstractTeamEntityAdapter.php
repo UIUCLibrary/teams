@@ -2,6 +2,7 @@
 
 namespace Teams\Api\Adapter;
 
+use Omeka\Api\Adapter\EntityAdapterInterface;
 use Omeka\Api\Request;
 use Omeka\Api\Resource;
 use Omeka\Entity\Asset;
@@ -12,6 +13,8 @@ use Omeka\Entity\User;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
 use Teams\Entity\Team;
+use Teams\Mvc\Controller\Plugin\TeamAuth;
+use Omeka\Api\Exception;
 
 abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEntityAdapter
 {
@@ -123,5 +126,31 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             ->findOneBy(['team'=>$team->getId(), $entity_name => $entity->getId()]);
 
     }
+
+    public function teamAuthority($request)
+    {
+        $em = $this->getEntityManager();
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $operation = $request->getOperation();
+        $services = $this->getServiceLocator();
+        $logger = $services->get('Omeka\Logger');
+        $teamAuth = new TeamAuth($em, $logger);
+        $teamId = 0;
+        if (array_key_exists('team',$request->getContent())){
+            $teamId = $request->getContent()['team'];
+        } elseif (array_key_exists('o:team', $request->getContent())){
+            $teamId = $request->getContent()['o:team'];
+        }
+
+        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
+            throw new Exception\PermissionDeniedException(sprintf(
+                    $this->getTranslator()->translate(
+                        'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
+                    ),
+                    $operation, $request->getContent()['o:team'])
+            );
+        }
+    }
+
 
 }

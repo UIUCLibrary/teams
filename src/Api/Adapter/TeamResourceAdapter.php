@@ -429,30 +429,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         return new Response($entity);
     }
 
-    public function teamAuthority($request)
-    {
-        $em = $this->getEntityManager();
-        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
-        $operation = $request->getOperation();
-        $services = $this->getServiceLocator();
-        $logger = $services->get('Omeka\Logger');
-        $teamAuth = new TeamAuth($em, $logger);
-        $teamId = 0;
-        if (array_key_exists('team',$request->getContent())){
-            $teamId = $request->getContent()['team'];
-        } elseif (array_key_exists('o:team', $request->getContent())){
-            $teamId = $request->getContent()['o:team'];
-        }
-
-        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
-            throw new Exception\PermissionDeniedException(sprintf(
-                    $this->getTranslator()->translate(
-                        'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
-                    ),
-                    $operation, $request->getContent()['o:team'])
-            );
-        }
-    }
 
 
     public function hydrateEntity(Request $request,
