@@ -26,7 +26,7 @@ class TeamAssetAdapter extends AbstractEntityAdapter
 
     public function getResourceName()
     {
-        return 'team-asset';
+        return 'team_asset';
     }
 
     public function getRepresentationClass()
