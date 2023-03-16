@@ -2,6 +2,7 @@
 
 namespace Teams\Api\Adapter;
 
+use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Adapter\EntityAdapterInterface;
 use Omeka\Api\Request;
 use Omeka\Api\Resource;
@@ -151,6 +152,35 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             );
         }
     }
+
+    public function read(Request $request)
+    {
+        AbstractAdapter::read($request);
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
+    }
+
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::update($request);
+    }
+
+    public function batchUpdate(Request $request)
+    {
+        AbstractAdapter::batchUpdate($request);
+    }
+
+
+
 
 
 }
