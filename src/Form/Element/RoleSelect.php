@@ -10,7 +10,7 @@ class RoleSelect extends TeamSelect
     protected $data_base_url = ['resource' => 'role'];
 
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
 

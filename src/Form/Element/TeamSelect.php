@@ -33,7 +33,7 @@ class TeamSelect extends Select
         'add_user_auth' => false
     ];
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
 

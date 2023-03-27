@@ -8,12 +8,8 @@ class UserSelect extends TeamSelect
     protected $data_placeholder = 'Select Users';
 
     protected $data_base_url = ['resource' => 'user'];
-    /**
-     * @var array
-     */
-    private $team_id = 1;
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
         $em = $this->getEntityManager();

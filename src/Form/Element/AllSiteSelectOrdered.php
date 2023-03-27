@@ -32,7 +32,7 @@ class AllSiteSelectOrdered extends SiteSelect
         $this->entityManager = $entityManager;
     }
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $query = $this->getOption('query');
 

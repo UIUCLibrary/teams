@@ -12,7 +12,7 @@ class AllSiteSelect extends TeamSelect
     protected $valueOptions = [];
 
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         if ($this->valueOptions) {
             return $this->valueOptions;

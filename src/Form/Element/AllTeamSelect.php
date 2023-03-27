@@ -5,7 +5,7 @@ namespace Teams\Form\Element;
 
 class AllTeamSelect extends TeamSelect
 {
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
 
