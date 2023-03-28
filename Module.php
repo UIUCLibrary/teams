@@ -1629,7 +1629,7 @@ SQL;
 
             $resource =  $response->getContent();
 
-            $teams = $request->getContent()['team'];
+            $teams = $request->getContent()['add_team'];
 
             foreach ($teams as $team_id):
             $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
@@ -1653,31 +1653,38 @@ SQL;
         $request = $event->getParam('request');
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
+        $teamAuth = new TeamAuth($em, $logger);
 
         if ($operation == 'update') {
             $resource_id = $request->getId();
-            $teams = $request->getContent()['team'];
-
-            //remove team resources for id
-            $remove_tr  = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $resource_id]);
-            foreach ($remove_tr as $tr):
-                $em->remove($tr);
-            endforeach;
+            foreach ($request->getContent()['remove_team'] as $team_id) {
+                if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
+                    $team_resource = $em->getRepository('Teams\Entity\TeamResource')
+                        ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
+                    if ($team_resource) {
+                        $em->remove($team_resource);
+                    }
+                }
+            }
+            $em->flush();
+            foreach ($request->getContent()['add_team'] as $team_id) {
+                //if the user is authorized to add items to that team
+                if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    if ($team) {
+                        $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
+                        if ($resource) {
+                            $team_resource = new TeamResource($team, $resource);
+                            $em->persist($team_resource);
+                        }
+                    }
+                }
+            }
             $em->flush();
 
-            //add team resources for id
-            $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource_id]);
-            foreach ($teams as $team_id):
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-            $add_tr = new TeamResource($team, $resource);
-            $em->persist($add_tr);
-            endforeach;
-            $em->flush();
 
-            //add and return errors
-//            $validationException = new Exception\ValidationException;
-//            $validationException->setErrorStore($error_store);
-//            throw $validationException;
         }
     }
 
@@ -1808,6 +1815,7 @@ SQL;
      */
     public function itemUpdate(Event $event)
     {
+        echo get_class($this->getUser());
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
