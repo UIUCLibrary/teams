@@ -13,7 +13,7 @@ use Omeka\Stdlib\ErrorStore;
 
 //legacy from deciding how much of the module to expose to the API
 
-class TeamUserAdapter extends AbstractEntityAdapter
+class TeamUserAdapter extends TeamResourceAdapter
 {
     use QueryBuilderTrait;
 
