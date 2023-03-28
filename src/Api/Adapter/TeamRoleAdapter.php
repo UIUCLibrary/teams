@@ -56,10 +56,6 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         AbstractAdapter::search($request);
     }
 
-    public function create(Request $request)
-    {
-        AbstractAdapter::create($request);
-    }
 
     public function batchCreate(Request $request)
     {
