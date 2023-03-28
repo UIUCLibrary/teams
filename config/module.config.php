@@ -114,6 +114,8 @@ return [
             'Teams\Controller\Add' => 'Teams\Service\AddControllerFactory',
             'Teams\Controller\Update' => 'Teams\Service\UpdateControllerFactory',
             'Teams\Controller\Trash' => 'Teams\Service\TrashControllerFactory',
+            'Teams\Controller\Team' => 'Teams\Service\TeamControllerFactory',
+
         ]
     ],
     'controller_plugins' => [
@@ -300,59 +302,67 @@ return [
                             ],
                         ],
                     ],
-                    //need to make a route for the resource page because there are no events inside the view
-//                    'site' => [
-//                        'type' => \Laminas\Router\Http\Literal::class,
-//                        'options' => [
-//                            'route' => '/site',
-//                            'defaults' => [
-//                                '__NAMESPACE__' => 'Omeka\Controller\SiteAdmin',
-//                                '__SITEADMIN__' => true,
-//                                'controller' => 'Index',
-//                                'action' => 'index',
-//                            ],
-//                        ],
-//                        'may_terminate' => true,
-//                        'child_routes' => [
-//                            'slug' => [
-//                                'type' => \Laminas\Router\Http\Segment::class,
-//                                'options' => [
-//                                    'route' => '/s/:site-slug',
-//                                    'constraints' => [
-//                                        'site-slug' => '[a-zA-Z0-9_-]+',
-//                                    ],
-//                                    'defaults' => [
-//                                        'action' => 'edit',
-//                                    ],
-//                                ],
-//                                'may_terminate' => true,
-//
-//                                //this is the child route for the new site resources page
-//                                'child_routes' => [
-//                                    'resources' => [
-//                                        'type' => \Laminas\Router\Http\Literal::class,
-//                                        'options' => [
-//                                            'route' => '/resources',
-//                                            'defaults' => [
-//                                                '__NAMESPACE__' => 'Teams\Controller',
-//                                                'controller' => 'Index',
-//                                                'action' => 'resources',
-//                                            ],
-//                                        ],
-//                                    ],
-//                                ],
-//                            ],
-//                            'add' => [
-//                                'type' => \Laminas\Router\Http\Literal::class,
-//                                'options' => [
-//                                    'route' => '/add',
-//                                    'defaults' => [
-//                                        'action' => 'add',
-//                                    ],
-//                                ],
-//                            ],
-//                        ],
-//                    ],
+                    'teams-module' => [
+                        'type' => Literal::class,
+                        'options' => [
+                            'route' => '/teams-module',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                'controller' => 'Team',
+                                'action' => 'browse',
+                            ],
+                        ],
+                        'may_terminate' => true,
+                        'child_routes' => [
+                            'show' => [
+                                'type' => 'Segment',
+                                'options' => [
+                                    'route' => '/:id',
+                                    'defaults' => [
+                                        'action' => 'show',
+                                    ],
+                                    'constraints' => [
+                                        'id' => '[1-9]\d*'
+                                    ]
+                                ],
+                                'may_terminate' => true,
+                                'child_routes' => [
+                                    'delete' => [
+                                        'type' => 'Literal',
+                                        'options' => [
+                                            'route' => '/delete',
+                                            'defaults' => [
+                                                'action' => 'delete',
+                                            ],
+
+                                        ],
+                                    ],
+                                    'update' => [
+                                        'type' => 'Literal',
+                                        'options' => [
+                                            'route' => '/edit',
+                                            'defaults' => [
+                                                //TODO change to correct controller when complete
+                                                'action' => 'edit',
+                                            ],
+
+                                        ],
+                                    ],
+
+                                ]
+                            ],
+                            'add' => [
+                                'type' => 'Literal',
+                                'options' => [
+                                    'route' => '/add',
+                                    'defaults' => [
+                                        //TODO change to correct controller when complete
+                                        'action' => 'add'
+                                    ]
+                                ]
+                            ],
+                        ],
+                    ],
 
                     //TODO: move this out of the index controller
                     'del' => [
@@ -381,22 +391,7 @@ return [
                         ],
                     ],
 
-                    //this might be a cleaner route
-//                    'perm_del'  => [
-//                        'type' => Segment::class,
-//                        'options' => [
-//                            'route' => '/item/:id/perm-delete-confirm',
-//                            'defaults' => [
-//                                '__NAMESPACE__' => 'Teams\Controller',
-//                                //need to make a anew action for the delete function?
-//                                'controller' => 'Delete',
-//                                'action' => 'perm-delete',
-//                            ],
-//                            'constraints' => [
-//                                'id' => '\d+',
-//                            ],
-//                        ],
-//                    ],
+
                     'trash' => [
                         'type' => Segment::class,
                         'options' => [

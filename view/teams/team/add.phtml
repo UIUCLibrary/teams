@@ -1,0 +1,17 @@
+<?php
+$translate = $this->plugin('translate');
+$this->htmlElement('body')->appendAttribute('class', 'add items');
+?>
+
+<?php echo $this->pageTitle($translate('New item'), 1, $translate('Items')); ?>
+<?php $this->trigger('view.add.before'); ?>
+<?php
+echo $this->partial('teams/team/form.phtml', [
+    'itemSetForm' => $itemSetForm,
+    'teamForm' => $teamForm,
+    'submitLabel' => 'Create Team',
+    'action' => 'add'
+]);
+?>
+
+<?php $this->trigger('view.add.after'); ?>
