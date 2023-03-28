@@ -271,8 +271,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         AbstractAdapter::batchCreate($request);
     }
 
-
-
     public function delete(Request $request)
     {
         //authorized
@@ -384,7 +382,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     }
 
-    public function create(Request $request)
+    public function create(Request $request): \Omeka\Api\Response
     {
         //authorized
         $this->teamAuthority($request);
