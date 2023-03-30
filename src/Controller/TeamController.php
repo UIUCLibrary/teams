@@ -9,15 +9,20 @@ use Teams\Form\TeamItemSetForm;
 
 class TeamController extends AbstractActionController
 {
+
     public function addAction()
     {
-        //if there are no roles yet, submit an error message and provide link to create roles
+        //TODO:if there are no roles yet, submit an error message and provide link to create roles
 
         $view = new ViewModel;
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
         $teamForm = $this->getForm(TeamForm::class);
+        $users =  $this->api()->search('users')->getContent();
+
+
         $view->setVariable('itemSetForm', $itemsetForm);
         $view->setVariable('teamForm', $teamForm);
+        $view->setVariable('users', $users);
 
         return $view;
     }
