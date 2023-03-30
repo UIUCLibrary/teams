@@ -23,19 +23,18 @@ $sectionNavs = [
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 ?>
-<div id="team-info" class="active section">
-    <div class="meta-group">
+    <fieldset id="team-info" class="section active">
+        <?php
+        $form = $this->form;
+        $form->setAttribute('id', 'new_team');
+        $form->setAttribute('action', $this->url());
+        $form->prepare();
+        echo $this->form()->openTag($form);
+        echo $this->formCollection($form);
+        ?>
+    </fieldset>
 
-<?php
-$form = $this->form;
-$form->setAttribute('id', 'new_team');
-$form->setAttribute('action', $this->url());
-$form->prepare();
-echo $this->form()->openTag($form);
-echo $this->formCollection($form);
-?>
-    </div>
-</div>
+
 <div id="team-members" class="section">
     <div class="meta-group">
         <div class="field">
