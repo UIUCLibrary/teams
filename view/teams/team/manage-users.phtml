@@ -1,0 +1,45 @@
+<?php
+//make a template
+//if an edit, populate the template from the team
+?>
+<?php
+$escape = $this->plugin('escapeHtml');
+
+// Teams are already sorted.
+$usersByInitial = [];
+$totalUsers = 0;
+foreach ($this->users as $user) {
+    $totalUsers += 1;
+    if (extension_loaded('mbstring')) {
+        $initial = mb_substr($user->name(), 0, 1);
+        $usersByInitial[mb_strtolower($initial)][] = $user;
+    } else {
+        $initial = substr($user->name(), 0, 1);
+        $usersByInitial[strtolower($initial)][] = $user;
+    }
+
+}
+?>
+<div id="team-selector" class='selector sidebar active'>
+    <a href="#" class="mobile-only sidebar-close o-icon-close"><span class="screen-reader-text"><?php echo $this->translate('Close Me'); ?></span></a>
+    <h3><?php echo $this->translate('Click on a user in the panel and select their role to add it to the edit panel.'); ?></h3>
+    <input type="text" class="selector-filter" placeholder="<?php echo $escape($this->translate('Filter teams')); ?>">
+    <ul>
+        <li class="total-count-heading"><?php echo $this->translate('Available Users'); ?> (<span class="selector-total-count"><?php echo $totalUsers; ?></span>)
+            <ul class="selectable-list">
+                <?php foreach ($usersByInitial as $initial => $teams): ?>
+                <li class="selector-parent">
+                    <span><?php echo $initial; ?></span>
+                    (<span class="selector-child-count"><?php echo count($usersByInitial[$initial]); ?></span>)
+                    <ul>
+                        <?php foreach ($teams as $team): ?>
+                            <li class="selector-child" data-child-search="<?php echo $escape($team->name()); ?>" data-team-internal-id="<?php echo $escape($team->id()); ?>">
+                                <span><?php echo $escape($team->name()); ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endforeach; ?>
+            </ul>
+        </li>
+    </ul>
+</div>
