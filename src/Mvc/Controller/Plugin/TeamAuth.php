@@ -71,7 +71,7 @@ class TeamAuth extends AbstractPlugin
         }
 
         $em = $this->entityManager;
-        $user_id = $this->user->getId();
+        $user_id = $user->getId();
         $authorized = false;
 
 
