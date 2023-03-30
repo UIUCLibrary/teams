@@ -11,13 +11,5 @@ class TeamForm extends Form
             'name' => 'team',
             'type' => TeamFieldset::class,
         ]);
-
-//        $this->add([
-//            'type' => 'submit',
-//            'name' => 'submit',
-//            'attributes' => [
-//                'value' => 'Create New Team',
-//            ],
-//        ]);
     }
 }
