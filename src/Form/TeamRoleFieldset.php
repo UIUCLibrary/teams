@@ -109,7 +109,7 @@ class TeamRoleFieldset extends Fieldset
                 ],
             ],
             'attributes' => [
-                'id' => 'can_delete_resources '
+                'id' => 'can_delete_resources'
             ]
         ]);
 
