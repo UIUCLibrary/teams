@@ -51,9 +51,9 @@ class TeamRoleFieldset extends Fieldset
                     'disable_html_escape' => true,
                 ],
             ],
-//            'attributes' => [
-//                'id' => 'can_add_users',
-//            ]
+            'attributes' => [
+                'id' => 'can_add_users',
+            ]
         ]);
 
         $this->add([
