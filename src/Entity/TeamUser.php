@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Mapping\UniqueConstraint;
+use Omeka\Entity\AbstractEntity;
 use Omeka\Entity\User;
 
 
@@ -20,7 +21,7 @@ use Omeka\Entity\User;
  * @Table(uniqueConstraints={@UniqueConstraint(name="active_team", columns={"is_current", "user_id"})})
 
  */
-class TeamUser
+class TeamUser extends AbstractEntity
 {
     /**
      * @var Team
