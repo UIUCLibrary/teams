@@ -210,4 +210,26 @@ class TeamResourceTemplate extends \Teams\Entity\TeamResourceTemplate implements
         return parent::__toString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function getId(): array
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getId', []);
+
+        return parent::getId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getResourceId()
+    {
+
+        $this->__initializer__ && $this->__initializer__->__invoke($this, 'getResourceId', []);
+
+        return parent::getResourceId();
+    }
+
 }
