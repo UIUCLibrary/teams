@@ -103,16 +103,16 @@ class AddController extends AbstractActionController
         if ($newTeam) {
             $team = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
-            if ($request->getPost('user_role')) {
-                foreach ($request->getPost('user_role') as $userId => $roleId):
+            if ($request->getPost('o:team_users')) {
+                foreach ($request->getPost('o:team_users') as $team_user):
                     $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                        ->findOneBy(['id' => (int)$userId]);
-                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                        ->findOneBy(['id' => (int)$roleId]);
+                        ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
+                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                        ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
 
-                $teamUser = new TeamUser($team, $user, $role);
-                $teamUser->setCurrent(null);
-                $this->entityManager->persist($teamUser);
+                    $teamUser = new TeamUser($team, $user, $role);
+                    $teamUser->setCurrent(null);
+                    $this->entityManager->persist($teamUser);
                 endforeach;
                 $this->entityManager->flush();
             }
