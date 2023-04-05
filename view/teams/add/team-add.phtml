@@ -34,122 +34,19 @@ echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
         ?>
     </fieldset>
 
+<fieldset id="team-members" class="section">
+<!--    --><?php //$userRoleForm = $this->userRoleForm;
+//    $userRoleForm->prepare();
+//    echo $this->form()->openTag($userRoleForm);
+//    echo $this->formCollection($userRoleForm);
+//    ?>
+    <?php echo $this->partial('teams/team/manage-users', [
+        'users' => $this->users,
+        'team' => null,
 
-<div id="team-members" class="section">
-    <div class="meta-group">
-        <div class="field">
-            <div class="field-meta">
-                <label for="add-member-choice">Add a User and Assign them a Role:</label>
-            </div>
-
-            <div class="input" id="user-role">
-
-                <select class="chosen-select" data-placeholder="Username"
-                         id="new-member-choice" name="add-member-choice" >
-                    <?php foreach ($available_u_array as $member => $id):
-                        echo '<option value="' . $id . '" id="user' . $id . '">' . $member . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-
-            <div class="input">
-                <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
-                    <?php foreach ($this->roles as $role => $id):
-                        echo '<option value="' . $id . '" id="user' . $id . '">' . $role . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-
-
-            <script>
-
-                function removeRow(id,u){
-                    let row = document.getElementById(id);
-                    row.parentElement.removeChild(row);
-                    let user_options = document.getElementById("add-member-options");
-                    let option = document.createElement('option');
-
-                    option.setAttribute('value', u);
-                    option.setAttribute('id', id);
-
-                    user_options.appendChild(option);
-
-
-                }
-
-                users = <?php echo json_encode($this->available_u_array);?>;
-                roles = <?php echo json_encode($this->roles);?>;
-                function addUser() {
-                    let nm = document.getElementById("new-member-choice");
-                    let nmr = document.getElementById("new-member-role");
-
-                    if (document.getElementById('u' + $("#new-member-choice").val())){
-                        document.getElementById('u' + $("#new-member-choice").val()).remove();
-                    }
-                    //make row with id u+user_id
-                    let row = document.createElement('tr');
-                    row.id = "u" + $("#new-member-choice").val();
-
-                    //create delete row icon
-                    let userNameTd = document.createElement('td');
-
-                    let trashA = document.createElement('a');
-                    trashA.setAttribute("class", "o-icon-delete icon-form");
-                    trashA.classList.add("row-left");
-                    trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
-
-                    //make the link with the user's name
-                    userNameTd.appendChild(trashA);
-                    let userA = document.createElement('span');
-                    // userA.setAttribute('href', window.location.hostname + '/admin/user' + nm.value);
-                    userA.innerText = $("#new-member-choice option:selected").text();
-                    userNameTd.appendChild(userA);
-
-                    //data encoded in the form user_role[user_id] = role_id
-                    let selected = document.createElement('input');
-                    selected.setAttribute('type', 'hidden');
-                    selected.setAttribute('form','new_team');
-                    selected.setAttribute('name', 'user_role[' + $("#new-member-choice").val() +']');
-                    selected.value = $("#new-member-role").val() ;
-
-                    row.appendChild(selected);
-
-
-                    row.appendChild(userNameTd);
-                    document.getElementById("user-table").appendChild(row);
-
-                    let roleTd = document.createElement('td');
-                    roleTd.innerText = $("#new-member-role option:selected").text() ;
-                    row.appendChild(roleTd);
-                }
-            </script>
-            <div style="margin-left: 20px; ">
-                <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
-            </div>
-        </div>
-        <div class="field">
-            <div class="field-meta">
-                Add Users:
-            </div>
-                <table>
-                    <thead>
-                    <tr>
-                        <th>
-                            <?php echo $translate('Name'); ?>
-                        </th>
-                        <th><?php echo $translate('Role'); ?></th>
-                    </tr>
-                    </thead>
-                    <tbody id="user-table">
-                    </tbody>
-                </table>
-        </div>
-    </div>
-    <div id="clone">
-    </div>
-</div>
+    ]);
+    ?>
+</fieldset>
 
 <?php
 $itemsetForm = $this->itemsetForm;

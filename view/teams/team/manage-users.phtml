@@ -5,11 +5,6 @@ $this->htmlElement('body')->appendAttribute('class', 'sites users');
 $escape = $this->plugin('escapeHtml');
 $delete = $translate('Delete');
 $restore = $translate('Restore');
-$roles = [
-    'viewer' => $translate('Viewer'),
-    'editor' => $translate('Creator'),
-    'admin' => $translate('Manager'),
-];
 $team_roles = $this->api()->search('team-role')->getContent();
 $userRowTemplate = '
 <tr class="resource-row">
@@ -27,16 +22,17 @@ $userRowTemplate .= '</select></td>
     </td>
 </tr>
 ';
-$sitePermissions = [];
 $users = [];
-foreach ($sitePermissions as $sitePermission) {
-    $user = $sitePermission->user();
-    $users[] = [
-        'id' => $user->id(),
-        'role' => $sitePermission->role(),
-    ];
+if ($team){
+    $teamUsers = $this->api()->search('team-user', ['team' => $team->getContent()->id()])->getContent();
+    foreach ($teamUsers as $teamUser) {
+        $users[] = [
+            'id' => $teamUser->user()->getId(),
+            'role' => $teamUser->role()->getId(),
+        ];
+    }
 }
-$sitePermissions =  []
+
 ?>
 
 <?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
@@ -48,7 +44,7 @@ $sitePermissions =  []
     <button><?php echo $translate('Save'); ?></button>
 </div>
 
-<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($sitePermissions) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($teamUsers) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
     <thead>
     <tr>
         <th scope="col"><?php echo $translate('User'); ?></th>
