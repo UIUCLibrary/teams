@@ -28,6 +28,7 @@ $sectionNavs = [
 
 <h1>Update Team for <?php echo $this->form->get('o:name')->getValue()?></h1>
 <div id="page-actions">
+        <?php echo $this->cancelButton(); ?>
     <button type="submit" form="team-update-form" value="Submit">Save Edits</button>
 </div>
 <?php
@@ -45,98 +46,20 @@ echo $this->form()->openTag($form);?>
 <?php echo $this->form()->openTag($form);?>
 
 <?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
-<div id="team-members" class="section">
-    <div class="meta-group">
-        <div class="field">
-            <div class="field-meta">
-                <label for="add-member-choice">Add a User to the Team:</label>
-            </div>
-            <div class="input" id="role">
-                <select class="chosen-select" data-placeholder="Username"
-                        id="new-member-choice" name="add-member" >
-                    <?php foreach ($available_u_array as $id => $member):
-                        echo '<option value="' .  $id .'" id="user' . $id . '">'.  $member . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-            <div class="input" id="role">
-                <select class="chosen-select" data-placeholder="Role"
-                        id="new-member-choice" name="member-role" >
-                    <?php foreach ($roles as $role):
-                        echo '<option value="' .  $role->getId() .'" id="user' . $role->getId() . '">'.  $role->getName() . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-            <div class="input" id="role">
-                <input class="btn btn-default"  style="margin-left: 20px;" type="submit" name="addUser" value="Add User" />
-            </div>
-        </div>
-        </div>
-        <div class="field">
-            <div class="field-meta">
-                Current Users:
-            </div>
-            <?php if (count($this->team_u_collection)> 0): ?>
-                <table class="tablesaw batch-edit" data-tablesaw-mode="stack">
-                    <thead>
-                    <tr>
-                        <th><?php echo $translate('Remove'); ?></th>
-                        <th><?php echo $translate('Name'); ?></th>
-                        <th><?php echo $translate('Role'); ?></th>
-                        <th><?php echo $translate('Current?'); ?></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($this->team_u_collection as $team_user):
-                        $user_name =  $team_user->getUser()->getName();
-                        $user_id = $team_user->getUser()->getId();
-                        $role_name = $team_user->getRole()->getName();
-                        $role_id = $team_user->getRole()->getid();
-                        $is_active = $team_user->getCurrent();
-                        $is_active_str = $is_active ?  'yes':  'no';
-                        ?>
-                        <tr>
-                            <td>
-                                <ul class="actions">
-                                    <li>
-                                        <a href="#" class="o-icon-delete remove-user" title="Remove team" aria-label="Remove team"></a>
-                                    </li>
-                                 </ul>
-                            </td>
-                            <td>
-                                    <?php echo $user_name ?>
-                            </td>
-                            <td>
-                                <fieldset name="user-roles" id="user-roles">
-                                    <select  id="UserRole[<?php echo $user_id?>]" name="<?php echo sprintf('UserRole[%s]', $user_id)?>">
-                                        <option value="<?php echo $team_user->getRole()->getId()?>"> <?php echo $team_user->getRole()->getName()?> </option>
-                                        <?php foreach ($this->roles as $role):
-                                            if ($role->getId() !== $team_user->getRole()->getId()) {
-                                                ?> <option value="<?php echo $role->getId(); ?>"><?php echo $role->getName(); ?></option> <?php
-                                            }
-                                        endforeach; ?>
-                                    </select>
-                                    <input type="hidden" id="UserCurrent[<?php echo $user_id?>]"
-                                           name="<?php echo sprintf('UserCurrent[%s]', $user_id)?>"
-                                           value="<?php echo $is_active?>"
-                                    >
-                                </fieldset>
-                            </td>
-                            <td><?php echo $is_active_str ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php else: ?>
-                <div class="-resources">
-                    <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-<?php endif; ?>
+
+    <fieldset id="team-members" class="section">
+    <!--    --><?php //$userRoleForm = $this->userRoleForm;
+//    $userRoleForm->prepare();
+//    echo $this->form()->openTag($userRoleForm);
+//    echo $this->formCollection($userRoleForm);
+//    ?>
+    <?php echo $this->partial('teams/team/manage-users', [
+        'users' => $this->users,
+        'team' => $this->team,
+
+    ]);
+    ?>
+    </fieldset><?php endif; ?>
 
 <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
 <div id="team-resources" class="section">
