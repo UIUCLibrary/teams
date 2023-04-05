@@ -35,6 +35,7 @@ echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
     <?php echo $this->partial('teams/team/manage-users', [
         'users' => $this->users,
         'team' => null,
+        'team_users' => $team_users,
 
     ]);
     ?>

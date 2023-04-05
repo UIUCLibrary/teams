@@ -23,7 +23,7 @@ $userRowTemplate .= '</select></td>
 </tr>
 ';
 $users = [];
-if ($team){
+if ($team) {
     $teamUsers = $this->api()->search('team-user', ['team' => $team->getContent()->id()])->getContent();
     foreach ($teamUsers as $teamUser) {
         $users[] = [
@@ -31,7 +31,16 @@ if ($team){
             'role' => $teamUser->role()->getId(),
         ];
     }
+} elseif ($team_users) {
+    foreach ($team_users as $team_user) {
+        $users[] = [
+            'id' => $team_user['o:user']['o:id'],
+            'role' => $team_user['o:team_role']['o:id'],
+        ];
+    }
 }
+
+
 
 ?>
 

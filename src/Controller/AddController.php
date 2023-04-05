@@ -226,7 +226,7 @@ class AddController extends AbstractActionController
         $view->setVariable('userRoleForm', $userRoleForm);
         $view->setVariable('roles', $roles);
         $view->setVariable('available_u_array', $all_u_array);
-        $view->setVariable('user_roles', $request->getPost('user_role'));
+        $view->setVariable('team_users', $request->getPost('o:team_users'));
 
         return $view;
     }
