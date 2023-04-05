@@ -97,6 +97,11 @@ class TeamRoleRepresentation extends AbstractEntityRepresentation
         $this->resource->getResources();
     }
 
+    public function id()
+    {
+        return $this->resource->getId();
+    }
+
 
 
 }
