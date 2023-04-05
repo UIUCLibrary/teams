@@ -174,6 +174,10 @@ SQL;
                 $conn->insert('team_asset', $entry);
             }
         }
+        if (version_compare($oldVersion,'4.0.0','<')){
+            $conn = $serviceLocator->get('Omeka\Connection');
+            $conn->exec('ALTER TABLE team-users MODIFY id INT NOT NULL AUTO_INCREMENT');
+        }
     }
 
     public function updateAllUserSites()
