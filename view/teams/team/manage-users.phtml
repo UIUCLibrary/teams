@@ -24,7 +24,7 @@ $userRowTemplate .= '</select></td>
 ';
 $users = [];
 if ($team) {
-    $teamUsers = $this->api()->search('team-user', ['team' => $team->getContent()->id()])->getContent();
+    $teamUsers = $this->api()->search('team-user', ['team' => $team->getId()])->getContent();
     foreach ($teamUsers as $teamUser) {
         $users[] = [
             'id' => $teamUser->user()->getId(),
@@ -60,7 +60,7 @@ if ($team) {
     <p><?php echo $translate('This team has no users. Add users using the interface to the right.'); ?></p>
 </div>
 <button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
-<?php echo $this->userSelector($translate('Click on a user to add them to the site.')); ?>
+<?php echo $this->userSelector($translate('Click on a user to add them to the team.')); ?>
 
 
 
