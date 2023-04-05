@@ -21,6 +21,8 @@ $sectionNavs = [
 </div>
 <?php
 $form = $this->form;
+$this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
+
 
 $form->prepare();
 
