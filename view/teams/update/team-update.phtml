@@ -1,16 +1,4 @@
-<script>
-    window.addEventListener("load", function () {
-        $(".remove-user").click(function(){
-            $(this).closest("tr").toggleClass('delete');
-            if ($(this).closest("tr").hasClass('delete')){
-                $(this).closest("tr").find("select").attr('disabled', true)
-            } else {$(this).closest("tr").find("select").removeAttr('disabled')}
-            $(this).toggleClass('o-icon-delete');
-            $(this).toggleClass('fa');
-            $(this).toggleClass('fa-undo');
-        });
-    })
-</script>
+
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
@@ -48,18 +36,14 @@ echo $this->form()->openTag($form);?>
 <?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
 
     <fieldset id="team-members" class="section">
-    <!--    --><?php //$userRoleForm = $this->userRoleForm;
-//    $userRoleForm->prepare();
-//    echo $this->form()->openTag($userRoleForm);
-//    echo $this->formCollection($userRoleForm);
-//    ?>
+
     <?php echo $this->partial('teams/team/manage-users', [
         'users' => $this->users,
         'team' => $this->team,
-
     ]);
     ?>
-    </fieldset><?php endif; ?>
+    </fieldset>
+<?php endif; ?>
 
 <?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
 <div id="team-resources" class="section">
