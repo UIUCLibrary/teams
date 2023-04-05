@@ -4,7 +4,7 @@ if ($this->roleAuth()->teamAuthorized('add', 'team')):
 
 $this->htmlElement('body')->appendAttribute('class', 'add');
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
-$this->headScript()->appendFile($this->assetUrl('js/add-team.js', 'Teams'));
+$this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
 $formElement = $this->plugin('formElement');
 ?>
 <div id="page-actions">
@@ -22,24 +22,16 @@ $sectionNavs = [
     'team-sites' => $translate('Sites'),
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
+    $form = $this->form;
+    $form->setAttribute('id', 'new_team');
+    $form->prepare();
+    echo $this->form()->openTag($form);
 ?>
     <fieldset id="team-info" class="section active">
-        <?php
-        $form = $this->form;
-        $form->setAttribute('id', 'new_team');
-        $form->setAttribute('action', $this->url());
-        $form->prepare();
-        echo $this->form()->openTag($form);
-        echo $this->formCollection($form);
-        ?>
+        <?php echo $this->formCollection($form); ?>
     </fieldset>
 
 <fieldset id="team-members" class="section">
-<!--    --><?php //$userRoleForm = $this->userRoleForm;
-//    $userRoleForm->prepare();
-//    echo $this->form()->openTag($userRoleForm);
-//    echo $this->formCollection($userRoleForm);
-//    ?>
     <?php echo $this->partial('teams/team/manage-users', [
         'users' => $this->users,
         'team' => null,
