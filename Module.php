@@ -2996,9 +2996,9 @@ SQL;
                 ],
                 'attributes' => [
                     'multiple' => true,
-                    'id' => 'team role',
+                    'id' => 'team_role',
                     'hidden' => 'hidden',
-//                    'class' => 'hidden_no_value'
+                    'class' => 'hidden_no_value'
 
 
                 ],

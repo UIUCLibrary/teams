@@ -8,6 +8,9 @@ If no default team has been selected, then upon selecting a team, use that team 
 */
 window.addEventListener("load", function () {
 
+    //first, hide the role select template element
+    $(".hidden_no_value").parent().parent().css("visibility","hidden");
+
     //disable the options for default so that the user cant select a default team where user isn't a memeber
     $("#default_team option").attr('disabled','disabled');
 
