@@ -1,23 +1,24 @@
 <div>
-    <form id="change_team" method="post" action=" <?php echo $this->url('admin/teams/current') ?>" >
-
-        <?php if ($this->resource_type) { ?>
-                    <label for="team_options"> <?php echo sprintf('Showing %s for your current team: ', $this->resource_type) ?></label>
-
-        <?php } ?>
+    <form id="change_team" method="post" action="<?php echo $this->url('admin/teams/current') ?>" >
+    <?php if ($this->resource_type): ?>
+        <label for="team_options"> <?php echo sprintf('Showing %s for your current team: ', $this->resource_type) ?></label>
+    <?php endif; ?>
         <input type="hidden" value="<?php echo $_SERVER["REQUEST_URI"]; ?>" name="return_url">
         <select id="team_options" name="team_id" form="change_team">
-
-            <?php if ($this->current_team == null) {
-    echo 'Current Team is Null';
-    foreach ($this->user_teams as $team):
-                    ?><option value="<?php echo $team->getTeam()->getId(); ?>"><?php echo $team->getTeam()->getName(); ?></option><?php                 endforeach; ?> <option value="null" selected>None</option><?php
-} else {
-                        foreach ($this->user_teams as $team):
-                    ?>
-                    <option <?php if ($team->getTeam()->getName() == $this->current_team) { ?>selected <?php                 } ?>value="<?php echo $team->getTeam()->getId(); ?>"><?php echo $team->getTeam()->getName(); ?></option><?php                 endforeach;
-                    }?>
-
+        <?php if ($this->current_team == null) :
+        echo 'Current Team is Null';
+        foreach ($this->user_teams as $team): ?>
+            <option value="<?php echo $team->getTeam()->getId(); ?>"><?php echo $team->getTeam()->getName(); ?></option>
+        <?php endforeach; ?>
+            <option value="null" selected>None</option>
+        <?php else : ?>
+            <?php foreach ($this->user_teams as $team):?>
+                <?php $team_name = $team->getTeam()->getName();?>
+                <?php $team_id = $team->getTeam()->getId();?>
+                <?php $selected = $team_name == $this->current_team ? 'selected': '';?>
+                <option <?php echo $selected ?>value="<?php echo $team_id; ?>"><?php echo $team_name; ?></option>
+            <?php endforeach; ?>
+       <?php endif; ?>
         </select>
         <button form="change_team"  formmethod="post">Change Team</button>
     </form>

@@ -731,6 +731,18 @@ SQL;
         }
     }
 
+    public function bypassTeamsSortSelector(Event $event)
+    {
+        if ($this->getUser()->getRole() == 'global_admin'){
+            $view = $event->getTarget();
+            $params = $view->params();
+            $bypassTeams = $params->fromQuery('bypass_team_filter');
+            $view->headScript()->appendFile($view->assetUrl('js/append-sort-selector.js', 'Teams'));
+            echo $view->partial('teams/common/sort-selector-bypass-teams', ['bypassTeams' => $bypassTeams]);
+        }
+
+    }
+
     //injects into AbstractEntityAdapter where queries are structured for the api
     public function currentTeam()
     {
@@ -859,7 +871,10 @@ SQL;
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
 
-        if (isset($query['bypass_team_filter']) && $this->getUser()->getRole() == 'global_admin') {
+        if (isset($query['bypass_team_filter'])
+            && $query['bypass_team_filter']
+            && $this->getUser()->getRole() == 'global_admin'
+        ) {
             return;
         }
         if (isset($query['bypass_team_filter']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
@@ -2439,6 +2454,11 @@ SQL;
             '*',
             'view.layout',
             [$this, 'teamSelectorNav']
+        );
+        $sharedEventManager->attach(
+            '*',
+            'view.browse.before',
+            [$this, 'bypassTeamsSortSelector']
         );
 
         $sharedEventManager->attach(
