@@ -1,3 +1,3 @@
 $(document).ready(function() {
-    $("#bypassTeams").detach().prependTo("form.sorting");
+    $("#bypassTeams").detach().insertBefore("form.sorting");
 });
