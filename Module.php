@@ -737,7 +737,7 @@ SQL;
         $params = $view->params();
         $bypassTeams = $params->fromQuery('bypass_team_filter');
         $view->headScript()->appendFile($view->assetUrl('js/append-sort-selector.js', 'Teams'));
-        echo $view->bypassTeamsSelector('teams/common/sort-selector-bypass-teams', $bypassTeams);
+        echo $view->partial('teams/common/sort-selector-bypass-teams', ['bypassTeams' => $bypassTeams]);
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
