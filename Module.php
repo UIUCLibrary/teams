@@ -1001,6 +1001,23 @@ SQL;
     }
 
     //Handle Users
+    public function filterByTeamUser(Event $event)
+    {
+        $query = $event->getParam('request')->getContent();
+        if (isset($query['bypass_team_filter']) && $query['bypass_team_filter']){
+            return;
+        }
+        $qb = $event->getParam('queryBuilder');
+        $alias = 'omeka_root';
+        if (array_key_exists('team_id', $query) && is_int($query['team_id'])){
+            $team = $query['team_id'];
+        } else {
+            $team = $this->getTeamContext($query, $event);
+        }
+        $qb->leftJoin('Teams\Entity\TeamUser', 'tu', Expr\Join::WITH, $alias .'.id = tu.user')
+            ->andWhere('tu.team = :team_id')
+            ->setParameter('team_id', $team);
+    }
 
     /**
      * Adds user's teams to the user view page
@@ -1143,6 +1160,7 @@ SQL;
             }
         }
     }
+
 
     public function updateItemSites($item_id)
     {
@@ -2506,10 +2524,13 @@ SQL;
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
-
-
-
         endforeach;
+
+        $sharedEventManager->attach(
+            UserAdapter::class,
+            'api.search.query',
+            [$this, 'filterByTeamUser']
+        );
 
         $sharedEventManager->attach(
             '*',
