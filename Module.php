@@ -988,20 +988,16 @@ SQL;
     //Handle Users
     public function filterByTeamUser(Event $event)
     {
-
-        $logger = $this->getServiceLocator()->get('Omeka\Logger');
-
-        $qb = $event->getParam('queryBuilder');
         $query = $event->getParam('request')->getContent();
+        if (isset($query['bypass_team_filter']) && $query['bypass_team_filter']){
+            return;
+        }
+        $qb = $event->getParam('queryBuilder');
         $alias = 'omeka_root';
-        $logger->err(($query));
         if (array_key_exists('team_id', $query) && is_int($query['team_id'])){
             $team = $query['team_id'];
-            $logger->err('team_id array key exists');
         } else {
             $team = $this->getTeamContext($query, $event);
-            $logger->err('team_id infered');
-
         }
         $qb->leftJoin('Teams\Entity\TeamUser', 'tu', Expr\Join::WITH, $alias .'.id = tu.user')
             ->andWhere('tu.team = :team_id')
