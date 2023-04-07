@@ -733,11 +733,14 @@ SQL;
 
     public function bypassTeamsSortSelector(Event $event)
     {
-        $view = $event->getTarget();
-        $params = $view->params();
-        $bypassTeams = $params->fromQuery('bypass_team_filter');
-        $view->headScript()->appendFile($view->assetUrl('js/append-sort-selector.js', 'Teams'));
-        echo $view->partial('teams/common/sort-selector-bypass-teams', ['bypassTeams' => $bypassTeams]);
+        if ($this->getUser()->getRole() == 'global_admin'){
+            $view = $event->getTarget();
+            $params = $view->params();
+            $bypassTeams = $params->fromQuery('bypass_team_filter');
+            $view->headScript()->appendFile($view->assetUrl('js/append-sort-selector.js', 'Teams'));
+            echo $view->partial('teams/common/sort-selector-bypass-teams', ['bypassTeams' => $bypassTeams]);
+        }
+
     }
 
     //injects into AbstractEntityAdapter where queries are structured for the api
