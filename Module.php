@@ -731,6 +731,15 @@ SQL;
         }
     }
 
+    public function bypassTeamsSortSelector(Event $event)
+    {
+        $view = $event->getTarget();
+        $params = $view->params();
+        $bypassTeams = $params->fromQuery('bypass_team_filter');
+        $view->headScript()->appendFile($view->assetUrl('js/append-sort-selector.js', 'Teams'));
+        echo $view->bypassTeamsSelector('teams/common/sort-selector-bypass-teams', $bypassTeams);
+    }
+
     //injects into AbstractEntityAdapter where queries are structured for the api
     public function currentTeam()
     {
@@ -2442,6 +2451,11 @@ SQL;
             '*',
             'view.layout',
             [$this, 'teamSelectorNav']
+        );
+        $sharedEventManager->attach(
+            '*',
+            'view.browse.before',
+            [$this, 'bypassTeamsSortSelector']
         );
 
         $sharedEventManager->attach(
