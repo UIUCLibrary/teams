@@ -43,6 +43,6 @@ if ($this->teams) {
     <?php endforeach; ?></ul><?php
 } else { ?>
 <div class="team-no-teams">
-<p><?php echo $this->translate('No teams linked to this item set')?></p>
+<p><?php echo $this->translate(sprintf('No teams are linked to this %s', $resource_type));; ?></p>
 </div>
-<?php }
+<?php } ?>
