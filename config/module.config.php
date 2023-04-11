@@ -100,8 +100,8 @@ return [
     'view_helpers' =>[
         'invokables' => [
             'addTeam' => 'Teams\View\Helper\AddTeam',
-            'bypassTeamsSelector' => 'Teams\View\Helper\BypassTeamsSortSelector'
-//            'roleAuth' => 'Teams\View\Helper\RoleAuth',
+            'bypassTeamsSelector' => 'Teams\View\Helper\BypassTeamsSortSelector',
+            'teamUserSelector' => 'Teams\View\Helper\teamUserSelector',
 
 
         ],
