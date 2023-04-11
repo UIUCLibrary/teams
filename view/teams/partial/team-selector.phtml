@@ -15,7 +15,7 @@
             <?php foreach ($this->user_teams as $team):?>
                 <?php $team_name = $team->getTeam()->getName();?>
                 <?php $team_id = $team->getTeam()->getId();?>
-                <?php $selected = $team_name == $this->current_team ? 'selected': '';?>
+                <?php $selected = $team_name == $this->current_team ? 'selected ': '';?>
                 <option <?php echo $selected ?>value="<?php echo $team_id; ?>"><?php echo $team_name; ?></option>
             <?php endforeach; ?>
        <?php endif; ?>
