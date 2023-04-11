@@ -1,0 +1,13 @@
+<?php
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+?>
+<form id="bypassTeams" name="bypassTeams" action="">
+
+    <?php echo $this->queryToHiddenInputs(['bypass_team_filter', 'page']); //don't keep track of the pagination when toggling the team filter because the result set has changed ?>
+    <select name="bypass_team_filter">
+        <option value="">Team Filter On</option>
+        <option <?php if($bypassTeams):?> selected <?php endif;?> value="true">Team Filter Off</option>
+    </select>
+    <button type="submit"><?php echo $translate("Apply"); ?></button>
+</form>
