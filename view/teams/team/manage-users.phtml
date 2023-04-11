@@ -44,7 +44,6 @@ if ($team) {
 
 ?>
 
-<?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
 
 <table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($teamUsers) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
     <thead>
@@ -60,7 +59,7 @@ if ($team) {
     <p><?php echo $translate('This team has no users. Add users using the interface to the right.'); ?></p>
 </div>
 <button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
-<?php echo $this->userSelector($translate('Click on a user to add them to the team.')); ?>
+<?php echo $this->teamUserSelector($translate('Click on a user to add them to the team.'),true,$this->bypass_teams_filter); ?>
 
 
 
