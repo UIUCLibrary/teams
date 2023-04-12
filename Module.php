@@ -1433,7 +1433,7 @@ SQL;
                         $team_ids[] = (int) $team_id;
 
                     //adding new team from the user form, indicated by an id of 0
-                    if ($team_id === 0) {
+                    if ($team_id == -1) {
                         $u_name = $request->getContent()['o:name'];
                         $team_name = sprintf("%s's team", $u_name);
                         $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
