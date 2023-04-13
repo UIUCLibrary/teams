@@ -23,22 +23,18 @@ $userRowTemplate .= '</select></td>
 </tr>
 ';
 $users = [];
+echo $team->getId();
 if ($team) {
-    $teamUsers = $this->api()->search('team-user', ['team' => $team->getId()])->getContent();
+    $teamUsers = $this->api()->read('team', ['id' => $team->getId()])->getContent()->teamUsers();
     foreach ($teamUsers as $teamUser) {
+        echo $teamUser->getUser()->getId() . '<br>';
         $users[] = [
-            'id' => $teamUser->user()->getId(),
-            'role' => $teamUser->role()->getId(),
-        ];
-    }
-} elseif ($team_users) {
-    foreach ($team_users as $team_user) {
-        $users[] = [
-            'id' => $team_user['o:user']['o:id'],
-            'role' => $team_user['o:team_role']['o:id'],
+            'id' => $teamUser->getUser()->getId(),
+            'role' => $teamUser->getRole()->getId(),
         ];
     }
 }
+
 
 
 
