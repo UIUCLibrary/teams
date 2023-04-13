@@ -40,7 +40,6 @@ echo $this->form()->openTag($form);?>
     <fieldset id="team-members" class="section">
 
     <?php echo $this->partial('teams/team/manage-users', [
-        'users' => $this->users,
         'team' => $this->team,
         'bypass_teams_filter' => true,
 
