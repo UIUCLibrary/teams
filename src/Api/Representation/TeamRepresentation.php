@@ -9,6 +9,10 @@ use Omeka\Api\Representation\AbstractEntityRepresentation;
  */
 class TeamRepresentation extends AbstractEntityRepresentation
 {
+    public function getControllerName()
+    {
+        return 'teams';
+    }
     public function getJsonLdType()
     {
         return 'o-module-teams:Team';

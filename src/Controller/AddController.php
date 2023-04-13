@@ -216,7 +216,7 @@ class AddController extends AbstractActionController
 
             $successMessage = sprintf("Successfully added the team: '%s'", $data['o:name']);
             $this->messenger()->addSuccess($successMessage);
-            return $this->redirect()->toRoute('admin/teams');
+            return $this->redirect()->toUrl($newTeam->getContent()->url());
         }
         $view = new ViewModel;
 
