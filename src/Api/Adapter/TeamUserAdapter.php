@@ -44,10 +44,10 @@ class TeamUserAdapter extends AbstractEntityAdapter
 //        AbstractAdapter::read($request);
 //    }
 
-//    public function search(Request $request)
-//    {
-//        AbstractAdapter::search($request);
-//    }
+    public function search(Request $request)
+    {
+        AbstractAdapter::search($request);
+    }
 
     public function create(Request $request)
     {
