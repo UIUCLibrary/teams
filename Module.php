@@ -1314,16 +1314,11 @@ SQL;
         $asset_id = $entity->id();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $teams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset'=>$asset_id]);
-        $sites = $em->getRepository('Omeka\Entity\Site')->findBy(['thumbnail'=>$asset_id]);
-        $resources = $em->getRepository('Omeka\Entity\Resource')->findBy(['thumbnail'=>$asset_id]);
-
         $view->headScript()->prependFile($view->assetUrl('js/asset-delete-warning.js', 'Teams'));
         echo $view->partial(
             'teams/partial/asset/detail',
             [
                 'teams' => $teams,
-                'resources' => $resources,
-                'sites'  => $sites
             ]
         );
     }
