@@ -71,27 +71,6 @@ $sectionNavs = [
         </div>
     </dl>
 </div>
-<div id="item-metadata" class="active section">
-        <div class="meta-group">
-            <h4><?php echo $translate('Name'); ?></h4>
-            <div class="value"><?php echo $escape($team->name()); ?></div>
-        </div>
-    <div class="meta-group">
-        <h4><?php echo $translate('Description'); ?></h4>
-        <div class="value"><?php echo $escape($team->description()); ?></div>
-    </div>
-
-    <div class="meta-group">
-        <h4><?php echo $translate('Linked Site(s)'); ?></h4>
-        <div class="value">
-            <?php foreach ($team->sites() as $site):?>
-                <?php echo $site->title(); ?>
-                <?php echo '<br>' ?>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-</div>
 
 <div id="users" class="section">
 
