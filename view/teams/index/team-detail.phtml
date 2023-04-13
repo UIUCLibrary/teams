@@ -5,7 +5,7 @@ $team = $this->response->getContent();
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-$this->htmlElement('body')->appendAttribute('class', 'items browse');
+$this->htmlElement('body')->appendAttribute('class', 'items show');
 $resourceSortHeadings = [
     [
         'label' => $translate('Title'),
@@ -44,27 +44,33 @@ $sectionNavs = [
         <a class="button" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
     <?php endif; ?>
 </div>
-
 <div id="item-metadata" class="active section">
-        <div class="meta-group">
-            <h4><?php echo $translate('Name'); ?></h4>
-            <div class="value"><?php echo $escape($team->name()); ?></div>
-        </div>
-    <div class="meta-group">
-        <h4><?php echo $translate('Description'); ?></h4>
-        <div class="value"><?php echo $escape($team->description()); ?></div>
-    </div>
 
-    <div class="meta-group">
-        <h4><?php echo $translate('Linked Site(s)'); ?></h4>
-        <div class="value">
-            <?php foreach ($team->sites() as $site):?>
-                <?php echo $site->title(); ?>
-                <?php echo '<br>' ?>
-            <?php endforeach; ?>
+    <dl>
+        <div class="property">
+            <dt>Title</dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $translate('Name'); ?></span>
+            </dd>
         </div>
-    </div>
-
+        <div class="property">
+            <dt>Description</dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $translate('Description'); ?></span>
+            </dd>
+        </div>
+        <div class="property">
+            <dt>Linked Sites</dt>
+            <dd class="value">
+                <span class="value-content">
+                    <?php foreach ($team->sites() as $site):?>
+                        <?php echo $site->title(); ?>
+                        <?php echo '<br>' ?>
+                    <?php endforeach; ?>
+                </span>
+            </dd>
+        </div>
+    </dl>
 </div>
 
 <div id="users" class="section">
