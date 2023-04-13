@@ -23,11 +23,9 @@ $userRowTemplate .= '</select></td>
 </tr>
 ';
 $users = [];
-echo $team->getId();
 if ($team) {
     $teamUsers = $this->api()->read('team', ['id' => $team->getId()])->getContent()->teamUsers();
     foreach ($teamUsers as $teamUser) {
-        echo $teamUser->getUser()->getId() . '<br>';
         $users[] = [
             'id' => $teamUser->getUser()->getId(),
             'role' => $teamUser->getRole()->getId(),
