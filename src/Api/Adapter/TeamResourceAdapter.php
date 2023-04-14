@@ -79,7 +79,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     public function buildBaseQuery(QueryBuilder $qb, array $query)
     {
         if (isset($query['id'])) {
-            echo $query['id'];
             $ids = $query['id'];
             if (!is_array($ids)) {
                 $ids = [$ids];
