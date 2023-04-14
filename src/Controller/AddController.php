@@ -264,7 +264,7 @@ class AddController extends AbstractActionController
             //        return new ViewModel(['data' => $data]);
             $successMessage = sprintf("Successfully added the role: '%s'", $data['o:name']);
             $this->messenger()->addSuccess($successMessage);
-            return $this->redirect()->toRoute('admin/teams/roles');
+            return $this->redirect()->toRoute('admin/teams/roles/detail',  ['id' => $newRole->getContent()->id()]);
         } else {
             return $view;
         }
