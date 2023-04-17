@@ -63,6 +63,7 @@ return [
             'team-user' => Api\Adapter\TeamUserAdapter::class,
             'team-role' => Api\Adapter\TeamRoleAdapter::class,
             'team-resource' => Api\Adapter\TeamResourceAdapter::class,
+            'team-resource-template' => Api\Adapter\TeamResourceTemplateAdapter::class,
         ],
     ],
     'view_manager' => [
