@@ -33,7 +33,7 @@ class TeamResourceTemplateRepresentation extends AbstractEntityRepresentation
 
     public function resource()
     {
-        return $this->resource->getResource()->getId();
+        return $this->resource->getResourceTemplate()->getId();
     }
 
     public function id(): string
