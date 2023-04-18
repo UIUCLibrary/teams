@@ -18,13 +18,11 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
         return [
             'team' => $this->team(),
             'resource' => $this->resource(),
+            'resource-type' => $this->joinResourceName(),
         ];
     }
 
-    public function getReference()
-    {
-        return new TeamReference($this->resource, $this->getAdapter());
-    }
+
 
     public function team()
     {
@@ -39,5 +37,10 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
     public function id(): string
     {
         return $this->team() . '-' . $this->resource();
+    }
+
+    public function joinResourceName(): string
+    {
+        return$this->resource->getResource()->getResourceName();
     }
 }
