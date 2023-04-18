@@ -10,7 +10,7 @@ return [
         'AdminResource' => [
             [
                 'label' => 'My Teams', // @translate
-                'class' => 'o-icon-users',
+                'class' => 'o-icon-users teams',
                 'route' => 'admin/teams',
                 'pages' => [
                     [
