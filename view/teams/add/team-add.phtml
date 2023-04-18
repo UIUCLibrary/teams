@@ -1,5 +1,5 @@
 <?php
-echo $this->pageTitle("Add New Team");
+echo $this->pageTitle("Add new team");
 if ($this->roleAuth()->teamAuthorized('add', 'team')):
 
 $this->htmlElement('body')->appendAttribute('class', 'add');
@@ -8,7 +8,7 @@ $this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
 $formElement = $this->plugin('formElement');
 ?>
 <div id="page-actions">
-    <button type="submit" form="new_team" value="Submit">Add Team</button>
+    <button type="submit" form="new_team" value="Submit">Add team</button>
 </div>
 <?php
 

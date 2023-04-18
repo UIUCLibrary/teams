@@ -17,7 +17,7 @@ $sectionNavs = [
 <div id="page-actions">
     <?php if ($this->roleAuth()->teamAuthorized('delete', 'role')): ?>
         <a class="button" href="<?php echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->getId()]) ?>">
-            Delete Role </a>
+            Delete role </a>
     <?php endif; ?>
 </div>
 
