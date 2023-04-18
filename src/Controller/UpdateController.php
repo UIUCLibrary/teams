@@ -529,7 +529,7 @@ class UpdateController extends AbstractActionController
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
         $this->messenger()->addSuccess($successMessage);
 
-        return $this->redirect()->refresh();
+        return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
     }
 
     public function roleUpdateAction()
