@@ -13,17 +13,12 @@ use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
-use Teams\Form\AddSitesToTeam;
-use Teams\Form\AddSiteToTeamFieldset;
-use Teams\Form\TeamAddUserRole;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Teams\Form\TeamUserForm;
-use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
-use Laminas\ServiceManager\ServiceLocatorInterface;
 
 class AddController extends AbstractActionController
 {
@@ -43,35 +38,15 @@ class AddController extends AbstractActionController
 
     public function teamAddAction()
     {
-
-        $all_u_array = array();
-        $all_u_collection = $this->api()->search('users')->getContent();
-        foreach ($all_u_collection as $u):
-            $all_u_array[$u->name()] = $u->id();
-        endforeach;
-
-        $role_query = $this->entityManager->createQuery('select partial r.{id, name} from Teams\Entity\TeamRole r');
-        $roles_array =  $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
-        $roles = array();
-
-        foreach ($roles_array as $role):
-            $roles[$role['name']] = $role['id'];
-        endforeach;
-
         $request   = $this->getRequest();
 
         $form = $this->getForm(TeamForm::class);
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
-        $userRoleForm = $this->getForm(TeamAddUserRole::class);
         $view = new ViewModel(
             [
                 'form' => $form,
-                'available_u_array' => $all_u_array,
-                'roles' => $roles,
-                'userForm' => $userForm,
                 'itemsetForm' => $itemsetForm,
-                'userRoleForm' => $userRoleForm,
             ]
         );
 
@@ -88,9 +63,6 @@ class AddController extends AbstractActionController
         $form->setData($request->getPost());
         $userForm->setData($request->getPost());
         $itemsetForm->setData($request->getPost());
-        $userRoleForm->setData($request->getPost());
-
-
         if (! $form->isValid()) {
             return $view;
         }
@@ -219,13 +191,8 @@ class AddController extends AbstractActionController
             return $this->redirect()->toUrl($newTeam->getContent()->url());
         }
         $view = new ViewModel;
-
         $view->setVariable('form', $form);
-        $view->setVariable('userForm', $userForm);
         $view->setVariable('itemsetForm', $itemsetForm);
-        $view->setVariable('userRoleForm', $userRoleForm);
-        $view->setVariable('roles', $roles);
-        $view->setVariable('available_u_array', $all_u_array);
         $view->setVariable('team_users', $request->getPost('o:team_users'));
 
         return $view;
