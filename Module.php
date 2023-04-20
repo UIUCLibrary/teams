@@ -536,6 +536,7 @@ SQL;
             $resource_type= null;
         }
 
+
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
         $user_teams = $team_user->findBy(['user'=>$user_id]);
@@ -2832,6 +2833,12 @@ SQL;
 
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Asset',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
         );
