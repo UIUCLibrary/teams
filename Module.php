@@ -176,7 +176,7 @@ SQL;
         }
         if (version_compare($oldVersion,'4.0.0','<')){
             $conn = $serviceLocator->get('Omeka\Connection');
-            $conn->exec('ALTER TABLE team-users MODIFY id INT NOT NULL AUTO_INCREMENT');
+            $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
         }
     }
 
