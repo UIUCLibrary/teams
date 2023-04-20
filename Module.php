@@ -174,6 +174,7 @@ SQL;
                 $conn->insert('team_asset', $entry);
             }
         }
+        //version naming conventions changed to mirror release versions/core omeka versions
         if (version_compare($oldVersion,'4.0.0','<')){
             $conn = $serviceLocator->get('Omeka\Connection');
             $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
