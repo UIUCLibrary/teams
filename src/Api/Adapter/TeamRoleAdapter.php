@@ -46,38 +46,6 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         return TeamRole::class;
     }
 
-    public function read(Request $request)
-    {
-        AbstractAdapter::read($request);
-    }
-
-//    public function search(Request $request)
-//    {
-//        AbstractAdapter::search($request);
-//    }
-
-
-    public function batchCreate(Request $request)
-    {
-        AbstractAdapter::batchCreate($request);
-    }
-
-    public function update(Request $request)
-    {
-        AbstractAdapter::batchCreate($request);
-    }
-
-    public function delete(Request $request)
-    {
-        AbstractAdapter::delete($request);
-    }
-
-    public function batchDelete(Request $request)
-    {
-        AbstractAdapter::batchDelete($request);
-    }
-
-
     public function hydrate(
         Request $request,
         EntityInterface $entity,
@@ -245,5 +213,30 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         if (array_key_exists('o:name', $data)) {
             $result = $this->validateName($data['o:name'], $errorStore);
         }
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function batchUpdate(Request $request)
+    {
+        AbstractAdapter::batchUpdate($request);
+    }
+
+    public function delete(Request $request)
+    {
+        AbstractAdapter::delete($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
     }
 }

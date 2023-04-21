@@ -218,6 +218,11 @@ class TeamSiteAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchCreate($request);
     }
 
+    public function batchUpdate(Request $request)
+    {
+        AbstractAdapter::batchUpdate($request);
+    }
+
     public function delete(Request $request)
     {
         AbstractAdapter::delete($request);
@@ -227,6 +232,5 @@ class TeamSiteAdapter extends AbstractEntityAdapter
     {
         AbstractAdapter::batchDelete($request);
     }
-
 
 }
