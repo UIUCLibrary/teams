@@ -147,6 +147,9 @@ function makeRoleElement(team_name, team_id, role = 1){
     let select = document.createElement('select');
     select.setAttribute('name', `user-information[o-module-teams:TeamRole][${team_id}]`);
     select.setAttribute('data-placeholder', 'Select Role');
+    if ( $('#team').attr('disabled') ) {
+        select.setAttribute('disabled', 'disabled')
+    }
     select.className = "chosen-select";
     select.id = `role_for_${team_name}`;
 

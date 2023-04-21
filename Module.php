@@ -2982,26 +2982,21 @@ SQL;
      */
     public function addUserFormElement(Event $event)
     {
-        $user_role = $this->getUser()
-            ->getRole();
-        ;
+        $user_role = $this->getUser()->getRole();
         $global_admin = $user_role === 'global_admin';
-
         $form = $event->getTarget();
         $form->get('user-information')->add([
                 'name' => 'o-module-teams:Team',
                 'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
                 'options' => [
                     'label' => 'Teams', // @translate
-                    'add_user_auth' => true,
                     'chosen' => true,
-
-//                    'required' => 'true',
                 ],
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
                     'required' => true,
+                    'disabled' => !$global_admin
                 ],
             ]);
         $form->get('user-information')->add([
@@ -3042,9 +3037,7 @@ SQL;
                     'multiple' => true,
                     'id' => 'team_role',
                     'hidden' => 'hidden',
-                    'class' => 'hidden_no_value'
-
-
+                    'class' => 'hidden_no_value',
                 ],
             ]);
     }
