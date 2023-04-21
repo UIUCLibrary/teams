@@ -1395,8 +1395,10 @@ SQL;
     public function userUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $entity = $event->getParam('entity');
         $request = $event->getParam('request');
+        $target_user =  $request->getId();
+        $current_user = $this->getUser();
+
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
@@ -1409,7 +1411,7 @@ SQL;
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
                 //array of team ids
 
-                if ($user_role = $this->getUser()->getRole() == 'global_admin') {//remove the user's teams
+                if ($current_user->getRole() == 'global_admin') {//remove the user's teams
                     $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
 
                     $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
@@ -1475,18 +1477,10 @@ SQL;
                     endforeach;
 
                     $em->flush();
-
-                    //if their current team was removed, just give them a current team from the top of the list
-//                    if (array_key_exists('o-module-teams:Team', $request->getContent())){
-//                        if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
-//                            $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
-//                                ->setCurrent(true);
-//                            $em->flush();
-//
-//                        }
-//                    }
-                    //update current team
-                    if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
+                }
+                if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
+                    if ($current_user->getRole()== 'global_admin' or $current_user->getId() == $target_user)
+                    {
                         $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
                         $new_default_team = $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'team'=>$default_team]);
                         if ($new_default_team) {
@@ -1507,10 +1501,12 @@ SQL;
                                 $new_default_team->setCurrent(true);
                                 $em->persist($new_default_team);
                                 $em->flush();
-                            }
+                    }
+
                         }
                     }
                 }
+
             }
         }
 
