@@ -2996,7 +2996,7 @@ SQL;
                     'multiple' => true,
                     'id' => 'team',
                     'required' => true,
-                    'disabled' => !$global_admin
+                    'data-mutable' => $global_admin
                 ],
             ]);
         $form->get('user-information')->add([
