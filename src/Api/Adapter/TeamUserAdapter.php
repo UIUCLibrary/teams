@@ -235,7 +235,7 @@ class TeamUserAdapter extends AbstractEntityAdapter
             $qb->andWhere(
                 $qb->expr()->eq(
                     'omeka_root' . '.' . 'is_current',
-                $this->createNamedParameter($qb, $query['is_current'])
+                $this->createNamedParameter($qb, $query['current'])
             )
             );
         }
