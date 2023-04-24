@@ -2450,7 +2450,6 @@ SQL;
      */
     public function siteSettingsRemoveAutoAssign(Event $event)
     {
-        $event->getTarget()->get('o:assign_new_items')->setAttribute('disabled', 'disabled');
         $event->getTarget()
             ->get('o:assign_new_items')
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
