@@ -5,7 +5,7 @@ $team = $this->response->getContent();
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-$this->htmlElement('body')->appendAttribute('class', 'items browse');
+$this->htmlElement('body')->appendAttribute('class', 'items show');
 $resourceSortHeadings = [
     [
         'label' => $translate('Title'),
@@ -41,30 +41,35 @@ $sectionNavs = [
 <?php echo $this->sectionNav($sectionNavs, 'view.show.section_nav', $team); ?>
 <div id="page-actions">
     <?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
-        <a class="button" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit Team </a>
+        <a class="button" href="<?php echo $this->url('admin/teams/detail/update', ['id' => $team->id()])?>"> Edit team </a>
     <?php endif; ?>
 </div>
-
 <div id="item-metadata" class="active section">
-        <div class="meta-group">
-            <h4><?php echo $translate('Name'); ?></h4>
-            <div class="value"><?php echo $escape($team->name()); ?></div>
+    <dl>
+        <div class="property">
+            <dt><?php echo $translate('Name'); ?></dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $escape($team->name()); ?></span>
+            </dd>
         </div>
-    <div class="meta-group">
-        <h4><?php echo $translate('Description'); ?></h4>
-        <div class="value"><?php echo $escape($team->description()); ?></div>
-    </div>
-
-    <div class="meta-group">
-        <h4><?php echo $translate('Linked Site(s)'); ?></h4>
-        <div class="value">
-            <?php foreach ($team->sites() as $site):?>
-                <?php echo $site->title(); ?>
-                <?php echo '<br>' ?>
-            <?php endforeach; ?>
+        <div class="property">
+            <dt><?php echo $translate('Description'); ?></dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $escape($team->description()); ?></span>
+            </dd>
         </div>
-    </div>
-
+        <div class="property">
+            <dt>Linked Sites</dt>
+            <dd class="value">
+                <span class="value-content">
+                    <?php foreach ($team->sites() as $site):?>
+                        <?php echo $site->title(); ?>
+                        <?php echo '<br>' ?>
+                    <?php endforeach; ?>
+                </span>
+            </dd>
+        </div>
+    </dl>
 </div>
 
 <div id="users" class="section">
@@ -84,10 +89,9 @@ $sectionNavs = [
                     <tr>
                         <td>
                             <?php echo $this->hyperlink(
-    $team_user->getUser()->getName(),
-    $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
-)
-                            ?>
+                                    $team_user->getUser()->getName(),
+                                    $this->url('admin/id', ['controller' => 'user', 'id' => $team_user->getUser()->getId() ])
+                            ) ?>
                         </td>
                         <td><?php echo $team_user->getRole()->getName(); ?></td>
                         <?php if ($team_user->getCurrent()): ?>
@@ -102,11 +106,6 @@ $sectionNavs = [
     <?php else: ?>
         <div class="no-resources o-icon-users">
             <p><?php echo $translate('No users currently belong to this team.'); ?></p>
-            <?php $this->hyperlink(
-                                'Add a Team',
-                                $this->url('admin/teams/detail/update', ['id' => $team->id()])
-                            )
-            ?>
         </div>
     <?php endif; ?>
 

@@ -7,7 +7,7 @@ class BlankTeamSelect extends TeamSelect
 {
     protected $data_placeholder = 'Select Default Team';
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $em = $this->getEntityManager();
         $valueOptions = [];

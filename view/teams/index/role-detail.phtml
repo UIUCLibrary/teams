@@ -3,6 +3,7 @@ $role = $this->role;
 $team_users = $this->team_users;
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
+$this->htmlElement('body')->appendAttribute('class', 'items show');
 
 $sectionNavs = [
     'item-metadata' => $translate('Info'),
@@ -16,19 +17,25 @@ $sectionNavs = [
 <div id="page-actions">
     <?php if ($this->roleAuth()->teamAuthorized('delete', 'role')): ?>
         <a class="button" href="<?php echo $this->url('admin/teams/roles/detail/delete', ['id' => $role->getId()]) ?>">
-            Delete Role </a>
+            Delete role </a>
     <?php endif; ?>
 </div>
 
 <div id="item-metadata" class="active section">
-    <div class="meta-group">
-        <h4><?php echo $translate('Name'); ?></h4>
-        <div class="value"><?php echo $escape($role->getName()); ?></div>
-    </div>
-    <div class="meta-group">
-        <h4><?php echo $translate('Comment'); ?></h4>
-        <div class="value"><?php echo $escape($role->getComment()); ?></div>
-    </div>
+    <dl>
+        <div class="property">
+            <dt><?php echo $translate('Name'); ?></dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $escape($role->getName()); ?></span>
+            </dd>
+        </div>
+        <div class="property">
+            <dt><?php echo $translate('Description'); ?></dt>
+            <dd class="value">
+                <span class="value-content"><?php echo $escape($role->getComment()); ?></span>
+            </dd>
+        </div>
+    </dl>
 </div>
 
 <div id="item-linked" class="section">

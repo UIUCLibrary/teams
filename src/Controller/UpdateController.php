@@ -292,6 +292,7 @@ class UpdateController extends AbstractActionController
     public function teamUpdateAction()
     {
         $team_id = $this->params()->fromRoute('id');
+        $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
         $team_sites = $this->entityManager
             ->getRepository('Teams\Entity\TeamSite')
             ->findBy(['team'=>$team_id]);
@@ -338,15 +339,6 @@ class UpdateController extends AbstractActionController
         $userId = $this->identity()->getId();
         //TODO rename this to TeamDetail form or find a way to string these all together
         $form = $this->getForm(TeamUpdateForm::class);
-
-        //is a team associated with the id from the route
-        //TODO I'm not sure this is a realistic issue
-        try {
-            $team = $this->api()->read('team', ['id'=>$team_id]);
-        } catch (InvalidArgumentException $exception) {
-            $this->messenger()->addError("There was a problem finding the team.");
-            return $this->redirect()->toRoute('admin/teams');
-        }
 
         //TODO: get team with a one line entity manager call
         $criteria = ['id' => $team_id];
@@ -467,58 +459,31 @@ class UpdateController extends AbstractActionController
                 ->execute();
         }
 
-        //if they clicked the add user button, just add a member and refresh
-        //TODO: return the form as filled out with whatever changes they made or use Ajax
 
-        //if they actually click on the add user button
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
-            $this->messenger()->addError("You aren't authorized to change this team");
-            return $view;
-        } else {
-            if ($post_data['addUser']) {
-                $user_id = $post_data['add-member'];
-                $role_id = $post_data['member-role'];
-                $newMember = $this->addTeamUser($team_id, $user_id, $role_id);
+            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+                $this->messenger()->addError("You aren't authorized to change team members");
+                return $view;
+            } else {
+                $current_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['team' => $team_id]);
 
-                if (! $newMember){
-                    $this->messenger()->addError("Unable to update team members");
-                    return $view;
+                foreach ($current_users as $team_user) {
+                    $this->entityManager->remove($team_user);
                 }
-                $successMessage = sprintf("Successfully added %s as a %s", $newMember->getUser()->getName(), $newMember->getRole()->getName());
-                $this->messenger()->addSuccess($successMessage);
-                return $this->redirect()->refresh();
+                $this->entityManager->flush();
 
-            }
+                foreach ($request->getPost('o:team_users') as $team_user):
+                    $user = $this->entityManager->getRepository('Omeka\Entity\User')
+                        ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
+                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                        ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
 
-            //remove all team users and add the ones that are active in the form
-            $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team'=>$team_id]);
-            foreach ($team_users as $tu):
-                $em->remove($tu);
-            endforeach;
-            $em->flush();
-
-            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-
-            if ($post_data['UserRole']) {
-                foreach ($post_data['UserRole'] as $user_id => $role_id):
-                    $user_id = (int) $user_id;
-                    $role_id = (int) $role_id;
-                    if ($post_data['UserCurrent'][$user_id] == 1) {
-                        $current = 1;
-                    } else {
-                        $current = null;
-                    }
-                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-                    $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role_id]);
-
-                    $new_tu = new TeamUser($team, $user, $role);
-                    $new_tu->setCurrent($current);
-                    $em->persist($new_tu);
+                    $teamUser = new TeamUser($team, $user, $role);
+                    $teamUser->setCurrent(null);
+                    $this->entityManager->persist($teamUser);
                 endforeach;
-                $em->flush();
-            }
-        }
+                $this->entityManager->flush();
 
+            }
 
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
             $this->messenger()->addError("You aren't authorized to change this team");
@@ -564,7 +529,7 @@ class UpdateController extends AbstractActionController
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
         $this->messenger()->addSuccess($successMessage);
 
-        return $this->redirect()->refresh();
+        return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
     }
 
     public function roleUpdateAction()

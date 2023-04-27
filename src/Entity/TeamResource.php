@@ -88,6 +88,9 @@ use Omeka\Entity\Resource;
      */
     public function getId()
     {
-        // TODO: Implement getId() method.
+        return [
+            'team' => $this->getTeam()->getId(),
+            'resource' => $this->getResource()->getId()
+        ];
     }
 }

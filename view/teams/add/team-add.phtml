@@ -1,14 +1,14 @@
 <?php
-echo $this->pageTitle("Add New Team");
+echo $this->pageTitle("Add new team");
 if ($this->roleAuth()->teamAuthorized('add', 'team')):
 
 $this->htmlElement('body')->appendAttribute('class', 'add');
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
-$this->headScript()->appendFile($this->assetUrl('js/add-team.js', 'Teams'));
+$this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
 $formElement = $this->plugin('formElement');
 ?>
 <div id="page-actions">
-    <button type="submit" form="new_team" value="Submit">Add Team</button>
+    <button type="submit" form="new_team" value="Submit">Add team</button>
 </div>
 <?php
 
@@ -22,135 +22,23 @@ $sectionNavs = [
     'team-sites' => $translate('Sites'),
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
+    $form = $this->form;
+    $form->setAttribute('id', 'new_team');
+    $form->prepare();
+    echo $this->form()->openTag($form);
 ?>
-<div id="team-info" class="active section">
-    <div class="meta-group">
+    <fieldset id="team-info" class="section active">
+        <?php echo $this->formCollection($form); ?>
+    </fieldset>
 
-<?php
-$form = $this->form;
-$form->setAttribute('id', 'new_team');
-$form->setAttribute('action', $this->url());
-$form->prepare();
-echo $this->form()->openTag($form);
-echo $this->formCollection($form);
-?>
-    </div>
-</div>
-<div id="team-members" class="section">
-    <div class="meta-group">
-        <div class="field">
-            <div class="field-meta">
-                <label for="add-member-choice">Add a User and Assign them a Role:</label>
-            </div>
+<fieldset id="team-members" class="section">
+    <?php echo $this->partial('teams/team/manage-users', [
+        'team' => null,
+        'bypass_teams_filter' => true,
 
-            <div class="input" id="user-role">
-
-                <select class="chosen-select" data-placeholder="Username"
-                         id="new-member-choice" name="add-member-choice" >
-                    <?php foreach ($available_u_array as $member => $id):
-                        echo '<option value="' . $id . '" id="user' . $id . '">' . $member . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-
-            <div class="input">
-                <select class="row-left chosen-select" data-placeholder="Role"  id="new-member-role" name="add-member-role">
-                    <?php foreach ($this->roles as $role => $id):
-                        echo '<option value="' . $id . '" id="user' . $id . '">' . $role . '</option>';
-                    endforeach;
-                    ?>
-                </select>
-            </div>
-
-
-            <script>
-
-                function removeRow(id,u){
-                    let row = document.getElementById(id);
-                    row.parentElement.removeChild(row);
-                    let user_options = document.getElementById("add-member-options");
-                    let option = document.createElement('option');
-
-                    option.setAttribute('value', u);
-                    option.setAttribute('id', id);
-
-                    user_options.appendChild(option);
-
-
-                }
-
-                users = <?php echo json_encode($this->available_u_array);?>;
-                roles = <?php echo json_encode($this->roles);?>;
-                function addUser() {
-                    let nm = document.getElementById("new-member-choice");
-                    let nmr = document.getElementById("new-member-role");
-
-                    if (document.getElementById('u' + $("#new-member-choice").val())){
-                        document.getElementById('u' + $("#new-member-choice").val()).remove();
-                    }
-                    //make row with id u+user_id
-                    let row = document.createElement('tr');
-                    row.id = "u" + $("#new-member-choice").val();
-
-                    //create delete row icon
-                    let userNameTd = document.createElement('td');
-
-                    let trashA = document.createElement('a');
-                    trashA.setAttribute("class", "o-icon-delete icon-form");
-                    trashA.classList.add("row-left");
-                    trashA.setAttribute("onclick", "removeRow('" + row.id +"', '"+ nm.value + "')");
-
-                    //make the link with the user's name
-                    userNameTd.appendChild(trashA);
-                    let userA = document.createElement('span');
-                    // userA.setAttribute('href', window.location.hostname + '/admin/user' + nm.value);
-                    userA.innerText = $("#new-member-choice option:selected").text();
-                    userNameTd.appendChild(userA);
-
-                    //data encoded in the form user_role[user_id] = role_id
-                    let selected = document.createElement('input');
-                    selected.setAttribute('type', 'hidden');
-                    selected.setAttribute('form','new_team');
-                    selected.setAttribute('name', 'user_role[' + $("#new-member-choice").val() +']');
-                    selected.value = $("#new-member-role").val() ;
-
-                    row.appendChild(selected);
-
-
-                    row.appendChild(userNameTd);
-                    document.getElementById("user-table").appendChild(row);
-
-                    let roleTd = document.createElement('td');
-                    roleTd.innerText = $("#new-member-role option:selected").text() ;
-                    row.appendChild(roleTd);
-                }
-            </script>
-            <div style="margin-left: 20px; ">
-                <button type="button" class="o-icon-add" onclick="addUser()" href='javascript:void()'> add</button>
-            </div>
-        </div>
-        <div class="field">
-            <div class="field-meta">
-                Add Users:
-            </div>
-                <table>
-                    <thead>
-                    <tr>
-                        <th>
-                            <?php echo $translate('Name'); ?>
-                        </th>
-                        <th><?php echo $translate('Role'); ?></th>
-                    </tr>
-                    </thead>
-                    <tbody id="user-table">
-                    </tbody>
-                </table>
-        </div>
-    </div>
-    <div id="clone">
-    </div>
-</div>
+    ]);
+    ?>
+</fieldset>
 
 <?php
 $itemsetForm = $this->itemsetForm;

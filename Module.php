@@ -174,6 +174,11 @@ SQL;
                 $conn->insert('team_asset', $entry);
             }
         }
+        //version naming conventions changed to mirror release versions/core omeka versions
+        if (version_compare($oldVersion,'4.0.0','<')){
+            $conn = $serviceLocator->get('Omeka\Connection');
+            $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
+        }
     }
 
     public function updateAllUserSites()
@@ -531,6 +536,7 @@ SQL;
         } else {
             $resource_type= null;
         }
+
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
@@ -1310,16 +1316,11 @@ SQL;
         $asset_id = $entity->id();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $teams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset'=>$asset_id]);
-        $sites = $em->getRepository('Omeka\Entity\Site')->findBy(['thumbnail'=>$asset_id]);
-        $resources = $em->getRepository('Omeka\Entity\Resource')->findBy(['thumbnail'=>$asset_id]);
-
         $view->headScript()->prependFile($view->assetUrl('js/asset-delete-warning.js', 'Teams'));
         echo $view->partial(
             'teams/partial/asset/detail',
             [
                 'teams' => $teams,
-                'resources' => $resources,
-                'sites'  => $sites
             ]
         );
     }
@@ -1394,8 +1395,10 @@ SQL;
     public function userUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $entity = $event->getParam('entity');
         $request = $event->getParam('request');
+        $target_user =  $request->getId();
+        $current_user = $this->getUser();
+
         $operation = $request->getOperation();
         $error_store = $event->getParam('errorStore');
 
@@ -1408,7 +1411,7 @@ SQL;
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
                 //array of team ids
 
-                if ($user_role = $this->getUser()->getRole() == 'global_admin') {//remove the user's teams
+                if ($current_user->getRole() == 'global_admin') {//remove the user's teams
                     $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
 
                     $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
@@ -1474,18 +1477,10 @@ SQL;
                     endforeach;
 
                     $em->flush();
-
-                    //if their current team was removed, just give them a current team from the top of the list
-//                    if (array_key_exists('o-module-teams:Team', $request->getContent())){
-//                        if (! in_array($current_team_id, $request->getContent()['o-module-teams:Team'])){
-//                            $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id])
-//                                ->setCurrent(true);
-//                            $em->flush();
-//
-//                        }
-//                    }
-                    //update current team
-                    if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
+                }
+                if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
+                    if ($current_user->getRole()== 'global_admin' or $current_user->getId() == $target_user)
+                    {
                         $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
                         $new_default_team = $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'team'=>$default_team]);
                         if ($new_default_team) {
@@ -1506,10 +1501,12 @@ SQL;
                                 $new_default_team->setCurrent(true);
                                 $em->persist($new_default_team);
                                 $em->flush();
-                            }
+                    }
+
                         }
                     }
                 }
+
             }
         }
 
@@ -2453,8 +2450,7 @@ SQL;
      */
     public function siteSettingsRemoveAutoAssign(Event $event)
     {
-//        $event->getTarget()->get('general')->get('o:assign_new_items')->setAttribute('disabled', 'disabled');
-        $event->getTarget()->get('general')
+        $event->getTarget()
             ->get('o:assign_new_items')
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
     }
@@ -2837,6 +2833,12 @@ SQL;
             [$this, 'teamSelectorBrowse']
         );
 
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\User',
+            'view.browse.before',
+            [$this, 'teamSelectorBrowse']
+        );
+
         //Add pages//
         //ItemSet//
         $sharedEventManager->attach(
@@ -2975,26 +2977,21 @@ SQL;
      */
     public function addUserFormElement(Event $event)
     {
-        $user_role = $this->getUser()
-            ->getRole();
-        ;
+        $user_role = $this->getUser()->getRole();
         $global_admin = $user_role === 'global_admin';
-
         $form = $event->getTarget();
         $form->get('user-information')->add([
                 'name' => 'o-module-teams:Team',
                 'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
                 'options' => [
                     'label' => 'Teams', // @translate
-                    'add_user_auth' => true,
                     'chosen' => true,
-
-//                    'required' => 'true',
                 ],
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
                     'required' => true,
+                    'data-mutable' => $global_admin
                 ],
             ]);
         $form->get('user-information')->add([
@@ -3033,11 +3030,9 @@ SQL;
                 ],
                 'attributes' => [
                     'multiple' => true,
-                    'id' => 'team role',
+                    'id' => 'team_role',
                     'hidden' => 'hidden',
-//                    'class' => 'hidden_no_value'
-
-
+                    'class' => 'hidden_no_value',
                 ],
             ]);
     }

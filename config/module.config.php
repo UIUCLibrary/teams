@@ -10,7 +10,7 @@ return [
         'AdminResource' => [
             [
                 'label' => 'My Teams', // @translate
-                'class' => 'o-icon-users',
+                'class' => 'o-icon-users teams',
                 'route' => 'admin/teams',
                 'pages' => [
                     [
@@ -48,7 +48,7 @@ return [
     ],
     'permissions' => [
         'acl_resources' => [
-            Entity\TeamUser::class,
+//            Entity\TeamUser::class,
 //            Entity\TeamResource::class,
             Controller\AddController::class,
             Controller\IndexController::class,
@@ -63,6 +63,8 @@ return [
             'team-user' => Api\Adapter\TeamUserAdapter::class,
             'team-role' => Api\Adapter\TeamRoleAdapter::class,
             'team-resource' => Api\Adapter\TeamResourceAdapter::class,
+            'team-resource-template' => Api\Adapter\TeamResourceTemplateAdapter::class,
+            'team-site' => Api\Adapter\TeamSiteAdapter::class,
         ],
     ],
     'view_manager' => [
@@ -100,8 +102,8 @@ return [
     'view_helpers' =>[
         'invokables' => [
             'addTeam' => 'Teams\View\Helper\AddTeam',
-            'bypassTeamsSelector' => 'Teams\View\Helper\BypassTeamsSortSelector'
-//            'roleAuth' => 'Teams\View\Helper\RoleAuth',
+            'bypassTeamsSelector' => 'Teams\View\Helper\BypassTeamsSortSelector',
+            'teamUserSelector' => 'Teams\View\Helper\teamUserSelector',
 
 
         ],

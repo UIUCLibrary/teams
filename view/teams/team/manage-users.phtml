@@ -1,0 +1,62 @@
+<?php
+$translate = $this->plugin('translate');
+$this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
+$this->htmlElement('body')->appendAttribute('class', 'sites users');
+$escape = $this->plugin('escapeHtml');
+$delete = $translate('Delete');
+$restore = $translate('Restore');
+$team_roles = $this->api()->search('team-role')->getContent();
+$userRowTemplate = '
+<tr class="resource-row">
+    <td class="data-value" data-row-key="child-search"></td>
+    <td><select name="o:team_users[__index__][o:team_role][o:id]">';
+foreach ($team_roles as $team_role) {
+    $userRowTemplate .= '<option value="' . $team_role->id() . '">' . $team_role->name() . '</option>';
+}
+$userRowTemplate .= '</select></td>
+    <td>
+        <ul class="actions">
+            <li>' . $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $delete]) . '</li>
+        </ul>
+        <input type="hidden" class="resource-id" name="o:team_users[__index__][o:user][o:id]">
+    </td>
+</tr>
+';
+$users = [];
+if ($team) {
+    $teamUsers = $this->api()->read('team', ['id' => $team->getId()])->getContent()->teamUsers();
+    foreach ($teamUsers as $teamUser) {
+        $users[] = [
+            'id' => $teamUser->getUser()->getId(),
+            'role' => $teamUser->getRole()->getId(),
+        ];
+    }
+}
+
+
+
+
+?>
+
+
+<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($teamUsers) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+    <thead>
+    <tr>
+        <th scope="col"><?php echo $translate('User'); ?></th>
+        <th scope="col"><?php echo $translate('Team Role'); ?></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody class="resource-rows"></tbody>
+</table>
+<div class="no-resources">
+    <p><?php echo $translate('This team has no users. Add users using the interface to the right.'); ?></p>
+</div>
+<button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
+<?php echo $this->teamUserSelector($translate('Click on a user to add them to the team.'),true,$this->bypass_teams_filter); ?>
+
+
+
+<script>
+    Omeka.initializeSelector('#site-user-permissions', '#user-selector');
+</script>

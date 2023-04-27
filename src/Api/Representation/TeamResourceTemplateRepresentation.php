@@ -6,23 +6,25 @@ namespace Teams\Api\Representation;
 use Omeka\Api\Representation\AbstractEntityRepresentation;
 
 //legacy from deciding how much of the module to expose to the API
-class TeamResourceRepresentation extends AbstractEntityRepresentation
+class TeamResourceTemplateRepresentation extends AbstractEntityRepresentation
 {
     public function getJsonLdType()
     {
-        return 'o-module-teams:TeamResource';
+        return 'o-module-teams:TeamResourceTemplate';
     }
 
     public function getJsonLd()
     {
         return [
             'team' => $this->team(),
-            'resource' => $this->resource(),
-            'resource-type' => $this->joinResourceName(),
+            'resource-template' => $this->resource(),
         ];
     }
 
-
+    public function getReference()
+    {
+        return new TeamReference($this->resource, $this->getAdapter());
+    }
 
     public function team()
     {
@@ -31,16 +33,11 @@ class TeamResourceRepresentation extends AbstractEntityRepresentation
 
     public function resource()
     {
-        return $this->resource->getResource()->getId();
+        return $this->resource->getResourceTemplate()->getId();
     }
 
     public function id(): string
     {
         return $this->team() . '-' . $this->resource();
-    }
-
-    public function joinResourceName(): string
-    {
-        return$this->resource->getResource()->getResourceName();
     }
 }

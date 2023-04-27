@@ -12,7 +12,7 @@ class AllSiteSelectOrderedFactory extends SiteSelectFactory
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
-        $element = new AllSiteSelectOrdered(null, $options);
+        $element = new AllSiteSelectOrdered(null, $options ?? []);
         $element->setApiManager($services->get('Omeka\ApiManager'));
         $element->setEntityManager($services->get('Omeka\EntityManager'));
         return $element;

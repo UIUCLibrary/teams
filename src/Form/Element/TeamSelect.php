@@ -30,16 +30,20 @@ class TeamSelect extends Select
     protected $data_base_url = ['resource' => 'team'];
 
     protected $options = [
-        'add_user_auth' => false
+        'add_user_auth' => false,
+        'show_all' => false,
     ];
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
 
         $user_id = $this->authenticationService->getIdentity();
+        $user_role =  $this->getApiManager()->read('users',['id'=>$user_id])->getContent()->role();
+
         $em = $this->getEntityManager();
         $team_users = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $all_teams = $em->getRepository('Teams\Entity\Team')->findAll();
         //this is set to display the teams for the current user. This works in many contexts for
         //normal users, but not for admins doing maintenance or adding new users to a team
         foreach ($team_users as $team_user) {
@@ -53,13 +57,32 @@ class TeamSelect extends Select
             $valueOptions[$team_id] = $team_name;
         }
 
+        if ($this->getOption('show_all') or $user_role == 'global_admin'){
+            $otherTeamsValueOptions = [];
+            $allOptions = [];
+            $all_teams = $em->getRepository('Teams\Entity\Team')->findAll();
+            foreach ($all_teams as $team){
+                if (!array_key_exists($team->getId(),$valueOptions)){
+                    $team_name = $team->getName();
+                    $team_id = $team->getId();
+                    $otherTeamsValueOptions[$team_id] = $team_name;
+                }
+            }
+            $allOptions[] = ['label' => 'Your Teams', 'options' => $valueOptions];
+            $allOptions[] = ['label' => 'Other Teams', 'options' => $otherTeamsValueOptions];
+            return $allOptions;
 
+        } else {
 
-        $prependValueOptions = $this->getOption('prepend_value_options');
-        if (is_array($prependValueOptions)) {
-            $valueOptions = $prependValueOptions + $valueOptions;
+            $prependValueOptions = $this->getOption('prepend_value_options');
+            if (is_array($prependValueOptions)) {
+                $valueOptions = $prependValueOptions + $valueOptions;
+            }
+
+            return $valueOptions;
         }
-        return $valueOptions;
+
+
     }
 
     public function setOptions($options)

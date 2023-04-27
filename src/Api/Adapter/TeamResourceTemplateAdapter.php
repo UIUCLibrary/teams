@@ -11,31 +11,30 @@ use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
-use Teams\Api\Representation\TeamResourceRepresentation;
-use Teams\Entity\TeamResource;
+use Teams\Entity\TeamResourceTemplate;
+use Teams\Api\Representation\TeamResourceTemplateRepresentation;
 
-//legacy from deciding how much of the module to expose to the API
-class TeamResourceAdapter extends AbstractEntityAdapter
+class TeamResourceTemplateAdapter extends AbstractEntityAdapter
 {
     protected $sortFields = [
-        'resource_id' => 'resource_id',
-        'team_id' => 'team_id',
+        'resource_template' => 'resource_template',
+        'team' => 'team',
 
     ];
 
     public function getResourceName()
     {
-        return 'team-resource';
+        return 'team-resource-template';
     }
 
     public function getRepresentationClass()
     {
-        return TeamResourceRepresentation::class;
+        return TeamResourceTemplateRepresentation::class;
     }
 
     public function getEntityClass()
     {
-        return TeamResource::class;
+        return TeamResourceTemplate::class;
     }
 
     public function hydrate(
@@ -44,17 +43,17 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'team')) {
-            $name = $request->getValue('team');
-            if (!is_null($name)) {
-                $name = trim($name);
-                $entity->setName($name);
+            $team_id = $request->getValue('team');
+            if (!is_null($team_id)) {
+                $team_id = trim($team_id);
+                $entity->setTeamId($team_id);
             }
         }
-        if ($this->shouldHydrate($request, 'resource')) {
-            $description = $request->getValue('resource');
-            if (!is_null($description)) {
-                $description = trim($description);
-                $entity->setDescription($description);
+        if ($this->shouldHydrate($request, 'resource_template')) {
+            $team_resource_id = $request->getValue('resource_template');
+            if (!is_null($team_resource_id)) {
+                $team_resource_id = trim($team_resource_id);
+                $entity->setTeamResourceId($team_resource_id);
             }
         }
     }
@@ -68,10 +67,10 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             ));
         }
 
-        if (isset($query['resource'])) {
+        if (isset($query['resource_template'])) {
             $qb->andWhere($qb->expr()->eq(
-                'omeka_root' . '.' . 'resource',
-                $this->createNamedParameter($qb, $query['resource'])
+                'omeka_root' . '.' . 'resource_template',
+                $this->createNamedParameter($qb, $query['resource_template'])
             ));        }
 
     }
@@ -83,7 +82,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             if (!is_array($ids)) {
                 $ids = [$ids];
             }
-            // Exclude null and empty-string ids. Previous resource-only version used
+            // Exclude null and empty-string ids. Previous resource_template-only version used
             // is_numeric, but we want this to be able to work for possible string IDs
             // also
             $ids = array_filter($ids, function ($id) {
@@ -106,12 +105,12 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
         if ( array_key_exists('team', $query) ) {
             $search_fields['team'] = $query['team'];
-            $group_by = 'resource';
-        } elseif (array_key_exists('resource', $query)) {
-            $search_fields['resource'] = $query['resource'];
+            $group_by = 'resource_template';
+        } elseif (array_key_exists('resource_template', $query)) {
+            $search_fields['resource_template'] = $query['resource_template'];
         } else {
             throw new Exception\BadRequestException(sprintf(
-                $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),
+                $this->getTranslator()->translate('%1$s entity requires team or resource_template search criteria'),
                 $this->getEntityClass()
             ));
         }
@@ -152,22 +151,17 @@ class TeamResourceAdapter extends AbstractEntityAdapter
             ->select('omeka_root')
             ->from($entityClass, 'omeka_root');
 
-            foreach ($search_fields as $field => $value) {
-                $qb->andWhere($qb->expr()->eq(
-                    "omeka_root.$field",
-                    $this->createNamedParameter($qb, $value)
-                ));
-            }
+        foreach ($search_fields as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
         $this->buildBaseQuery($qb, $query);
         $this->buildQuery($qb, $query);
         $qb->groupBy("omeka_root." . $group_by);
 
-        // Trigger the search.query event.
-        $event = new Event('api.search.query', $this, [
-            'queryBuilder' => $qb,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
+
 
         // Add the LIMIT clause.
         $this->limitQuery($qb, $query);
@@ -205,40 +199,6 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         return $response;
     }
 
-    public function findEntity($criteria, $request = null)
-    {
-        if (!is_array($criteria)) {
-            $criteria = ['id' => $criteria];
-        }
-
-        $entityClass = $this->getEntityClass();
-        $this->index = 0;
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $qb->setMaxResults(1);
-
-        $event = new Event('api.find.query', $this, [
-            'queryBuilder' => $qb,
-            'request' => $request,
-        ]);
-
-        $this->getEventManager()->triggerEvent($event);
-        $entity = $qb->getQuery()->getOneOrNullResult();
-        if (!$entity) {
-            throw new Exception\NotFoundException(sprintf(
-                $this->getTranslator()->translate('%1$s entity with criteria %2$s not found'),
-                $entityClass, json_encode($criteria)
-            ));
-        }
-        return $entity;
-    }
-
     public function read(Request $request)
     {
         AbstractAdapter::read($request);
@@ -273,12 +233,5 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchDelete($request);
     }
 
-    public function validateRequest(Request $request, ErrorStore $errorStore)
-    {
-        $data = $request->getContent();
-        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
-            $result = $this->validateName($data['o:name'], $errorStore);
-        }
-    }
 
 }

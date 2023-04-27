@@ -2,6 +2,7 @@
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
+use Omeka\Api\Adapter\AbstractAdapter;
 use Teams\Api\Representation\TeamRepresentation;
 use Teams\Entity\Team;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
@@ -171,5 +172,25 @@ class TeamAdapter extends AbstractEntityAdapter
         if (array_key_exists('o:name', $data)) {
             $result = $this->validateName($data['o:name'], $errorStore);
         }
+    }
+
+    public function batchCreate(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function update(Request $request)
+    {
+        AbstractAdapter::batchCreate($request);
+    }
+
+    public function batchUpdate(Request $request)
+    {
+        AbstractAdapter::batchUpdate($request);
+    }
+
+    public function batchDelete(Request $request)
+    {
+        AbstractAdapter::batchDelete($request);
     }
 }

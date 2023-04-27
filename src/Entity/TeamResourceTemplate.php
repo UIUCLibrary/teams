@@ -7,6 +7,7 @@ namespace Teams\Entity;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
+use Omeka\Entity\AbstractEntity;
 use Omeka\Entity\ResourceTemplate;
 
 /**
@@ -16,7 +17,7 @@ use Omeka\Entity\ResourceTemplate;
  *
  * @Entity
  */
-class TeamResourceTemplate
+class TeamResourceTemplate extends AbstractEntity
 {
 
     /**
@@ -70,6 +71,14 @@ class TeamResourceTemplate
             'team' => $this->getTeam()->getId(),
             'resource_template' => $this->getResourceTemplate()->getId(),
         ]);
+    }
+
+    public function getId(): array
+    {
+        return [
+            'team' => $this->getTeam()->getId(),
+            'resource-template' => $this->getResourceTemplate()->getId()
+        ];
     }
 
 }

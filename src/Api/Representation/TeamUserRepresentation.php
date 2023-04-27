@@ -22,9 +22,19 @@ class TeamUserRepresentation extends AbstractEntityRepresentation
     public function getJsonLd()
     {
         return [
-            'o:team' => $this->team(),
-            'o:user' => $this->user(),
-            'o:role' => $this->role(),
+            'o:team' => [
+                'o:id' => $this->team()->getId(),
+                'o:name' => $this->team()->getName(),
+            ],
+            'o:user' =>
+                [
+                    'o:id' => $this->user()->getId(),
+                    'o:name' => $this->user()->getName(),
+                ],
+            'o:role' => [
+                'o:id' => $this->role()->getId(),
+                'o:name' => $this->role()->getName(),
+            ],
             'o:current' => $this->current(),
 
         ];
@@ -37,7 +47,7 @@ class TeamUserRepresentation extends AbstractEntityRepresentation
 
     public function team()
     {
-        return $this->resource->getName();
+        return $this->resource->getTeam();
     }
 
     public function user()

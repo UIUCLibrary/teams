@@ -9,7 +9,7 @@ class AllItemSetSelect extends TeamSelect
 
     protected $data_base_url = ['resource' => 'item_set'];
 
-    public function getValueOptions()
+    public function getValueOptions(): array
     {
         $valueOptions = [];
 

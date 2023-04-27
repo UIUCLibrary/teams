@@ -2,27 +2,6 @@
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 ?>
-<?php if ($this->sites or $this->resources): ?>
-<!--not able to add in stylesheets on partials-->
-<style>
-    #sidebar-confirm input[type="submit"].disabled {
-        background-color: grey;
-        cursor: not-allowed;
-    }
-</style>
-<script>
-        $('h3 + p').append(' It is being used by <strong><?php echo count($this->sites) ?> site(s) and <?php echo count($this->resources) ?> resource(s)</strong>')
-        $('h3 + p').after('<p><input type="checkbox" id="enable-delete"> You understand that this will delete an asset curently being used and cannot be undone</p>' )
-        $('#confirmform input[name="submit"]').prop('disabled', true).addClass('disabled')
-        $("#enable-delete").change(function() {
-            if(this.checked) {
-                $('#confirmform input[name="submit"]').prop('disabled', false).removeClass('disabled')
-            } else {
-                $('#confirmform input[name="submit"]').prop('disabled', true).addClass('disabled')
-            }
-        });
-</script>
-<?php endif; ?>
 
 <div class="meta-group">
     <h4><?php echo $translate('Teams'); ?></h4>
@@ -34,28 +13,4 @@ $escape = $this->plugin('escapeHtml');
         </ul>
     </div>
 </div>
-<?php if (! empty($this->sites)): ?>
-    <div class="meta-group">
-        <h4><?php echo $translate('Used for These Sites'); ?></h4>
-        <div class="value">
-            <ul>
-                <?php foreach ($this->sites as $site):
-                    ?><li><?php echo $site->getTitle() ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    </div>
-<?php endif; ?>
 
-<?php if (! empty($this->resources)): ?>
-    <div class="meta-group">
-        <h4><?php echo $translate('Used for These Resources'); ?></h4>
-        <div class="value">
-            <ul>
-                <?php foreach ($this->resources as $resource):
-                    ?><li><?php echo $resource->getTitle() ?></li>
-                <?php endforeach; ?>
-            </ul>
-        </div>
-    </div>
-<?php endif; ?>
