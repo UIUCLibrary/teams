@@ -918,9 +918,10 @@ SQL;
                         $i++;
                     }
                     $qb->orWhere($orX);
-                    return;
+
                 }
             }
+            return;
         }
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
