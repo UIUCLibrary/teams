@@ -178,7 +178,7 @@ class IndexController extends AbstractActionController
 
                 $entity = $entityManager
                     ->getRepository('Teams\Entity\TeamResource')
-                    ->findOneBy(['team'=>$team_id, 'resource'=> (int) $this->params('id')]);
+                    ->findOneBy(['team'=>$team_id, 'resource'=> $this->params('id')]);
 
                 $request = new Request('delete', 'team_resource');
                 $event = new Event('api.hydrate.pre', $this, [
@@ -206,6 +206,10 @@ class IndexController extends AbstractActionController
                 } else {
                     $this->messenger()->addError('something went wrong'); // @translate
                 }
+                $event = new Event('api.execute.post', $this, [
+                    'entity' => $entity,
+                    'request' => $request,
+                ]);
             } else {
                 $this->messenger()->addFormErrors($form);
             }
