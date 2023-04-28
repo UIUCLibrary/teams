@@ -631,6 +631,9 @@ SQL;
         if ($vars->resource) {
             $vars->offsetSet('teams', $this->listTeams($vars->resource, 'representation'));
         }
+        echo $event->getTarget()->partial(
+            'teams/partial/team-form',
+        );
     }
 
     /**
@@ -1855,7 +1858,6 @@ SQL;
      */
     public function itemUpdate(Event $event)
     {
-        echo get_class($this->getUser());
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $entity = $event->getParam('entity');
         $request = $event->getParam('request');
