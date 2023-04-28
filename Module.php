@@ -2687,7 +2687,7 @@ SQL;
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.edit.form.after',
-            [$this, 'displayTeamForm']
+            [$this, 'displayTeamFormNoID']
         );
 
         $sharedEventManager->attach(
@@ -2708,7 +2708,7 @@ SQL;
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
             'view.edit.form.after',
-            [$this, 'displayTeamForm']
+            [$this, 'displayTeamFormNoID']
         );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ItemSet',
@@ -2719,7 +2719,7 @@ SQL;
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Media',
             'view.edit.form.after',
-            [$this, 'displayTeamForm']
+            [$this, 'displayTeamFormNoID']
         );
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Media',
