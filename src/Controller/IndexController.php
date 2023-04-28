@@ -210,6 +210,8 @@ class IndexController extends AbstractActionController
                     'entity' => $entity,
                     'request' => $request,
                 ]);
+                $this->getEventManager()->triggerEvent($event);
+
             } else {
                 $this->messenger()->addFormErrors($form);
             }
