@@ -1832,6 +1832,19 @@ SQL;
         echo $view->partial('teams/partial/resource-template/add', ['team_id' => $team_id]);
     }
 
+    public function itemDelete(Event $event)
+    {
+        $itemIds = [];
+        if ($event->getParam('resource_ids')) {
+            $itemIds = $event->getParam('resource_ids');
+        } else {
+            $itemIds[] = $event->getParam('entity')->getResource()->getId();
+        }
+
+        foreach ($itemIds as $itemId) {
+            $this->updateItemSites($itemId);
+        }
+    }
 
     /**
      *
@@ -2663,6 +2676,11 @@ SQL;
             [$this, 'itemUpdate']
         );
 
+        $sharedEventManager->attach(
+            'Teams\Controller\IndexController',
+            'api.execute.post',
+            [$this, 'itemDelete']
+        );
 
         $sharedEventManager->attach(
             MediaAdapter::class,

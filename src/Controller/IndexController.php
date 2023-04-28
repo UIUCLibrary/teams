@@ -247,6 +247,12 @@ class IndexController extends AbstractActionController
             $entityManager->remove($entity);
         }
         $entityManager->flush();
+        $event = new Event('api.execute.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+            'resource_ids' => $resource_ids,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
         return $this->redirect()->toRoute('admin', ['controller'=>'item']);
     }
 
