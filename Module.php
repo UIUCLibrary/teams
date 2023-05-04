@@ -2309,8 +2309,10 @@ SQL;
             'Omeka\Entity\Item',
             'Omeka\Entity\ItemSet',
             'Omeka\Entity\Media',
+            'Omeka\Entity\Asset',
             'Omeka\Entity\ResourceTemplate',
-            'Teams\Entity\TeamResource'
+            'Teams\Entity\TeamResource',
+            'Teams\Entity\TeamAsset',
             ];
 
         if (in_array($res_class, $resource_domains)) {
@@ -2384,8 +2386,6 @@ SQL;
             }
         }
 
-
-
         //a list of classes where we don't need to check teams
         //TODO: this should be refactored and go with the checks in the beginning
         elseif ($res_class == 'Omeka\Entity\User') {
@@ -2396,8 +2396,6 @@ SQL;
             return true;
         } elseif ($res_class == 'Teams\Entity\TeamRole') {
             $authorized = $is_glob_admin;
-        } elseif ($res_class == "Omeka\Entity\Asset") {
-            return true;
         }
 
         //don't police other modules by default
@@ -2408,10 +2406,7 @@ SQL;
         if (!$authorized) {
             $authorized = false;
             $msg = sprintf(
-//                    $this->getTranslator()->translate(
                 'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.'
-
-//                    )
                 ,
                 get_class($resource),
                 $resource->getId(),
@@ -2420,10 +2415,7 @@ SQL;
                 $team->getName()
             );
             $diagnostic = sprintf(
-//                    $this->getTranslator()->translate(
                 'Diagnostic:  --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
-
-//                    )
                 ,
                 get_class($resource),
                 $resource->getId(),
