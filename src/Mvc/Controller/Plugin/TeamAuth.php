@@ -45,8 +45,6 @@ class TeamAuth extends AbstractPlugin
 
     public function teamAuthorized(User $user, string $action, string $domain, int $context=0): bool
     {
-
-
         //validate inputs
         if (!in_array($action, $this->actions)) {
             throw new InvalidArgumentException(
@@ -86,7 +84,7 @@ class TeamAuth extends AbstractPlugin
 
             //only the global admin can create, delete or modify teams
             if ($domain == 'team' || $domain ==  'role') {
-                $authorized = $this->isGlobAdmin();
+                $authorized = $this->isGlobAdmin($user);
 
             }
 
@@ -105,7 +103,7 @@ class TeamAuth extends AbstractPlugin
 
                 //only the global admin can add and delete sites
                 if ($action == 'add' || $action == 'delete') {
-                    $authorized = $this->isGlobAdmin();
+                    $authorized = $this->isGlobAdmin($user);
                 } elseif ($action == 'update') {
                     $authorized = $current_role->getCanAddSitePages();
                 }
