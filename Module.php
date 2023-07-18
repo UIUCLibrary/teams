@@ -738,7 +738,8 @@ SQL;
 
     public function bypassTeamsSortSelector(Event $event)
     {
-        if ($this->getUser()->getRole() == 'global_admin'){
+        $user = $this->getUser();
+        if ($user && $user->getRole() == 'global_admin'){
             $view = $event->getTarget();
             $params = $view->params();
             $bypassTeams = $params->fromQuery('bypass_team_filter');
@@ -2473,11 +2474,22 @@ SQL;
             'view.layout',
             [$this, 'teamSelectorNav']
         );
-        $sharedEventManager->attach(
-            '*',
-            'view.browse.before',
-            [$this, 'bypassTeamsSortSelector']
-        );
+        $teamFilterable = [
+            'Omeka\Controller\Admin\Item',
+            'Omeka\Controller\Admin\ItemSet',
+            'Omeka\Controller\Admin\ResourceTemplate',
+            'Omeka\Controller\Admin\Media',
+            'Omeka\Controller\Admin\Asset',
+            'Omeka\Controller\SiteAdmin\Index'
+
+        ];
+        foreach ($teamFilterable as $controller) {
+            $sharedEventManager->attach(
+                $controller,
+                'view.browse.before',
+                [$this, 'bypassTeamsSortSelector']
+            );
+        }
 
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\User',
