@@ -2480,7 +2480,8 @@ SQL;
             'Omeka\Controller\Admin\ResourceTemplate',
             'Omeka\Controller\Admin\Media',
             'Omeka\Controller\Admin\Asset',
-            'Omeka\Controller\SiteAdmin\Index'
+            'Omeka\Controller\Admin\User',
+            'Omeka\Controller\SiteAdmin\Index',
 
         ];
         foreach ($teamFilterable as $controller) {
