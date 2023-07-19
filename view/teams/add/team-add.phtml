@@ -33,7 +33,7 @@ echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
 
 <fieldset id="team-members" class="section">
     <?php echo $this->partial('teams/team/manage-users', [
-        'team' => null,
+        'team' => [],
         'bypass_teams_filter' => true,
 
     ]);
