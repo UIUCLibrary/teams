@@ -39,7 +39,7 @@ if ($team) {
 ?>
 
 
-<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($teamUsers) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($users) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
     <thead>
     <tr>
         <th scope="col"><?php echo $translate('User'); ?></th>
