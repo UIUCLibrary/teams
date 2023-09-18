@@ -41,7 +41,6 @@ class TrashController extends AbstractActionController
 
     public function indexAction()
     {
-        $qb = $this->entityManager->createQueryBuilder();
 
         if ($this->request->isPost()) {
             if ($this->identity()->getRole() == 'global_admin') {
@@ -70,42 +69,17 @@ class TrashController extends AbstractActionController
                 }
             }
         }
-        $params = $this->params();
-        if ($params()->fromQuery('sort_order') === 'asc') {
-            $order = 'asc';
-        } else {
-            $order = 'desc';
-        }
-        $sort_options = [
-            'title' => 'title',
-            'id' => 'id',
-            'resource_class_label' => 'class',
-            'owner_name' => 'owner',
-            'created' => 'created',
-        ];
-        if (key_exists($params->fromQuery('sort_by'), $sort_options)) {
-            $sort = $sort_options[$params->fromQuery('sort_by')];
-        } else {
-            $sort = 'created';
-        }
+        $this->browse()->setDefaults('items');
+        $params = $this->params()->fromQuery();
+        $params['orphans'] = true;
+        $params['bypass_team_filter'] = true;
+        $response = $this->api()->search('items', $params);
+        $this->paginator($response->getTotalResults());
 
-        $qb->select('r_trash')
-            ->from('Omeka\Entity\Item ', 'r_trash')
-            ->leftJoin(
-                'Teams\Entity\TeamResource',
-                'tr_trash',
-                \Doctrine\ORM\Query\Expr\Join::WITH,
-                'r_trash.id = tr_trash.resource'
-            )
-            ->where('tr_trash.team is NULL')
-            ->orderBy('r_trash.' . $sort, $order);
+        $orphans =  $response->getContent();
+        $returnQuery = $this->params()->fromQuery();
+        unset($returnQuery['page']);
 
-        $orphans =  $qb->getQuery()->getResult();
-        $this->paginator(count($orphans));
-
-        $page = $this->params()->fromQuery('page');
-        $offset = ($page * 10) - 10;
-        $orphans = array_slice($orphans, $offset, 10);
         $formDeleteSelected = $this->getForm(ConfirmForm::class);
         $formDeleteSelected->setAttribute('action', $this->url()->fromRoute('admin/trash', ['action' => 'batch-delete'], true));
         $formDeleteSelected->setButtonLabel('Delete Selected'); // @translate
@@ -118,9 +92,13 @@ class TrashController extends AbstractActionController
         $formDeleteAll->get('submit')->setAttribute('disabled', true);
 
         $view = new ViewModel;
-        $view->setVariable('orphan', $orphans);
+        $view->setVariable('items', $orphans);
         $view->setVariable('formDeleteSelected', $formDeleteSelected);
         $view->setVariable('formDeleteAll', $formDeleteAll);
+        $view->setVariable('resources', $orphans);
+        $view->setVariable('formDeleteSelected', $formDeleteSelected);
+        $view->setVariable('formDeleteAll', $formDeleteAll);
+        $view->setVariable('returnQuery', $returnQuery);
 
         return $view;
     }
