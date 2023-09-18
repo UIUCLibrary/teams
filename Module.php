@@ -1007,6 +1007,21 @@ SQL;
         }
     }
 
+    public function getOrphans(Event $event)
+    {
+        $request = $event->getParam('request')->getContent();
+        if(array_key_exists('orphans', $request)){
+            $qb = $event->getParam('queryBuilder');
+            $sub = $this->getServiceLocator()->get('Omeka\EntityManager')
+                ->createQueryBuilder()
+                ->select('tr')
+                ->from('Teams\Entity\TeamResource', 'tr');
+            $q = $sub->getQuery()->getResult(\Doctrine\ORM\Query::HYDRATE_SCALAR);
+            $resource_ids = array_column($q,'tr_resource_id');
+            $qb->andWhere($qb->expr()->notIn('omeka_root.id', $resource_ids));
+        }
+    }
+
     //Handle Users
     public function filterByTeamUser(Event $event)
     {
@@ -2537,7 +2552,14 @@ SQL;
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
+
         endforeach;
+
+        $sharedEventManager->attach(
+            ItemAdapter::class,
+            'api.search.query',
+            [$this, 'getOrphans']
+        );
 
         $sharedEventManager->attach(
             UserAdapter::class,
