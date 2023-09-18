@@ -1,10 +1,4 @@
-<?php
 
-$items =  array();
-foreach ($this->orphan as $item):
-    $items[] = $this->api()->read('items', $item->getId())->getContent();
-endforeach;
-?>
 <?php
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
