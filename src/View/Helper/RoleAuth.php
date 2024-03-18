@@ -32,11 +32,6 @@ class RoleAuth extends AbstractHelper
         return $this->user()->getRole() === 'global_admin';
     }
 
-    public function isSuper()
-    {
-        return ($this->isGlobAdmin() && $this->user()->getId() === 1);
-    }
-
     public function teamAuthorized(string $action, string $domain, int $context=0)
     {
         //validate inputs
@@ -58,7 +53,7 @@ class RoleAuth extends AbstractHelper
         }
 
         //super admin should bypass team authority
-        if ($this->isSuper()) {
+        if ($this->isGlobAdmin()) {
             return true;
         }
 
