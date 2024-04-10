@@ -1758,7 +1758,7 @@ SQL;
                     $team = $teams->findOneBy(['id' => $team_id]);
                     $trt = new TeamResourceTemplate($team, $resource_template);
                     $em->persist($trt);
-                    $em->flush();
+                    //note: don't flush here or the validation is bypassed, which can cause duplicate name icv, see #146
                 }
             } else { # for imports where there is no event triggered, use the users current team
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $this->currentTeam()]);
