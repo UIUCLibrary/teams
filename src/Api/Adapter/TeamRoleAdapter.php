@@ -149,6 +149,8 @@ class TeamRoleAdapter extends AbstractEntityAdapter
         $string = preg_replace('/[\(\{]/', '[', $string);
         $string = preg_replace('/[\)\}]/', ']', $string);
         $string = preg_replace('/[[:cntrl:]\/\\\?<>\*\%\|\"`\&\;#+\^\$\s]/', ' ', $string);
+        //don't allow double apostrophe
+        $string = str_replace("''","",$string);
         return trim(preg_replace('/\s+/', ' ', $string));
     }
 
