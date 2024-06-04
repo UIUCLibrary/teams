@@ -148,7 +148,7 @@ function makeRoleElement(team_name, team_id, role = 1){
     select.setAttribute('name', `user-information[o-module-teams:TeamRole][${team_id}]`);
     select.setAttribute('data-placeholder', 'Select Role');
     select.className = "chosen-select";
-    select.id = `role_for_${team_name}`;
+    select.id = "role_for_" + team_name;
 
 
     for (let [role_id, role_name] of Object.entries(role_array)){
