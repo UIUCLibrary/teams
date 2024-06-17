@@ -14,6 +14,7 @@ use Omeka\Entity\EntityInterface;
 use Omeka\Entity\Item;
 use Omeka\Entity\Resource;
 use Omeka\Entity\User;
+use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
 use Teams\Api\Representation\TeamResourceRepresentation;
@@ -261,25 +262,27 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
         $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
 
-
         $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $resource = $request->getValue('resource');
         $this->teamAuthority($request, $request->getValue('team'), $user);
         if (!$this->resourceAuthority($request->getValue('resource'),$user)){
             throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
                 );
         }
-
-        if ($request->getValue('team')){
-            $team = $request->getValue('team');
+        $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
+        $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
+        $teamResource = new TeamResource($teamEntity, $resourceEntity);
+        $this->getEntityManager()->persist($teamResource);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($teamResource);
         }
-        $team = $request->getContent();
+        return new Response($teamResource);
 
-        throw new Exception\OperationNotImplementedException(sprintf(
-            $this->getTranslator()->translate(
-                'The %1$s adapter does not implement the search operation.'
-            ),
-            $request->getValue('team')
-        ));
+
     }
 
     public function batchCreate(Request $request)
@@ -349,7 +352,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
     {
         $em = $this->getEntityManager();
         $operation = $request->getOperation();
-        $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
         if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $team)){
             throw new Exception\PermissionDeniedException(sprintf(
@@ -369,11 +371,13 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
      */
     public function resourceAuthority($resource, User $user ):bool
     {
-
         //if the resource belongs to any team where the user has resource authority, or if the resource belongs to no team
 
         //iterate through the teams of the resource
 
+        if ($user->getRole() == 'global_admin'){
+            return true;
+        }
         $resourceTeams = $this->getEntityManager()
             ->getRepository('Teams\Entity\TeamResource')
                 ->findBy(['resource'=>$resource]);
