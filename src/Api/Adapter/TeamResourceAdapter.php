@@ -352,6 +352,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
     {
         $em = $this->getEntityManager();
         $operation = $request->getOperation();
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
         if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $team)){
             throw new Exception\PermissionDeniedException(sprintf(
@@ -371,6 +372,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
      */
     public function resourceAuthority($resource, User $user ):bool
     {
+
         //if the resource belongs to any team where the user has resource authority, or if the resource belongs to no team
 
         //iterate through the teams of the resource
