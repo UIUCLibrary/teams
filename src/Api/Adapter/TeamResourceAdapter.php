@@ -1,6 +1,7 @@
 <?php
 namespace Teams\Api\Adapter;
 
+use CSVImport\Api\Adapter\EntityAdapter;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Laminas\EventManager\Event;
@@ -287,7 +288,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function batchCreate(Request $request)
     {
-        AbstractEntityAdapter::batchCreate($request);
+        EntityAdapter::batchCreate($request);
     }
 
     public function update(Request $request)
