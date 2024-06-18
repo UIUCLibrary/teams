@@ -1980,10 +1980,8 @@ SQL;
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-
         if ($operation == 'create') {
             $response = $event->getParam('response');
-
             $resource =  $response->getContent();
             $team_key = '';
             if (array_key_exists('team', $request->getContent())){
@@ -1994,24 +1992,24 @@ SQL;
 
             if ($team_key) {
                 $teams = $request->getContent()[$team_key];
-
-                //add items to team
-                foreach ($teams as $team_id):
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-                $tr = new TeamResource($team, $resource);
-                $em->persist($tr);
-
-                //if there is media, add those to the team as well
-
-                $media = $resource->getMedia();
-
-                if (count($media) > 0) {
-                    foreach ($media as $m):
-                                $tr = new TeamResource($team, $m);
-                    $em->persist($tr);
-                    endforeach;
+                if (!is_array($teams)){
+                    $teams = [$teams];
                 }
-                endforeach;
+                //add items to team
+                foreach ($teams as $team_id){
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                    $tr = new TeamResource($team, $resource);
+                    $em->persist($tr);
+
+                    //if there is media, add those to the team as well
+                    $media = $resource->getMedia();
+                    if (count($media) > 0) {
+                        foreach ($media as $m):
+                            $tr = new TeamResource($team, $m);
+                            $em->persist($tr);
+                        endforeach;
+                    }
+                }
                 $em->flush();
             }
         }
