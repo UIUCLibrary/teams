@@ -3018,6 +3018,7 @@ SQL;
     public function addUserFormElement(Event $event)
     {
         $user_role = $this->getUser()->getRole();
+        $has_team = (bool)$this->currentTeam();
         $global_admin = $user_role === 'global_admin';
         $form = $event->getTarget();
         $form->get('user-information')->add([
@@ -3030,7 +3031,7 @@ SQL;
                 'attributes' => [
                     'multiple' => true,
                     'id' => 'team',
-                    'required' => true,
+                    'required' => $has_team,
                     'data-mutable' => $global_admin
                 ],
             ]);
@@ -3044,7 +3045,7 @@ SQL;
                 ],
                 'attributes' => [
                     'id' => 'default_team',
-                    'required' => true,
+                    'required' => $has_team,
                 ],
             ]);
         $form->get('user-information')->add([
