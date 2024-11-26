@@ -713,8 +713,6 @@ SQL;
     public function teamSelectorNav(Event $event)
     {
         if (!$this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            $view = $event->getTarget();
-            $view->headScript()->appendFile($view->assetUrl('js/team_nav_selector.js', 'Teams'));
             if ($identity = $this->getUser()) {
                 $user_id = $identity->getId();
             } else {
