@@ -3,13 +3,15 @@
 
     <?php if ($this->current_team == 'None') { ?>
         teamName = "No Team Assigned";
-        teamHref = "<?php echo $this->url('admin/teams') ?>";
+        viewTeam = "<?php echo $this->url('admin/teams') ?>";
     <?php
 
     } else {
         ?>
             teamName = "<?php echo $this->current_team->getName()?>";
-            teamHref = "<?php echo $this->url('admin/teams/detail', ['id'=>$this->current_team->getId()]) ?>";
+            viewTeamHref = "<?php echo $this->url('admin/teams/detail', ['id'=>$this->current_team->getId()]) ?>";
+            editTeamHref = "<?php echo $this->url('admin/teams/detail/update', ['id'=>$this->current_team->getId()]) ?>";
+
         <?php
     }
     ?>
