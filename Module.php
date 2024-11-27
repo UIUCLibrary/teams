@@ -3085,9 +3085,9 @@ SQL;
             ]);
         }
 
+        //adjust validation for cases where a user doesn't need to belong to or hasn't yet been added to a team
         if (!$has_team or $global_admin)
         {
-            // separate input filter stuff so that the event work right
             $inputFilter = $form->getInputFilter();
 
             $inputFilter->get('user-information')->add([
