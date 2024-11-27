@@ -3085,6 +3085,26 @@ SQL;
             ]);
         }
 
+        if (!$has_team or $global_admin)
+        {
+            // separate input filter stuff so that the event work right
+            $inputFilter = $form->getInputFilter();
+
+            $inputFilter->get('user-information')->add([
+                'name' => 'o-module-teams:TeamRole',
+                'allow_empty' => true,
+            ]);
+            $inputFilter->get('user-information')->add([
+                'name' => 'o-module-teams:DefaultTeam',
+                'allow_empty' => true,
+            ]);
+            $inputFilter->get('user-information')->add([
+                'name' => 'o-module-teams:Team',
+                'allow_empty' => true,
+            ]);
+
+        }
+
     }
 
     public function addAssetFormElement(Event $event)
