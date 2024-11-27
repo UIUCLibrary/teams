@@ -3017,11 +3017,18 @@ SQL;
      */
     public function addUserFormElement(Event $event)
     {
+        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+        $teams_exist = $api->search('team')->getTotalResults() > 0;
+        $roles_exist = $api->search('team-role')->getTotalResults() > 0;
+
         $user_role = $this->getUser()->getRole();
         $has_team = (bool)$this->currentTeam();
         $global_admin = $user_role === 'global_admin';
         $form = $event->getTarget();
-        $form->get('user-information')->add([
+
+        //don't add the form fields if there are no roles or teams
+        if ($teams_exist && $roles_exist){
+            $form->get('user-information')->add([
                 'name' => 'o-module-teams:Team',
                 'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
                 'options' => [
@@ -3035,7 +3042,7 @@ SQL;
                     'data-mutable' => $global_admin
                 ],
             ]);
-        $form->get('user-information')->add([
+            $form->get('user-information')->add([
                 'name' => 'o-module-teams:DefaultTeam',
                 'type' => BlankTeamSelect::class,
                 'options' => [
@@ -3048,7 +3055,7 @@ SQL;
                     'required' => $has_team,
                 ],
             ]);
-        $form->get('user-information')->add([
+            $form->get('user-information')->add([
                 'name' => 'update_default_sites',
                 'type' => 'checkbox',
                 'options' => [
@@ -3063,7 +3070,7 @@ SQL;
                 ],
             ]);
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
-        $form->get('user-information')->add([
+            $form->get('user-information')->add([
                 'name' => 'o-module-teams:TeamRole',
                 'type' => RoleSelect::class,
                 'options' => [
@@ -3076,6 +3083,8 @@ SQL;
                     'class' => 'hidden_no_value',
                 ],
             ]);
+        }
+
     }
 
     public function addAssetFormElement(Event $event)
