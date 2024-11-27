@@ -3,8 +3,8 @@
 
     <?php if ($this->current_team == 'None') { ?>
         teamName = "No Team Assigned";
-        viewTeam = "<?php echo $this->url('admin/teams') ?>";
-        editTeamHref = viewTeam;
+        viewTeamHref = "<?php echo $this->url('admin/teams') ?>";
+        editTeamHref = viewTeamHref;
     <?php
 
     } else {
