@@ -5,7 +5,6 @@ namespace Teams\Form;
 
 use Omeka\Permissions\Acl;
 use Laminas\Form\Form;
-use Teams\Form\Element\RoleSelect;
 
 class ConfigForm extends Form
 {
