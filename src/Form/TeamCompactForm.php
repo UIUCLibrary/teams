@@ -89,7 +89,8 @@ class TeamCompactForm extends Form
         if ($this->getOption('include_role')) {
             $excludeAdminRoles = !$this->getOption('include_admin_roles');
             $roles = $this->getAcl()->getRoleLabels($excludeAdminRoles);
-            $this->get('user-information')->add([
+            $this->get('user-information')
+                ->add([
                 'name' => 'o:role',
                 'type' => 'select',
                 'options' => [
