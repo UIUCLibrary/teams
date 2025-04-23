@@ -58,7 +58,7 @@ class ConfigForm extends Form
                 'type' => 'select',
                 'options' => [
                     'label' => 'Grant "Bypass Teams Filter" ability', // @translate
-                    'info' =>'Minimum role to bypass Teams filter on admin search interface',
+                    'info' =>'List of core Omeka S roles that can bypass the Teams filter on admin search interfaces',
                     'value_options' => $roles,
 
                 ],
