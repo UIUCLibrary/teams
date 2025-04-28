@@ -1878,8 +1878,27 @@ SQL;
         $operation = $request->getOperation();
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
-
         if ($operation == 'update') {
+
+            if(array_key_exists('remove_team', $request->getContent())) {
+               if (!is_array($request->getContent()['remove_team'])) {
+                   $remove = array($request->getContent()['remove_team']);
+               } else {
+                   $remove = $request->getContent()['remove_team'];
+               }
+            } else {
+                $remove = [];
+            }
+
+            if(array_key_exists('add_team', $request->getContent())) {
+                if (!is_array($request->getContent()['add_team'])) {
+                    $add = array($request->getContent()['add_team']);
+                } else {
+                    $add = $request->getContent()['add_team'];
+                }
+            } else {
+                $remove = [];
+            }
             if (array_key_exists('remove_team', $request->getContent()) ||
                 array_key_exists('add_team', $request->getContent())) {
 
@@ -1890,7 +1909,9 @@ SQL;
                     $resource_ids[$media->getId()] = true;
                 }
 
-                foreach ($request->getContent()['add_team'] as $team_id) {
+
+                foreach ($add as $team_id) {
+                    $logger->err('this is the team id: ' . $team_id);
                     //if the user is authorized to add items to that team
                     if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
@@ -1907,7 +1928,7 @@ SQL;
                 }
                 $em->flush();
 
-                foreach ($request->getContent()['remove_team'] as $team_id) {
+                foreach ($remove as $team_id) {
                     if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
                         foreach (array_keys($resource_ids) as $resource_id) {
                             $team_resource = $em->getRepository('Teams\Entity\TeamResource')
@@ -2502,6 +2523,42 @@ SQL;
         ]);
     }
 
+    public function processTeamBatchEditData (Event $event) {
+        $data = $event->getParam('data');
+        $rawData = $event->getParam('request')->getContent();
+
+        //add first then remove
+        $targets = ['add_team', 'remove_team'];
+
+        foreach ($targets as $teamData) {
+            if (isset($rawData[$teamData])) {
+                $data[$teamData] = $rawData[$teamData];
+            }
+        }
+
+        $event->setParam('data', $data);
+    }
+
+
+//    public function batchAddRemoveTeam (Event $event) {
+//        $data = $event->getParam('request')->getContent();
+//        $item = $event->getParam('response')->getContent();
+//
+//        if (!(isset($data['add_team']) && $data['add_team'])) {
+//            return;
+//        }
+//
+//        $services = $this->getServiceLocator();
+//        $entityManager = $services->get('Omeka\EntityManager');
+//
+//        $dql = 'DELETE FROM Mapping\Entity\MappingFeature m WHERE m.item = :item_id';
+//        $entityManager->createQuery($dql)
+//            ->setParameter('item_id', $item->getId())
+//            ->execute();
+//
+//
+//    }
+
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
@@ -3023,6 +3080,12 @@ SQL;
             'Omeka\Form\ResourceBatchUpdateForm',
             'form.add_elements',
             [$this, 'addTeamToBatchEditForm']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemAdapter',
+            'api.preprocess_batch_update',
+            [$this, 'processTeamBatchEditData']
         );
     }
 
