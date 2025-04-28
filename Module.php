@@ -2511,7 +2511,13 @@ SQL;
             'options' => [
                 'element_group' => 'teams',
                 'label' => 'Add resource to Teams', // @translate
+                'empty_option' => 'Select a team',
+                'chosen' => true,
             ],
+            'attributes' => [
+                'multiple' => true,
+            ]
+
         ]);
         $form->add([
             'type' => TeamSelect::class,
@@ -2519,7 +2525,11 @@ SQL;
             'options' => [
                 'element_group' => 'teams',
                 'label' => 'Remove resources from teams', // @translate
+                'chosen' => true
             ],
+            'attributes' => [
+                'multiple' => true,
+            ]
         ]);
     }
 
