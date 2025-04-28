@@ -11,6 +11,7 @@ class ConfigFormFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         $form = new ConfigForm();
+        $form->setAcl($container->get('Omeka\Acl'));
         $globalSettings = $container->get('Omeka\Settings');
         $form->setGlobalSettings($globalSettings);
 
