@@ -2473,7 +2473,11 @@ SQL;
 
     //Add Team options to Batch Edit
 
-
+    /**
+     * Add  "Add Team" and "Remove Team" select elements to the batch edit forme
+     * @param Event $event
+     * @return void
+     */
     public function addTeamToBatchEditForm(Event $event) {
         $form = $event->getTarget();
 
