@@ -2471,6 +2471,34 @@ SQL;
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
     }
 
+    //Add Team options to Batch Edit
+
+
+    public function addTeamToBatchEditForm(Event $event) {
+        $form = $event->getTarget();
+
+        $groups = $form->getOption('element_groups');
+        $groups['teams'] = 'Teams'; // @translate
+        $form->setOption('element_groups', $groups);
+        $form->add([
+            'type' => TeamSelect::class,
+            'name' => 'add_team',
+            'options' => [
+                'element_group' => 'teams',
+                'label' => 'Add resource to Teams', // @translate
+            ],
+        ]);
+        $form->add([
+            'type' => TeamSelect::class,
+            'name' => 'remove_team',
+            'options' => [
+                'element_group' => 'teams',
+                'label' => 'Remove resources from teams', // @translate
+            ],
+        ]);
+    }
+
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -2984,6 +3012,13 @@ SQL;
             \Omeka\Form\SiteForm::class,
             'form.add_elements',
             [$this, 'addSiteFormElement']
+        );
+
+        // Add teams to batch update
+        $sharedEventManager->attach(
+            'Omeka\Form\ResourceBatchUpdateForm',
+            'form.add_elements',
+            [$this, 'addTeamToBatchEditForm']
         );
     }
 
