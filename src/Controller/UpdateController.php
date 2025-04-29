@@ -337,34 +337,7 @@ class UpdateController extends AbstractActionController
         //set up the item set form
         $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
-        //TODO rename this to TeamDetail form or find a way to string these all together
         $teamDetailsForm = $this->getForm(TeamDetailsForm::class);
-
-        //TODO: get team with a one line entity manager call
-        $criteria = ['id' => $team_id];
-        $qb = $this->entityManager->createQueryBuilder();
-        $entityClass = 'Teams\Entity\Team';
-
-        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $qb->setMaxResults(1);
-
-        $entity = $qb->getQuery()->getOneOrNullResult();
-
-
-        $data = $this->api()->read('team', ['id'=>$team_id])->getContent();
-        $request = new Request('update', 'team');
-        $event = new Event('api.hydrate.pre', $this, [
-            'entity' => $entity,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
-
 
         //TODO (refactor) this is probably a stupid way to do this
 
@@ -392,6 +365,7 @@ class UpdateController extends AbstractActionController
 
         //create an array object to hold the contents to pre-fill the form with
         //TODO (emulate) this is the procedure to use to populate forms. Copy this.
+        $data = $this->api()->read('team', ['id'=>$team_id])->getContent();
         $fill = new ArrayObject;
         $fill['o:name'] = $data->getJsonLd()['o:name'];
         $fill['o:description'] = $data->getJsonLd()['o:description'];
