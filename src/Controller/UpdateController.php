@@ -12,7 +12,7 @@ use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamSitesAddRemoveForm;
-use Teams\Form\TeamUpdateForm;
+use Teams\Form\TeamDetailsForm;
 use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
@@ -338,7 +338,7 @@ class UpdateController extends AbstractActionController
         $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
         $userId = $this->identity()->getId();
         //TODO rename this to TeamDetail form or find a way to string these all together
-        $form = $this->getForm(TeamUpdateForm::class);
+        $teamDetailsForm = $this->getForm(TeamDetailsForm::class);
 
         //TODO: get team with a one line entity manager call
         $criteria = ['id' => $team_id];
@@ -395,13 +395,13 @@ class UpdateController extends AbstractActionController
         $fill = new ArrayObject;
         $fill['o:name'] = $data->getJsonLd()['o:name'];
         $fill['o:description'] = $data->getJsonLd()['o:description'];
-        $form->bind($fill);
+        $teamDetailsForm->bind($fill);
 
         //is it a post request?
         //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
         $view = new ViewModel(['team'=>$team,
-            'form' => $form,
+            'form' => $teamDetailsForm,
             'id'=>$team_id,
             'roles'=> $roles,
             'roles_array' => $roles_array,
