@@ -2547,6 +2547,15 @@ SQL;
                 'multiple' => true,
             ]
         ]);
+        $inputFilter = $form->getInputFilter();
+        $inputFilter->add([
+            'name' => 'remove_team',
+            'required' => false
+        ]);
+        $inputFilter->add([
+            'name' => 'add_team',
+            'required' => false
+        ]);
     }
 
     public function processTeamBatchEditData (Event $event) {
