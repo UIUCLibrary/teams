@@ -11,6 +11,7 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemsetAddRemoveForm;
+use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamDetailsForm;
 use Laminas\EventManager\Event;
@@ -374,8 +375,13 @@ class UpdateController extends AbstractActionController
         //is it a post request?
         //TODO (refactor) clean up this, only send what is needed
         $request = $this->getRequest();
-        $view = new ViewModel(['team'=>$team,
+
+        $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
+        $resourceForm->get();
+        $view = new ViewModel([
+            'team'=>$team,
             'form' => $teamDetailsForm,
+            'resourceForm' => $resourceForm,
             'id'=>$team_id,
             'roles'=> $roles,
             'roles_array' => $roles_array,
@@ -463,6 +469,7 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to change this team");
             return $view;
         } else {
+
 
             //first delete then add resources to team
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, $existing_assets, true);
