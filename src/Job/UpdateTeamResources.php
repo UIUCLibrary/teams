@@ -54,7 +54,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         foreach ($teams as $teamId => $query) {
             $logger->info("beginning the update");
             $logger->info("the team is: " . $teamId);
-            $logger->info("the query is: " . $query);
+            $logger->info("the query inside perform: " . print_r($query, true));
 
 
             $this->updateTeamResources($teamId, $query, $action);
