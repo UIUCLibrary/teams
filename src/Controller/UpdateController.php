@@ -403,7 +403,7 @@ class UpdateController extends AbstractActionController
         $request = $this->getRequest();
 
         $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
-        $resourceForm->get();
+//        $resourceForm->get();
         $view = new ViewModel([
             'team'=>$team,
             'form' => $teamDetailsForm,
@@ -495,7 +495,13 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to change this team");
             return $view;
         } else {
-
+            if ($post_data['item_assignment_action'] && $post_data['item_assignment_action'] !== 'no_action') {
+                $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
+                    'team' => [$team_id => $post_data['item_pool']],
+                    'action' => $post_data['item_assignment_action'],
+                ]);
+                $this->messenger()->addSuccess('Team Resource update  in progress. To see the new counts, refresh the page.'); // @translate
+            }
 
             //first delete then add resources to team
             $this->processResources($request, $team, $existing_resources, $existing_resource_templates, $existing_assets, true);
