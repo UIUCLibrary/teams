@@ -53,6 +53,10 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         // Update the team resource assignments.
         foreach ($teams as $teamId => $query) {
             $logger->info("beginning the update");
+            $logger->info("the team is: " . $teamId);
+            $logger->info("the query is: " . $query);
+
+
             $this->updateTeamResources($teamId, $query, $action);
         }    }
 
@@ -77,10 +81,10 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         //array merge after fetching the ids from those other endpoints. Then, resource templates are not
         //in the resource table or team_resource table, so they would need to be done separately
 
-        $logger->info("the query is: " . print_r($query, true));
+        $logger->info("the query is inside the updateTeamResources function is: " . print_r($query, true));
 
         $resourceIds = $api->search('items', $query, ['returnScalar' => 'id'])->getContent();
-        $logger->info("the resource ids:");
+        $logger->info("the resource ids are:");
         $logger->info(print_r($resourceIds, true));
 
         if (in_array($action, ['replace', 'remove_all'])) {
