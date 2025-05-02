@@ -14,6 +14,7 @@ use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\TeamItemSetForm;
+use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Teams\Form\TeamUserForm;
@@ -43,10 +44,13 @@ class AddController extends AbstractActionController
         $form = $this->getForm(TeamForm::class);
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
+        $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
+
         $view = new ViewModel(
             [
                 'form' => $form,
                 'itemsetForm' => $itemsetForm,
+                'resourceForm' => $resourceForm,
             ]
         );
 
@@ -63,6 +67,7 @@ class AddController extends AbstractActionController
         $form->setData($request->getPost());
         $userForm->setData($request->getPost());
         $itemsetForm->setData($request->getPost());
+        $resourceForm->setData($request->getPost());
         if (! $form->isValid()) {
             return $view;
         }
@@ -92,61 +97,16 @@ class AddController extends AbstractActionController
             $resource_array = array();
             $resource_template_array = array();
             $asset_array = array();
-            if (isset($request->getPost('itemset')['itemset']['o:itemset'])) {
-                foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
-                    if ((int)$item_set_id > 0) {
-                        $item_set_id = (int)$item_set_id;
-
-                        //add all items belonging to itemset
-                        foreach ($this->api()->search('items', ['item_set_id' => $item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                            $resource_array[$item->id()] = true;
-
-                        //add all media belonging to item
-                        foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
-                        endforeach;
-                        endforeach;
-                    }
-                //add itemset itself
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                        ->findOneBy(['id' => $item_set_id]);
-                $team_resource = new TeamResource($team, $resource);
-
-                $this->entityManager->persist($team_resource);
-                endforeach;
-            }
-            if (isset($request->getPost('itemset')['itemset']['o:user'])) {
-                foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
-                    if ((int)$user_id > 0) {
-                        $user_id = (int)$user_id;
-
-                        //add all of that users items and their media
-                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $item):
-                            $resource_array[$item->id()] = true;
-                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                    $resource_array[$media->id()] = true;
-                            endforeach;
-                        endforeach;
-
-                        //add all of that user's item sets
-                        foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $itemset):
-                            $resource_array[$itemset->id()] = true;
-                        endforeach;
-
-                        //add all of that user's resource templates
-                        $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner' => $user_id]);
-                        foreach ($rts as $rt):
-                            $resource_template_array[$rt->getId()] = true;
-                        endforeach;
-
-                        //add all fo that user's assets
-                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id]);
-                            foreach ($assets as $asset):
-                                $asset_array[$asset->getId()] = true;
-                            endforeach;
-
-                    }
-                endforeach;
+            $formData = $this->params()->fromPost();
+            $formData['item_pool'] .= "&bypass_team_filter=true";
+            $resourceForm->setData($formData);
+            parse_str($formData['item_pool'], $itemPool);
+            if ($formData['item_assignment_action'] && $formData['item_assignment_action'] !== 'no_action') {
+                $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
+                    'teams' => [$newTeam->getContent()->id() => $itemPool],
+                    'action' => $formData['item_assignment_action'],
+                ]);
+                $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
             }
 
             //persist the resources, ie item, item set, media
@@ -194,6 +154,7 @@ class AddController extends AbstractActionController
         $view->setVariable('form', $form);
         $view->setVariable('itemsetForm', $itemsetForm);
         $view->setVariable('team_users', $request->getPost('o:team_users'));
+        $view->setVariable('resourceForm', $resourceForm);
 
         return $view;
     }
