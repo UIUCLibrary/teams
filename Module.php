@@ -1913,7 +1913,7 @@ SQL;
                     $add = $request->getContent()['add_team'];
                 }
             } else {
-                $remove = [];
+                $add = [];
             }
             if (array_key_exists('remove_team', $request->getContent()) ||
                 array_key_exists('add_team', $request->getContent())) {
