@@ -497,7 +497,7 @@ class UpdateController extends AbstractActionController
         } else {
             if ($post_data['item_assignment_action'] && $post_data['item_assignment_action'] !== 'no_action') {
                 $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
-                    'team' => [$team_id => $post_data['item_pool']],
+                    'teams' => [$team_id => $post_data['item_pool']],
                     'action' => $post_data['item_assignment_action'],
                 ]);
                 $this->messenger()->addSuccess('Team Resource update  in progress. To see the new counts, refresh the page.'); // @translate
