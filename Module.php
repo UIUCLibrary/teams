@@ -1911,7 +1911,6 @@ SQL;
 
 
                 foreach ($add as $team_id) {
-                    $logger->err('this is the team id: ' . $team_id);
                     //if the user is authorized to add items to that team
                     if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
