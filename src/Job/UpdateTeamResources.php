@@ -51,7 +51,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         // Update the team resource assignments.
         foreach ($teams as $teamId => $query) {
-            $this->updateTeamItems($teamId, $query, $action);
+            $this->updateTeamResources($teamId, $query, $action);
         }    }
 
     /**
