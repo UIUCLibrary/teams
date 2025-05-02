@@ -22,6 +22,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
     public function perform()
     {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $services = $this->getServiceLocator();
         $conn = $services->get('Omeka\Connection');
 
@@ -51,6 +52,11 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         // Update the team resource assignments.
         foreach ($teams as $teamId => $query) {
+            $logger->info("beginning the update");
+            $logger->info("the team is: " . $teamId);
+            $logger->info("the query inside perform: " . print_r($query, true));
+
+
             $this->updateTeamResources($teamId, $query, $action);
         }    }
 
@@ -65,6 +71,8 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
      */
     public function updateTeamResources(int $teamId, array $query, string $action) : void
     {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
         $services = $this->getServiceLocator();
         $api = $services->get('Omeka\ApiManager');
         $conn = $services->get('Omeka\Connection');
@@ -73,7 +81,11 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         //array merge after fetching the ids from those other endpoints. Then, resource templates are not
         //in the resource table or team_resource table, so they would need to be done separately
 
+        $logger->info("the query is inside the updateTeamResources function is: " . print_r($query, true));
+
         $resourceIds = $api->search('items', $query, ['returnScalar' => 'id'])->getContent();
+        $logger->info("the resource ids are:");
+        $logger->info(print_r($resourceIds, true));
 
         if (in_array($action, ['replace', 'remove_all'])) {
             $conn->delete('team_resource', ['team_id' => $teamId]);
@@ -84,6 +96,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $values = [];
                 $bindValues = [];
                 foreach ($resourceIdsChunk as $resourceId) {
+                    $logger->info("resource id: " . $resourceId);
                     $values[] = '(?,?)';
                     $bindValues[] = $resourceId;
                     $bindValues[] = $teamId;
@@ -93,7 +106,12 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $stmt = $conn->prepare($sql);
                 foreach ($bindValues as $position => $value) {
                     $stmt->bindValue($position + 1, $value);
+                    $logger->info($sql);
+                    $logger->info($position);
+
                 }
+
+
                 $stmt->execute();
             }
         }
