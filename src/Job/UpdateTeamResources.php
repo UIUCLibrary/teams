@@ -88,6 +88,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $values = [];
                 $bindValues = [];
                 foreach ($resourceIdsChunk as $resourceId) {
+                    $logger->info("resource id: " . $resourceId);
                     $values[] = '(?,?)';
                     $bindValues[] = $resourceId;
                     $bindValues[] = $teamId;
@@ -97,8 +98,11 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $stmt = $conn->prepare($sql);
                 foreach ($bindValues as $position => $value) {
                     $stmt->bindValue($position + 1, $value);
+                    $logger->info($sql);
+                    $logger->info($position);
+
                 }
-                $logger->info($sql);
+
 
                 $stmt->execute();
             }
