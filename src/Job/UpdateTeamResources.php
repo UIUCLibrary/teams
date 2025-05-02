@@ -77,9 +77,11 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         //array merge after fetching the ids from those other endpoints. Then, resource templates are not
         //in the resource table or team_resource table, so they would need to be done separately
 
-        $logger->info($query);
+        $logger->info("the query is: " . $query);
 
         $resourceIds = $api->search('items', $query, ['returnScalar' => 'id'])->getContent();
+        $logger->info("the resource ids:");
+        $logger->info(print_r($resourceIds, true));
 
         if (in_array($action, ['replace', 'remove_all'])) {
             $conn->delete('team_resource', ['team_id' => $teamId]);
