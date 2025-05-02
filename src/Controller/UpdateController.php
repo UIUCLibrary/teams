@@ -495,6 +495,7 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to change this team");
             return $view;
         } else {
+            $post_data['item_assignment_action'] .= '&bypass_team_filter=true';
             if ($post_data['item_assignment_action'] && $post_data['item_assignment_action'] !== 'no_action') {
                 $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
                     'teams' => [$team_id => $post_data['item_pool']],
