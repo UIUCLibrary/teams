@@ -22,6 +22,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
     public function perform()
     {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $services = $this->getServiceLocator();
         $conn = $services->get('Omeka\Connection');
 
@@ -51,6 +52,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         // Update the team resource assignments.
         foreach ($teams as $teamId => $query) {
+            $logger->info("beginning the update");
             $this->updateTeamResources($teamId, $query, $action);
         }    }
 
@@ -65,6 +67,8 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
      */
     public function updateTeamResources(int $teamId, array $query, string $action) : void
     {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
         $services = $this->getServiceLocator();
         $api = $services->get('Omeka\ApiManager');
         $conn = $services->get('Omeka\Connection');
@@ -94,6 +98,8 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 foreach ($bindValues as $position => $value) {
                     $stmt->bindValue($position + 1, $value);
                 }
+                $logger->info($sql);
+
                 $stmt->execute();
             }
         }
