@@ -37,6 +37,7 @@ use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Teams\Mvc\Controller\Plugin\TeamAuth;
+use function Symfony\Component\String\b;
 
 class Module extends AbstractModule
 {
@@ -200,6 +201,8 @@ SQL;
         $globalSettings->set('teams_site_admin_make_site', $params['teams_site_admin_make_site']);
         $globalSettings->set('teams_editor_make_site', $params['teams_editor_make_site']);
         $globalSettings->set('teams_site_admin_make_user', $params['teams_site_admin_make_user']);
+        $globalSettings->set('teams_filter_bypass_roles', $params['teams_filter_bypass_roles']);
+
     }
 
     public function getConfigForm(PhpRenderer $renderer)
@@ -736,8 +739,15 @@ SQL;
 
     public function bypassTeamsSortSelector(Event $event)
     {
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $roles = $globalSettings->get('teams_filter_bypass_roles');
+
+        if (!is_array($roles)) {
+            $roles[] = $roles;
+        }
+
         $user = $this->getUser();
-        if ($user && $user->getRole() == 'global_admin'){
+        if ($user && in_array($user->getRole(),$roles) ){
             $view = $event->getTarget();
             $params = $view->params();
             $bypassTeams = $params->fromQuery('bypass_team_filter');
@@ -875,9 +885,15 @@ SQL;
         //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
         //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
 
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $bypass_teams_filter_roles = $globalSettings->get('teams_filter_bypass_roles');
+
+        if (!is_array($bypass_teams_filter_roles)) {
+            $bypass_teams_filter_roles[] = $bypass_teams_filter_roles;
+        }
         if (isset($query['bypass_team_filter'])
             && $query['bypass_team_filter']
-            && $this->getUser()->getRole() == 'global_admin'
+            && in_array($this->getUser()->getRole(), $bypass_teams_filter_roles)
         ) {
             return;
         }
