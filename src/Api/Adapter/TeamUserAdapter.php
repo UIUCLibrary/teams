@@ -8,6 +8,7 @@ use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Response;
 use Omeka\Api\Exception;
 use Teams\Api\Representation\TeamUserRepresentation;
+use Teams\Entity\TeamRole;
 use Teams\Entity\TeamUser;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
@@ -96,12 +97,57 @@ class TeamUserAdapter extends AbstractEntityAdapter
             ->select('omeka_root')
             ->from($entityClass, 'omeka_root');
 
+        if (isset($query['role'])  && is_numeric($query['role'])){
+            $joinConditions = sprintf(
+                'role.id = omeka_root.role'
+            );
+            $qb->innerJoin(TeamRole::class, 'role', 'WITH', $joinConditions);
+            $qb->andWhere($qb->expr()->eq(
+                "role.id",
+                $this->createNamedParameter($qb, $query['role'])));
+
+//            $qb->innerJoin('Omeka\Entity\FulltextSearch', 'omeka_fulltext_search', 'WITH', $joinConditions);
+
+//            $roleAlias = $this->createAlias();
+//            $qb->innerJoin(
+//                'omeka_root.role',
+//                $roleAlias
+//            );
+//            $qb->andWhere($qb->expr()->eq(
+//                "$userAlias.id",
+//                $this->createNamedParameter($qb, $query['owner_id']))
+//            );
+
+        }
+
+        $role_permissions = [
+            'can_add_users',
+            'can_add_items',
+            'can_add_itemsets',
+            'can_modify_resources',
+            'can_delete_resources',
+            'can_add_site_pages'
+
+        ];
+        foreach ($role_permissions as $role_permission){
+            if (isset($query[$role_permission]) && is_bool($query[$role_permission])) {
+                $joinConditions = sprintf(
+                    'role.id = omeka_root.role'
+                );
+                $qb->innerJoin(TeamRole::class, 'role', 'WITH', $joinConditions);
+                $qb->andWhere($qb->expr()->eq(
+                    "role." . $role_permission,
+                    $this->createNamedParameter($qb, $query[$role_permission])));
+            }
+        }
+
         foreach ($search_fields as $field => $value) {
             $qb->andWhere($qb->expr()->eq(
                 "omeka_root.$field",
                 $this->createNamedParameter($qb, $value)
             ));
         }
+
         $this->buildBaseQuery($qb, $query);
         $this->buildQuery($qb, $query);
         $qb->groupBy("omeka_root." . $group_by);
@@ -121,7 +167,6 @@ class TeamUserAdapter extends AbstractEntityAdapter
         // sorting the adapters add.
         $this->sortQuery($qb, $query);
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
-
 
         $paginator = new Paginator($qb, false);
         $entities = [];
