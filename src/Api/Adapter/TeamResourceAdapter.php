@@ -232,7 +232,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             } else {
                 $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
             }
-            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, 'team');
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
             $response = new Response($content);
             $response->setTotalResults($countPaginator->count());
             return $response;
