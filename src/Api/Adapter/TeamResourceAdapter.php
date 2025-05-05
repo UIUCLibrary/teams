@@ -190,6 +190,8 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         // Add the LIMIT clause.
         $this->limitQuery($qb, $query);
 
+
+
         // Before adding the ORDER BY clause, set a paginator responsible for
         // getting the total count. This optimization excludes the ORDER BY
         // clause from the count query, greatly speeding up response time.
@@ -201,6 +203,40 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         // sorting the adapters add.
         $this->sortQuery($qb, $query);
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
+
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
+                        $scalarField, $entityClass
+                    ));
+                }
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.resource) as resource"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, 'team');
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
 
 
         $paginator = new Paginator($qb, false);
