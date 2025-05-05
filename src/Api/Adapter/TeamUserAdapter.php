@@ -179,11 +179,9 @@ class TeamUserAdapter extends AbstractEntityAdapter
             // The return_scalar passed in the query is valid. Note that we must
             // set returnScalar to the request so the API manager skips validation.
             $scalarField = $query['return_scalar'];
-            echo $query['return_scalar'];
             $request->setOption('returnScalar', $scalarField);
         }
         if ($scalarField) {
-            echo "search";
             $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
             $fieldNames = $classMetadata->getFieldNames();
             if (!in_array($scalarField, $fieldNames)) {
