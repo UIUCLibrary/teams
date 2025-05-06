@@ -1,0 +1,186 @@
+<?php
+
+namespace Teams\Form;
+
+use Doctrine\ORM\EntityManager;
+use Exception;
+use InvalidArgumentException;
+use Laminas\Authentication\AuthenticationService;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Api\Representation\AbstractResourceRepresentation;
+use Omeka\Form\Element\ItemSetSelect;
+use Omeka\Form\Element\ResourceTemplateSelect;
+use Laminas\Form\Form;
+use Omeka\Settings\Settings;
+
+
+class SecondaryResourcesForm extends Form
+{
+
+    /**
+     * @var EntityManager
+     */
+    protected EntityManager $entityManager;
+
+    /**
+     * @var ApiManager
+     */
+    protected ApiManager $apiManager;
+
+    /**
+     * @var AuthenticationService
+     */
+    protected AuthenticationService $authenticationService;
+
+    /**
+     * @var Settings
+     */
+    protected $settings;
+
+    public function init()
+    {
+        //determine which roles can bypass team filter
+
+        $show_all_options = in_array($this->authenticationService->getIdentity()->getRole(), $this->settings->get('teams_filter_bypass_roles'));
+
+        $this->setAttribute('id', 'team-secondary-resources-form');
+
+        $this->add([
+            'name' => 'o-modules-team:resource-templates',
+            'type' => ResourceTemplateSelect::class,
+            'options' => [
+                'label' => 'Select Resource Templates',
+                'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
+                'class' => 'chosen-select',
+                'filter_resource_representations' => $show_all_options ? "" : function ($templates) {
+                    // The user must have permission to assign items to the site.
+                    foreach ($templates as $index => $template) {
+                        if (!$this->userAllowed($template)) {
+                            unset($templates[$index]);
+                        }
+                    }
+                    return $templates;
+                },
+            ],
+            'attributes' => [
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'id' => 'o-modules-team-resource-templates',
+                'data-placeholder' => 'Select resource templates', // @translate
+
+            ]
+        ]);
+        $this->add([
+            'name' => 'o-modules-team:item-sets',
+            'type' => ItemSetSelect::class,
+            'options' => [
+                'label' => 'Select Item Sets',
+                'query' => ['bypass_team_filter' => true],
+                'class' => 'chosen-select',
+                'filter_resource_representations' => $show_all_options ? "" : function ($itemsets) {
+                    // The user must have permission to assign items to the site.
+                    foreach ($itemsets as $index => $itemset) {
+                        if (!$this->userAllowed($itemset)) {
+                            unset($itemsets[$index]);
+                        }
+                    }
+                    return $itemsets;
+                },
+
+            ],
+            'attributes' => [
+                'id' => 'o-modules-team-item-sets',
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'data-placeholder' => 'Select item sets', // @translate
+
+            ]
+        ]);
+
+    }
+
+    /**
+     * Determines if the user should be able to add this resource to other teams by checking to see if the user has
+     * resource editing privileges in any team where the resource is a team_resource. I.e., is there any context where
+     * the user can edit this item? If so, then they can edit which teams it belongs in.
+     *
+     * @param AbstractResourceRepresentation $resource
+     * @return bool
+     *
+     */
+    private function userAllowed(AbstractResourceRepresentation $resource): bool
+    {
+        $user = $this->authenticationService->getIdentity();
+        $users_edit_roles = $this->apiManager->search('team-user', ['user'=> $user, 'can_delete_resources'=>1], ['returnScalar' => 'team'] )->getContent();
+        if (str_contains('resource-template', $resource->getControllerName())) {
+            $resource_type = 'resource-template';
+            $table_name = 'resource_template';
+        } elseif(str_contains($resource->getControllerName(), 'item') || str_contains('media', $resource->getControllerName())) {
+            $resource_type = 'resource';
+            $table_name = 'resource';
+
+        } else
+        {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Cant create query ror "%1$s" type resource.',
+                    $resource->getControllerName()
+                )
+            );
+        }
+
+        $resources_teams = $this->apiManager->search('team-' . $resource_type, [$table_name => $resource->id()], ['returnScalar'=>'team'])->getContent();
+
+        if (!empty(array_intersect($users_edit_roles, $resources_teams))){
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
+
+    /**
+     * @param ApiManager $apiManager
+     * @return void
+     */
+    public function setApiManager(ApiManager $apiManager)
+    {
+        $this->apiManager = $apiManager;
+    }
+
+    /**
+     * @param AuthenticationService $authenticationService
+     * @return void
+     */
+    public function setAuthService(AuthenticationService $authenticationService)
+    {
+        $this->authenticationService = $authenticationService;
+    }
+
+
+    /**
+     * @param EntityManager $entityManager
+     */
+    public function setEntityManager(EntityManager $entityManager)
+    {
+        $this->entityManager = $entityManager;
+    }
+
+    /**
+     * @param Settings $settings
+     */
+    public function setSettings(Settings $settings)
+    {
+        $this->settings = $settings;
+    }
+
+    /**
+     * @return Settings
+     */
+    public function getSettings(): Settings
+    {
+        return $this->settings;
+    }
+
+}
