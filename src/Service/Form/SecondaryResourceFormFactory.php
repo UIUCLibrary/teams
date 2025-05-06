@@ -9,7 +9,8 @@ class SecondaryResourceFormFactory
 {
     public function __invoke(ContainerInterface $services, $requestedName, ?array $options = null)
     {
-        $form = new SecondaryResourcesForm();
+        $form = new SecondaryResourcesForm(null, $options);
+
         $form->setApiManager($services->get('Omeka\ApiManager'));
         $form->setAuthService($services->get('Omeka\AuthenticationService'));
         $form->setEntityManager($services->get('Omeka\EntityManager'));

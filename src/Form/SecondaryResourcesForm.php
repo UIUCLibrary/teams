@@ -3,7 +3,6 @@
 namespace Teams\Form;
 
 use Doctrine\ORM\EntityManager;
-use Exception;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationService;
 use Omeka\Api\Manager as ApiManager;
@@ -16,6 +15,8 @@ use Omeka\Settings\Settings;
 
 class SecondaryResourcesForm extends Form
 {
+
+    protected $options;
 
     /**
      * @var EntityManager
@@ -37,6 +38,11 @@ class SecondaryResourcesForm extends Form
      */
     protected $settings;
 
+    public function __construct($name = null, $options = [])
+    {
+        parent::__construct($name,  $options);
+    }
+
     public function init()
     {
         //determine which roles can bypass team filter
@@ -45,8 +51,10 @@ class SecondaryResourcesForm extends Form
 
         $this->setAttribute('id', 'team-secondary-resources-form');
 
+        $teamId = $this->options['team_id'];
+
         $this->add([
-            'name' => 'o-modules-team:resource-templates',
+            'name' => 'resource_templates',
             'type' => ResourceTemplateSelect::class,
             'options' => [
                 'label' => 'Select Resource Templates',
@@ -63,6 +71,7 @@ class SecondaryResourcesForm extends Form
                 },
             ],
             'attributes' => [
+                'value' =>  $teamId ? $this->apiManager->search('team-resource-template', ['team'=>$teamId], ['returnScalar' => 'resource_template'])->getContent():[],
                 'class' => 'chosen-select',
                 'multiple' => true,
                 'id' => 'o-modules-team-resource-templates',
@@ -71,12 +80,11 @@ class SecondaryResourcesForm extends Form
             ]
         ]);
         $this->add([
-            'name' => 'o-modules-team:item-sets',
+            'name' => 'item_sets',
             'type' => ItemSetSelect::class,
             'options' => [
                 'label' => 'Select Item Sets',
                 'query' => ['bypass_team_filter' => true],
-                'class' => 'chosen-select',
                 'filter_resource_representations' => $show_all_options ? "" : function ($itemsets) {
                     // The user must have permission to assign items to the site.
                     foreach ($itemsets as $index => $itemset) {
@@ -89,6 +97,7 @@ class SecondaryResourcesForm extends Form
 
             ],
             'attributes' => [
+                'value' =>  $teamId ? $this->apiManager->search('team-resource', ['team'=>$teamId], ['returnScalar' => 'resource'])->getContent():[],
                 'id' => 'o-modules-team-item-sets',
                 'class' => 'chosen-select',
                 'multiple' => true,
