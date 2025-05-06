@@ -10,6 +10,7 @@ use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
+use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamSitesAddRemoveForm;
@@ -119,22 +120,9 @@ class UpdateController extends AbstractActionController
         return $resource_array;
     }
 
-    public function processAssets($request, $team, $existing_resources, $existing_resources_templates, bool $delete = false)
-    {
-
-    }
-    public function tempteamUpdateAction()
-    {
-        $id = $this->params()->fromRoute('id');
-        $team_id = $this->params()->fromRoute('id');
-
-        $resource_form = $this->getForm(AvailableResourcesForm::class);
-        $sites_form = $this->getForm(AvailableSitesForm::class);
-        $user_form = $this->getForm(AvailableSitesForm::class);
-    }
-
     public function teamUpdateAction()
     {
+
         $team_id = $this->params()->fromRoute('id');
         $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
         $team_sites = $this->entityManager
@@ -178,9 +166,10 @@ class UpdateController extends AbstractActionController
         $sites->setEmptyOption('None');
         $sites->setValueOptions($valueOptions);
 
+
         //set up the item set form
         $itemsetForm = $this->getForm(TeamItemsetAddRemoveForm::class);
-        $userId = $this->identity()->getId();
+        $user = $this->identity();
         //TODO rename this to TeamDetail form or find a way to string these all together
         $teamDetailsForm = $this->getForm(TeamDetailsForm::class);
 
@@ -246,19 +235,31 @@ class UpdateController extends AbstractActionController
         $request = $this->getRequest();
 
         $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
-//        $resourceForm->get();
+        $secondaryResourcesForm = $this->getForm(SecondaryResourcesForm::class,
+        ['team_id'=>$team_id]
+        );
+
+        $vo = $secondaryResourcesForm->get('item_sets')->getValueOptions();
+        foreach ($vo as $o) {
+            $o['attributes']['selected' ] = true;
+        }
+        $secondaryResourcesForm->get('item_sets')->setValueOptions($vo);
+
+        $bypass_team_filter_roles = $this->settings()->get('teams_filter_bypass_roles');
         $view = new ViewModel([
             'team'=>$team,
             'form' => $teamDetailsForm,
             'resourceForm' => $resourceForm,
-            'id'=>$team_id,
+            'secondaryResourcesForm' => $secondaryResourcesForm,
+            'bypassTeamFilterRoles' => $bypass_team_filter_roles,
+            'id' => $team_id,
             'roles'=> $roles,
             'roles_array' => $roles_array,
             'all_u_collection' => $all_u_collection,
             'team_u_collection' => $team_u_collection,
             'team_u_array'=>$team_u_array,
             'available_u_array'=>$available_u_array,
-            'ident' => $userId,
+            'user' => $user,
             'itemsetForm' => $itemsetForm,
             'sitesForm' => $sitesForm,
         ]);
@@ -307,33 +308,32 @@ class UpdateController extends AbstractActionController
                 ->getQuery()
                 ->execute();
         }
+        if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
+            $this->messenger()->addError("You aren't authorized to change team members");
+            return $view;
+        } else {
+            $current_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['team' => $team_id]);
 
-
-            if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
-                $this->messenger()->addError("You aren't authorized to change team members");
-                return $view;
-            } else {
-                $current_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['team' => $team_id]);
-
-                foreach ($current_users as $team_user) {
-                    $this->entityManager->remove($team_user);
-                }
-                $this->entityManager->flush();
-
-                foreach ($request->getPost('o:team_users') as $team_user):
-                    $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                        ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
-                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                        ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
-
-                    $teamUser = new TeamUser($team, $user, $role);
-                    $teamUser->setCurrent(null);
-                    $this->entityManager->persist($teamUser);
-                endforeach;
-                $this->entityManager->flush();
-
+            foreach ($current_users as $team_user) {
+                $this->entityManager->remove($team_user);
             }
+            $this->entityManager->flush();
 
+            foreach ($request->getPost('o:team_users') as $team_user):
+                $user = $this->entityManager->getRepository('Omeka\Entity\User')
+                    ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
+                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                    ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
+
+                $teamUser = new TeamUser($team, $user, $role);
+                $teamUser->setCurrent(null);
+                $this->entityManager->persist($teamUser);
+            endforeach;
+            $this->entityManager->flush();
+
+        }
+
+        //need to update this for users who have the update and bypass_team_filter
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
             $this->messenger()->addError("You aren't authorized to change this team");
             return $view;
@@ -349,6 +349,7 @@ class UpdateController extends AbstractActionController
                     ]);
                     $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
                 }
+
 
             //handle new sites
             foreach ($post_data['teamSites']['o:site'] as $site) {
@@ -386,10 +387,6 @@ class UpdateController extends AbstractActionController
         $this->messenger()->addSuccess($successMessage);
 
         return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
-    }
-
-    public function roleUpdateAction()
-    {
     }
 
     public function userAction()
