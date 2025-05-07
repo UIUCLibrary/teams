@@ -11,6 +11,8 @@ use Omeka\Form\Element\ItemSetSelect;
 use Omeka\Form\Element\ResourceTemplateSelect;
 use Laminas\Form\Form;
 use Omeka\Settings\Settings;
+use Teams\Form\Element\ItemSetTeamSelect;
+use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
 
 class SecondaryResourcesForm extends Form
@@ -55,8 +57,9 @@ class SecondaryResourcesForm extends Form
 
         $this->add([
             'name' => 'resource_templates',
-            'type' => ResourceTemplateSelect::class,
+            'type' => ResourceTemplateTeamsSelect::class,
             'options' => [
+                'group_by' => ['team' => $teamId],
                 'label' => 'Select Resource Templates',
                 'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
                 'class' => 'chosen-select',
@@ -81,8 +84,9 @@ class SecondaryResourcesForm extends Form
         ]);
         $this->add([
             'name' => 'item_sets',
-            'type' => ItemSetSelect::class,
+            'type' => ItemSetTeamSelect::class,
             'options' => [
+                'group_by' => ['team' => $teamId],
                 'label' => 'Select Item Sets',
                 'query' => ['bypass_team_filter' => true],
                 'filter_resource_representations' => $show_all_options ? "" : function ($itemsets) {
@@ -132,7 +136,7 @@ class SecondaryResourcesForm extends Form
         {
             throw new InvalidArgumentException(
                 sprintf(
-                    'Cant create query ror "%1$s" type resource.',
+                    'Cant create query for "%1$s" type resource.',
                     $resource->getControllerName()
                 )
             );

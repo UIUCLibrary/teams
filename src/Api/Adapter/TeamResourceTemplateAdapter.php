@@ -207,6 +207,7 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
             } else {
                 $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
             }
+            //just putting this note here because it has been confusing before: returns the id as the index and key
             $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
             $response = new Response($content);
             $response->setTotalResults($countPaginator->count());
