@@ -239,11 +239,6 @@ class UpdateController extends AbstractActionController
         ['team_id'=>$team_id]
         );
 
-        $vo = $secondaryResourcesForm->get('item_sets')->getValueOptions();
-        foreach ($vo as $o) {
-            $o['attributes']['selected' ] = true;
-        }
-        $secondaryResourcesForm->get('item_sets')->setValueOptions($vo);
         $bypass_team_filter_roles = $this->settings()->get('teams_filter_bypass_roles');
         $view = new ViewModel([
             'team'=>$team,
@@ -265,29 +260,6 @@ class UpdateController extends AbstractActionController
         if (! $request->isPost()) {
             return $view;
         }
-
-        $em = $this->entityManager;
-        $qb = $em->createQueryBuilder();
-        $existing_resources = $qb->select('tr')
-            ->from('Teams\Entity\TeamResource', 'tr')
-            ->where('tr.team = :team_id')
-            ->setParameter('team_id', $team_id)
-            ->getQuery()
-            ->getResult();
-
-        $existing_resource_templates = $qb->select('trt')
-            ->from('Teams\Entity\TeamResourceTemplate', 'trt')
-            ->where('trt.team = :team_id')
-            ->setParameter('team_id', $team_id)
-            ->getQuery()
-            ->getResult();
-
-        $existing_assets = $qb->select('ta')
-            ->from('Teams\Entity\TeamAsset', 'ta')
-            ->where('ta.team = :team_id')
-            ->setParameter('team_id', $team_id)
-            ->getQuery()
-            ->getResult();
 
 
         $post_data = $request->getPost();
@@ -332,11 +304,13 @@ class UpdateController extends AbstractActionController
 
         }
 
-        //need to update this for users who have the update and bypass_team_filter
+        //TODO:need to update this for users who have the update and bypass_team_filter
         if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
             $this->messenger()->addError("You aren't authorized to change this team");
             return $view;
         } else {
+
+            //process items
             $formData = $this->params()->fromPost();
             $formData['item_pool'] .= "&bypass_team_filter=true";
             $resourceForm->setData($formData);
@@ -348,9 +322,12 @@ class UpdateController extends AbstractActionController
                 ]);
                 $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
             }
+
+            //process item sets and resource templates
             $secondaryResourcesForm->setData($formData);
+            //TODO: process additions and removals
 
-
+            $em = $this->entityManager;
             //handle new sites
             foreach ($post_data['teamSites']['o:site'] as $site) {
                 if (!in_array($site, $current_sites)) {
