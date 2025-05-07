@@ -244,7 +244,6 @@ class UpdateController extends AbstractActionController
             $o['attributes']['selected' ] = true;
         }
         $secondaryResourcesForm->get('item_sets')->setValueOptions($vo);
-
         $bypass_team_filter_roles = $this->settings()->get('teams_filter_bypass_roles');
         $view = new ViewModel([
             'team'=>$team,
@@ -341,14 +340,15 @@ class UpdateController extends AbstractActionController
             $formData = $this->params()->fromPost();
             $formData['item_pool'] .= "&bypass_team_filter=true";
             $resourceForm->setData($formData);
-                parse_str($formData['item_pool'], $itemPool);
-                if ($formData['item_assignment_action'] && $formData['item_assignment_action'] !== 'no_action') {
-                    $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
-                        'teams' => [$team_id => $itemPool],
-                        'action' => $formData['item_assignment_action'],
-                    ]);
-                    $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
-                }
+            parse_str($formData['item_pool'], $itemPool);
+            if ($formData['item_assignment_action'] && $formData['item_assignment_action'] !== 'no_action') {
+                $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
+                    'teams' => [$team_id => $itemPool],
+                    'action' => $formData['item_assignment_action'],
+                ]);
+                $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
+            }
+            $secondaryResourcesForm->setData($formData);
 
 
             //handle new sites

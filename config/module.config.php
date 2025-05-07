@@ -97,7 +97,8 @@ return [
             Form\SecondaryResourcesForm::class => Service\Form\SecondaryResourceFormFactory::class,
             Form\Element\TeamName::class => Service\Form\Element\TeamNameFactory::class,
             Form\Element\RoleName::class => Service\Form\Element\RoleNameFactory::class,
-
+            Form\Element\ItemSetTeamSelect::class => Service\Form\Element\ItemSetTeamSelectFactory::class,
+            Form\Element\ResourceTemplateTeamsSelect::class => Service\Form\Element\ResourceTemplateTeamsSelectFactory::class,
         ],
     ],
     'view_helpers' =>[
