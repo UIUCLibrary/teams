@@ -10,17 +10,22 @@ use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
+use Omeka\Entity\ResourceTemplate;
 use Omeka\Stdlib\ErrorStore;
+use Omeka\Stdlib\Message;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Api\Representation\TeamResourceTemplateRepresentation;
 
-class TeamResourceTemplateAdapter extends AbstractEntityAdapter
+class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
 {
     protected $sortFields = [
-        'resource_template' => 'resource_template',
+        'resource-template' => 'resource-template',
         'team' => 'team',
 
     ];
+
+
 
     public function getResourceName()
     {
@@ -49,8 +54,8 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
                 $entity->setTeamId($team_id);
             }
         }
-        if ($this->shouldHydrate($request, 'resource_template')) {
-            $team_resource_id = $request->getValue('resource_template');
+        if ($this->shouldHydrate($request, 'resource-template')) {
+            $team_resource_id = $request->getValue('resource-template');
             if (!is_null($team_resource_id)) {
                 $team_resource_id = trim($team_resource_id);
                 $entity->setTeamResourceId($team_resource_id);
@@ -67,10 +72,10 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
             ));
         }
 
-        if (isset($query['resource_template'])) {
+        if (isset($query['resource-template'])) {
             $qb->andWhere($qb->expr()->eq(
                 'omeka_root' . '.' . 'resource_template',
-                $this->createNamedParameter($qb, $query['resource_template'])
+                $this->createNamedParameter($qb, $query['resource-template'])
             ));        }
 
     }
@@ -106,11 +111,11 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
         if ( array_key_exists('team', $query) ) {
             $search_fields['team'] = $query['team'];
             $group_by = 'resource_template';
-        } elseif (array_key_exists('resource_template', $query)) {
-            $search_fields['resource_template'] = $query['resource_template'];
+        } elseif (array_key_exists('resource-template', $query)) {
+            $search_fields['resource-template'] = $query['resource-template'];
         } else {
             throw new Exception\BadRequestException(sprintf(
-                $this->getTranslator()->translate('%1$s entity requires team or resource_template search criteria'),
+                $this->getTranslator()->translate('%1$s entity requires team or resource-template search criteria'),
                 $this->getEntityClass()
             ));
         }
@@ -238,9 +243,87 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
     {
         AbstractAdapter::read($request);
     }
-    public function create(Request $request)
+
+    public function validateRequest(Request $request, ErrorStore $errorStore)
     {
-        AbstractAdapter::create($request);
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
+        if (Request::CREATE === $request->getOperation()) {
+            $logger->err('in the validator::create');
+            //validate correct payload data exists
+            if (!$request->getValue('team') || !is_numeric($request->getValue('team'))) {
+                $logger->err('our payload needs to indicate team with a numeric value');
+
+                $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
+            } else {
+                $team = $this->getEntityManager()
+                    ->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id' => $request->getValue('team')]);
+                if (!$team) {
+                    $logger->err('a team with that id doesnt exist');
+
+                    $errorStore->addError('o-module-teams:team', new Message(
+                        'A team with id %s does not exist.', // @translate
+                        $request->getValue('team')));
+
+                }
+            }
+            if (!$request->getValue($this->getMappedEntityName()) || !is_numeric($request->getValue($this->getMappedEntityName()))) {
+                $errorStore->addError('o-module-teams:team', "Your payload needs to indicate {$this->getMappedEntityName()} with a numeric value");
+                $logger->err("the value of {$this->getMappedEntityName()} needs to be numeric");
+
+            }
+
+            //validate team and resource exist
+
+        }
+        if ($errorStore->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
+    }
+
+
+        public function create(Request $request)
+    {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
+        $logger->err('TRT::Create - got to the method.');
+        if ($request->getValue('batch')){
+            $this->batchCreate($request);
+        }
+
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+//        $this->validateRequest($request, new ErrorStore());
+        $logger->err('TRT::Create - validated');
+
+
+        $team = $request->getValue('team');
+        $resource = $request->getValue('resource-template');
+        echo 'the resource teplate id in the api is: ' . $resource;
+        $this->teamAuthority($request, $request->getValue('team'), $user);
+        if (!$this->resourceAuthority($request->getValue('resource'),$user)){
+            throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
+            );
+        }
+        $logger->err('TRT::Create - authorized');
+
+        $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
+        $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id'=>$resource]);
+        $teamResource = new TeamResourceTemplate($teamEntity, $resourceEntity);
+        $logger->err(get_class($teamResource));
+        $this->getEntityManager()->persist($teamResource);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($teamResource);
+        }
+        return new Response($teamResource);
+
+
     }
 
     public function batchCreate(Request $request)
@@ -269,4 +352,14 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
     }
 
 
+    public function getMappedEntityClass()
+    {
+        return ResourceTemplate::class;
+
+    }
+
+    public function getMappedEntityName()
+    {
+        return 'resource-template';
+    }
 }
