@@ -292,16 +292,23 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
     }
     public function create(Request $request)
     {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        $logger->err('this is the team: '. $request->getValue('team'));
 
         if ($request->getValue('batch')){
             $this->batchCreate($request);
         }
 
         $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $logger->err('this is the user: '. $user->getId());
 
         $this->validateRequest($request, new ErrorStore());
+        $logger->err('the request is valid');
+
         $team = $request->getValue('team');
         $resource = $request->getValue('resource');
+        $logger->err('Did we fail silently?' );
+
         $this->teamAuthority($request, $request->getValue('team'), $user);
         if (!$this->resourceAuthority($request->getValue('resource'),$user)){
             throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
@@ -310,6 +317,9 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
         $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
         $teamResource = new TeamResource($teamEntity, $resourceEntity);
+        $logger->err('this is the class of the team resource entity: ' );
+
+        $logger->err( get_class($teamResource));
         $this->getEntityManager()->persist($teamResource);
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
@@ -339,8 +349,11 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
-    }
+        $entity = $this->deleteEntity($request);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);    }
 
     public function batchDelete(Request $request)
     {
@@ -353,7 +366,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             //validate payload data refers to real entities
 
             //validate team data
-            if(!$request->getValue('team') || !is_int($request->getValue('team'))){
+            if(!$request->getValue('team') || !is_numeric($request->getValue('team'))){
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
             } else {
                 $team = $this->getEntityManager()
@@ -367,7 +380,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             }
 
             //validate resource data
-            if(!$request->getValue('resource') || !is_int($request->getValue('resource'))){
+            if(!$request->getValue('resource') || !is_numeric($request->getValue('resource'))){
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate resource with a numeric value');
             } else {
                 $mappedEntity = $this->findMappedEntity($request->getValue('resource'), $request);
@@ -384,6 +397,23 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             throw $validationException;
         }
 
+    }
+    public function deleteEntity(Request $request): EntityInterface
+    {
+        $entity = $this->findEntity(['team'=>$request->getValue('team'), 'resource' => $request->getValue('resource')]);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $this->teamAuthority($request, $team, $user);
+
+        $event = new Event('api.find.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+        $this->getEntityManager()->remove($entity);
+        return $entity;
     }
     public function teamAuthority($request, $team, $user, $resource=null)
     {
