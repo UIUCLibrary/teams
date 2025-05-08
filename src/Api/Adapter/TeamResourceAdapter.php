@@ -339,8 +339,11 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
-    }
+        $entity = $this->deleteEntity($request);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);    }
 
     public function batchDelete(Request $request)
     {
@@ -385,11 +388,32 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         }
 
     }
+    public function deleteEntity(Request $request): EntityInterface
+    {
+        $entity = $this->findEntity(['team'=>$request->getValue('team'), 'resource' => $request->getValue('resource')]);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        $logger->err('this is the request: ');
+        $logger->err($request->getContent());
+        $this->teamAuthority($request, $team, $user);
+
+        $event = new Event('api.find.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+        $this->getEntityManager()->remove($entity);
+        return $entity;
+    }
     public function teamAuthority($request, $team, $user, $resource=null)
     {
         $em = $this->getEntityManager();
         $operation = $request->getOperation();
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        $logger->err('this is the team: '. $team);
         $teamAuth = new TeamAuth($em, $logger);
         if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $team)){
             throw new Exception\PermissionDeniedException(sprintf(
