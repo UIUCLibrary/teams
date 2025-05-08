@@ -5,12 +5,14 @@ namespace Teams\Form;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationService;
+use Laminas\Form\Element\Select;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
 use Omeka\Form\Element\ItemSetSelect;
 use Omeka\Form\Element\ResourceTemplateSelect;
 use Laminas\Form\Form;
 use Omeka\Settings\Settings;
+use Teams\Form\Element\BlankTeamSelect;
 use Teams\Form\Element\ItemSetTeamSelect;
 use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
@@ -109,6 +111,23 @@ class SecondaryResourcesForm extends Form
 
             ]
         ]);
+        $this->add([
+            'name' => 'remove_item_sets',
+            'type' => Select::class,
+            'options' => [
+                'label' => 'Remove Item Sets',
+            ],
+            'attributes' => [
+                'id' => 'o-modules-team-remove-item-sets',
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'data-placeholder' => 'Select item sets', // @translate
+                'hidden' => 'hidden',
+                'visibility' => 'hidden',
+
+            ]
+        ]);
+
 
     }
 

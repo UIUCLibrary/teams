@@ -44,7 +44,8 @@ class TeamAuth extends AbstractPlugin
     }
 
 
-    public function teamAuthorized(User $user, string $action, string $domain, int $context=0): bool
+
+    public function teamAuthorized(User $user, string $action, string $domain, int $team=0): bool
     {
 
         if ($action=='create'){
@@ -79,9 +80,9 @@ class TeamAuth extends AbstractPlugin
 
 
         //see if the user has a role in the supplied team
-        if ($context>0){
+        if ($team>0){
             $teamUser = $em->getRepository('Teams\Entity\TeamUser')
-                ->findOneBy(['team' => $context, 'user'=>$user_id]);
+                ->findOneBy(['team' => $team, 'user'=>$user_id]);
             if ($teamUser) {
                 $role = $teamUser->getRole();
             } else {
@@ -104,7 +105,6 @@ class TeamAuth extends AbstractPlugin
             //only the global admin can create, delete or modify teams
             if ($domain == 'team' || $domain ==  'role') {
                 $authorized = $this->isGlobAdmin($user);
-
             }
 
             //if they can manage users of the team (including their role)

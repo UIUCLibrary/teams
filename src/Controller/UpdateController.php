@@ -325,6 +325,21 @@ class UpdateController extends AbstractActionController
 
             //process item sets and resource templates
             $secondaryResourcesForm->setData($formData);
+            if (isset($formData['remove_item_sets'])){
+                $remove_item_sets = $formData['remove_item_sets'];
+                foreach ($remove_item_sets as $item_set_id) {
+                    //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
+                    $this->api()->delete('team-resource', [], ['team' => $team_id, 'resource' => $item_set_id],['anOption'=>'test']);
+                }
+            }
+
+            foreach ($formData['item_sets'] as $item_set_id) {
+                //todo: implement the read operation
+                $exists = $this->api()->search('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
+                if (count($exists->getContent())<1){
+                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
+                }
+            }
             //TODO: process additions and removals
 
             $em = $this->entityManager;

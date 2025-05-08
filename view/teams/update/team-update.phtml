@@ -2,6 +2,8 @@
 <?php
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/item-set-removal.js', 'Teams'));
+
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'items edit');
