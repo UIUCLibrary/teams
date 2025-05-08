@@ -115,18 +115,30 @@ class SecondaryResourcesForm extends Form
             'name' => 'remove_item_sets',
             'type' => Select::class,
             'options' => [
-                'label' => 'Remove Item Sets',
+                'label' => 'Item Sets to be removed',
             ],
             'attributes' => [
                 'id' => 'o-modules-team-remove-item-sets',
                 'class' => 'chosen-select',
                 'multiple' => true,
-                'data-placeholder' => 'Select item sets', // @translate
-                'hidden' => 'hidden',
-                'visibility' => 'hidden',
+                'data-placeholder' => 'None', // @translate
 
             ]
         ]);
+        $this->add([
+            'name' => 'remove_resource_templates',
+            'type' => Select::class,
+            'options' => [
+                'label' => 'Resource Templates to be removed',
+            ],
+            'attributes' => [
+                'id' => 'o-modules-team-remove-resource-templates',
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'data-placeholder' => 'None', // @translate
+            ]
+        ]);
+
 
 
     }
