@@ -51,7 +51,11 @@ class SecondaryResourcesForm extends Form
     {
         //determine which roles can bypass team filter
 
-        $show_all_options = in_array($this->authenticationService->getIdentity()->getRole(), $this->settings->get('teams_filter_bypass_roles'));
+        if (is_array($this->settings->get('teams_filter_bypass_roles'))) {
+            $show_all_options = in_array($this->authenticationService->getIdentity()->getRole(), $this->settings->get('teams_filter_bypass_roles'));
+        } else {
+            $show_all_options = $this->authenticationService->getIdentity()->getRole() === 'global_admin';
+        }
 
         $this->setAttribute('id', 'team-secondary-resources-form');
 
