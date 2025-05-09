@@ -292,23 +292,13 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
     }
     public function create(Request $request)
     {
-        $logger = $this->getServiceLocator()->get('Omeka\Logger');
-        $logger->err('this is the team: '. $request->getValue('team'));
-
         if ($request->getValue('batch')){
             $this->batchCreate($request);
         }
-
         $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
-        $logger->err('this is the user: '. $user->getId());
-
         $this->validateRequest($request, new ErrorStore());
-        $logger->err('the request is valid');
-
         $team = $request->getValue('team');
         $resource = $request->getValue('resource');
-        $logger->err('Did we fail silently?' );
-
         $this->teamAuthority($request, $request->getValue('team'), $user);
         if (!$this->resourceAuthority($request->getValue('resource'),$user)){
             throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
@@ -317,9 +307,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
         $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
         $teamResource = new TeamResource($teamEntity, $resourceEntity);
-        $logger->err('this is the class of the team resource entity: ' );
-
-        $logger->err( get_class($teamResource));
         $this->getEntityManager()->persist($teamResource);
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
@@ -353,7 +340,8 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
         }
-        return new Response($entity);    }
+        return new Response($entity);
+    }
 
     public function batchDelete(Request $request)
     {
@@ -433,7 +421,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     /**
      * @param $request
-     * @return void
+     * @return bool
      *
      * Does the user have the authority to modify the resource
      */
