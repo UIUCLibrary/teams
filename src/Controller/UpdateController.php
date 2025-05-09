@@ -348,51 +348,19 @@ class UpdateController extends AbstractActionController
             $secondaryResourcesForm->setData($formData);
             if (isset($formData['remove_resource_templates'])){
                 $this->logger()->err('TRT:Controller - we received delete requests from the form');
-                $remove_resource_templates = $formData['remove_resource_templates'];
-                foreach ($remove_resource_templates as $resource_templates_id) {
+                foreach ($formData['remove_resource_templates'] as $resource_template_id) {
                     //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
-                    $this->api()->delete('team-resource-template', [], ['team' => $team_id, 'resource' => $resource_templates_id]);
+                    $this->api()->delete('team-resource-template', [], ['team' => $team_id, 'resource-template' => $resource_template_id]);
                 }
-            } else {
-                $this->logger()->err('TRT:Controller - we did not receive delete requests from the form');
-
             }
             //add resource templates
             if (isset($formData['resource_templates'])){
-                $this->logger()->err('TRT:Controller - we received create requests from the form for rt: ');
-                $this->logger()->err($formData['resource_templates']);
-                $existing = $this->api()->search('team-resource-template', ['team'=>$team_id], ['returnScalar' => 'resource_template'])->getContent();
-                $this->logger()->err("here are the existing id for the trts for the team: " . print_r($existing));
-
-
                 foreach ($formData['resource_templates'] as $resource_template_id) {
-
-                    $trt = [];
-                    $this->logger()->err('**********');
-                    $this->logger()->err('**********');
-                    $this->logger()->err('**********');
-                    $this->logger()->err('');
-                    $this->logger()->err('');
-                    $this->logger()->err('');
-                    $this->logger()->err('now working on trt id = ' . $resource_template_id);
-
-                    if (count($this->api()->search('team-resource-template', ['team'=>$team_id, 'resource-template'=>$resource_template_id], ['flushEntityManager' => true])->getContent())<1){
-                        $this->logger()->err('TRT:Controller - this one doesnt exist: ' . $resource_template_id);
+                    if (count($this->api()->search('team-resource-template', ['team'=>$team_id, 'resource-template'=>$resource_template_id])->getContent())<1){
                         $this->api()->create('team-resource-template', ['team'=>$team_id, 'resource-template'=>$resource_template_id]);
-                    } else {
-                        $trt = $this->api()->search('team-resource-template', ['team'=>$team_id, 'resource-template'=>$resource_template_id])->getContent()[0];
-                        $this->logger()->err('TRT:Controller - this one already exists: ' . $resource_template_id);
-                        $this->logger()->err('this is the team: ' . $trt->team());
-                        $this->logger()->err('and this is the resource template: ' . $trt->resource());
-
-
-
-
                     }
                 }
-
             }
-
 
             $em = $this->entityManager;
             //handle new sites
