@@ -330,9 +330,8 @@ class UpdateController extends AbstractActionController
             if (isset($formData['remove_item_sets'])){
                 $remove_item_sets = $formData['remove_item_sets'];
                 foreach ($remove_item_sets as $item_set_id) {
-                    $this->logger()->err("item set id from the controller: " . $item_set_id);
                     //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
-                    $this->api()->delete('team-resource', [], ['team' => $team_id, 'resource' => $item_set_id],['anOption'=>'test']);
+                    $this->api()->delete('team-resource', [], ['team' => $team_id, 'resource' => $item_set_id],['recursive'=>true]);
                 }
             }
             //add item sets
@@ -340,14 +339,13 @@ class UpdateController extends AbstractActionController
                 //todo: implement the read operation
                 $exists = $this->api()->search('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
                 if (count($exists->getContent())<1){
-                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
+                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id],[], ['recursive'=>true]);
                 }
             }
 
             //remove resource templates
             $secondaryResourcesForm->setData($formData);
             if (isset($formData['remove_resource_templates'])){
-                $this->logger()->err('TRT:Controller - we received delete requests from the form');
                 foreach ($formData['remove_resource_templates'] as $resource_template_id) {
                     //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
                     $this->api()->delete('team-resource-template', [], ['team' => $team_id, 'resource-template' => $resource_template_id]);

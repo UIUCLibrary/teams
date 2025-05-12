@@ -2,6 +2,7 @@
 
 namespace Teams\Api\Adapter;
 
+use Laminas\EventManager\Event;
 use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Request;
 use Omeka\Db\Event\Subscriber\Entity;
@@ -46,6 +47,74 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
     abstract public function getMappedEntityClass();
 
     abstract public function getMappedEntityName();
+
+    public function findMappedEntity($criteria, $request = null)
+    {
+        if (!is_array($criteria)) {
+            $criteria = ['id' => $criteria];
+        }
+
+        $entityClass = $this->getMappedEntityClass();
+        $this->index = 0;
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $qb->setMaxResults(1);
+
+        $event = new Event('api.find.query', $this, [
+            'queryBuilder' => $qb,
+            'request' => $request,
+        ]);
+
+        $this->getEventManager()->triggerEvent($event);
+        $entity = $qb->getQuery()->getOneOrNullResult();
+        if (!$entity) {
+            throw new Exception\NotFoundException(sprintf(
+                $this->getTranslator()->translate('%1$s entity with criteria %2$s not found'),
+                $entityClass, json_encode($criteria)
+            ));
+        }
+        return $entity;
+    }
+
+    public function entityExists($criteria, $request = null)
+    {
+        if (!is_array($criteria)) {
+            $criteria = ['id' => $criteria];
+        }
+
+        $entityClass = $this->getEntityClass();
+        $this->index = 0;
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
+        foreach ($criteria as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $qb->setMaxResults(1);
+
+        $event = new Event('api.find.query', $this, [
+            'queryBuilder' => $qb,
+            'request' => $request,
+        ]);
+
+        $this->getEventManager()->triggerEvent($event);
+        $entity =  $qb->getQuery()->getOneOrNullResult();
+
+        if (!$entity){
+            return false;
+
+        } return  true;
+    }
+
+
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
     {
