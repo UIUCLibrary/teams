@@ -336,6 +336,44 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function delete(Request $request)
     {
+
+        if ($request->getOption('recursive')){
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+            $logger->err('recursive option detected');
+
+            $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
+
+            $logger->err('mapped entity class:' . get_class($mappedEntity));
+            $logger->err('mapped entity resource name is '. $mappedEntity->getResourceName()) ;
+
+            //item sets => contain items
+            if ($mappedEntity->getResourceName() === 'item_sets') {
+                $logger->err('item set detected') ;
+
+                $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
+                    ->search('items', ['item_set_id' => $mappedEntity->getId()], ['returnScalar' => 'id'])
+                    ->getContent();
+                $logger->err('item set child items: ' . $childIds);
+
+                foreach ($childIds as $resourceId) {
+                    $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+                        ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $resourceId])->getContent();
+                    if (count($exists) > 0)
+                    {
+                        $this->getServiceLocator()
+                            ->get('Omeka\ApiManager')
+                            ->delete('team-resource', [], ['team' => $request->getValue('team'), 'resource' => $resourceId],['recursive'=>false]);
+                    }
+
+//                    $subRequest = New Request('delete','team-resource');
+//                    $subRequest->setContent(['team'=>$request->getValue('team'),'resource'=>$resourceId]);
+//                    $subRequest->setOption('recursive',true);
+//                    $this->delete($subRequest);
+                }
+            }
+            //items => contain media
+        }
+
         $entity = $this->deleteEntity($request);
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
