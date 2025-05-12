@@ -59,12 +59,22 @@ class SecondaryResourcesForm extends Form
 
         $this->setAttribute('id', 'team-secondary-resources-form');
 
-        $teamId = $this->options['team_id'];
+        if (array_key_exists('team_id', $this->options)){
+            $teamId = $this->options['team_id'];
+        } else {
+            $teamId = 0;
+        }
+        if ($teamId === 0) {
+            $disableGroupBy = true;
+        } else {
+            $disableGroupBy = false;
+        }
 
         $this->add([
             'name' => 'resource_templates',
             'type' => ResourceTemplateTeamsSelect::class,
             'options' => [
+                'disable_group_by' => $disableGroupBy,
                 'group_by' => ['team' => $teamId],
                 'label' => 'Select Resource Templates',
                 'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
@@ -92,6 +102,7 @@ class SecondaryResourcesForm extends Form
             'name' => 'item_sets',
             'type' => ItemSetTeamSelect::class,
             'options' => [
+                'disable_group_by' => $disableGroupBy,
                 'group_by' => ['team' => $teamId],
                 'label' => 'Select Item Sets',
                 'query' => ['bypass_team_filter' => true],
