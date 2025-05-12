@@ -339,14 +339,13 @@ class UpdateController extends AbstractActionController
                 //todo: implement the read operation
                 $exists = $this->api()->search('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
                 if (count($exists->getContent())<1){
-                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
+                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id],[], ['recursive'=>true]);
                 }
             }
 
             //remove resource templates
             $secondaryResourcesForm->setData($formData);
             if (isset($formData['remove_resource_templates'])){
-                $this->logger()->err('TRT:Controller - we received delete requests from the form');
                 foreach ($formData['remove_resource_templates'] as $resource_template_id) {
                     //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
                     $this->api()->delete('team-resource-template', [], ['team' => $team_id, 'resource-template' => $resource_template_id]);
