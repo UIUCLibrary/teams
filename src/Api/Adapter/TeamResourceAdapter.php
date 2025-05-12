@@ -190,6 +190,8 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         // Add the LIMIT clause.
         $this->limitQuery($qb, $query);
 
+
+
         // Before adding the ORDER BY clause, set a paginator responsible for
         // getting the total count. This optimization excludes the ORDER BY
         // clause from the count query, greatly speeding up response time.
@@ -201,6 +203,40 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         // sorting the adapters add.
         $this->sortQuery($qb, $query);
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
+
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
+                        $scalarField, $entityClass
+                    ));
+                }
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.resource) as resource"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
 
 
         $paginator = new Paginator($qb, false);
@@ -256,13 +292,10 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
     }
     public function create(Request $request)
     {
-
         if ($request->getValue('batch')){
             $this->batchCreate($request);
         }
-
         $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
-
         $this->validateRequest($request, new ErrorStore());
         $team = $request->getValue('team');
         $resource = $request->getValue('resource');
@@ -303,7 +336,11 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
+        $entity = $this->deleteEntity($request);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);
     }
 
     public function batchDelete(Request $request)
@@ -317,7 +354,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             //validate payload data refers to real entities
 
             //validate team data
-            if(!$request->getValue('team') || !is_int($request->getValue('team'))){
+            if(!$request->getValue('team') || !is_numeric($request->getValue('team'))){
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
             } else {
                 $team = $this->getEntityManager()
@@ -331,7 +368,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             }
 
             //validate resource data
-            if(!$request->getValue('resource') || !is_int($request->getValue('resource'))){
+            if(!$request->getValue('resource') || !is_numeric($request->getValue('resource'))){
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate resource with a numeric value');
             } else {
                 $mappedEntity = $this->findMappedEntity($request->getValue('resource'), $request);
@@ -348,6 +385,23 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             throw $validationException;
         }
 
+    }
+    public function deleteEntity(Request $request): EntityInterface
+    {
+        $entity = $this->findEntity(['team'=>$request->getValue('team'), 'resource' => $request->getValue('resource')]);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $this->teamAuthority($request, $team, $user);
+
+        $event = new Event('api.find.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+        $this->getEntityManager()->remove($entity);
+        return $entity;
     }
     public function teamAuthority($request, $team, $user, $resource=null)
     {
@@ -367,7 +421,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     /**
      * @param $request
-     * @return void
+     * @return bool
      *
      * Does the user have the authority to modify the resource
      */

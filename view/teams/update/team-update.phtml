@@ -1,5 +1,9 @@
 
 <?php
+$this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/item-set-removal.js', 'Teams'));
+
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $this->htmlElement('body')->appendAttribute('class', 'items edit');
@@ -8,6 +12,7 @@ $sectionNavs = [
     'team-info' => $translate('Info'),
     'team-members' => $translate('Users'),
     'team-resources' => $translate('Resources'),
+    'team-secondary-resources' => $translate('Other Resources'),
     'team-sites' => $translate('Sites'),
 //    'team-assets' => $translate('Assets')
 ];
@@ -48,28 +53,48 @@ echo $this->form()->openTag($form);?>
     </fieldset>
 <?php endif; ?>
 
-<?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
-<div id="team-resources" class="section">
-    <div class="selection-criteria">
-        <div class="select-by-item-set-content">
-            <?php
-            $itemsetForm = $this->itemsetForm;
-            $fs = $itemsetForm->getFieldsets();
-            $fs['addCollections']->setLabel('Add resources to team');
-            $fs['rmCollections']->setLabel('Remove resources from team');
-            $itemsetForm->prepare();
-            echo $this->form()->openTag($itemsetForm);
-            echo $this->formCollection($itemsetForm);
-            ?>
+<?php if ($this->roleAuth()->teamAuthorized('update', 'resource')): ?>
+    <div id="team-resources" class="manual-assignment section">
+        <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
+        <div id="item-pool-container" style="display: none;">
+            <?php echo $this->formRow($resourceForm->get('item_pool')); ?>
+            <div id="save-search">
+                <label><?php echo $this->translate('Keep this query'); ?><?php echo $this->formElement($resourceForm->get('save_search')); ?></label>
+            </div>
         </div>
     </div>
-</div>
 <?php else: ?>
     <div id="team-resources" class="section">
         <p>You are only authorized to Manage Team Users</p>
     </div>
 <?php endif; ?>
-<?php if ($this->roleAuth()->teamAuthorized('update', 'team')): ?>
+<?php if ($this->roleAuth()->teamAuthorized('update', 'resource')): ?>
+
+    <div id="team-secondary-resources" class="manual-assignment section">
+
+        <h2>Select resource templates for this team</h2>
+        <?php if (!in_array($user->getRole(),  $bypassTeamFilterRoles) ): ?>
+            <p>You can only add resources from other teams where your team role has resource edit privileges.</p>
+            <p> Users with these roles have broader privileges: </p>
+                <ul>
+            <?php foreach ($bypassTeamFilterRoles as $role): ?>
+                    <li>
+                        <?php echo str_replace('_', ' ', $role)?>
+                    </li>
+            <?php endforeach ?>
+                </ul>
+        <?php endif ?>
+        <?php
+        $secondaryResourcesForm->setLabel("Add and Remove Templates and Item Sets");
+        echo $this->formCollection($secondaryResourcesForm);
+        ?>
+    </div>
+<?php else: ?>
+    <div id="team-resources" class="section">
+        <p>You are only authorized to Manage Team Users</p>
+    </div>
+<?php endif; ?>
+<?php if ($this->roleAuth()->teamAuthorized('update', 'site')): ?>
     <div id="team-sites" class="section">
         <div class="selection-criteria">
             <div class="select-by-item-set-content">

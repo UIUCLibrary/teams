@@ -10,17 +10,23 @@ use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
+use Omeka\Entity\ResourceTemplate;
 use Omeka\Stdlib\ErrorStore;
+use Omeka\Stdlib\Message;
+use Teams\Entity\Team;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Api\Representation\TeamResourceTemplateRepresentation;
 
-class TeamResourceTemplateAdapter extends AbstractEntityAdapter
+class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
 {
     protected $sortFields = [
-        'resource_template' => 'resource_template',
+        'resource-template' => 'resource-template',
         'team' => 'team',
 
     ];
+
+
 
     public function getResourceName()
     {
@@ -30,11 +36,6 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
     public function getRepresentationClass()
     {
         return TeamResourceTemplateRepresentation::class;
-    }
-
-    public function getEntityClass()
-    {
-        return TeamResourceTemplate::class;
     }
 
     public function hydrate(
@@ -49,8 +50,8 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
                 $entity->setTeamId($team_id);
             }
         }
-        if ($this->shouldHydrate($request, 'resource_template')) {
-            $team_resource_id = $request->getValue('resource_template');
+        if ($this->shouldHydrate($request, 'resource-template')) {
+            $team_resource_id = $request->getValue('resource-template');
             if (!is_null($team_resource_id)) {
                 $team_resource_id = trim($team_resource_id);
                 $entity->setTeamResourceId($team_resource_id);
@@ -67,10 +68,10 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
             ));
         }
 
-        if (isset($query['resource_template'])) {
+        if (isset($query['resource-template'])) {
             $qb->andWhere($qb->expr()->eq(
                 'omeka_root' . '.' . 'resource_template',
-                $this->createNamedParameter($qb, $query['resource_template'])
+                $this->createNamedParameter($qb, $query['resource-template'])
             ));        }
 
     }
@@ -106,11 +107,11 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
         if ( array_key_exists('team', $query) ) {
             $search_fields['team'] = $query['team'];
             $group_by = 'resource_template';
-        } elseif (array_key_exists('resource_template', $query)) {
-            $search_fields['resource_template'] = $query['resource_template'];
+        } elseif (array_key_exists('resource-template', $query)) {
+            $search_fields['resource_template'] = $query['resource-template'];
         } else {
             throw new Exception\BadRequestException(sprintf(
-                $this->getTranslator()->translate('%1$s entity requires team or resource_template search criteria'),
+                $this->getTranslator()->translate('%1$s entity requires team or resource-template search criteria'),
                 $this->getEntityClass()
             ));
         }
@@ -179,6 +180,41 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
 
 
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
+                        $scalarField, $entityClass
+                    ));
+                }
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.resource_template) as resource_template"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            //just putting this note here because it has been confusing before: returns the id as the index and key
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
+
         $paginator = new Paginator($qb, false);
         $entities = [];
         // Don't make the request if the LIMIT is set to zero. Useful if the
@@ -203,9 +239,74 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
     {
         AbstractAdapter::read($request);
     }
-    public function create(Request $request)
+
+    public function validateRequest(Request $request, ErrorStore $errorStore)
     {
-        AbstractAdapter::create($request);
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
+        if (Request::CREATE === $request->getOperation()) {
+            //validate correct payload data exists
+            if (!$request->getValue('team') || !is_numeric($request->getValue('team'))) {
+                $logger->err('team must have a numeric value');
+                $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
+            } else {
+                $team = $this->getEntityManager()
+                    ->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id' => $request->getValue('team')]);
+                if (!$team) {
+                    $logger->err("a team with that id = {$request->getValue('team')} doesnt exist");
+
+                    $errorStore->addError('o-module-teams:team', new Message(
+                        'A team with id %s does not exist.', // @translate
+                        $request->getValue('team')));
+                }
+            }
+            if (!$request->getValue($this->getMappedEntityName()) || !is_numeric($request->getValue($this->getMappedEntityName()))) {
+                $errorStore->addError('o-module-teams:team', "Your payload needs to indicate {$this->getMappedEntityName()} with a numeric value");
+                $logger->err("the value of {$this->getMappedEntityName()} needs to be numeric");
+            }
+
+            //validate team and resource exist
+
+        }
+        if ($errorStore->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
+    }
+
+        public function create(Request $request)
+    {
+        if ($request->getValue('batch')){
+            $this->batchCreate($request);
+        }
+
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+        $this->validateRequest($request, new ErrorStore());
+
+        $team = $request->getValue('team');
+        $resource = $request->getValue('resource-template');
+        echo 'the resource teplate id in the api is: ' . $resource;
+        $this->teamAuthority($request, $request->getValue('team'), $user);
+        if (!$this->resourceAuthority($request->getValue('resource'),$user)){
+            throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
+            );
+        }
+        $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
+        $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\ResourceTemplate')->findOneBy(['id'=>$resource]);
+        $teamResource = new TeamResourceTemplate($teamEntity, $resourceEntity);
+        $this->getEntityManager()->persist($teamResource);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($teamResource);
+        }
+        return new Response($teamResource);
+
+
     }
 
     public function batchCreate(Request $request)
@@ -225,7 +326,11 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
+        $entity = $this->deleteEntity($request);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);
     }
 
     public function batchDelete(Request $request)
@@ -233,5 +338,38 @@ class TeamResourceTemplateAdapter extends AbstractEntityAdapter
         AbstractAdapter::batchDelete($request);
     }
 
+    public function deleteEntity(Request $request): EntityInterface
+    {
+        $entity = $this->findEntity(['team'=>$request->getValue('team'), 'resource_template' => $request->getValue('resource-template')]);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
 
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $this->teamAuthority($request, $team, $user);
+
+        $event = new Event('api.find.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+        $this->getEntityManager()->remove($entity);
+        return $entity;
+    }
+
+
+    public function getMappedEntityClass()
+    {
+        return ResourceTemplate::class;
+
+    }
+
+    public function getMappedEntityName()
+    {
+        return 'resource-template';
+    }
+
+    public function getEntityClass()
+    {
+        return TeamResourceTemplate::class;
+    }
 }

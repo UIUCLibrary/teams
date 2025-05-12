@@ -1,4 +1,6 @@
 <?php
+$this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
 echo $this->pageTitle("Add new team");
 if ($this->roleAuth()->teamAuthorized('add', 'team')):
 
@@ -46,16 +48,15 @@ $itemsetForm->prepare();
 $formElement = $this->plugin('formElement');
 echo $this->form()->openTag($itemsetForm);
 ?>
-<fieldset id="team-resources" class="section">
-    <div class="selection-criteria">
-        <p>
-            All items belonging to these item sets or owners will be added to the group
-        </p>
-        <div class="select-by-item-set-content">
-            <?php echo $this->formCollection($itemsetForm->get('itemset')); ?>
+    <div id="team-resources" class="manual-assignment section">
+        <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
+        <div id="item-pool-container" style="display: none;">
+            <?php echo $this->formRow($resourceForm->get('item_pool')); ?>
+            <div id="save-search">
+                <label><?php echo $this->translate('Keep this query'); ?><?php echo $this->formElement($resourceForm->get('save_search')); ?></label>
+            </div>
         </div>
     </div>
-</fieldset>
 
 <fieldset id="team-sites" class="section">
     <div class="selection-criteria">

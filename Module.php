@@ -180,6 +180,11 @@ SQL;
             $conn = $serviceLocator->get('Omeka\Connection');
             $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
         }
+        if (version_compare($oldVersion,'4.1.0', '<')) {
+            //add global admin to the list of settings for bypass team users
+            $globalSettings = $serviceLocator->get('Omeka\Settings');
+            $globalSettings->set('teams_filter_bypass_roles', ["global_admin"]);
+        }
     }
 
     public function updateAllUserSites()
@@ -882,8 +887,6 @@ SQL;
         if ($this->getUser() === null) {
             return;
         }
-        //TODO: if is set (search_everywhere) and ACL check passes as global admin, bypass the join
-        //for times when the admin needs to turn off the filter by teams (e.g. when adding resources to a new team)
 
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
         $bypass_teams_filter_roles = $globalSettings->get('teams_filter_bypass_roles');
@@ -900,7 +903,6 @@ SQL;
         if (isset($query['bypass_team_filter']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
             return;
         }
-
         if (isset($query['resource_class_id']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
             return;
         }
@@ -1894,8 +1896,27 @@ SQL;
         $operation = $request->getOperation();
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
-
         if ($operation == 'update') {
+
+            if(array_key_exists('remove_team', $request->getContent())) {
+               if (!is_array($request->getContent()['remove_team'])) {
+                   $remove = array($request->getContent()['remove_team']);
+               } else {
+                   $remove = $request->getContent()['remove_team'];
+               }
+            } else {
+                $remove = [];
+            }
+
+            if(array_key_exists('add_team', $request->getContent())) {
+                if (!is_array($request->getContent()['add_team'])) {
+                    $add = array($request->getContent()['add_team']);
+                } else {
+                    $add = $request->getContent()['add_team'];
+                }
+            } else {
+                $add = [];
+            }
             if (array_key_exists('remove_team', $request->getContent()) ||
                 array_key_exists('add_team', $request->getContent())) {
 
@@ -1906,7 +1927,8 @@ SQL;
                     $resource_ids[$media->getId()] = true;
                 }
 
-                foreach ($request->getContent()['add_team'] as $team_id) {
+
+                foreach ($add as $team_id) {
                     //if the user is authorized to add items to that team
                     if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
@@ -1923,7 +1945,7 @@ SQL;
                 }
                 $em->flush();
 
-                foreach ($request->getContent()['remove_team'] as $team_id) {
+                foreach ($remove as $team_id) {
                     if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
                         foreach (array_keys($resource_ids) as $resource_id) {
                             $team_resource = $em->getRepository('Teams\Entity\TeamResource')
@@ -2487,6 +2509,93 @@ SQL;
             ->setOption('info', 'The Teams Module manages how items become associated with sites, so this has been disabled.');
     }
 
+    //Add Team options to Batch Edit
+
+    /**
+     * Add  "Add Team" and "Remove Team" select elements to the batch edit forme
+     * @param Event $event
+     * @return void
+     */
+    public function addTeamToBatchEditForm(Event $event) {
+        $form = $event->getTarget();
+
+        $groups = $form->getOption('element_groups');
+        $groups['teams'] = 'Teams'; // @translate
+        $form->setOption('element_groups', $groups);
+        $form->add([
+            'type' => TeamSelect::class,
+            'name' => 'add_team',
+            'options' => [
+                'element_group' => 'teams',
+                'label' => 'Add resource to Teams', // @translate
+                'empty_option' => 'Select a team',
+                'chosen' => true,
+            ],
+            'attributes' => [
+                'multiple' => true,
+            ]
+
+        ]);
+        $form->add([
+            'type' => TeamSelect::class,
+            'name' => 'remove_team',
+            'options' => [
+                'element_group' => 'teams',
+                'label' => 'Remove resources from teams', // @translate
+                'chosen' => true
+            ],
+            'attributes' => [
+                'multiple' => true,
+            ]
+        ]);
+        $inputFilter = $form->getInputFilter();
+        $inputFilter->add([
+            'name' => 'remove_team',
+            'required' => false
+        ]);
+        $inputFilter->add([
+            'name' => 'add_team',
+            'required' => false
+        ]);
+    }
+
+    public function processTeamBatchEditData (Event $event) {
+        $data = $event->getParam('data');
+        $rawData = $event->getParam('request')->getContent();
+
+        //add first then remove
+        $targets = ['add_team', 'remove_team'];
+
+        foreach ($targets as $teamData) {
+            if (isset($rawData[$teamData])) {
+                $data[$teamData] = $rawData[$teamData];
+            }
+        }
+
+        $event->setParam('data', $data);
+    }
+
+
+//    public function batchAddRemoveTeam (Event $event) {
+//        $data = $event->getParam('request')->getContent();
+//        $item = $event->getParam('response')->getContent();
+//
+//        if (!(isset($data['add_team']) && $data['add_team'])) {
+//            return;
+//        }
+//
+//        $services = $this->getServiceLocator();
+//        $entityManager = $services->get('Omeka\EntityManager');
+//
+//        $dql = 'DELETE FROM Mapping\Entity\MappingFeature m WHERE m.item = :item_id';
+//        $entityManager->createQuery($dql)
+//            ->setParameter('item_id', $item->getId())
+//            ->execute();
+//
+//
+//    }
+
+
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
@@ -3000,6 +3109,19 @@ SQL;
             \Omeka\Form\SiteForm::class,
             'form.add_elements',
             [$this, 'addSiteFormElement']
+        );
+
+        // Add teams to batch update
+        $sharedEventManager->attach(
+            'Omeka\Form\ResourceBatchUpdateForm',
+            'form.add_elements',
+            [$this, 'addTeamToBatchEditForm']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Api\Adapter\ItemAdapter',
+            'api.preprocess_batch_update',
+            [$this, 'processTeamBatchEditData']
         );
     }
 
