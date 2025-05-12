@@ -1,6 +1,6 @@
 $(window).on('load', function() {
-    // $("#o-modules-team-remove-item-sets").parent().parent().css('visibility', 'hidden');
-    // $("#o-modules-team-remove-resource-templates").parent().parent().css('visibility', 'hidden');
+    $("#o-modules-team-remove-item-sets").parent().parent().css('visibility', 'hidden');
+    $("#o-modules-team-remove-resource-templates").parent().parent().css('visibility', 'hidden');
 
     //not ideal, but for some reason the chosen option from chosen-options.js are getting unset, so settin them here
     $("#o-modules-team-item-sets").chosen({
