@@ -180,6 +180,11 @@ SQL;
             $conn = $serviceLocator->get('Omeka\Connection');
             $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
         }
+        if (version_compare($oldVersion,'4.0.1', '<')) {
+            //add global admin to the list of settings for bypass team users
+            $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+            $globalSettings->set('teams_filter_bypass_roles', 'global_adin');
+        }
     }
 
     public function updateAllUserSites()
