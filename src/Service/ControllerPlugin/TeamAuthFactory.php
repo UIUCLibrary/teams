@@ -18,6 +18,8 @@ class TeamAuthFactory implements FactoryInterface
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
         $logger = $services->get('Omeka\Logger');
-        return new TeamAuth($services->get('Omeka\EntityManager'), $logger);
+        $entityManager = $services->get('Omeka\EntityManager');
+        $apiManager = $services->get('Omeka\Api\Manager');
+        return new TeamAuth( $logger, $entityManager, $apiManager);
     }
 }

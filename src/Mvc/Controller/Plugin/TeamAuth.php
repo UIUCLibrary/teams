@@ -4,6 +4,8 @@ namespace Teams\Mvc\Controller\Plugin;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Mvc\Controller\Plugin\AbstractPlugin;
+use Omeka\Api\Manager as ApiManager;
+use Omeka\Entity\EntityInterface;
 use \Omeka\Entity\User;
 use Omeka\Mvc\Controller\Plugin\Logger;
 use Omeka\Stdlib\ErrorStore;
@@ -13,8 +15,8 @@ use Omeka\Stdlib\ErrorStore;
  */
 class TeamAuth extends AbstractPlugin
 {
-    public $actions = ['add', 'create','delete', 'update'];
-    public $domains = ['resource', 'team', 'site', 'team_user', 'role'];
+    private array $actions = ['add', 'create','delete', 'update'];
+    private array $domains = ['resource', 'team', 'site', 'team_user', 'role'];
 
     /**
      * @var Logger
@@ -27,18 +29,23 @@ class TeamAuth extends AbstractPlugin
     protected $entityManager;
 
     /**
+     * @var ApiManager
+     */
+    protected ApiManager $apiManager;
+
+    /**
      * Construct the plugin.
      *
      * @param EntityManager $entityManager
      */
-    public function __construct(EntityManager $entityManager, \Laminas\Log\Logger $logger)
+    public function __construct(EntityManager $entityManager, \Laminas\Log\Logger $logger, ApiManager $apiManager)
     {
         $this->entityManager = $entityManager;
         $this->logger = $logger;
     }
 
 
-    public function isGlobAdmin(User $user): bool
+    private function isGlobAdmin(User $user): bool
     {
         return $user->getRole() === 'global_admin';
     }
@@ -133,5 +140,34 @@ class TeamAuth extends AbstractPlugin
         } else {
             return false;
         }
+    }
+
+    /**
+     *
+     * Determines if the user has teams-based permissions to perform an action against a resource
+     *
+     * @param $user
+     * @param $action
+     * @param $resource
+     * @param $team
+     * @return void
+     */
+    public function userCanUpdate(User $user, EntityInterface $resource, int $team)
+    {
+        if (!in_array($action, $this->actions)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    ' "%1$s" not a valid action for userCan().',
+                    $action
+                )
+            );
+        }
+
+    }
+
+    public function userCanDelete(User $user, $resource)
+    {
+        $users_edit_roles = $this->apiManager->search('team-user', ['user'=> $user, 'can_delete_resources'=>1], ['returnScalar' => 'team'] )->getContent();
+
     }
 }

@@ -20,23 +20,21 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
     /**
      * @inheritDoc
      */
-    public function getRepresentationClass()
-    {
-        // TODO: Implement getRepresentationClass() method.
-    }
+    abstract public function getRepresentationClass() : string;
+
 
     /**
      * @inheritDoc
      */
-    public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore)
-    {
-        // TODO: Implement hydrate() method.
-    }
+    abstract public function hydrate(Request $request, EntityInterface $entity, ErrorStore $errorStore)
+
 
     /**
      * @inheritDoc
      */
     abstract public function getResourceName();
+
+    abstract public function getResourceDBName();
 
     /**
      * @inheritDoc
@@ -213,6 +211,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
      */
     public function resourceAuthority($resource, User $user ):bool
     {
+        $apiManager = $this->getServiceLocator()->get('Omeka\ApiManager');
+
 
         //if the resource belongs to any team where the user has resource authority, or if the resource belongs to no team
 
@@ -222,8 +222,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             return true;
         }
         $resourceTeams = $this->getEntityManager()
-            ->getRepository('Teams\Entity\TeamResource')
-            ->findBy(['resource'=>$resource]);
+            ->getRepository($this->getEntityClass())
+            ->findBy([$this->getResourceDBName()=>$resource]);
         if (!$resourceTeams){
             return true;
         } else {
@@ -231,6 +231,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
                 ->getRepository('Teams\Entity\TeamUser')
                 ->findBy(['user'=>$user->getId()]);
 
+            $apiManager->search('team-user', ['user'=> $user, 'can_delete_resources'=>1], ['returnScalar' => 'team'] )->getContent();
             //if the user has a resource permission in any team the resource belongs to, return true
             foreach ($resourceTeams as $resourceTeam) {
                 $resourceTeamId = $resourceTeam->getTeam()->getId();
@@ -245,9 +246,4 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         }
         return false;
     }
-
-
-
-
-
 }
