@@ -50,6 +50,13 @@ $itemsetForm = $this->itemsetForm;
 $itemsetForm->prepare();
 $formElement = $this->plugin('formElement');
 echo $this->form()->openTag($itemsetForm);
+$resourceForm->get('item_assignment_action')
+    ->setValueOptions(
+        [
+            'no_action' => 'Do nothing', // @translate
+            'add' => 'Add - keep existing items and assign items from a new search query', // @translate
+        ]
+    )
 ?>
     <div id="team-resources" class="manual-assignment section">
         <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
