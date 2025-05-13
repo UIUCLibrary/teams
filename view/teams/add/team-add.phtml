@@ -54,9 +54,9 @@ $resourceForm->get('item_assignment_action')
     ->setValueOptions(
         [
             'no_action' => 'Do nothing', // @translate
-            'add' => 'Add - keep existing items and assign items from a new search query', // @translate
+            'add' => 'Add - assign items from a search query', // @translate
         ]
-    )
+    )->setOptions(['label' => 'Add items to the team'])
 ?>
     <div id="team-resources" class="manual-assignment section">
         <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>

@@ -112,11 +112,13 @@ class AddController extends AbstractActionController
             }
 
             $secondaryResourcesForm->setData($formData);
+            $recursive = $formData['recursive_item_sets'] ?? false;
+            $this->logger()->err('this is the recursive value:' . $recursive);
             if (isset($formData['item_sets'])) {
                 foreach ($formData['item_sets'] as $item_set_id) {
                     $exists = $this->api()->search('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id]);
                     if (count($exists->getContent()) < 1) {
-                        $this->api()->create('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id], ['recursive'=>true]);
+                        $this->api()->create('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id],[], ['recursive'=>$recursive]);
                     }
                 }
             }
