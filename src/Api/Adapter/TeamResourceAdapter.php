@@ -308,15 +308,15 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
         $teamResource = new TeamResource($teamEntity, $resourceEntity);
         if ($request->getOption('recursive')){
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+            $logger->err('recursive in the adapter');
             $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
-
             //item sets => contain items
             if ($mappedEntity->getResourceName() === 'item_sets') {
-
-                    $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
-                        ->search('items', ['item_set_id' => $mappedEntity->getId()], ['returnScalar' => 'id'])
-                        ->getContent();
-                    foreach ($childIds as $resourceId) {
+                $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
+                    ->search('items', ['item_set_id' => $mappedEntity->getId(), 'bypass_team_filter'=>true], ['returnScalar' => 'id'])
+                    ->getContent();
+                foreach ($childIds as $resourceId) {
                         $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
                             ->search('team-resource',
                                 [
@@ -409,11 +409,11 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             //item sets => contain items
             if ($mappedEntity->getResourceName() === 'item_sets') {
                 $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
-                    ->search('items', ['item_set_id' => $mappedEntity->getId()], ['returnScalar' => 'id'])
+                    ->search('items', ['item_set_id' => $mappedEntity->getId(), 'bypass_team_filter'=>true], ['returnScalar' => 'id'])
                     ->getContent();
                 foreach ($childIds as $resourceId) {
                     $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
-                        ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $resourceId])
+                        ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $resourceId] )
                         ->getContent();
                     if (count($exists) > 0)
                     {
@@ -457,11 +457,14 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
                     }
                 }
             }
-
-            //items => contain media
         }
 
-        $entity = $this->deleteEntity($request);
+        $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+            ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $request->getValue('resource')])
+            ->getContent();
+        if (count($exists) > 0) {
+            $entity = $this->deleteEntity($request);
+        }
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
         }
