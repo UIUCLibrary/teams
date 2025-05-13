@@ -2,7 +2,7 @@
 <?php
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
-$this->headScript()->appendFile($this->assetUrl('js/item-set-removal.js', 'Teams'));
+$this->headScript()->appendFile($this->assetUrl('js/inject-removal-util-element.js', 'Teams'));
 
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
@@ -86,6 +86,9 @@ echo $this->form()->openTag($form);?>
         <?php endif ?>
         <?php
         $secondaryResourcesForm->setLabel("Add and Remove Templates and Item Sets");
+        $secondaryResourcesForm->get('recursive_item_sets')->setOptions(['label'=>'Recursively manage items from item sets?']);
+        $secondaryResourcesForm->get('recursive_item_sets')->setOptions(['info'=>'Add/remove all of the items from the item sets when you add/remove them']);
+
         echo $this->formCollection($secondaryResourcesForm);
         ?>
     </div>

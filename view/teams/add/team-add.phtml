@@ -1,6 +1,8 @@
 <?php
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
+$this->headScript()->appendFile($this->assetUrl('js/inject-removal-util-element.js', 'Teams'));
+
 echo $this->pageTitle("Add new team");
 if ($this->roleAuth()->teamAuthorized('add', 'team')):
 
@@ -21,6 +23,7 @@ $sectionNavs = [
     'team-info' => $translate('Info'),
     'team-members' => $translate('Users'),
     'team-resources' => $translate('Resources'),
+    'team-secondary-resources' => $translate('Other Resources'),
     'team-sites' => $translate('Sites'),
 ];
 echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
@@ -47,6 +50,13 @@ $itemsetForm = $this->itemsetForm;
 $itemsetForm->prepare();
 $formElement = $this->plugin('formElement');
 echo $this->form()->openTag($itemsetForm);
+$resourceForm->get('item_assignment_action')
+    ->setValueOptions(
+        [
+            'no_action' => 'Do nothing', // @translate
+            'add' => 'Add - assign items from a search query', // @translate
+        ]
+    )->setOptions(['label' => 'Add items to the team'])
 ?>
     <div id="team-resources" class="manual-assignment section">
         <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
@@ -57,6 +67,15 @@ echo $this->form()->openTag($itemsetForm);
             </div>
         </div>
     </div>
+    <div id="team-secondary-resources" class="manual-assignment section">
+
+        <h2>Select resource templates for this team</h2>
+        <?php
+        $secondaryResourcesForm->setLabel("Add and Remove Templates and Item Sets");
+        echo $this->formCollection($secondaryResourcesForm);
+        ?>
+    </div>
+
 
 <fieldset id="team-sites" class="section">
     <div class="selection-criteria">

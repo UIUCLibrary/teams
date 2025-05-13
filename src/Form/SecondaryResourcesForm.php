@@ -5,6 +5,7 @@ namespace Teams\Form;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationService;
+use Laminas\Form\Element\Checkbox;
 use Laminas\Form\Element\Select;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
@@ -59,39 +60,35 @@ class SecondaryResourcesForm extends Form
 
         $this->setAttribute('id', 'team-secondary-resources-form');
 
-        $teamId = $this->options['team_id'];
+        if (array_key_exists('team_id', $this->options)){
+            $teamId = $this->options['team_id'];
+        } else {
+            $teamId = 0;
+        }
+        if ($teamId === 0) {
+            $disableGroupBy = true;
+        } else {
+            $disableGroupBy = false;
+        }
 
         $this->add([
-            'name' => 'resource_templates',
-            'type' => ResourceTemplateTeamsSelect::class,
+            'name' => 'recursive_item_sets',
+            'type' => 'checkbox',
             'options' => [
-                'group_by' => ['team' => $teamId],
-                'label' => 'Select Resource Templates',
-                'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
-                'class' => 'chosen-select',
-                'filter_resource_representations' => $show_all_options ? "" : function ($templates) {
-                    // The user must have permission to assign items to the site.
-                    foreach ($templates as $index => $template) {
-                        if (!$this->userAllowed($template)) {
-                            unset($templates[$index]);
-                        }
-                    }
-                    return $templates;
-                },
+                'label' => 'Recursively add items of selected item sets?', // @translate
+                'info' => 'This will also add all of the items inside the itemset', // @translate
             ],
             'attributes' => [
-                'value' =>  $teamId ? $this->apiManager->search('team-resource-template', ['team'=>$teamId], ['returnScalar' => 'resource_template'])->getContent():[],
-                'class' => 'chosen-select',
-                'multiple' => true,
-                'id' => 'o-modules-team-resource-templates',
-                'data-placeholder' => 'Select resource templates', // @translate
+                'id' => 'o-modules-team-recursive_item_sets',
+                'value' => true,
+            ],
 
-            ]
         ]);
         $this->add([
             'name' => 'item_sets',
             'type' => ItemSetTeamSelect::class,
             'options' => [
+                'disable_group_by' => $disableGroupBy,
                 'group_by' => ['team' => $teamId],
                 'label' => 'Select Item Sets',
                 'query' => ['bypass_team_filter' => true],
@@ -112,6 +109,34 @@ class SecondaryResourcesForm extends Form
                 'class' => 'chosen-select',
                 'multiple' => true,
                 'data-placeholder' => 'Select item sets', // @translate
+
+            ]
+        ]);
+        $this->add([
+            'name' => 'resource_templates',
+            'type' => ResourceTemplateTeamsSelect::class,
+            'options' => [
+                'disable_group_by' => $disableGroupBy,
+                'group_by' => ['team' => $teamId],
+                'label' => 'Select Resource Templates',
+                'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
+                'class' => 'chosen-select',
+                'filter_resource_representations' => $show_all_options ? "" : function ($templates) {
+                    // The user must have permission to assign items to the site.
+                    foreach ($templates as $index => $template) {
+                        if (!$this->userAllowed($template)) {
+                            unset($templates[$index]);
+                        }
+                    }
+                    return $templates;
+                },
+            ],
+            'attributes' => [
+                'value' =>  $teamId ? $this->apiManager->search('team-resource-template', ['team'=>$teamId], ['returnScalar' => 'resource_template'])->getContent():[],
+                'class' => 'chosen-select',
+                'multiple' => true,
+                'id' => 'o-modules-team-resource-templates',
+                'data-placeholder' => 'Select resource templates', // @translate
 
             ]
         ]);

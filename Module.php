@@ -54,6 +54,9 @@ class Module extends AbstractModule
 
     public function install(ServiceLocatorInterface $serviceLocator)
     {
+        $globalSettings = $serviceLocator->get('Omeka\Settings');
+        $globalSettings->set('teams_filter_bypass_roles', ["global_admin"]);
+
         $conn = $serviceLocator->get('Omeka\Connection');
 
         $conn->exec('
