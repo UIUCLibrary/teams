@@ -1082,6 +1082,7 @@ SQL;
      */
     public function userTeamsEdit(Event $event)
     {
+
         //send the form data for processing by module controller to add teamUser
         $view = $event->getTarget();
         $user_id = $view->vars()->user->id();
@@ -3180,94 +3181,94 @@ SQL;
      */
     public function addUserFormElement(Event $event)
     {
-        $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-        $teams_exist = $api->search('team')->getTotalResults() > 0;
-        $roles_exist = $api->search('team-role')->getTotalResults() > 0;
+        if ($this->getUser()->getRole() === 'global_admin'){
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+            $teams_exist = $api->search('team')->getTotalResults() > 0;
+            $roles_exist = $api->search('team-role')->getTotalResults() > 0;
 
-        $user_role = $this->getUser()->getRole();
-        $has_team = (bool)$this->currentTeam();
-        $global_admin = $user_role === 'global_admin';
-        $form = $event->getTarget();
+            $user_role = $this->getUser()->getRole();
+            $has_team = (bool)$this->currentTeam();
+            $global_admin = $user_role === 'global_admin';
+            $form = $event->getTarget();
 
-        //don't add the form fields if there are no roles or teams
-        if ($teams_exist && $roles_exist){
-            $form->get('user-information')->add([
-                'name' => 'o-module-teams:Team',
-                'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
-                'options' => [
-                    'label' => 'Teams', // @translate
-                    'chosen' => true,
-                ],
-                'attributes' => [
-                    'multiple' => true,
-                    'id' => 'team',
-                    'required' => $has_team,
-                    'data-mutable' => $global_admin
-                ],
-            ]);
-            $form->get('user-information')->add([
-                'name' => 'o-module-teams:DefaultTeam',
-                'type' => BlankTeamSelect::class,
-                'options' => [
-                    'label' => 'Default Team', // @translate
-                    'chosen' => true,
-                    'info' => 'This is the team the user will see next time they log in. Options are available only after adding Team(s) for the the user.',
-                ],
-                'attributes' => [
-                    'id' => 'default_team',
-                    'required' => $has_team,
-                ],
-            ]);
-            $form->get('user-information')->add([
-                'name' => 'update_default_sites',
-                'type' => 'checkbox',
-                'options' => [
-                    'label' => 'Use Teams for default sites?', // @translate
-                    'info' => 'Default sites for this user will be those in their default team, above.', // @translate
+            //don't add the form fields if there are no roles or teams
+            if ($teams_exist && $roles_exist) {
+                $form->get('user-information')->add([
+                    'name' => 'o-module-teams:Team',
+                    'type' => $global_admin ? AllTeamSelect::class : TeamSelect::class,
+                    'options' => [
+                        'label' => 'Teams', // @translate
+                        'chosen' => true,
+                    ],
+                    'attributes' => [
+                        'multiple' => true,
+                        'id' => 'team',
+                        'required' => $has_team,
+                        'data-mutable' => $global_admin
+                    ],
+                ]);
+                $form->get('user-information')->add([
+                    'name' => 'o-module-teams:DefaultTeam',
+                    'type' => BlankTeamSelect::class,
+                    'options' => [
+                        'label' => 'Default Team', // @translate
+                        'chosen' => true,
+                        'info' => 'This is the team the user will see next time they log in. Options are available only after adding Team(s) for the the user.',
+                    ],
+                    'attributes' => [
+                        'id' => 'default_team',
+                        'required' => $has_team,
+                    ],
+                ]);
+                $form->get('user-information')->add([
+                    'name' => 'update_default_sites',
+                    'type' => 'checkbox',
+                    'options' => [
+                        'label' => 'Use Teams for default sites?', // @translate
+                        'info' => 'Default sites for this user will be those in their default team, above.', // @translate
 
-                ],
-                'attributes' => [
-                    'id' => 'update_default_sites',
-                    'value' => true,
+                    ],
+                    'attributes' => [
+                        'id' => 'update_default_sites',
+                        'value' => true,
 
-                ],
-            ]);
+                    ],
+                ]);
 //            this needs to be in here so that the form will push the jQuery created team roles into the request object
-            $form->get('user-information')->add([
-                'name' => 'o-module-teams:TeamRole',
-                'type' => RoleSelect::class,
-                'options' => [
-                    'label' => ' ', // @translate
-                ],
-                'attributes' => [
-                    'multiple' => true,
-                    'id' => 'team_role',
-                    'hidden' => 'hidden',
-                    'class' => 'hidden_no_value',
-                ],
-            ]);
+                $form->get('user-information')->add([
+                    'name' => 'o-module-teams:TeamRole',
+                    'type' => RoleSelect::class,
+                    'options' => [
+                        'label' => ' ', // @translate
+                    ],
+                    'attributes' => [
+                        'multiple' => true,
+                        'id' => 'team_role',
+                        'hidden' => 'hidden',
+                        'class' => 'hidden_no_value',
+                    ],
+                ]);
+            }
+
+            //adjust validation for cases where a user doesn't need to belong to or hasn't yet been added to a team
+            if (!$has_team or $global_admin) {
+                $inputFilter = $form->getInputFilter();
+
+                $inputFilter->get('user-information')->add([
+                    'name' => 'o-module-teams:TeamRole',
+                    'allow_empty' => true,
+                ]);
+                $inputFilter->get('user-information')->add([
+                    'name' => 'o-module-teams:DefaultTeam',
+                    'allow_empty' => true,
+                ]);
+                $inputFilter->get('user-information')->add([
+                    'name' => 'o-module-teams:Team',
+                    'allow_empty' => true,
+                ]);
+
+            }
         }
-
-        //adjust validation for cases where a user doesn't need to belong to or hasn't yet been added to a team
-        if (!$has_team or $global_admin)
-        {
-            $inputFilter = $form->getInputFilter();
-
-            $inputFilter->get('user-information')->add([
-                'name' => 'o-module-teams:TeamRole',
-                'allow_empty' => true,
-            ]);
-            $inputFilter->get('user-information')->add([
-                'name' => 'o-module-teams:DefaultTeam',
-                'allow_empty' => true,
-            ]);
-            $inputFilter->get('user-information')->add([
-                'name' => 'o-module-teams:Team',
-                'allow_empty' => true,
-            ]);
-
-        }
-
     }
 
     public function addAssetFormElement(Event $event)
