@@ -288,7 +288,6 @@ class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
 
         $team = $request->getValue('team');
         $resource = $request->getValue('resource-template');
-        echo 'the resource teplate id in the api is: ' . $resource;
         $this->teamAuthority($request, $request->getValue('team'), $user);
         if (!$this->resourceAuthority($request->getValue('resource'),$user)){
             throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
