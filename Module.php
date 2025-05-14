@@ -975,65 +975,48 @@ SQL;
             return;
         }
         if (is_array($team_id)) {
-
-            //TODO (Done): site really should be taking its team cue from the teams the site is associated with, not the user
-            //otherwise it will not work when the public searches the site
             if ($entityClass == \Omeka\Entity\Site::class) {
+                $team_alias = 'ts';
                 if (!$this->getUser()) {
                     return ;
                 } else {
-
                     //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                    $qb->leftJoin('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias .'.id = ts.site')
-                        ->andWhere('ts.team = :team_id')
+                    //Leaving this todo for now, but this should be covered by item-site now
+                    $qb->leftJoin('Teams\Entity\TeamSite', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.site")
+                        ->andWhere("$team_alias.team = :team_id")
                         ->setParameter('team_id', $team_id[0]);
                 }
             } elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class) {
-                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')
-                    ->andWhere('trt.team = :team_id')
+                $team_alias = 'trt';
+                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.resource_template")
+                    ->andWhere($team_alias . '.team = :team_id')
                     ->setParameter('team_id', $team_id[0]);
-                if (count($team_id) > 1) {
-                    $orX = $qb->expr()->orX();
-                    $i=0;
-                    foreach ($team_id as $value) {
-                        $orX->add($qb->expr()->eq('trt.team', ':name'.$i));
-                        $qb->setParameter('name'.$i, $value);
-                        $i++;
-                    }
-                    $qb->orWhere($orX);
-                }
             } elseif ($entityClass == \Omeka\Entity\User::class) {
                 return;
             } elseif ($entityClass == \Omeka\Entity\Vocabulary::class) {
                 return;
             } elseif ($entityClass == \Omeka\Entity\Asset::class) {
-                $qb->leftJoin('Teams\Entity\TeamAsset', 'ta', Expr\Join::WITH, $alias .'.id = ta.asset')->andWhere('ta.team = :team_id')
+                $team_alias = 'ta';
+                $qb->leftJoin('Teams\Entity\TeamAsset', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.asset'")
+                    ->andWhere("{$team_alias}.team = :team_id")
                     ->setParameter('team_id', $team_id[0]);
-                if (count($team_id) > 1) {
-                    $orX = $qb->expr()->orX();
-                    $i=0;
-                    foreach ($team_id as $value) {
-                        $orX->add($qb->expr()->eq('ta.team', ':name'.$i));
-                        $qb->setParameter('name'.$i, $value);
-                        $i++;
-                    }
-                    $qb->orWhere($orX);
-                }
             }  else {
-                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
-                    ->andWhere('tr.team = :team_id')
+                $team_alias = 'tr';
+                $qb->leftJoin('Teams\Entity\TeamResource', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.resource")
+                    ->andWhere("{$team_alias}.team = :team_id")
                     ->setParameter('team_id', $team_id[0]);
-                if (count($team_id) > 1) {
-                    $orX = $qb->expr()->orX();
-                    $i=0;
-                    foreach ($team_id as $value) {
-                        $orX->add($qb->expr()->eq('tr.team', ':name'.$i));
-                        $qb->setParameter('name'.$i, $value);
-                        $i++;
-                    }
-                    $qb->orWhere($orX);
-                }
             }
+            if (count($team_id) > 1) {
+                $orX = $qb->expr()->orX();
+                $i=0;
+                foreach ($team_id as $value) {
+                    $orX->add($qb->expr()->eq("{$team_alias}.team", ':name'.$i));
+                    $qb->setParameter('name'.$i, $value);
+                    $i++;
+                }
+                $qb->orWhere($orX);
+            }
+
         }
     }
 
