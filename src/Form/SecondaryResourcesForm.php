@@ -187,10 +187,8 @@ class SecondaryResourcesForm extends Form
         $users_edit_roles = $this->apiManager->search('team-user', ['user'=> $user, 'can_delete_resources'=>1], ['returnScalar' => 'team'] )->getContent();
         if (str_contains('resource-template', $resource->getControllerName())) {
             $resource_type = 'resource-template';
-            $table_name = 'resource_template';
         } elseif(str_contains($resource->getControllerName(), 'item') || str_contains('media', $resource->getControllerName())) {
             $resource_type = 'resource';
-            $table_name = 'resource';
 
         } else
         {
@@ -202,7 +200,7 @@ class SecondaryResourcesForm extends Form
             );
         }
 
-        $resources_teams = $this->apiManager->search('team-' . $resource_type, [$table_name => $resource->id()], ['returnScalar'=>'team'])->getContent();
+        $resources_teams = $this->apiManager->search('team-' . $resource_type, [$resource_type => $resource->id()], ['returnScalar'=>'team'])->getContent();
 
         if (!empty(array_intersect($users_edit_roles, $resources_teams))){
             return true;
