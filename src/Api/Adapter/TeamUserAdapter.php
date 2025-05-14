@@ -130,7 +130,7 @@ class TeamUserAdapter extends AbstractEntityAdapter
 
         ];
         foreach ($role_permissions as $role_permission){
-            if (isset($query[$role_permission]) && is_bool($query[$role_permission])) {
+            if (isset($query[$role_permission])) {
                 $joinConditions = sprintf(
                     'role.id = omeka_root.role'
                 );
