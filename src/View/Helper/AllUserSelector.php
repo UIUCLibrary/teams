@@ -4,7 +4,7 @@ namespace Teams\View\Helper;
 
 use Laminas\View\Helper\AbstractHelper;
 
-class teamUserSelector extends AbstractHelper
+class allUserSelector extends AbstractHelper
 {
     /**
      * Return the user selector form control.

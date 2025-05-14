@@ -1,0 +1,84 @@
+<?php
+$translate = $this->plugin('translate');
+// Prepare the item set queries
+$inIds = $query['item_set_id'] ?? [];
+if (!is_array($inIds)) {
+    $inIds = [$inIds];
+}
+$inIds = array_filter($inIds);
+$notInIds = $query['not_item_set_id'] ?? [];
+if (!is_array($notInIds)) {
+    $notInIds = [$notInIds];
+}
+$notInIds = array_filter($notInIds);
+$itemSets = [];
+foreach ($inIds as $inId) {
+    $itemSets[] = ['id' => $inId, 'type' => 'in'];
+}
+foreach ($notInIds as $notInId) {
+    $itemSets[] = ['id' => $notInId, 'type' => 'not_in'];
+}
+if (!$itemSets) {
+    $itemSets[] = ['id' => null, 'type' => 'in'];
+}
+
+if ($this->status()->isSiteRequest()) {
+    if (!$this->layout()->site->siteItemSets()) {
+        return;
+    }
+    $filterLocale = (bool) $this->siteSetting('filter_locale_values');
+    $lang = $this->lang();
+
+    $selectOptions = [
+        'disable_group_by_owner' => true,
+        'query' => ['site_id' => $this->layout()->site->id(), 'bypass_team_filter' => true],
+        'lang' => $filterLocale ? [$lang, ''] : null,
+    ];
+} else {
+    $selectOptions = [
+        'query' => ['bypass_team_filter' => true],
+
+    ];
+}
+?>
+<div id="item-sets" class="field removable multi-value" role="group" aria-labelledby="by-item-set-label">
+    <div class="field-meta">
+        <span id="by-item-set-label" class="label"><?php echo $translate('Search by item set'); ?></span>
+        <?php echo $this->hyperlink('', '#', ['class' => 'expand', 'title' => $translate('Expand')]); ?>
+        <div class="collapsible">
+            <div class="field-description"><?php echo $translate('Searches for items that are assigned to any of these item sets.'); ?></div>
+        </div>
+        <button type="button" class="add-value o-icon-add button" aria-label="<?php echo $translate('Add new item set'); ?>" title="<?php echo $translate('Add new item set'); ?>"></button>
+    </div>
+    <div class="inputs">
+        <?php foreach ($itemSets as $itemSet): ?>
+            <div class="value">
+                <select class="item-set-select-type" aria-label="<?php echo $translate('Condition'); ?>">
+                    <option value="in"<?php echo 'in' === $itemSet['type'] ? ' selected' : ''; ?>><?php echo $translate('In'); ?></option>
+                    <option value="not_in"<?php echo 'not_in' === $itemSet['type'] ? ' selected' : ''; ?>><?php echo $translate('Not in'); ?></option>
+                </select>
+                <?php echo $this->itemSetSelect([
+                    'name' => ('not_in' === $itemSet['type']) ? 'not_item_set_id[]' : 'item_set_id[]',
+                    'attributes' => [
+                        'value' => $itemSet['id'],
+                        'class' => 'item-set-select',
+                        'aria-labelledby' => 'by-item-set-label',
+                    ],
+                    'options' => $selectOptions,
+                ]); ?>
+                <button type="button" class="o-icon-delete remove-value button" aria-label="<?php echo $translate('Remove value'); ?>" title="<?php echo $translate('Remove value'); ?>"></button>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<script>
+    $('#content').on('change', '.item-set-select-type', function() {
+        const typeSelect = $(this);
+        const itemSetSelect = typeSelect.closest('.value').find('.item-set-select');
+        if ('not_in' === typeSelect.val()) {
+            itemSetSelect.attr('name', 'not_item_set_id[]');
+        } else {
+            itemSetSelect.attr('name', 'item_set_id[]');
+        }
+    });
+</script>

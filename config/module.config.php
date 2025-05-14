@@ -105,12 +105,14 @@ return [
         'invokables' => [
             'addTeam' => 'Teams\View\Helper\AddTeam',
             'bypassTeamsSelector' => 'Teams\View\Helper\BypassTeamsSortSelector',
-            'teamUserSelector' => 'Teams\View\Helper\teamUserSelector',
+            'allUserSelector' => 'Teams\View\Helper\AllUserSelector',
 
 
         ],
         'factories' => [
             'roleAuth' => Service\ViewHelper\RoleAuthFactory::class,
+            'allUserSelect'  => Service\ViewHelper\AllUserSelectFactory::class,
+
         ]
     ],
     'controllers' => [
