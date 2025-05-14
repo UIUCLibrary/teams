@@ -192,11 +192,11 @@ class TeamUserAdapter extends AbstractEntityAdapter
                         $scalarField, $entityClass
                     ));
                 }
-                $qb->select(['omeka_root.id', "IDENTITY(omeka_root.$scalarField) AS $scalarField"]);
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.user) as user"]);
             } else {
                 $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
             }
-            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, 'id');
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
             $response = new Response($content);
             $response->setTotalResults($countPaginator->count());
             return $response;
