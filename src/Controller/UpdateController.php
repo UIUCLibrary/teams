@@ -337,11 +337,13 @@ class UpdateController extends AbstractActionController
                 }
             }
             //add item sets
-            foreach ($formData['item_sets'] as $item_set_id) {
-                //todo: implement the read operation
-                $exists = $this->api()->search('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id]);
-                if (count($exists->getContent())<1){
-                    $this->api()->create('team-resource', ['team'=>$team_id, 'resource'=>$item_set_id],[], ['recursive'=>$recursive]);
+            if (isset($formData['item_sets'])) {
+                foreach ($formData['item_sets'] as $item_set_id) {
+                    //todo: implement the read operation
+                    $exists = $this->api()->search('team-resource', ['team' => $team_id, 'resource' => $item_set_id]);
+                    if (count($exists->getContent()) < 1) {
+                        $this->api()->create('team-resource', ['team' => $team_id, 'resource' => $item_set_id], [], ['recursive' => $recursive]);
+                    }
                 }
             }
 
