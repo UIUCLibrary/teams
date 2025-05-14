@@ -811,18 +811,22 @@ SQL;
      */
     public function getTeamContext($query, Event $event)
     {
+
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])) {
-            foreach ($query['team_id'] as $id):
-                $team_id[] = $id;
-            endforeach;
-        }
-
-        //Logged-in or not, if it is a public site use the TeamSite
-        elseif ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            if (! isset($query['site_id'])) {
-                return array(0);
+            if (!is_array($query['team_id'])){
+                $team_id = array($query['team_id']);
             }
+            foreach ($query['team_id'] as $id):
+                if (is_int($id)){
+                    $team_id[] = $id;
+                } else {
+                    throw new Exception\BadRequestException(sprintf(
+                        'team id has to be an integer',
+                    ));
+                }
+            endforeach;
+        } elseif ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) { //Logged-in or not, if it is a public site use the TeamSite
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             if (isset($query['site_id'])) {
                 $team = $entityManager->getRepository('Teams\Entity\TeamSite')
@@ -837,15 +841,17 @@ SQL;
             } else {
                 $team_id = array(0);
             }
-        } elseif ($this->getUser() != null && $this->currentTeam() != null) {
-            $team_id[] = $this->currentTeam()->getId();
+        } elseif ($this->getUser() != null) {
+            if (isset($query['all_user_teams'])){
+                $userId = $this->getUser()->getId();
+                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                $userTeams = $api->search('team-user', ['user'=>$userId], ['returnScalar'=>'team'])->getContent();
+                $team_id =  array_values($userTeams);
+            } elseif (($this->currentTeam())){
+                $team_id[] = $this->currentTeam()->getId();
+            }
         }
-
-        if (isset($team_id)) {
-            return $team_id;
-        } else {
-            return array(0);
-        }
+        return $team_id ?? array(0);
     }
     /**
      *
@@ -861,6 +867,41 @@ SQL;
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
+        //fist, catch some cases where we shouldn't filter by team
+
+        //catch REST queries
+        if ($this->getUser() === null) {
+            return;
+        }
+
+        //catch cases where bypass_team_filter is passes, and it is a valid flag for the user's access level or the context,
+        // e.g. certain non-admin site requests
+
+        $site_request = $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest();
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $bypass_teams_filter_roles = $globalSettings->get('teams_filter_bypass_roles');
+
+        if (!is_array($bypass_teams_filter_roles)) {
+            $bypass_teams_filter_roles[] = $bypass_teams_filter_roles;
+        } else {
+            $bypass_teams_filter_roles = ['global_admin'];
+        }
+        if (isset($query['bypass_team_filter'])
+            && $query['bypass_team_filter']
+            && in_array($this->getUser()->getRole(), $bypass_teams_filter_roles)
+        ) {
+            return;
+        }
+        if (isset($query['bypass_team_filter']) && $site_request) {
+            return;
+        }
+        if (isset($query['resource_class_id']) && $site_request) {
+            return;
+        }
+        if (isset($query['resource_template_id']) && $site_request) {
+            return;
+        }
+
 
         //this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
@@ -871,7 +912,7 @@ SQL;
             $site_slug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
             $site_id = $em->getRepository('Omeka\Entity\Site')->findOneBy(['slug' => $site_slug])->getId();
 
-            //get the teams of the current site because we only want to show sites within its teams
+            //get the teams of the current site because we only want to show sites within its teams.
             $teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site_id]);
             $team_ids = [];
 
@@ -883,33 +924,6 @@ SQL;
             $qb->join('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias . '.id = ts.site')
                 ->andWhere('ts.team IN (:team_ids)')
                 ->setParameter('team_ids', $team_ids);
-            return;
-        }
-
-        //catch REST queries
-        if ($this->getUser() === null) {
-            return;
-        }
-
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        $bypass_teams_filter_roles = $globalSettings->get('teams_filter_bypass_roles');
-
-        if (!is_array($bypass_teams_filter_roles)) {
-            $bypass_teams_filter_roles[] = $bypass_teams_filter_roles;
-        }
-        if (isset($query['bypass_team_filter'])
-            && $query['bypass_team_filter']
-            && in_array($this->getUser()->getRole(), $bypass_teams_filter_roles)
-        ) {
-            return;
-        }
-        if (isset($query['bypass_team_filter']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            return;
-        }
-        if (isset($query['resource_class_id']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            return;
-        }
-        if (isset($query['resource_template_id']) && $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
             return;
         }
 
@@ -942,6 +956,7 @@ SQL;
             }
             return;
         }
+
         ///If this is a case where someone is adding something and can choose which team to add it to, take that into
         /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
         /// This turned out to be vital to making public facing browse and search work
@@ -956,7 +971,7 @@ SQL;
             $team_id = $this->getTeamContext($query, $event);
         }
 
-        if ($team_id === 0) {
+        if ($team_id === array(0)) {
             return;
         }
         if (is_array($team_id)) {
@@ -993,8 +1008,7 @@ SQL;
                 }
             } elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class) {
                 $qb->leftJoin('Teams\Entity\TeamResourceTemplate', 'trt', Expr\Join::WITH, $alias .'.id = trt.resource_template')->andWhere('trt.team = :team_id')
-                    ->setParameter('team_id', $team_id)
-         ;
+                    ->setParameter('team_id', $team_id);
             //
             } elseif ($entityClass == \Omeka\Entity\User::class) {
                 return;
@@ -1004,24 +1018,22 @@ SQL;
                 $qb->leftJoin('Teams\Entity\TeamAsset', 'ta', Expr\Join::WITH, $alias .'.id = ta.asset')->andWhere('ta.team = :team_id')
                     ->setParameter('team_id', $team_id)
                 ;
-            } else {
+            }  else {
                 //this is the case that catches for site browse. For sites with multiple teams, need to orWhere for each
-                $qb->leftJoin('Teams\Entity\TeamResource', 'tr_else', Expr\Join::WITH, $alias .'.id = tr_else.resource')
-                    ->andWhere('tr_else.team = :team_id')
-                    ->setParameter('team_id', $team_id[0])
+                $qb->leftJoin('Teams\Entity\TeamResource', 'tr', Expr\Join::WITH, $alias .'.id = tr.resource')
+                    ->andWhere('tr.team = :team_id')
+                    ->setParameter('team_id', $team_id[0]);
+            }
 
-                ;
-
-                if (count($team_id) > 1) {
-                    $orX = $qb->expr()->orX();
-                    $i=0;
-                    foreach ($team_id as $value) {
-                        $orX->add($qb->expr()->eq('tr.team', ':name'.$i));
-                        $qb->setParameter('name'.$i, $value);
-                        $i++;
-                    }
-                    $qb->orWhere($orX);
+            if (count($team_id) > 1) {
+                $orX = $qb->expr()->orX();
+                $i=0;
+                foreach ($team_id as $value) {
+                    $orX->add($qb->expr()->eq('tr.team', ':name'.$i));
+                    $qb->setParameter('name'.$i, $value);
+                    $i++;
                 }
+                $qb->orWhere($orX);
             }
         }
     }
