@@ -2598,10 +2598,32 @@ SQL;
 //
 //    }
 
+    public function bypassTeamFilterOnAdvancedSearch(Event $event)
+    {
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $roles = $globalSettings->get('teams_filter_bypass_roles');
+
+        if (!is_array($roles)) {
+            $roles[] = $roles;
+        }
+
+        $user = $this->getUser();
+        if ($user && in_array($user->getRole(),$roles) ) {
+            $partials = $event->getParam('partials');
+            $partials[] = 'teams/partial/bypass-team-filter-advanced-search-selector';
+            $event->setParam('partials', $partials);
+        }
+
+    }
 
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Item',
+            'view.advanced_search',
+            [$this,'bypassTeamFilterOnAdvancedSearch']
+        );
 
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
