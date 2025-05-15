@@ -5,15 +5,11 @@ namespace Teams\Form;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationService;
-use Laminas\Form\Element\Checkbox;
 use Laminas\Form\Element\Select;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
-use Omeka\Form\Element\ItemSetSelect;
-use Omeka\Form\Element\ResourceTemplateSelect;
 use Laminas\Form\Form;
 use Omeka\Settings\Settings;
-use Teams\Form\Element\BlankTeamSelect;
 use Teams\Form\Element\ItemSetTeamSelect;
 use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
@@ -91,7 +87,7 @@ class SecondaryResourcesForm extends Form
                 'disable_group_by' => $disableGroupBy,
                 'group_by' => ['team' => $teamId],
                 'label' => 'Select Item Sets',
-                'query' => ['bypass_team_filter' => true],
+                'query' => ['bypass_team_filter' => true, 'all_user_teams'=>true],
                 'filter_resource_representations' => $show_all_options ? "" : function ($itemsets) {
                     // The user must have permission to assign items to the site.
                     foreach ($itemsets as $index => $itemset) {
@@ -119,7 +115,7 @@ class SecondaryResourcesForm extends Form
                 'disable_group_by' => $disableGroupBy,
                 'group_by' => ['team' => $teamId],
                 'label' => 'Select Resource Templates',
-                'query' => ['bypass_team_filter' => true], //get all the responses, then filter below as appropriate
+                'query' => ['bypass_team_filter' => true, 'all_user_teams'=>true], //get all the responses, then filter below as appropriate
                 'class' => 'chosen-select',
                 'filter_resource_representations' => $show_all_options ? "" : function ($templates) {
                     // The user must have permission to assign items to the site.
@@ -189,7 +185,6 @@ class SecondaryResourcesForm extends Form
             $resource_type = 'resource-template';
         } elseif(str_contains($resource->getControllerName(), 'item') || str_contains('media', $resource->getControllerName())) {
             $resource_type = 'resource';
-
         } else
         {
             throw new InvalidArgumentException(
