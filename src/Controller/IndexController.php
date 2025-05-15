@@ -229,6 +229,7 @@ class IndexController extends AbstractActionController
             return $this->redirect()->toRoute('admin', ['action'=>'browse', 'controller' => 'item']);
         }
 
+        //TODO: use api when read is implemented
         $entityManager = $this->entityManager;
 
         $user_id = $this->identity()->getId();
@@ -254,6 +255,43 @@ class IndexController extends AbstractActionController
         ]);
         $this->getEventManager()->triggerEvent($event);
         return $this->redirect()->toRoute('admin', ['controller'=>'item']);
+    }
+
+    public function batchDeleteAllAction()
+    {
+        if (!$this->getRequest()->isPost()) {
+            return $this->redirect()->toRoute('admin', ['action'=>'browse', 'controller' => 'item']);
+        }
+
+        // Derive the query, removing limiting and sorting params.
+        $query = json_decode($this->params()->fromPost('query', []), true);
+        unset($query['submit'], $query['page'], $query['per_page'], $query['limit'],
+            $query['offset'], $query['sort_by'], $query['sort_order'], $query['sort_by_default'],
+            $query['sort_order_default']);
+
+        $user_id = $this->identity()->getId();
+
+        $entityManager = $this->entityManager;
+
+        //TODO: use api when read is implemented
+        $team_id = $entityManager
+            ->getRepository('Teams\Entity\TeamUser')
+            ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+            ->getTeam()->getId();
+
+        $form = $this->getForm(ConfirmForm::class);
+        $form->setData($this->getRequest()->getPost());
+        if ($form->isValid()) {
+            $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
+                'action' => 'remove',
+                'teams' => [$team_id => $query]
+            ]);
+            $this->logger()->err($team_id);
+            $this->messenger()->addSuccess('Removing items from team. This may take a while.'); // @translate
+        } else {
+            $this->messenger()->addFormErrors($form);
+        }
+        return $this->redirect()->toRoute('admin', ['controller'=>'item-set']);
     }
 
     public function changeCurrentTeamAction(int $user_id, int $team_id)
