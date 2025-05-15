@@ -8,6 +8,7 @@ use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Response;
 use Omeka\Api\Exception;
 use Teams\Api\Representation\TeamUserRepresentation;
+use Teams\Entity\TeamRole;
 use Teams\Entity\TeamUser;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
@@ -96,12 +97,57 @@ class TeamUserAdapter extends AbstractEntityAdapter
             ->select('omeka_root')
             ->from($entityClass, 'omeka_root');
 
+        if (isset($query['role'])  && is_numeric($query['role'])){
+            $joinConditions = sprintf(
+                'role.id = omeka_root.role'
+            );
+            $qb->innerJoin(TeamRole::class, 'role', 'WITH', $joinConditions);
+            $qb->andWhere($qb->expr()->eq(
+                "role.id",
+                $this->createNamedParameter($qb, $query['role'])));
+
+//            $qb->innerJoin('Omeka\Entity\FulltextSearch', 'omeka_fulltext_search', 'WITH', $joinConditions);
+
+//            $roleAlias = $this->createAlias();
+//            $qb->innerJoin(
+//                'omeka_root.role',
+//                $roleAlias
+//            );
+//            $qb->andWhere($qb->expr()->eq(
+//                "$userAlias.id",
+//                $this->createNamedParameter($qb, $query['owner_id']))
+//            );
+
+        }
+
+        $role_permissions = [
+            'can_add_users',
+            'can_add_items',
+            'can_add_itemsets',
+            'can_modify_resources',
+            'can_delete_resources',
+            'can_add_site_pages'
+
+        ];
+        foreach ($role_permissions as $role_permission){
+            if (isset($query[$role_permission])) {
+                $joinConditions = sprintf(
+                    'role.id = omeka_root.role'
+                );
+                $qb->innerJoin(TeamRole::class, 'role', 'WITH', $joinConditions);
+                $qb->andWhere($qb->expr()->eq(
+                    "role." . $role_permission,
+                    $this->createNamedParameter($qb, $query[$role_permission])));
+            }
+        }
+
         foreach ($search_fields as $field => $value) {
             $qb->andWhere($qb->expr()->eq(
                 "omeka_root.$field",
                 $this->createNamedParameter($qb, $value)
             ));
         }
+
         $this->buildBaseQuery($qb, $query);
         $this->buildQuery($qb, $query);
         $qb->groupBy("omeka_root." . $group_by);
@@ -122,6 +168,39 @@ class TeamUserAdapter extends AbstractEntityAdapter
         $this->sortQuery($qb, $query);
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
 
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
+                        $scalarField, $entityClass
+                    ));
+                }
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.user) as user"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
 
         $paginator = new Paginator($qb, false);
         $entities = [];

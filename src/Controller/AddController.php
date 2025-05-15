@@ -13,7 +13,9 @@ use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
+use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamItemSetForm;
+use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
 use Teams\Form\TeamUserForm;
@@ -43,10 +45,16 @@ class AddController extends AbstractActionController
         $form = $this->getForm(TeamForm::class);
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
+        $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
+        $secondaryResourcesForm = $this->getForm(SecondaryResourcesForm::class,
+            ['team_id'=>0]
+        );
         $view = new ViewModel(
             [
                 'form' => $form,
                 'itemsetForm' => $itemsetForm,
+                'resourceForm' => $resourceForm,
+                'secondaryResourcesForm' => $secondaryResourcesForm,
             ]
         );
 
@@ -63,6 +71,7 @@ class AddController extends AbstractActionController
         $form->setData($request->getPost());
         $userForm->setData($request->getPost());
         $itemsetForm->setData($request->getPost());
+        $resourceForm->setData($request->getPost());
         if (! $form->isValid()) {
             return $view;
         }
@@ -73,7 +82,7 @@ class AddController extends AbstractActionController
 
         //add the users, resources and sites to the team
         if ($newTeam) {
-            $team = $this->entityManager->getRepository('Teams\Entity\Team')
+            $teamEntity = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
             if ($request->getPost('o:team_users')) {
                 foreach ($request->getPost('o:team_users') as $team_user):
@@ -82,95 +91,54 @@ class AddController extends AbstractActionController
                     $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
                         ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
 
-                    $teamUser = new TeamUser($team, $user, $role);
+                    $teamUser = new TeamUser($teamEntity, $user, $role);
                     $teamUser->setCurrent(null);
                     $this->entityManager->persist($teamUser);
                 endforeach;
                 $this->entityManager->flush();
             }
 
-            $resource_array = array();
-            $resource_template_array = array();
             $asset_array = array();
-            if (isset($request->getPost('itemset')['itemset']['o:itemset'])) {
-                foreach ($request->getPost('itemset')['itemset']['o:itemset'] as $item_set_id):
-                    if ((int)$item_set_id > 0) {
-                        $item_set_id = (int)$item_set_id;
-
-                        //add all items belonging to itemset
-                        foreach ($this->api()->search('items', ['item_set_id' => $item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                            $resource_array[$item->id()] = true;
-
-                        //add all media belonging to item
-                        foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                $resource_array[$media->id()] = true;
-                        endforeach;
-                        endforeach;
-                    }
-                //add itemset itself
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                        ->findOneBy(['id' => $item_set_id]);
-                $team_resource = new TeamResource($team, $resource);
-
-                $this->entityManager->persist($team_resource);
-                endforeach;
-            }
-            if (isset($request->getPost('itemset')['itemset']['o:user'])) {
-                foreach ($request->getPost('itemset')['itemset']['o:user'] as $user_id):
-                    if ((int)$user_id > 0) {
-                        $user_id = (int)$user_id;
-
-                        //add all of that users items and their media
-                        foreach ($this->api()->search('items', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $item):
-                            $resource_array[$item->id()] = true;
-                            foreach ($this->api()->search('media', ['item_id' => $item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                                    $resource_array[$media->id()] = true;
-                            endforeach;
-                        endforeach;
-
-                        //add all of that user's item sets
-                        foreach ($this->api()->search('item_sets', ['owner_id' => $user_id, 'bypass_team_filter' => true])->getContent() as $itemset):
-                            $resource_array[$itemset->id()] = true;
-                        endforeach;
-
-                        //add all of that user's resource templates
-                        $rts = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')->findBy(['owner' => $user_id]);
-                        foreach ($rts as $rt):
-                            $resource_template_array[$rt->getId()] = true;
-                        endforeach;
-
-                        //add all fo that user's assets
-                        $assets = $this->entityManager->getRepository('Omeka\Entity\Asset')->findBy(['owner' => $user_id]);
-                            foreach ($assets as $asset):
-                                $asset_array[$asset->getId()] = true;
-                            endforeach;
-
-                    }
-                endforeach;
+            $formData = $this->params()->fromPost();
+            $formData['item_pool'] .= "&bypass_team_filter=true";
+            $resourceForm->setData($formData);
+            parse_str($formData['item_pool'], $itemPool);
+            if ($formData['item_assignment_action'] && $formData['item_assignment_action'] !== 'no_action') {
+                $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
+                    'teams' => [$newTeam->getContent()->id() => $itemPool],
+                    'action' => $formData['item_assignment_action'],
+                ]);
+                $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
             }
 
-            //persist the resources, ie item, item set, media
-            foreach (array_keys($resource_array) as $resource_id):
-                $resource = $this->entityManager->getRepository('Omeka\Entity\Resource')
-                    ->findOneBy(['id' => $resource_id]);
-            $team_resource = new TeamResource($team, $resource);
-            $this->entityManager->persist($team_resource);
-            endforeach;
+            $secondaryResourcesForm->setData($formData);
+            $recursive = $formData['recursive_item_sets'] ?? false;
+            $this->logger()->err('this is the recursive value:' . $recursive);
+            if (isset($formData['item_sets'])) {
+                foreach ($formData['item_sets'] as $item_set_id) {
+                    $exists = $this->api()->search('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id]);
+                    if (count($exists->getContent()) < 1) {
+                        $this->api()->create('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id],[], ['recursive'=>$recursive]);
+                    }
+                }
+            }
+            if (isset($formData['resource_templates'])){
+                foreach ($formData['resource_templates'] as $resource_template_id) {
+                    if (count($this->api()->search('team-resource-template', ['team'=>$teamEntity->getId(), 'resource-template'=>$resource_template_id])->getContent())<1){
+                        $this->api()->create('team-resource-template', ['team'=>$teamEntity->getId(), 'resource-template'=>$resource_template_id]);
+                    }
+                }
+            }
 
-            //persist the resource templates
-            foreach (array_keys($resource_template_array) as $rt_id):
-                $resource_template = $this->entityManager->getRepository('Omeka\Entity\ResourceTemplate')
-                    ->findOneBy(['id' => $rt_id]);
-                $team_rt = new TeamResourceTemplate($team, $resource_template);
-                $this->entityManager->persist($team_rt);
-            endforeach;
-            $this->entityManager->flush();
 
-            //persist the assets
+
+            //TODO: add assets to secondaryResourcesForm.
+
+            // persist the assets
             foreach (array_keys($asset_array) as $asset_id):
                 $asset = $this->entityManager->getRepository('Omeka\Entity\Asset')
                     ->findOneBy(['id' => $asset_id]);
-                $team_asset = new TeamAsset($team, $asset);
+                $team_asset = new TeamAsset($teamEntity, $asset);
                 $this->entityManager->persist($team_asset);
             endforeach;
 
@@ -180,7 +148,7 @@ class AddController extends AbstractActionController
                     $site_id = (int)$site_id;
                 $site = $this->entityManager->getRepository('Omeka\Entity\Site')
                         ->findOneBy(['id' => $site_id]);
-                $team_site = new TeamSite($team, $site);
+                $team_site = new TeamSite($teamEntity, $site);
                 $this->entityManager->persist($team_site);
                 endforeach;
                 $this->entityManager->flush();
@@ -194,6 +162,7 @@ class AddController extends AbstractActionController
         $view->setVariable('form', $form);
         $view->setVariable('itemsetForm', $itemsetForm);
         $view->setVariable('team_users', $request->getPost('o:team_users'));
+        $view->setVariable('resourceForm', $resourceForm);
 
         return $view;
     }

@@ -1,21 +1,29 @@
 <?php
 namespace Teams\Api\Adapter;
 
+use CSVImport\Api\Adapter\EntityAdapter;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Laminas\EventManager\Event;
+use NumericDataTypes\DataType\Integer;
 use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Exception;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Entity\EntityInterface;
+use Omeka\Entity\Item;
+use Omeka\Entity\Resource;
+use Omeka\Entity\User;
+use Omeka\Mvc\Controller\Plugin\Api;
 use Omeka\Stdlib\ErrorStore;
+use Omeka\Stdlib\Message;
 use Teams\Api\Representation\TeamResourceRepresentation;
 use Teams\Entity\TeamResource;
+use Teams\Mvc\Controller\Plugin\TeamAuth;
 
 //legacy from deciding how much of the module to expose to the API
-class TeamResourceAdapter extends AbstractEntityAdapter
+class TeamResourceAdapter extends AbstractTeamEntityAdapter
 {
     protected $sortFields = [
         'resource_id' => 'resource_id',
@@ -36,6 +44,16 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     public function getEntityClass()
     {
         return TeamResource::class;
+    }
+
+    public function getMappedEntityClass()
+    {
+        return Resource::class;
+    }
+
+    public function getMappedEntityName()
+    {
+        return 'resource';
     }
 
     public function hydrate(
@@ -172,6 +190,8 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         // Add the LIMIT clause.
         $this->limitQuery($qb, $query);
 
+
+
         // Before adding the ORDER BY clause, set a paginator responsible for
         // getting the total count. This optimization excludes the ORDER BY
         // clause from the count query, greatly speeding up response time.
@@ -183,6 +203,40 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         // sorting the adapters add.
         $this->sortQuery($qb, $query);
         $qb->addOrderBy("omeka_root.team", $query['sort_order']);
+
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
+                        $scalarField, $entityClass
+                    ));
+                }
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.resource) as resource"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
 
 
         $paginator = new Paginator($qb, false);
@@ -205,13 +259,13 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         return $response;
     }
 
-    public function findEntity($criteria, $request = null)
+    public function findMappedEntity($criteria, $request = null)
     {
         if (!is_array($criteria)) {
             $criteria = ['id' => $criteria];
         }
 
-        $entityClass = $this->getEntityClass();
+        $entityClass = $this->getMappedEntityClass();
         $this->index = 0;
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('omeka_root')->from($entityClass, 'omeka_root');
@@ -229,14 +283,7 @@ class TeamResourceAdapter extends AbstractEntityAdapter
         ]);
 
         $this->getEventManager()->triggerEvent($event);
-        $entity = $qb->getQuery()->getOneOrNullResult();
-        if (!$entity) {
-            throw new Exception\NotFoundException(sprintf(
-                $this->getTranslator()->translate('%1$s entity with criteria %2$s not found'),
-                $entityClass, json_encode($criteria)
-            ));
-        }
-        return $entity;
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     public function read(Request $request)
@@ -245,17 +292,108 @@ class TeamResourceAdapter extends AbstractEntityAdapter
     }
     public function create(Request $request)
     {
-        AbstractAdapter::create($request);
+        if ($request->getValue('batch')){
+            $this->batchCreate($request);
+        }
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $resource = $request->getValue('resource');
+        $this->teamAuthority($request, $request->getValue('team'), $user);
+        if (!$this->resourceAuthority($request->getValue('resource'),$user)){
+            throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
+                );
+        }
+        $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
+        $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
+        $teamResource = new TeamResource($teamEntity, $resourceEntity);
+        if ($request->getOption('recursive')){
+            $logger = $this->getServiceLocator()->get('Omeka\Logger');
+            $logger->err('recursive in the adapter');
+            $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
+            //item sets => contain items
+            if ($mappedEntity->getResourceName() === 'item_sets') {
+                $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
+                    ->search('items', ['item_set_id' => $mappedEntity->getId(), 'bypass_team_filter'=>true], ['returnScalar' => 'id'])
+                    ->getContent();
+                foreach ($childIds as $resourceId) {
+                        $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+                            ->search('team-resource',
+                                [
+                                    'team' => $request->getValue('team'),
+                                    'resource' => $resourceId
+                                ])
+                            ->getContent();
+                        if (count($exists) < 1)
+                        {
+                            $this->getServiceLocator()
+                                ->get('Omeka\ApiManager')
+                                ->create('team-resource',
+                                    [
+                                        'team' => $request->getValue('team'),
+                                        'resource' => $resourceId
+                                    ],
+                                    [],
+                                    ['recursive'=>true]
+                                );
+                        }
+                    }
+                }
+                //items => contain media
+            if ($mappedEntity->getResourceName() === 'items') {
+
+                $childIds = [];
+                if (method_exists($mappedEntity, 'getMedia')){
+                    $media = $mappedEntity->getMedia();
+                    foreach ($media as $m) {
+                        $childIds[] =  $m->getId();
+                    }
+                }
+                foreach ($childIds as $resourceId) {
+                    $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+                        ->search('team-resource',
+                            [
+                                'team' => $request->getValue('team'),
+                                'resource' => $resourceId
+                            ])
+                        ->getContent();
+                    if (count($exists) < 1)
+                    {
+                        $this->getServiceLocator()
+                            ->get('Omeka\ApiManager')
+                            ->create('team-resource',
+                                [
+                                    'team' => $request->getValue('team'),
+                                    'resource' => $resourceId
+                                ],
+                                ['recursive'=>false]
+                            );
+                    }
+                }
+            }
+        }
+
+
+        $this->getEntityManager()->persist($teamResource);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($teamResource);
+        }
+        return new Response($teamResource);
+
+
     }
 
     public function batchCreate(Request $request)
     {
-        AbstractAdapter::batchCreate($request);
+        EntityAdapter::batchCreate($request);
     }
 
     public function update(Request $request)
     {
-        AbstractAdapter::batchCreate($request);
+        AbstractAdapter::update($request);
     }
 
     public function batchUpdate(Request $request)
@@ -265,7 +403,72 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
+
+        if ($request->getOption('recursive')){
+            $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
+            //item sets => contain items
+            if ($mappedEntity->getResourceName() === 'item_sets') {
+                $childIds = $this->getServiceLocator()->get('Omeka\ApiManager')
+                    ->search('items', ['item_set_id' => $mappedEntity->getId(), 'bypass_team_filter'=>true], ['returnScalar' => 'id'])
+                    ->getContent();
+                foreach ($childIds as $resourceId) {
+                    $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+                        ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $resourceId] )
+                        ->getContent();
+                    if (count($exists) > 0)
+                    {
+                        $this->getServiceLocator()
+                            ->get('Omeka\ApiManager')
+                            ->delete('team-resource',
+                                [],
+                                [
+                                    'team' => $request->getValue('team'),
+                                    'resource' => $resourceId
+                                ],
+                                ['recursive'=>true]);
+                    }
+                }
+            }
+
+            if ($mappedEntity->getResourceName() === 'items') {
+                $childIds = [];
+                if (method_exists($mappedEntity, 'getMedia')){
+                    $media = $mappedEntity->getMedia();
+                    foreach ($media as $m) {
+                        $childIds[] =  $m->getId();
+                    }
+                }
+
+                foreach ($childIds as $resourceId) {
+                    $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+                        ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $resourceId])
+                        ->getContent();
+                    if (count($exists) > 0)
+                    {
+                        $this->getServiceLocator()
+                            ->get('Omeka\ApiManager')
+                            ->delete('team-resource',
+                                [],
+                                [
+                                    'team' => $request->getValue('team'),
+                                    'resource' => $resourceId
+                                ]
+                            );
+                    }
+                }
+            }
+        }
+
+        $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
+            ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $request->getValue('resource')])
+            ->getContent();
+        if (count($exists) > 0) {
+            $entity = $this->deleteEntity($request);
+        }
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);
     }
 
     public function batchDelete(Request $request)
@@ -275,10 +478,113 @@ class TeamResourceAdapter extends AbstractEntityAdapter
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
     {
-        $data = $request->getContent();
-        if (array_key_exists('team', $data) && array_key_exists('resource', $data)) {
-            $result = $this->validateName($data['o:name'], $errorStore);
+        if (Request::CREATE === $request->getOperation()){
+            //validate payload data refers to real entities
+
+            //validate team data
+            if(!$request->getValue('team') || !is_numeric($request->getValue('team'))){
+                $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
+            } else {
+                $team = $this->getEntityManager()
+                    ->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id'=>$request->getValue('team')]);
+                if(is_null($team)){
+                    $errorStore->addError('o-module-teams:team', new Message(
+                        'A team with id %s does not exist.', // @translate
+                        $request->getValue('team') ));
+                }
+            }
+
+            //validate resource data
+            if(!$request->getValue('resource') || !is_numeric($request->getValue('resource'))){
+                $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate resource with a numeric value');
+            } else {
+                $mappedEntity = $this->findMappedEntity($request->getValue('resource'), $request);
+                if(is_null($mappedEntity)){
+                    $errorStore->addError('o-module-teams:team', new Message(
+                        'A resource with id %s does not exist.', // @translate
+                        $request->getValue('resource') ));
+                }
+            }
+        }
+        if ($errorStore->hasErrors()) {
+            $validationException = new Exception\ValidationException;
+            $validationException->setErrorStore($errorStore);
+            throw $validationException;
+        }
+
+    }
+    public function deleteEntity(Request $request): EntityInterface
+    {
+        $entity = $this->findEntity(['team'=>$request->getValue('team'), 'resource' => $request->getValue('resource')]);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $this->teamAuthority($request, $team, $user);
+
+        $event = new Event('api.find.post', $this, [
+            'entity' => $entity,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+        $this->getEntityManager()->remove($entity);
+        return $entity;
+    }
+    public function teamAuthority($request, $team, $user, $resource=null)
+    {
+        $em = $this->getEntityManager();
+        $operation = $request->getOperation();
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+        $teamAuth = new TeamAuth($em, $logger);
+        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $team)){
+            throw new Exception\PermissionDeniedException(sprintf(
+                    $this->getTranslator()->translate(
+                        'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
+                    ),
+                    $operation, $team)
+            );
         }
     }
 
+    /**
+     * @param $request
+     * @return bool
+     *
+     * Does the user have the authority to modify the resource
+     */
+    public function resourceAuthority($resource, User $user ):bool
+    {
+
+        //if the resource belongs to any team where the user has resource authority, or if the resource belongs to no team
+
+        //iterate through the teams of the resource
+
+        if ($user->getRole() == 'global_admin'){
+            return true;
+        }
+        $resourceTeams = $this->getEntityManager()
+            ->getRepository('Teams\Entity\TeamResource')
+                ->findBy(['resource'=>$resource]);
+        if (!$resourceTeams){
+            return true;
+        } else {
+            $userTeams = $this->getEntityManager()
+                ->getRepository('Teams\Entity\TeamUser')
+                ->findBy(['user'=>$user->getId()]);
+
+            //if the user has a resource permission in any team the resource belongs to, return true
+            foreach ($resourceTeams as $resourceTeam) {
+                $resourceTeamId = $resourceTeam->getTeam()->getId();
+                foreach($userTeams as $userTeam){
+                    if ($resourceTeamId == $userTeam->getTeam()->getId()){
+                        if ($userTeam->getRole()->getCanAddItems()){
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }

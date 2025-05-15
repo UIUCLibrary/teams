@@ -3,10 +3,15 @@
 
 namespace Teams\Form;
 
+use Omeka\Permissions\Acl;
 use Laminas\Form\Form;
 
 class ConfigForm extends Form
 {
+    /**
+     * @var Acl
+     */
+    protected $acl;
     protected $globalSettings;
 
     public function init()
@@ -46,9 +51,44 @@ class ConfigForm extends Form
                 'id' => 'teams_site_admin_make_user',
             ],
         ]);
+        $roles = $this->getAcl()->getRoleLabels(false);
+
+        $this->add([
+                'name' => 'teams_filter_bypass_roles',
+                'type' => 'select',
+                'options' => [
+                    'label' => 'Grant "Bypass Teams Filter" ability', // @translate
+                    'info' =>'List of core Omeka S roles that can bypass the Teams filter on admin search interfaces',
+                    'value_options' => $roles,
+
+                ],
+                'attributes' => [
+                    'id' => 'role',
+                    'class' => 'chosen-select',
+                    'multiple' => true,
+                    'value' => $this->globalSettings->get('teams_filter_bypass_roles'),
+                ],
+            ]);
+
     }
     public function setGlobalSettings($globalSettings)
     {
         $this->globalSettings = $globalSettings;
+    }
+
+    /**
+     * @param Acl $acl
+     */
+    public function setAcl(Acl $acl)
+    {
+        $this->acl = $acl;
+    }
+
+    /**
+     * @return Acl
+     */
+    public function getAcl()
+    {
+        return $this->acl;
     }
 }

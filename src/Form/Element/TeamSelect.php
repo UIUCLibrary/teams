@@ -72,15 +72,15 @@ class TeamSelect extends Select
             $allOptions[] = ['label' => 'Other Teams', 'options' => $otherTeamsValueOptions];
             return $allOptions;
 
-        } else {
-
-            $prependValueOptions = $this->getOption('prepend_value_options');
-            if (is_array($prependValueOptions)) {
-                $valueOptions = $prependValueOptions + $valueOptions;
-            }
-
-            return $valueOptions;
         }
+
+        $prependValueOptions = $this->getOption('prepend_value_options');
+        if (is_array($prependValueOptions)) {
+            $valueOptions = $prependValueOptions + $valueOptions;
+        }
+
+        return $valueOptions;
+
 
 
     }

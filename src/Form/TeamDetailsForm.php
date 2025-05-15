@@ -5,7 +5,7 @@ use Laminas\Form\Form;
 use Laminas\Form\Element;
 
 
-class TeamUpdateForm extends Form
+class TeamDetailsForm extends Form
 {
     public function init()
     {

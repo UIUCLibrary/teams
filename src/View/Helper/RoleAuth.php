@@ -6,6 +6,8 @@ namespace Teams\View\Helper;
 use Doctrine\ORM\EntityManager;
 use InvalidArgumentException;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Resource;
+use Omeka\Entity\User;
 
 class RoleAuth extends AbstractHelper
 {
@@ -22,22 +24,22 @@ class RoleAuth extends AbstractHelper
         $this->entityManger = $entityManager;
     }
 
-    public function user()
+    private function user()
     {
         return $this->getView()->identity();
     }
 
-    public function isGlobAdmin()
+    private function isGlobAdmin()
     {
         return $this->user()->getRole() === 'global_admin';
     }
 
-    public function isSuper()
+    public function userIsAllowed(User $user, Resource $resource, $action) : bool
     {
-        return ($this->isGlobAdmin() && $this->user()->getId() === 1);
+
     }
 
-    public function teamAuthorized(string $action, string $domain, int $context=0)
+    public function teamAuthorized(string $action, string $domain, int $team = 0)
     {
         //validate inputs
         if (!in_array($action, $this->actions)) {
@@ -58,7 +60,7 @@ class RoleAuth extends AbstractHelper
         }
 
         //super admin should bypass team authority
-        if ($this->isSuper()) {
+        if ($this->isGlobAdmin()) {
             return true;
         }
 
@@ -67,10 +69,10 @@ class RoleAuth extends AbstractHelper
         $authorized = false;
 
 
-        if ($context > 0) {
+        if ($team > 0) {
             //determine if the user is part of that team
             $has_role = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['user' => $user_id, 'team'=>$context]);
+            ->findOneBy(['user' => $user_id, 'team'=>$team]);
 
         } else {
             //get the users current team
@@ -92,7 +94,6 @@ class RoleAuth extends AbstractHelper
                 $authorized = $this->isGlobAdmin();
 
             }
-
             //if they can manage users of the team (including their role)
             elseif ($domain == 'team_user') {
                 $authorized = $current_role->getCanAddUsers();
