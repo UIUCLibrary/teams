@@ -119,7 +119,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         if (in_array($action, ['remove'])) {
             foreach (array_chunk($resourceIds, 1000) as $resourceIdsChunk) {
-                $sql = sprintf('DELETE FROM team_resource WHERE team_id = ? AND resourc_id IN (?)');
+                $sql = sprintf('DELETE FROM team_resource WHERE team_id = ? AND resource_id IN (?)');
                 $stmt = $conn->executeQuery($sql, [$teamId, $resourceIdsChunk], [null, Connection::PARAM_INT_ARRAY]);
                 $stmt->execute();
             }
