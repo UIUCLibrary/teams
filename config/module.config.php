@@ -384,6 +384,18 @@ return [
                             ],
                         ],
                     ],
+                    'batch_delete_all' => [
+                        'type' => Literal::class,
+                        'options' => [
+                            'route' => '/item/batch-delete-all',
+                            'defaults' => [
+                                '__NAMESPACE__' => 'Teams\Controller',
+                                //need to make a anew action for the delete function?
+                                'controller' => 'Index',
+                                'action' => 'batch-delete-all',
+                            ],
+                        ],
+                    ],
 
                     //this might be a cleaner route
 //                    'perm_del'  => [
