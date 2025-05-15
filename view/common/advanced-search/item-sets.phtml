@@ -1,4 +1,21 @@
 <?php
+/**
+ * Summary: This was copied from the core Omeka S view directory view/common/advanced-search
+ * from commit 534ed98b4970b23b8841b5b80cf9375317c6d92d.
+ *
+ * Purpose: This instance passes the 'bypass_team_filter' => true to the query used to populate
+ * the item-set select element. This allows users with the 'bypass_team_filter permission
+ * to see all the installations item-sets, not just those that belong to the current team.
+ * This facilitates populating new teams with existing resources.
+ *
+ * Notes: This file should be patched when upgrading the core software so that the advanced search
+ * elements continue to reflect the changes in the core software. Create a patch using git diff
+ * using the commit hash listed below and applying the patch to this file . Then update the commit
+ * listed under Most recent patch.
+ *
+ * Most recent patch: 534ed98b4970b23b8841b5b80cf9375317c6d92d
+ *
+ */
 $translate = $this->plugin('translate');
 // Prepare the item set queries
 $inIds = $query['item_set_id'] ?? [];
