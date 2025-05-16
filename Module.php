@@ -1894,12 +1894,11 @@ SQL;
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $teamAuth = new TeamAuth($em, $logger);
         if ($operation == 'update') {
-
             if(array_key_exists('remove_team', $request->getContent())) {
-               if (!is_array($request->getContent()['remove_team'])) {
+                if (!is_array($request->getContent()['remove_team'])) {
                    $remove = array($request->getContent()['remove_team']);
-               } else {
-                   $remove = $request->getContent()['remove_team'];
+                } else {
+                    $remove = $request->getContent()['remove_team'];
                }
             } else {
                 $remove = [];
@@ -1923,8 +1922,6 @@ SQL;
                 foreach ($entity->getMedia() as $media) {
                     $resource_ids[$media->getId()] = true;
                 }
-
-
                 foreach ($add as $team_id) {
                     //if the user is authorized to add items to that team
                     if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
@@ -2509,12 +2506,15 @@ SQL;
     //Add Team options to Batch Edit
 
     /**
-     * Add  "Add Team" and "Remove Team" select elements to the batch edit forme
+     * Add  "Add Team" and "Remove Team" select elements to the batch edit form
      * @param Event $event
      * @return void
      */
     public function addTeamToBatchEditForm(Event $event) {
         $form = $event->getTarget();
+        if ('item' !== $form->getOption('resource_type')) {
+            return; // Include elements only on item batch edit.
+        }
 
         $groups = $form->getOption('element_groups');
         $groups['teams'] = 'Teams'; // @translate
@@ -2530,6 +2530,7 @@ SQL;
             ],
             'attributes' => [
                 'multiple' => true,
+                'data-collection-action' => 'append'
             ]
 
         ]);
@@ -2543,6 +2544,8 @@ SQL;
             ],
             'attributes' => [
                 'multiple' => true,
+                'data-collection-action' => 'append'
+
             ]
         ]);
         $inputFilter = $form->getInputFilter();
@@ -2557,6 +2560,7 @@ SQL;
     }
 
     public function processTeamBatchEditData (Event $event) {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $data = $event->getParam('data');
         $rawData = $event->getParam('request')->getContent();
 
@@ -2572,25 +2576,6 @@ SQL;
         $event->setParam('data', $data);
     }
 
-
-//    public function batchAddRemoveTeam (Event $event) {
-//        $data = $event->getParam('request')->getContent();
-//        $item = $event->getParam('response')->getContent();
-//
-//        if (!(isset($data['add_team']) && $data['add_team'])) {
-//            return;
-//        }
-//
-//        $services = $this->getServiceLocator();
-//        $entityManager = $services->get('Omeka\EntityManager');
-//
-//        $dql = 'DELETE FROM Mapping\Entity\MappingFeature m WHERE m.item = :item_id';
-//        $entityManager->createQuery($dql)
-//            ->setParameter('item_id', $item->getId())
-//            ->execute();
-//
-//
-//    }
 
     public function bypassTeamFilterOnAdvancedSearch(Event $event)
     {
@@ -2613,6 +2598,7 @@ SQL;
     public function attachListeners(SharedEventManagerInterface $sharedEventManager)
     {
         $services = $this->getServiceLocator();
+
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
@@ -2844,6 +2830,7 @@ SQL;
             'api.hydrate.post',
             [$this, 'itemUpdate']
         );
+
 
         $sharedEventManager->attach(
             'Teams\Controller\IndexController',
