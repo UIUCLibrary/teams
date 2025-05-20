@@ -2604,6 +2604,11 @@ SQL;
             'view.advanced_search',
             [$this,'bypassTeamFilterOnAdvancedSearch']
         );
+        $sharedEventManager->attach(
+            'Omeka\Controller\Admin\Query',
+            'view.advanced_search',
+            [$this, 'bypassTeamFilterOnAdvancedSearch']
+        );
 
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
