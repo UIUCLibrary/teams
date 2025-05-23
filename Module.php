@@ -2411,11 +2411,10 @@ SQL;
         } elseif ($res_class == 'Teams\Entity\TeamSite') {
             if ($action == 'read') {
                 $authorized = true;
-            //deleting a site from a team
             }
             //adding or removing sites from a team
             else {
-                $authorized = $is_glob_admin;
+                $authorized = $team_user_role->getCanAddSitePages();
             }
         } elseif ($res_class == 'Teams\Entity\TeamUser') {
             if ($action == 'read') {
@@ -2448,7 +2447,6 @@ SQL;
         }
 
         if (!$authorized) {
-            $authorized = false;
             $msg = sprintf(
                 'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.'
                 ,
