@@ -2380,7 +2380,7 @@ SQL;
                     $authorized = $is_glob_admin;
                 }
             } elseif ($action == 'delete' || $action == 'batch_delete') {
-                $authorized = $is_glob_admin;
+                $authorized = $team_user_role->getCanAddSitePages();
             } elseif ($action == 'update') {
                 $authorized = $team_user_role->getCanAddSitePages();
             } elseif ($action == 'read') {
