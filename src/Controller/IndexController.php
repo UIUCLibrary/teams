@@ -242,14 +242,11 @@ class IndexController extends AbstractActionController
         $request = $this->getRequest();
 
         $resource_ids = $request->getPost()['resource_ids'];
-        for ($i= 0; $i< count($resource_ids); $i++) {
-            $entity = $this->entityManager->getRepository('Teams\Entity\TeamResource')
-                ->findOneBy(['team'=>$team_id, 'resource'=>$resource_ids[$i]]);
-            $entityManager->remove($entity);
+        foreach ($resource_ids as $resource_id) {
+            $this->api()->delete('team-resource', [], ['team'=>$team_id, 'resource'=>$resource_id], ['recursive'=>true]);
         }
-        $entityManager->flush();
+        //this is syncing the item sites in Module.php. This should be done via the delete call instead
         $event = new Event('api.execute.post', $this, [
-            'entity' => $entity,
             'request' => $request,
             'resource_ids' => $resource_ids,
         ]);
