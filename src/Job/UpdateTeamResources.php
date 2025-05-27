@@ -19,7 +19,6 @@ use Omeka\Job\Exception\InvalidArgumentException;
  */
 class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 {
-
     public function perform()
     {
         $services = $this->getServiceLocator();
@@ -76,7 +75,10 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         //in the resource table or team_resource table, so they would need to be done separately
 
 
-        $resourceIds = $api->search('items', $query, ['returnScalar' => 'id'])->getContent();
+        //get the item ids before adding media ids to sync item_site
+        $itemIds = $api->search('items', $query, ['returnScalar' => 'id'])->getContent();
+
+        $resourceIds = $itemIds;
 
         //get the item's media
         $resources = $api->search('items', $query)->getContent();
@@ -123,6 +125,66 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $stmt = $conn->executeQuery($sql, [$teamId, $resourceIdsChunk], [null, Connection::PARAM_INT_ARRAY]);
                 $stmt->execute();
             }
+        }
+
+        $sites = $api->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])->getContent();
+
+        foreach($sites as $siteId) {
+            $this->syncItemSites($siteId, $teamId, $action, $itemIds);
+        }
+    }
+
+    public function syncItemSites(int $siteId, int $teamId, string $action, array $resourceIds)
+    {
+        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+
+        $services = $this->getServiceLocator();
+        $api = $services->get('Omeka\ApiManager');
+        $conn = $services->get('Omeka\Connection');
+
+        $removalResourceIds = array();
+        $additionalResourceIds = array();
+
+        if (in_array($action, ['replace', 'remove_all']))
+        {
+            $removalResourceIds = $api->search('team-resource', ['team' => $teamId], ['returnScalar'=>'resource']);
+        }
+        if ($action == 'remove') {
+            $removalResourceIds = $resourceIds;
+        }
+        if (in_array($action,['add', 'replace'] )) {
+            $additionalResourceIds = $resourceIds;
+        }
+        $logger->err('removal:');
+        $logger->err($removalResourceIds);
+        $logger->err('addition:');
+        $logger->err($additionalResourceIds);
+
+
+
+        //remove items from sites
+        foreach (array_chunk($removalResourceIds, 1000) as $resourceIdsChunk) {
+            $sql = sprintf('DELETE FROM item_site WHERE site_id = ? AND item_id IN (?)');
+            $stmt = $conn->executeQuery($sql, [$siteId, $resourceIdsChunk], [null, Connection::PARAM_INT_ARRAY]);
+            $stmt->execute();
+        }
+
+        //add items to sites
+        foreach (array_chunk($additionalResourceIds, 1000) as $resourceIdsChunk) {
+            $values = [];
+            $bindValues = [];
+            foreach ($resourceIdsChunk as $resourceId) {
+                $values[] = '(?,?)';
+                $bindValues[] = $resourceId;
+                $bindValues[] = $siteId;
+            }
+            // Note the use of IGNORE here to prevent duplicate-key errors.
+            $sql = sprintf('INSERT IGNORE INTO item_site (item_id, site_id) VALUES %s', implode(',', $values));
+            $stmt = $conn->prepare($sql);
+            foreach ($bindValues as $position => $value) {
+                $stmt->bindValue($position + 1, $value);
+            }
+            $stmt->execute();
         }
     }
 }
