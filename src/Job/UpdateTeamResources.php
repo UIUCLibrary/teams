@@ -143,7 +143,7 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         if (in_array($action, ['replace', 'remove_all']))
         {
-            $removalResourceIds = $api->search('team-resource', ['team' => $teamId], ['returnScalar'=>'resource']);
+            $removalResourceIds = $api->search('team-resource', ['team' => $teamId], ['returnScalar'=>'resource'])->getContent();
         }
         if ($action == 'remove') {
             $removalResourceIds = $resourceIds;
