@@ -333,7 +333,7 @@ class UpdateController extends AbstractActionController
                 $remove_item_sets = $formData['remove_item_sets'];
                 foreach ($remove_item_sets as $item_set_id) {
                     //todo: delete expects the id to be in the second parameter, for now just leaving empty because team resource uses a composite key
-                    $this->api()->delete('team-resource', [], ['team' => $team_id, 'resource' => $item_set_id],['recursive'=>$recursive]);
+                    $this->api()->delete('team-resource', [], ['team' => $team_id, 'resource' => $item_set_id],['recursive'=>$recursive, 'syncSites' => true]);
                 }
             }
             //add item sets
@@ -342,7 +342,7 @@ class UpdateController extends AbstractActionController
                     //todo: implement the read operation
                     $exists = $this->api()->search('team-resource', ['team' => $team_id, 'resource' => $item_set_id]);
                     if (count($exists->getContent()) < 1) {
-                        $this->api()->create('team-resource', ['team' => $team_id, 'resource' => $item_set_id], [], ['recursive' => $recursive]);
+                        $this->api()->create('team-resource', ['team' => $team_id, 'resource' => $item_set_id], [], ['recursive' => $recursive, 'syncSites' => true]);
                     }
                 }
             }
