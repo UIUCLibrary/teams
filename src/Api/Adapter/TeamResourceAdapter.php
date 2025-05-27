@@ -308,8 +308,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$resource]);
         $teamResource = new TeamResource($teamEntity, $resourceEntity);
         if ($request->getOption('recursive')){
-            $logger = $this->getServiceLocator()->get('Omeka\Logger');
-            $logger->err('recursive in the adapter');
+            $syncSites = (bool)$request->getOption('syncSites');
             $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
             //item sets => contain items
             if ($mappedEntity->getResourceName() === 'item_sets') {
@@ -334,7 +333,10 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
                                         'resource' => $resourceId
                                     ],
                                     [],
-                                    ['recursive'=>true]
+                                    [
+                                        'recursive'=>true,
+                                        'syncSites' => $syncSites
+                                    ]
                                 );
                         }
                     }
@@ -374,6 +376,22 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         }
 
 
+        if ($request->getOption('syncSites')){
+            $sites = $this->getServiceLocator()->get('Omeka\ApiManager')
+                ->search('team-site', ['team' => $team], ['returnScalar' => 'site'])
+                ->getContent();
+
+            if (method_exists($resourceEntity, 'getSites')) {
+                $siteAdapter = $this->getServiceLocator()->get('Omeka\ApiAdapterManager')->get('sites');
+                $item_sites = $resourceEntity->getSites();
+                foreach ($sites as $site) {
+                    $add_site = $siteAdapter->findEntity($site);
+                    $item_sites->set($add_site->getId(), $add_site);
+                }
+            }
+
+        }
+
         $this->getEntityManager()->persist($teamResource);
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
@@ -403,8 +421,8 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
 
     public function delete(Request $request)
     {
-
         if ($request->getOption('recursive')){
+            $syncSites = (bool)($request->getOption('syncSites'));
             $mappedEntity = $this->findMappedEntity($request->getValue('resource'));
             //item sets => contain items
             if ($mappedEntity->getResourceName() === 'item_sets') {
@@ -425,7 +443,10 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
                                     'team' => $request->getValue('team'),
                                     'resource' => $resourceId
                                 ],
-                                ['recursive'=>true]);
+                                [
+                                    'recursive' => true,
+                                    'syncSites' => $syncSites,
+                                ]);
                     }
                 }
             }
@@ -465,6 +486,26 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         if (count($exists) > 0) {
             $entity = $this->deleteEntity($request);
         }
+
+        if ($request->getOption('syncSites')){
+            $sites = $this->getServiceLocator()->get('Omeka\ApiManager')
+                ->search('team-site', ['team' => $request->getValue('team')], ['returnScalar' => 'site'])
+                ->getContent();
+            $resourceEntity = $this->getEntityManager()
+                ->getRepository('Omeka\Entity\Resource')
+                ->findOneBy(['id'=>$request->getValue('resource')]);
+
+            if (method_exists($resourceEntity, 'getSites')) {
+                $item_sites = $resourceEntity->getSites();
+                foreach ($sites as $site) {
+                    $target_site = $item_sites->get($site);
+                    $item_sites->removeElement($target_site);
+                }
+            }
+
+        }
+
+
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
         }
