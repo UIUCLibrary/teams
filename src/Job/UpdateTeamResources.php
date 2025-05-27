@@ -80,6 +80,12 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
 
         $resourceIds = $itemIds;
 
+        $sites = $api->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])->getContent();
+
+        foreach($sites as $siteId) {
+            $this->syncItemSites($siteId, $teamId, $action, $itemIds);
+        }
+
         //get the item's media
         $resources = $api->search('items', $query)->getContent();
 
@@ -101,7 +107,6 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $values = [];
                 $bindValues = [];
                 foreach ($resourceIdsChunk as $resourceId) {
-                    $logger->info("resource id: " . $resourceId);
                     $values[] = '(?,?)';
                     $bindValues[] = $resourceId;
                     $bindValues[] = $teamId;
@@ -111,9 +116,6 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $stmt = $conn->prepare($sql);
                 foreach ($bindValues as $position => $value) {
                     $stmt->bindValue($position + 1, $value);
-                    $logger->info($sql);
-                    $logger->info($position);
-
                 }
                 $stmt->execute();
             }
@@ -125,12 +127,6 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
                 $stmt = $conn->executeQuery($sql, [$teamId, $resourceIdsChunk], [null, Connection::PARAM_INT_ARRAY]);
                 $stmt->execute();
             }
-        }
-
-        $sites = $api->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])->getContent();
-
-        foreach($sites as $siteId) {
-            $this->syncItemSites($siteId, $teamId, $action, $itemIds);
         }
     }
 
@@ -155,12 +151,6 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
         if (in_array($action,['add', 'replace'] )) {
             $additionalResourceIds = $resourceIds;
         }
-        $logger->err('removal:');
-        $logger->err($removalResourceIds);
-        $logger->err('addition:');
-        $logger->err($additionalResourceIds);
-
-
 
         //remove items from sites
         foreach (array_chunk($removalResourceIds, 1000) as $resourceIdsChunk) {
