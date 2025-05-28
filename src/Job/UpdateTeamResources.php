@@ -4,6 +4,8 @@ namespace Teams\Job;
 
 use Doctrine\DBAL\Connection;
 use Omeka\Job\Exception\InvalidArgumentException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * Update resources assigned to a team.
@@ -58,9 +60,11 @@ class UpdateTeamResources extends \Omeka\Job\UpdateSiteItems
      *
      * Note that we chunk item IDs to avoid query/buffer/packet size limits.
      *
-     * @param int $siteId
+     * @param int $teamId
      * @param array $query
      * @param string $action
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function updateTeamResources(int $teamId, array $query, string $action) : void
     {
