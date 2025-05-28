@@ -98,6 +98,17 @@ class AddController extends AbstractActionController
                 $this->entityManager->flush();
             }
 
+            //persist the sites (no possibility of duplicates, so don't need to save to associative array)
+            if (isset($request->getPost('site')['site']['o:site'])) {
+                foreach ($request->getPost('site')['site']['o:site'] as $site_id):
+                    $site_id = (int)$site_id;
+                    $site = $this->entityManager->getRepository('Omeka\Entity\Site')
+                        ->findOneBy(['id' => $site_id]);
+                    $team_site = new TeamSite($teamEntity, $site);
+                    $this->entityManager->persist($team_site);
+                endforeach;
+                $this->entityManager->flush();
+            }
             $asset_array = array();
             $formData = $this->params()->fromPost();
             $formData['item_pool'] .= "&bypass_team_filter=true";
@@ -117,7 +128,7 @@ class AddController extends AbstractActionController
                 foreach ($formData['item_sets'] as $item_set_id) {
                     $exists = $this->api()->search('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id]);
                     if (count($exists->getContent()) < 1) {
-                        $this->api()->create('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id],[], ['recursive'=>$recursive]);
+                        $this->api()->create('team-resource', ['team' => $teamEntity->getId(), 'resource' => $item_set_id],[], ['recursive'=>$recursive, 'syncSites'=>true]);
                     }
                 }
             }
@@ -141,17 +152,6 @@ class AddController extends AbstractActionController
                 $this->entityManager->persist($team_asset);
             endforeach;
 
-            //persist the sites (no possibility of duplicates, so don't need to save to associative array)
-            if (isset($request->getPost('site')['site']['o:site'])) {
-                foreach ($request->getPost('site')['site']['o:site'] as $site_id):
-                    $site_id = (int)$site_id;
-                $site = $this->entityManager->getRepository('Omeka\Entity\Site')
-                        ->findOneBy(['id' => $site_id]);
-                $team_site = new TeamSite($teamEntity, $site);
-                $this->entityManager->persist($team_site);
-                endforeach;
-                $this->entityManager->flush();
-            }
 
             $successMessage = sprintf("Successfully added the team: '%s'", $data['o:name']);
             $this->messenger()->addSuccess($successMessage);
