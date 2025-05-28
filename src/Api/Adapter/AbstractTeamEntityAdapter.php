@@ -121,11 +121,9 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
         if (Request::CREATE === $request->getOperation()){
-            $logger->err('in the validator::create');
             //validate correct payload data exists
             if(!$request->getValue('team') || !is_numeric($request->getValue('team'))){
-                $logger->err('our payload needs to indicate team with a numeric value');
-
+                $logger->err('your payload needs to indicate team with a numeric value');
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
             } else {
                 $team = $this->getEntityManager()
