@@ -1,0 +1,15 @@
+<div class="field">
+    <div class="field-meta">
+        <label for="bypass_team_filter"><?php echo $this->translate('Bypass Team Filter'); ?></label>
+        <?php echo $this->hyperlink('', '#', ['class' => 'expand', 'title' => $this->translate('Expand')]); ?>
+        <div class="collapsible">
+            <div class="field-description"><?php echo $this->translate('Search the entire installation'); ?></div>
+        </div>
+    </div>
+    <div class="inputs">
+        <select name="bypass_team_filter">
+            <option  value="false">Team Filter On</option>
+            <option  selected value="true">Team Filter Off</option>
+        </select>
+    </div>
+</div>
