@@ -2,9 +2,11 @@
 
 namespace Teams\Api\Adapter;
 
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Laminas\EventManager\Event;
 use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Request;
+use Omeka\Api\Response;
 use Omeka\Db\Event\Subscriber\Entity;
 use Omeka\Entity\EntityInterface;
 use Omeka\Entity\User;
@@ -17,6 +19,8 @@ use Omeka\Api\Exception;
 
 abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEntityAdapter
 {
+
+    protected array $searchFields = [];
 
     /**
      * @inheritDoc
@@ -47,6 +51,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
     abstract public function getMappedEntityClass();
 
     abstract public function getMappedEntityName();
+
+    abstract public function getMappedEntityDBName();
 
     public function findMappedEntity($criteria, $request = null)
     {
@@ -113,8 +119,6 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
         } return  true;
     }
-
-
 
     public function validateRequest(Request $request, ErrorStore $errorStore)
     {
@@ -263,7 +267,6 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         AbstractAdapter::batchDelete($request);
     }
 
-
     public function update(Request $request)
     {
         AbstractAdapter::update($request);
@@ -272,6 +275,149 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
     public function batchUpdate(Request $request)
     {
         AbstractAdapter::batchUpdate($request);
+    }
+
+    public function search(Request $request): Response
+    {
+        $searchFields = array();
+        $group_by = 'team'; //default order by
+        $query = $request->getContent();
+        $mappedEntityDBName = $this->getMappedEntityDBName();
+
+        if ( array_key_exists('team', $query) ) {
+            $searchFields['team'] = $query['team'];
+            $group_by = $mappedEntityDBName;
+        } elseif (array_key_exists($mappedEntityDBName, $query)) {
+            $searchFields[$mappedEntityDBName] = $query[$mappedEntityDBName];
+        } else {
+            throw new Exception\BadRequestException(sprintf(
+                $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),
+                $this->getEntityClass()
+            ));
+        }
+
+        // Set default query parameters
+        if (!isset($query['page'])) {
+            $query['page'] = null;
+        }
+        if (!isset($query['per_page'])) {
+            $query['per_page'] = null;
+        }
+        if (!isset($query['limit'])) {
+            $query['limit'] = null;
+        }
+        if (!isset($query['offset'])) {
+            $query['offset'] = null;
+        }
+        if (!isset($query['sort_by'])) {
+            $query['sort_by'] = null;
+        }
+        if (isset($query['sort_order'])
+            && in_array(strtoupper($query['sort_order']), ['ASC', 'DESC'])
+        ) {
+            $query['sort_order'] = strtoupper($query['sort_order']);
+        } else {
+            $query['sort_order'] = 'ASC';
+        }
+        if (!isset($query['return_scalar'])) {
+            $query['return_scalar'] = null;
+        }
+
+        // Begin building the search query.
+        $entityClass = $this->getEntityClass();
+
+        $this->index = 0;
+        $qb = $this->getEntityManager()
+            ->createQueryBuilder()
+            ->select('omeka_root')
+            ->from($entityClass, 'omeka_root');
+
+        foreach ($searchFields as $field => $value) {
+            $qb->andWhere($qb->expr()->eq(
+                "omeka_root.$field",
+                $this->createNamedParameter($qb, $value)
+            ));
+        }
+        $this->buildBaseQuery($qb, $query);
+        $this->buildQuery($qb, $query);
+        $qb->groupBy("omeka_root." . $group_by);
+
+        // Trigger the search.query event.
+        $event = new Event('api.search.query', $this, [
+            'queryBuilder' => $qb,
+            'request' => $request,
+        ]);
+        $this->getEventManager()->triggerEvent($event);
+
+        // Add the LIMIT clause.
+        $this->limitQuery($qb, $query);
+
+        // Before adding the ORDER BY clause, set a paginator responsible for
+        // getting the total count. This optimization excludes the ORDER BY
+        // clause from the count query, greatly speeding up response time.
+        $countQb = clone $qb;
+        $countQb->select('1')->resetDQLPart('orderBy');
+        $countPaginator = new Paginator($countQb, false);
+
+        // Add the ORDER BY clause. Always sort by entity ID in addition to any
+        // sorting the adapters add.
+        $this->sortQuery($qb, $query);
+        $qb->addOrderBy("omeka_root.team", $query['sort_order']);
+
+        $scalarField = $request->getOption('returnScalar');
+        if (!$scalarField && $query['return_scalar']) {
+            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
+                    $query['return_scalar'], get_class($this)
+                ));
+            }
+            // The return_scalar passed in the query is valid. Note that we must
+            // set returnScalar to the request so the API manager skips validation.
+            $scalarField = $query['return_scalar'];
+            $request->setOption('returnScalar', $scalarField);
+        }
+        if ($scalarField) {
+            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
+            $fieldNames = $classMetadata->getFieldNames();
+            if (!in_array($scalarField, $fieldNames)) {
+                $associationNames = $classMetadata->getAssociationNames();
+                if (!in_array($scalarField, $associationNames)) {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class. Must be in: %3$s'),
+                        $scalarField, $entityClass, implode('|', $associationNames)
+                    ));
+                }
+
+                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.{$mappedEntityDBName}) as {$mappedEntityDBName}"]);
+            } else {
+                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
+            }
+            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
+            $response = new Response($content);
+            $response->setTotalResults($countPaginator->count());
+            return $response;
+        }
+
+
+        $paginator = new Paginator($qb, false);
+        $entities = [];
+        // Don't make the request if the LIMIT is set to zero. Useful if the
+        // only information needed is total results.
+        if ($qb->getMaxResults() || null === $qb->getMaxResults()) {
+            foreach ($paginator as $entity) {
+                if (is_array($entity)) {
+                    // Remove non-entity columns added to the SELECT. You can use
+                    // "AS HIDDEN {alias}" to avoid this condition.
+                    $entity = $entity[0];
+                }
+                $entities[] = $entity;
+            }
+        }
+
+        $response = new Response($entities);
+        $response->setTotalResults($countPaginator->count());
+        return $response;
     }
 
     /**

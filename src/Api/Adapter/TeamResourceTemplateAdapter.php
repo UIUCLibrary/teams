@@ -26,6 +26,11 @@ class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
 
     ];
 
+    protected $scalarFields = [
+        'resource_template' => 'resource_template',
+        'team' => 'team',
+    ];
+
 
 
     public function getResourceName()
@@ -98,142 +103,6 @@ class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
         }
     }
 
-    public function search(Request $request)
-    {
-        $search_fields = array();
-        $group_by = 'team'; //default order by
-        $query = $request->getContent();
-
-        if ( array_key_exists('team', $query) ) {
-            $search_fields['team'] = $query['team'];
-            $group_by = 'resource_template';
-        } elseif (array_key_exists('resource-template', $query)) {
-            $search_fields['resource_template'] = $query['resource-template'];
-        } else {
-            throw new Exception\BadRequestException(sprintf(
-                $this->getTranslator()->translate('%1$s entity requires team or resource-template search criteria'),
-                $this->getEntityClass()
-            ));
-        }
-
-        // Set default query parameters
-        if (!isset($query['page'])) {
-            $query['page'] = null;
-        }
-        if (!isset($query['per_page'])) {
-            $query['per_page'] = null;
-        }
-        if (!isset($query['limit'])) {
-            $query['limit'] = null;
-        }
-        if (!isset($query['offset'])) {
-            $query['offset'] = null;
-        }
-        if (!isset($query['sort_by'])) {
-            $query['sort_by'] = null;
-        }
-        if (isset($query['sort_order'])
-            && in_array(strtoupper($query['sort_order']), ['ASC', 'DESC'])
-        ) {
-            $query['sort_order'] = strtoupper($query['sort_order']);
-        } else {
-            $query['sort_order'] = 'ASC';
-        }
-        if (!isset($query['return_scalar'])) {
-            $query['return_scalar'] = null;
-        }
-
-        // Begin building the search query.
-        $entityClass = $this->getEntityClass();
-
-        $this->index = 0;
-        $qb = $this->getEntityManager()
-            ->createQueryBuilder()
-            ->select('omeka_root')
-            ->from($entityClass, 'omeka_root');
-
-        foreach ($search_fields as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $this->buildBaseQuery($qb, $query);
-        $this->buildQuery($qb, $query);
-        $qb->groupBy("omeka_root." . $group_by);
-
-
-
-        // Add the LIMIT clause.
-        $this->limitQuery($qb, $query);
-
-        // Before adding the ORDER BY clause, set a paginator responsible for
-        // getting the total count. This optimization excludes the ORDER BY
-        // clause from the count query, greatly speeding up response time.
-        $countQb = clone $qb;
-        $countQb->select('1')->resetDQLPart('orderBy');
-        $countPaginator = new Paginator($countQb, false);
-
-        // Add the ORDER BY clause. Always sort by entity ID in addition to any
-        // sorting the adapters add.
-        $this->sortQuery($qb, $query);
-        $qb->addOrderBy("omeka_root.team", $query['sort_order']);
-
-
-        $scalarField = $request->getOption('returnScalar');
-        if (!$scalarField && $query['return_scalar']) {
-            if (!array_key_exists($query['return_scalar'], $this->scalarFields)) {
-                throw new Exception\BadRequestException(sprintf(
-                    $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s adapter class.'),
-                    $query['return_scalar'], get_class($this)
-                ));
-            }
-            // The return_scalar passed in the query is valid. Note that we must
-            // set returnScalar to the request so the API manager skips validation.
-            $scalarField = $query['return_scalar'];
-            $request->setOption('returnScalar', $scalarField);
-        }
-        if ($scalarField) {
-            $classMetadata = $this->getEntityManager()->getClassMetadata($entityClass);
-            $fieldNames = $classMetadata->getFieldNames();
-            if (!in_array($scalarField, $fieldNames)) {
-                $associationNames = $classMetadata->getAssociationNames();
-                if (!in_array($scalarField, $associationNames)) {
-                    throw new Exception\BadRequestException(sprintf(
-                        $this->getTranslator()->translate('The "%1$s" field is not available in the %2$s entity class.'),
-                        $scalarField, $entityClass
-                    ));
-                }
-                $qb->select(["IDENTITY(omeka_root.team) AS team, IDENTITY(omeka_root.resource_template) as resource_template"]);
-            } else {
-                $qb->select(['omeka_root.id', 'omeka_root.' . $scalarField]);
-            }
-            //just putting this note here because it has been confusing before: returns the id as the index and key
-            $content = array_column($qb->getQuery()->getScalarResult(), $scalarField, $scalarField);
-            $response = new Response($content);
-            $response->setTotalResults($countPaginator->count());
-            return $response;
-        }
-
-        $paginator = new Paginator($qb, false);
-        $entities = [];
-        // Don't make the request if the LIMIT is set to zero. Useful if the
-        // only information needed is total results.
-        if ($qb->getMaxResults() || null === $qb->getMaxResults()) {
-            foreach ($paginator as $entity) {
-                if (is_array($entity)) {
-                    // Remove non-entity columns added to the SELECT. You can use
-                    // "AS HIDDEN {alias}" to avoid this condition.
-                    $entity = $entity[0];
-                }
-                $entities[] = $entity;
-            }
-        }
-
-        $response = new Response($entities);
-        $response->setTotalResults($countPaginator->count());
-        return $response;
-    }
 
     public function read(Request $request)
     {
@@ -366,6 +235,12 @@ class TeamResourceTemplateAdapter extends AbstractTeamEntityAdapter
     {
         return 'resource-template';
     }
+
+    public function getMappedEntityDBName()
+    {
+        return 'resource_template';
+    }
+
 
     public function getEntityClass()
     {
