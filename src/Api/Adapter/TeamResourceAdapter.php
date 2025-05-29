@@ -154,10 +154,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
         return $qb->getQuery()->getOneOrNullResult();
     }
 
-    public function read(Request $request)
-    {
-        AbstractAdapter::read($request);
-    }
     public function create(Request $request)
     {
         if ($request->getValue('batch')){
