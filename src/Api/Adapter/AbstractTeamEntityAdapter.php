@@ -132,13 +132,12 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             //validate correct payload data exists
             if(!$request->getValue('team') || !is_numeric($request->getValue('team'))){
                 $logger->err('our payload needs to indicate team with a numeric value');
-
                 $errorStore->addError('o-module-teams:team', 'Your payload needs to indicate team with a numeric value');
             } else {
                 $team = $this->getEntityManager()
                     ->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$request->getValue('team')]);
-                if($team){
+                if(!$team){
                     $logger->err('a team with that id doesnt exist');
 
                     $errorStore->addError('o-module-teams:team', new Message(
@@ -186,6 +185,13 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
 
         //is that id a team
+        if ($data['team']){
+            $data['o:team'] = $data['team'];
+        }
+
+        if ($data[$this->getMappedEntityName()]){
+            $data[$entity_index] = $data[$this->getMappedEntityName()];
+        }
 
         $team = $this->getEntityManager()
             ->getRepository('Teams\Entity\Team')
@@ -257,8 +263,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
     public function findEntity($criteria, $request = null)
     {
-        if ($this->compositeID){
-            if (is_string($criteria) && str_contains($criteria,'-')){
+        if ($this->compositeID && is_string($criteria)){
+            if (str_contains($criteria,'-')){
                 $compositeId = explode('-', $criteria);
                 if (count($compositeId) == 2) {
                     $teamId = $compositeId[0];
@@ -274,8 +280,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
                 }
             } else {
                 throw new Exception\BadRequestException(sprintf(
-                    $this->getTranslator()->translate('Bad id. Composite ids for "%1$s" should take the form of "api/%2$s/teamId-%3$sId".'),
-                    get_class($this),$this->getResourceName(),$this->getMappedEntityName()
+                    $this->getTranslator()->translate('Bad id: %1$s . Composite ids for "%2$s" should take the form of "api/%3$s/teamId-%4$sId".'),
+                    $criteria, get_class($this),$this->getResourceName(),$this->getMappedEntityName()
                 ));
             }
 
