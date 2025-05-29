@@ -251,7 +251,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             $teamId = $request->getContent()['o:team'];
         }
 
-        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
+
+        if (! $teamAuth->teamAuthorized($user, $operation, $this->getResourceName(), $teamId)){
             throw new Exception\PermissionDeniedException(sprintf(
                     $this->getTranslator()->translate(
                         'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
@@ -315,12 +316,15 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $group_by = 'team'; //default order by
         $query = $request->getContent();
         $mappedEntityDBName = $this->getMappedEntityDBName();
+        $mappedEntityName = $this->getMappedEntityName();
 
         if ( array_key_exists('team', $query) ) {
             $searchFields['team'] = $query['team'];
             $group_by = $mappedEntityDBName;
         } elseif (array_key_exists($mappedEntityDBName, $query)) {
             $searchFields[$mappedEntityDBName] = $query[$mappedEntityDBName];
+        } elseif (array_key_exists($mappedEntityName, $query)){
+            $searchFields[$mappedEntityDBName] = $query[$mappedEntityName];
         } else {
             throw new Exception\BadRequestException(sprintf(
                 $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),

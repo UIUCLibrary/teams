@@ -252,6 +252,15 @@ SQL;
             'Teams\Controller\Index',
             ['index', 'teamDetail']
         );
+        //any level of core role can be given the team permission to update the team
+        $acl->allow(
+            $roles,
+            'Teams\Controller\Update',
+            ['teamUpdate']
+        );
+
+
+
 
         //allow everyone to change their current team
         $acl->allow(
@@ -311,6 +320,16 @@ SQL;
             [Api\Adapter\TeamAdapter::class],
             ['search', 'read']
         );
+        $acl->allow(
+            $viewerRoles,
+            [
+                Api\Adapter\TeamResourceAdapter::class,
+                Api\Adapter\TeamResourceTemplateAdapter::class,
+                Api\Adapter\TeamRoleAdapter::class,
+                Api\Adapter\TeamUserAdapter::class
+            ],
+            ['search', 'read']
+        );
 
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
         if (! $globalSettings->get('teams_site_admin_make_user')) {
@@ -354,7 +373,7 @@ SQL;
         );
         $acl->allow(
             $viewerRoles,
-            [Entity\TeamUser::class, Entity\TeamResource::class],
+            [Entity\TeamUser::class, Entity\TeamResource::class, Entity\TeamRole::class],
             // The right "assign" is used to display the form or not.
             ['read', 'create', 'update', 'delete', 'assign']
         );
@@ -2366,7 +2385,7 @@ SQL;
                 $authorized = $team_user_role->getCanDeleteResources();
             } elseif ($action == 'update') {
                 $authorized = $team_user_role->getCanModifyResources();
-            } elseif ($action == 'read') {
+            } elseif ($action == 'read' || $action == 'search') {
                 $authorized = true;
             }
         } elseif ($res_class == 'Omeka\Entity\Site') {
@@ -2396,7 +2415,7 @@ SQL;
             } elseif ($action == 'read') {
                 $authorized = true;
             }
-        } elseif ($res_class == 'Teams\Entity\Team') {
+        } elseif ($res_class == 'Teams\Entity\Team'|| $res_class == 'Teams\Entity\TeamRole') {
             if ($action == 'create') {
                 $authorized = $is_glob_admin;
             } elseif ($action == 'delete' || $action == 'batch_delete') {
@@ -2457,7 +2476,7 @@ SQL;
                 $team->getName()
             );
             $diagnostic = sprintf(
-                'Diagnostic:  --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
+                'Diagnostic: --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
                 ,
                 get_class($resource),
                 $resource->getId(),

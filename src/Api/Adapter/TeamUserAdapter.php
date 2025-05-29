@@ -32,8 +32,6 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
         'team' => 'team',
     ];
 
-
-
     public function getResourceName()
     {
         return 'team_user';
@@ -148,13 +146,35 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
         }
     }
 
-    public function read(Request $request)
-    {
-        AbstractAdapter::read($request);
-    }
     public function create(Request $request)
     {
-        AbstractAdapter::create($request);
+        if ($request->getValue('batch')){
+            $this->batchCreate($request);
+        }
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $this->validateRequest($request, new ErrorStore());
+        $team = $request->getValue('team');
+        $resource = $request->getValue('user');
+        $role = $request->getValue('role');
+        $this->teamAuthority($request, $request->getValue('team'), $user);
+        if (!$this->resourceAuthority($request->getValue('resource'),$user)){
+            throw new Exception\PermissionDeniedException('Permission denied for the current user to add this resource to a team.'
+            );
+        }
+        $teamEntity = $this->getEntityManager()->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team]);
+        $resourceEntity = $this->getEntityManager()->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$resource]);
+        $roleEntity = $this->getEntityManager()->getRepository('Teams\Entity\TeamRole')->findOneBy(['id'=>$role]);
+        $teamResource = new TeamUser($teamEntity, $resourceEntity, $roleEntity);
+
+
+        $this->getEntityManager()->persist($teamResource);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            // Refresh the entity on the chance that it contains associations
+            // that have not been loaded.
+            $this->getEntityManager()->refresh($teamResource);
+        }
+        return new Response($teamResource);
     }
 
     public function batchCreate(Request $request)
@@ -172,10 +192,6 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
         AbstractAdapter::batchUpdate($request);
     }
 
-    public function delete(Request $request)
-    {
-        AbstractAdapter::delete($request);
-    }
 
     public function batchDelete(Request $request)
     {
