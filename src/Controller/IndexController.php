@@ -283,7 +283,6 @@ class IndexController extends AbstractActionController
                 'action' => 'remove',
                 'teams' => [$team_id => $query]
             ]);
-            $this->logger()->err($team_id);
             $this->messenger()->addSuccess('Removing items from team. This may take a while.'); // @translate
         } else {
             $this->messenger()->addFormErrors($form);

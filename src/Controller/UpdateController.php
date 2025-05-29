@@ -329,7 +329,6 @@ class UpdateController extends AbstractActionController
 
             //process items
             $formData = $this->params()->fromPost();
-            $formData['item_pool'] .= "&bypass_team_filter=true";
             $resourceForm->setData($formData);
             parse_str($formData['item_pool'], $itemPool);
             if ($formData['item_assignment_action'] && $formData['item_assignment_action'] !== 'no_action') {
