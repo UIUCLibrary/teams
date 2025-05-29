@@ -290,14 +290,13 @@ SQL;
             $entityRights
         );
 
-        // Only admin can manage groups.
+        // Only admin can manage teams.
         $adminRoles = [
             Acl::ROLE_GLOBAL_ADMIN,
             Acl::ROLE_SITE_ADMIN,
 
         ];
 
-        //added
         $viewerRoles = [
             Acl::ROLE_AUTHOR,
             Acl::ROLE_EDITOR,
@@ -305,10 +304,9 @@ SQL;
             Acl::ROLE_REVIEWER
         ];
 
-        //added--this gives an author user the ability to see their own group and which groups items belong to
         $acl->allow(
             $viewerRoles,
-            [Api\Adapter\TeamAdapter::class],
+            [Api\Adapter\TeamAdapter::class, Api\Adapter\TeamResourceAdapter::class],
             ['search', 'read']
         );
 
@@ -330,8 +328,7 @@ SQL;
         $acl->allow(
             $viewerRoles,
             [Entity\TeamResource::class],
-            // The right "assign" is used to display the form or not.
-            ['read', 'create', 'update', 'delete', 'assign']
+            ['read', 'create', 'update', 'delete']
         );
 
         $acl->allow(
@@ -343,8 +340,7 @@ SQL;
         $acl->allow(
             $viewerRoles,
             [TeamUser::class, Entity\TeamResource::class],
-            // The right "assign" is used to display the form or not.
-            ['read', 'create', 'update', 'delete', 'assign']
+            ['read', 'create', 'update', 'delete']
         );
 
         $acl->allow(
@@ -355,8 +351,12 @@ SQL;
         $acl->allow(
             $viewerRoles,
             [Entity\TeamUser::class, Entity\TeamResource::class],
-            // The right "assign" is used to display the form or not.
-            ['read', 'create', 'update', 'delete', 'assign']
+            ['read', 'create', 'update', 'delete']
+        );
+        $acl->allow(
+            $viewerRoles,
+            [Api\Adapter\TeamRoleAdapter::class],
+            ['search', 'read']
         );
         $acl->allow(
             $viewerRoles,
@@ -376,12 +376,6 @@ SQL;
         $acl->allow(
             $viewerRoles,
             [Controller\IndexController::class],
-            ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
-        );
-
-        $acl->allow(
-            $viewerRoles,
-            [Controller\ItemController::class],
             ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
         );
 
@@ -423,6 +417,8 @@ SQL;
             'Teams\Controller\Trash',
             'update'
         );
+
+
     }
 
 
