@@ -43,6 +43,10 @@ class TeamRoleRepresentation extends AbstractEntityRepresentation
     {
         return new TeamRoleRepresentation($this->resource, $this->getAdapter());
     }
+    public function getEntity(): \Omeka\Api\ResourceInterface
+    {
+        return $this->resource;
+    }
 
     public function name()
     {
