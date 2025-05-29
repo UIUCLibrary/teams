@@ -44,12 +44,23 @@ class TeamAuth extends AbstractPlugin
     }
 
 
-
+    /**
+     * Determine if the user can perform the action for the domain in the given team
+     * @param User $user
+     * @param string $action
+     * @param string $domain
+     * @param int $team
+     * @return bool
+     */
     public function teamAuthorized(User $user, string $action, string $domain, int $team=0): bool
     {
 
         if ($action=='create'){
             $action = 'add';
+        }
+        $resourceDomains = ['team_resource','team_resource_template','team_asset','team-resource','team-resource-template','team-asset'];
+        if (in_array($domain,$resourceDomains)) {
+            $domain = 'resource';
         }
 
         //validate inputs
@@ -102,8 +113,15 @@ class TeamAuth extends AbstractPlugin
 
             //go through each domain and determine if user is authorized for actions in that domain
 
-            //only the global admin can create, delete or modify teams
-            if ($domain == 'team' || $domain ==  'role') {
+            //only the global admin can create or delete teams
+            if ($domain == 'team' && $action == 'create' || $action == 'delete' )  {
+                $authorized = $this->isGlobAdmin($user);
+            } elseif ($action == 'update') {
+                $authorized = $role->getCanAddUsers();
+            }
+
+            //only global admin can create or delete roles
+            if ($domain == 'role') {
                 $authorized = $this->isGlobAdmin($user);
             }
 

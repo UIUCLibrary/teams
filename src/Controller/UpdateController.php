@@ -2,12 +2,11 @@
 namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\OptimisticLockException;
+use Doctrine\ORM\ORMException;
 use Doctrine\ORM\QueryBuilder;
-use Omeka\Api\Exception\InvalidArgumentException;
 use Omeka\Api\Request;
-use Teams\Entity\TeamAsset;
-use Teams\Entity\TeamResource;
-use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
 use Teams\Form\SecondaryResourcesForm;
@@ -19,6 +18,7 @@ use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
 use Laminas\View\Model\ViewModel;
+
 
 class UpdateController extends AbstractActionController
 {
@@ -120,6 +120,11 @@ class UpdateController extends AbstractActionController
         return $resource_array;
     }
 
+    /**
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws NonUniqueResultException
+     */
     public function teamUpdateAction()
     {
 
@@ -283,25 +288,37 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to change team members");
             return $view;
         } else {
-            $current_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['team' => $team_id]);
-
-            foreach ($current_users as $team_user) {
-                $this->entityManager->remove($team_user);
+            $teamUsers = $request->getPost('o:team_users');
+            //remove team users not in the form
+            $formTeamUsers = array();
+            foreach ($teamUsers as $teamUser){
+                $formTeamUsers[] = $teamUser['o:user']['o:id'];
             }
-            $this->entityManager->flush();
 
-            foreach ($request->getPost('o:team_users') as $team_user):
-                $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                    ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
-                $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                    ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
+            $oldTeamUsers= $this->api()->search('team-user', ['team'=>$team_id], ['returnScalar'=>'user'])->getContent();
+            foreach ($oldTeamUsers as $oldTeamUser) {
+                if (!in_array($oldTeamUser,$formTeamUsers)) {
+                    $this->api()->delete('team-user',['team'=>$team_id, 'user'=>$oldTeamUser]);
+                }
+            }
+            //add team users or update permissions
+            foreach ($teamUsers as $teamUser) {
+                //using search instead of read because read will throw a not found error instead of returning empty
+                $teamUserExists = $this->api()->search('team-user', ['team'=>$team_id, 'user'=>$teamUser['o:user']['o:id']])->getContent();
 
-                $teamUser = new TeamUser($team, $user, $role);
-                $teamUser->setCurrent(null);
-                $this->entityManager->persist($teamUser);
-            endforeach;
-            $this->entityManager->flush();
-
+                if ($teamUserExists){
+                    $role = $this->api()->read('team-role',['id'=>$teamUser['o:team_role']['o:id']])->getContent();
+                    $teamUserExists[0]->getEntity()->setRole($role->getEntity());
+                } else {
+                    $this->api()
+                        ->create('team-user',
+                            [
+                                'team'=>$team_id,
+                                'user'=>$teamUser['o:user']['o:id'],
+                                'role'=>$teamUser['o:team_role']['o:id']
+                            ]);
+                }
+            }
         }
 
         //TODO:need to update this for users who have the update and bypass_team_filter

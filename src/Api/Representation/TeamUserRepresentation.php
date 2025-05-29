@@ -44,6 +44,10 @@ class TeamUserRepresentation extends AbstractEntityRepresentation
     {
         return new TeamUserReference($this->resource, $this->adapter);
     }
+    public function getEntity(): \Omeka\Api\ResourceInterface
+    {
+        return $this->resource;
+    }
 
     public function team()
     {

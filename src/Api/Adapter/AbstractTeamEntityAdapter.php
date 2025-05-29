@@ -136,7 +136,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
                 $team = $this->getEntityManager()
                     ->getRepository('Teams\Entity\Team')
                     ->findOneBy(['id'=>$request->getValue('team')]);
-                if($team){
+                if(!$team){
                     $logger->err('a team with that id doesnt exist');
 
                     $errorStore->addError('o-module-teams:team', new Message(
@@ -184,6 +184,13 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
 
         //is that id a team
+        if ($data['team']){
+            $data['o:team'] = $data['team'];
+        }
+
+        if ($data[$this->getMappedEntityName()]){
+            $data[$entity_index] = $data[$this->getMappedEntityName()];
+        }
 
         $team = $this->getEntityManager()
             ->getRepository('Teams\Entity\Team')
@@ -243,7 +250,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
             $teamId = $request->getContent()['o:team'];
         }
 
-        if (! $teamAuth->teamAuthorized($user, $operation, 'resource', $teamId)){
+
+        if (! $teamAuth->teamAuthorized($user, $operation, $this->getResourceName(), $teamId)){
             throw new Exception\PermissionDeniedException(sprintf(
                     $this->getTranslator()->translate(
                         'Permission denied for the current user to %1$s a team resource in team_id = %2$s.'
@@ -255,8 +263,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
     public function findEntity($criteria, $request = null)
     {
-        if ($this->compositeID){
-            if (is_string($criteria) && str_contains($criteria,'-')){
+        if ($this->compositeID && is_string($criteria)){
+            if (str_contains($criteria,'-')){
                 $compositeId = explode('-', $criteria);
                 if (count($compositeId) == 2) {
                     $teamId = $compositeId[0];
@@ -272,8 +280,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
                 }
             } else {
                 throw new Exception\BadRequestException(sprintf(
-                    $this->getTranslator()->translate('Bad id. Composite ids for "%1$s" should take the form of "api/%2$s/teamId-%3$sId".'),
-                    get_class($this),$this->getResourceName(),$this->getMappedEntityName()
+                    $this->getTranslator()->translate('Bad id: %1$s . Composite ids for "%2$s" should take the form of "api/%3$s/teamId-%4$sId".'),
+                    $criteria, get_class($this),$this->getResourceName(),$this->getMappedEntityName()
                 ));
             }
 
@@ -307,12 +315,15 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $group_by = 'team'; //default order by
         $query = $request->getContent();
         $mappedEntityDBName = $this->getMappedEntityDBName();
+        $mappedEntityName = $this->getMappedEntityName();
 
         if ( array_key_exists('team', $query) ) {
             $searchFields['team'] = $query['team'];
             $group_by = $mappedEntityDBName;
         } elseif (array_key_exists($mappedEntityDBName, $query)) {
             $searchFields[$mappedEntityDBName] = $query[$mappedEntityDBName];
+        } elseif (array_key_exists($mappedEntityName, $query)){
+            $searchFields[$mappedEntityDBName] = $query[$mappedEntityName];
         } else {
             throw new Exception\BadRequestException(sprintf(
                 $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),

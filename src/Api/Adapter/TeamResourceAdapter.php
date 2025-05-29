@@ -238,8 +238,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
                 }
             }
         }
-
-
         if ($request->getOption('syncSites')){
             $sites = $this->getServiceLocator()->get('Omeka\ApiManager')
                 ->search('team-site', ['team' => $team], ['returnScalar' => 'site'])
@@ -264,8 +262,6 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             $this->getEntityManager()->refresh($teamResource);
         }
         return new Response($teamResource);
-
-
     }
 
     public function batchCreate(Request $request)
