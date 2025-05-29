@@ -6,7 +6,6 @@ use Laminas\Router\Http\Segment;
 
 return [
     'navigation' => [
-
         'AdminResource' => [
             [
                 'label' => 'My Teams', // @translate
@@ -25,9 +24,7 @@ return [
             [
                 'label' => 'All Teams', // @translate
                 'class' => 'o-icon-users',
-                //make new route
                 'route' => 'admin/teams/all',
-                //etc
                 'controller' => 'setting',
                 'action' => 'browse',
                 'resource' => 'Omeka\Controller\Admin\Setting',
@@ -36,10 +33,7 @@ return [
             [
                 'label' => 'Trash', // @translate
                 'class' => 'fa-trash',
-                //make new route
                 'route' => 'admin/trash',
-                //etc
-
                 'resource' => 'Teams\Controller\Trash',
                 'privilege' => 'update',
             ],
