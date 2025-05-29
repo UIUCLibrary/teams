@@ -5,6 +5,7 @@ namespace Teams\Api\Adapter;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Laminas\EventManager\Event;
 use Omeka\Api\Adapter\AbstractAdapter;
+use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
 use Omeka\Db\Event\Subscriber\Entity;
@@ -21,6 +22,8 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 {
 
     protected array $searchFields = [];
+
+    protected bool $compositeID = true;
 
     /**
      * @inheritDoc
@@ -252,9 +255,32 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         }
     }
 
-    public function read(Request $request)
+    public function findEntity($criteria, $request = null)
     {
-        AbstractAdapter::read($request);
+        if ($this->compositeID){
+            if (is_string($criteria) && str_contains($criteria,'-')){
+                $compositeId = explode('-', $criteria);
+                if (count($compositeId) == 2) {
+                    $teamId = $compositeId[0];
+                    $resourceId = $compositeId[1];
+                    $criteria = array();
+                    $criteria['team'] = $teamId;
+                    $criteria[$this->getMappedEntityDBName()] = $resourceId;
+                } else {
+                    throw new Exception\BadRequestException(sprintf(
+                        $this->getTranslator()->translate('Bad id. Composite ids for "%1$s" should take the form of "api/%2$s/teamId-%3$sId".'),
+                        get_class($this),$this->getResourceName(),$this->getMappedEntityName()
+                    ));
+                }
+            } else {
+                throw new Exception\BadRequestException(sprintf(
+                    $this->getTranslator()->translate('Bad id. Composite ids for "%1$s" should take the form of "api/%2$s/teamId-%3$sId".'),
+                    get_class($this),$this->getResourceName(),$this->getMappedEntityName()
+                ));
+            }
+
+        }
+        return AbstractEntityAdapter::findEntity($criteria, $request=null);
     }
 
     public function batchCreate(Request $request)
