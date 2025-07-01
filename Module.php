@@ -37,7 +37,6 @@ use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Laminas\View\Renderer\PhpRenderer;
 use Teams\Mvc\Controller\Plugin\TeamAuth;
-use function Symfony\Component\String\b;
 
 class Module extends AbstractModule
 {
@@ -96,7 +95,6 @@ ALTER TABLE team_resource ADD CONSTRAINT FK_4D32868296CD8AE FOREIGN KEY (team_id
         $conn->exec('
 ALTER TABLE team_resource ADD CONSTRAINT FK_4D3286889329D25 FOREIGN KEY (resource_id) REFERENCES resource (id) ON DELETE CASCADE;');
     }
-
 
     public function uninstall(ServiceLocatorInterface $serviceLocator)
     {
@@ -179,11 +177,11 @@ SQL;
             }
         }
         //version naming conventions changed to mirror release versions/core omeka versions
-        if (version_compare($oldVersion,'4.0.0','<')){
+        if (version_compare($oldVersion, '4.0.0', '<')) {
             $conn = $serviceLocator->get('Omeka\Connection');
             $conn->exec('ALTER TABLE team_user MODIFY id INT NOT NULL AUTO_INCREMENT');
         }
-        if (version_compare($oldVersion,'4.1.0', '<')) {
+        if (version_compare($oldVersion, '4.1.0', '<')) {
             //add global admin to the list of settings for bypass team users
             $globalSettings = $serviceLocator->get('Omeka\Settings');
             $globalSettings->set('teams_filter_bypass_roles', ["global_admin"]);
@@ -193,7 +191,7 @@ SQL;
     public function updateAllUserSites()
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $active_users = $em->getRepository('Teams\Entity\TeamUser')->findAllBy(['is_active'=>true]);
+        $active_users = $em->getRepository('Teams\Entity\TeamUser')->findAllBy(['is_active' => true]);
 
         foreach ($active_users as $user) {
             $this->updateUserSites($user->getUser()->getId());
@@ -259,9 +257,6 @@ SQL;
             ['teamUpdate']
         );
 
-
-
-
         //allow everyone to change their current team
         $acl->allow(
             $roles,
@@ -310,7 +305,7 @@ SQL;
             Acl::ROLE_AUTHOR,
             Acl::ROLE_EDITOR,
             Acl::ROLE_RESEARCHER,
-            Acl::ROLE_REVIEWER
+            Acl::ROLE_REVIEWER,
         ];
 
         $acl->allow(
@@ -324,7 +319,7 @@ SQL;
                 Api\Adapter\TeamResourceAdapter::class,
                 Api\Adapter\TeamResourceTemplateAdapter::class,
                 Api\Adapter\TeamRoleAdapter::class,
-                Api\Adapter\TeamUserAdapter::class
+                Api\Adapter\TeamUserAdapter::class,
             ],
             ['search', 'read']
         );
@@ -437,9 +432,7 @@ SQL;
             'update'
         );
 
-
     }
-
 
     /**
      * @param Event $event
@@ -454,7 +447,6 @@ SQL;
         $userId = $form->getOption('user_id');
         $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
         $informationFieldset = $form->get('user-information');
-
 
         $settingsFieldset->remove('default_item_sites');
 
@@ -475,22 +467,21 @@ SQL;
 
             ],
         ]);
-//        $informationFieldset->add([
-//            'name' => 'update_default_sites',
-//            'type' => 'checkbox',
-//            'options' => [
-//                'label' => 'Use Teams for default sites?', // @translate
-//                'info' => 'Default sites for this user will be those in the selected teams(s) above.', // @translate
-//
-//            ],
-//            'attributes' => [
-//                'id' => 'update_default_sites',
-//                'value' => false,
-//
-//            ],
-//        ]);
+        //        $informationFieldset->add([
+        //            'name' => 'update_default_sites',
+        //            'type' => 'checkbox',
+        //            'options' => [
+        //                'label' => 'Use Teams for default sites?', // @translate
+        //                'info' => 'Default sites for this user will be those in the selected teams(s) above.', // @translate
+        //
+        //            ],
+        //            'attributes' => [
+        //                'id' => 'update_default_sites',
+        //                'value' => false,
+        //
+        //            ],
+        //        ]);
     }
-
 
     /**
      * Add a tab to section navigation of a admin view.
@@ -525,7 +516,6 @@ SQL;
         $resource_type = $resource->getControllerName();
         $associated_teams = $this->listTeams($resource);
 
-
         echo '<div id="teams" class="section"><p>';
         //get the partial and pass it whatever variables it needs
 
@@ -533,10 +523,9 @@ SQL;
             'teams/partial/resource-show-teams',
             [
                 'teams' => $associated_teams,
-                'resource_type' => $resource_type
+                'resource_type' => $resource_type,
             ]
         );
-
 
         echo '</div>';
     }
@@ -552,26 +541,25 @@ SQL;
     {
         $identity = $this->getUser();
         $user_id = $identity->getId();
-        $view =  $event->getTarget();
+        $view = $event->getTarget();
         $vars = $view->vars();
 
         if (is_array($vars->resources) && count($vars->resources) > 0) {
             $resource_type = $vars->resources[0]->getControllerName() . 's';
         } elseif (is_array($vars->sites) && count($vars->sites)) {
-            $resource_type ='sites';
+            $resource_type = 'sites';
         } else {
-            $resource_type= null;
+            $resource_type = null;
         }
-
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        $user_teams = $team_user->findBy(['user' => $user_id]);
+        $current_team = $team_user->findOneBy(['user' => $user_id,'is_current' => true]);
         if ($current_team) {
             $current_team = $current_team->getTeam()->getName();
         } elseif ($user_teams) {
-            $current_team = $team_user->findOneBy(['user'=>$user_id]);
+            $current_team = $team_user->findOneBy(['user' => $user_id]);
             $current_team->setCurrent(true);
             $entityManager->flush();
             $current_team = $current_team->getTeam()->getName();
@@ -581,7 +569,7 @@ SQL;
 
         echo $event->getTarget()->partial(
             'teams/partial/team-selector',
-            ['user_teams'=>$user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
+            ['user_teams' => $user_teams, 'current_team' => $current_team, 'resource_type' => $resource_type]
         );
     }
     //TODO need to change language on results page so it is clear which team is being searched against
@@ -597,8 +585,8 @@ SQL;
 
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $team_user = $entityManager->getRepository('Teams\Entity\TeamUser');
-        $user_teams = $team_user->findBy(['user'=>$user_id]);
-        $current_team = $team_user->findOneBy(['user'=>$user_id,'is_current'=>true]);
+        $user_teams = $team_user->findBy(['user' => $user_id]);
+        $current_team = $team_user->findOneBy(['user' => $user_id,'is_current' => true]);
         if ($current_team) {
             $current_team = $current_team->getTeam()->getName();
         } else {
@@ -607,7 +595,7 @@ SQL;
 
         echo $event->getTarget()->partial(
             'teams/partial/team-selector-adv-search',
-            ['user_teams'=>$user_teams, 'current_team' => $current_team]
+            ['user_teams' => $user_teams, 'current_team' => $current_team]
         );
     }
 
@@ -624,7 +612,7 @@ SQL;
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         $team_resource = $entityManager->getRepository('Teams\Entity\TeamResource')
-            ->findBy(['resource'=>$resource->id()]);
+            ->findBy(['resource' => $resource->id()]);
 
         foreach ($team_resource as $tr):
             $result[$tr->getTeam()->getName()] = $tr->getTeam();
@@ -698,7 +686,7 @@ SQL;
         $view->headLink()->appendStylesheet($view->assetUrl('css/teams.css', 'Teams'));
         echo $event->getTarget()->partial(
             'teams/partial/team-form-no-id',
-            ['user_id'=>$user_id, 'default_team' => $default_team]
+            ['user_id' => $user_id, 'default_team' => $default_team]
         );
     }
 
@@ -727,7 +715,6 @@ SQL;
         $event->setParam('partials', $partials);
     }
 
-
     //TODO: refactor to use the currentTeam() function
     //need to use the currentTeam() function
 
@@ -746,7 +733,7 @@ SQL;
             }
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
             $tu = $entityManager->getRepository('Teams\Entity\TeamUser');
-            $ct = $tu->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+            $ct = $tu->findOneBy(['is_current' => true, 'user' => $user_id]);
 
             if ($ct) {
                 $ct = $ct->getTeam();
@@ -770,7 +757,7 @@ SQL;
         }
 
         $user = $this->getUser();
-        if ($user && in_array($user->getRole(),$roles) ){
+        if ($user && in_array($user->getRole(), $roles)) {
             $view = $event->getTarget();
             $params = $view->params();
             $bypassTeams = $params->fromQuery('bypass_team_filter');
@@ -794,7 +781,7 @@ SQL;
         }
 
         //look for their current team
-        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current'=>1]);
+        $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'is_current' => 1]);
         if (!$team_user) {
             $team_user = $entityManager->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id]);
 
@@ -829,11 +816,11 @@ SQL;
 
         //if the query explicitly asks for a team, that trumps all
         if (isset($query['team_id'])) {
-            if (!is_array($query['team_id'])){
-                $team_id = array($query['team_id']);
+            if (!is_array($query['team_id'])) {
+                $team_id = [$query['team_id']];
             }
             foreach ($query['team_id'] as $id):
-                if (is_int($id)){
+                if (is_int($id)) {
                     $team_id[] = $id;
                 } else {
                     throw new Exception\BadRequestException(sprintf(
@@ -851,25 +838,24 @@ SQL;
                         $team_id[] = $t->getTeam()->getId();
                     endforeach;
                 } else {
-                    $team_id = array(0);
+                    $team_id = [0];
                 }
             } else {
-                $team_id = array(0);
+                $team_id = [0];
             }
         } elseif ($this->getUser() != null) {
-            if (isset($query['all_user_teams'])){
+            if (isset($query['all_user_teams'])) {
                 $userId = $this->getUser()->getId();
                 $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-                $userTeams = $api->search('team-user', ['user'=>$userId], ['returnScalar'=>'team'])->getContent();
-                $team_id =  array_values($userTeams);
-            } elseif (($this->currentTeam())){
+                $userTeams = $api->search('team-user', ['user' => $userId], ['returnScalar' => 'team'])->getContent();
+                $team_id = array_values($userTeams);
+            } elseif (($this->currentTeam())) {
                 $team_id[] = $this->currentTeam()->getId();
             }
         }
-        return $team_id ?? array(0);
+        return $team_id ?? [0];
     }
     /**
-     *
      * Adds a join to API calls for resources and sites to filter results by teams
      *
      * @param Event $event
@@ -916,7 +902,6 @@ SQL;
         if (isset($query['resource_template_id']) && $site_request) {
             return;
         }
-
 
         //this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
@@ -966,7 +951,6 @@ SQL;
                         $i++;
                     }
                     $qb->orWhere($orX);
-
                 }
             }
             return;
@@ -977,7 +961,7 @@ SQL;
         /// This turned out to be vital to making public facing browse and search work
         if (isset($query['team_id'])) {
             $team_id = (int) $query['team_id'];
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_ti', Expr\Join::WITH, $alias .'.id = tr_ti.resource')
+            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_ti', Expr\Join::WITH, $alias . '.id = tr_ti.resource')
                 ->andWhere('tr_ti.team = :team_id')
                 ->setParameter('team_id', $team_id)
             ;
@@ -986,7 +970,7 @@ SQL;
             $team_id = $this->getTeamContext($query, $event);
         }
 
-        if ($team_id === array(0)) {
+        if ($team_id === [0]) {
             return;
         }
         if (is_array($team_id)) {
@@ -1015,7 +999,7 @@ SQL;
                 $qb->leftJoin('Teams\Entity\TeamAsset', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.asset'")
                     ->andWhere("{$team_alias}.team = :team_id")
                     ->setParameter('team_id', $team_id[0]);
-            }  else {
+            } else {
                 $team_alias = 'tr';
                 $qb->leftJoin('Teams\Entity\TeamResource', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.resource")
                     ->andWhere("{$team_alias}.team = :team_id")
@@ -1023,10 +1007,10 @@ SQL;
             }
             if (count($team_id) > 1) {
                 $orX = $qb->expr()->orX();
-                $i=0;
+                $i = 0;
                 foreach ($team_id as $value) {
-                    $orX->add($qb->expr()->eq("{$team_alias}.team", ':name'.$i));
-                    $qb->setParameter('name'.$i, $value);
+                    $orX->add($qb->expr()->eq("{$team_alias}.team", ':name' . $i));
+                    $qb->setParameter('name' . $i, $value);
                     $i++;
                 }
                 $qb->orWhere($orX);
@@ -1038,14 +1022,14 @@ SQL;
     public function getOrphans(Event $event)
     {
         $request = $event->getParam('request')->getContent();
-        if(array_key_exists('orphans', $request)){
+        if(array_key_exists('orphans', $request)) {
             $qb = $event->getParam('queryBuilder');
             $sub = $this->getServiceLocator()->get('Omeka\EntityManager')
                 ->createQueryBuilder()
                 ->select('tr')
                 ->from('Teams\Entity\TeamResource', 'tr');
             $q = $sub->getQuery()->getResult(\Doctrine\ORM\Query::HYDRATE_SCALAR);
-            $resource_ids = array_column($q,'tr_resource_id');
+            $resource_ids = array_column($q, 'tr_resource_id');
             $qb->andWhere($qb->expr()->notIn('omeka_root.id', $resource_ids));
         }
     }
@@ -1054,17 +1038,17 @@ SQL;
     public function filterByTeamUser(Event $event)
     {
         $query = $event->getParam('request')->getContent();
-        if (isset($query['bypass_team_filter']) && $query['bypass_team_filter']){
+        if (isset($query['bypass_team_filter']) && $query['bypass_team_filter']) {
             return;
         }
         $qb = $event->getParam('queryBuilder');
         $alias = 'omeka_root';
-        if (array_key_exists('team_id', $query) && is_int($query['team_id'])){
+        if (array_key_exists('team_id', $query) && is_int($query['team_id'])) {
             $team = $query['team_id'];
         } else {
             $team = $this->getTeamContext($query, $event);
         }
-        $qb->leftJoin('Teams\Entity\TeamUser', 'tu', Expr\Join::WITH, $alias .'.id = tu.user')
+        $qb->leftJoin('Teams\Entity\TeamUser', 'tu', Expr\Join::WITH, $alias . '.id = tu.user')
             ->andWhere('tu.team = :team_id')
             ->setParameter('team_id', $team);
     }
@@ -1079,9 +1063,9 @@ SQL;
         $view = $event->getTarget();
         $user_id = $view->vars()->user->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $team_users = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
+        $team_users = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
 
-        echo $view->partial('teams/partial/user/view', ['team_users'=> $team_users]);
+        echo $view->partial('teams/partial/user/view', ['team_users' => $team_users]);
     }
 
     /**
@@ -1095,8 +1079,8 @@ SQL;
         $view = $event->getTarget();
         $user_id = $view->vars()->user->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $user_teams = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user'=>$user_id]);
-        $team_ids = array();
+        $user_teams = $entityManager->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
+        $team_ids = [];
         foreach ($user_teams as $user_team):
             $team_ids[] = $user_team->getTeam()->getId();
         endforeach;
@@ -1104,20 +1088,17 @@ SQL;
     }
 
     //at one point this was fixing a bug but no longer needed. Keeping for reference for now.
-//    /**
-//     * @param Event $event
-//     */
-//    public function userFormEdit(Event $event)
-//    {
-//        $view = $event->getTarget();
-//        echo $view->partial('teams/partial/return_url', 'Teams');
-//    }
-
-
+    //    /**
+    //     * @param Event $event
+    //     */
+    //    public function userFormEdit(Event $event)
+    //    {
+    //        $view = $event->getTarget();
+    //        echo $view->partial('teams/partial/return_url', 'Teams');
+    //    }
 
     //TODO: make at least one team the user's 'active' team.
     /**
-     *
      * When user is created, gets team+role info from the form and creates new TeamUser(s)
      *
      * @param Event $event
@@ -1132,10 +1113,10 @@ SQL;
         if ($operation == 'create') {
             $messanger = new Messenger();
             $response = $event->getParam('response');
-            $resource =  $response->getContent();
-            $user_id =  $resource->getId();
-            $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-            $teams =  $em->getRepository('Teams\Entity\Team');
+            $resource = $response->getContent();
+            $user_id = $resource->getId();
+            $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
+            $teams = $em->getRepository('Teams\Entity\Team');
 
             $team_ids = $request->getContent()['o-module-teams:Team'];
 
@@ -1143,9 +1124,8 @@ SQL;
             $team_role_ids = $request->getContent()['o-module-teams:TeamRole'];
             $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
 
-
             foreach ($team_ids as $team_id) {
-                $team_id = (int)$team_id;
+                $team_id = (int) $team_id;
                 //handle new team added via form
                 if ($team_id === -1) {
                     if ($global) {
@@ -1191,16 +1171,15 @@ SQL;
                     $team_user = new TeamUser($team, $user, $role);
                     $em->persist($team_user);
                 }
-            };
+            }
             $em->flush();
             if ($default_team) {
                 $em->getRepository('Teams\Entity\TeamUser')
-                    ->findOneBy(['team'=>$default_team, 'user'=>$user_id])
+                    ->findOneBy(['team' => $default_team, 'user' => $user_id])
                     ->setCurrent(true)
                 ;
                 $em->flush();
             }
-
 
             //handle user sites
             if ($request->getContent()['update_default_sites']) {
@@ -1211,14 +1190,13 @@ SQL;
         }
     }
 
-
     public function updateItemSites($item_id)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         //get current item sites
         $item = $em->getRepository('Omeka\Entity\Item')
-            ->findOneBy(['id'=>$item_id]);
+            ->findOneBy(['id' => $item_id]);
         if ($item) {
             //get all teams for the item
             //get all sites associated with those teams
@@ -1277,7 +1255,7 @@ SQL;
         $settingId = 'default_item_sites';
 
         $active_team = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['user'=>$user_id, 'is_current'=>true]);
+            ->findOneBy(['user' => $user_id, 'is_current' => true]);
         if ($active_team) {
             $active_team = $active_team->getTeam();
 
@@ -1311,10 +1289,10 @@ SQL;
         $response = $event->getParam('response');
 
         if ($operation == 'create') {
-            $resource =  $response->getContent();
-            $asset_id =  $resource->getId();
-            $asset  = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id'=>$asset_id]);
-            $teams =  $em->getRepository('Teams\Entity\Team');
+            $resource = $response->getContent();
+            $asset_id = $resource->getId();
+            $asset = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id' => $asset_id]);
+            $teams = $em->getRepository('Teams\Entity\Team');
 
             //because this is a sidebar instead of a full form, keeping this simple and just using the current team
             $team = $teams->findOneBy(['id' => $this->currentTeam()]);
@@ -1326,32 +1304,32 @@ SQL;
         }
     }
 
-//    public function assetDelete(Event $event)
-//    {
-//        $request = $event->getParam('request');
-//        $operation = $request->getOperation();
-//        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-//        $logger = $this->getServiceLocator()->get('Omeka\Logger');
-//
-//        $request->getId();
-//
-//        $response = $event->getParam('response');
-//
-//        if ($operation == 'delete'){
-//            $resource =  $response->getContent();
-//            $asset_id =  $resource->getId();
-//            $asset  = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id'=>$asset_id]);
-//            $teams =  $em->getRepository('Teams\Entity\Team');
-//
-//            //because this is a sidebar instead of a full form, keeping this simple and just using the current team
-//            $team = $teams->findOneBy(['id' => $this->currentTeam()]);
-//            if ($team && $asset){
-//                $team_asset = new TeamAsset($team, $asset);
-//                $em->persist($team_asset);
-//                $em->flush();
-//            }
-//        }
-//    }
+    //    public function assetDelete(Event $event)
+    //    {
+    //        $request = $event->getParam('request');
+    //        $operation = $request->getOperation();
+    //        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+    //        $logger = $this->getServiceLocator()->get('Omeka\Logger');
+    //
+    //        $request->getId();
+    //
+    //        $response = $event->getParam('response');
+    //
+    //        if ($operation == 'delete'){
+    //            $resource =  $response->getContent();
+    //            $asset_id =  $resource->getId();
+    //            $asset  = $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id'=>$asset_id]);
+    //            $teams =  $em->getRepository('Teams\Entity\Team');
+    //
+    //            //because this is a sidebar instead of a full form, keeping this simple and just using the current team
+    //            $team = $teams->findOneBy(['id' => $this->currentTeam()]);
+    //            if ($team && $asset){
+    //                $team_asset = new TeamAsset($team, $asset);
+    //                $em->persist($team_asset);
+    //                $em->flush();
+    //            }
+    //        }
+    //    }
 
     public function assetDetail(Event $event)
     {
@@ -1359,7 +1337,7 @@ SQL;
         $entity = $event->getParam('entity');
         $asset_id = $entity->id();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $teams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset'=>$asset_id]);
+        $teams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset_id]);
         $view->headScript()->prependFile($view->assetUrl('js/asset-delete-warning.js', 'Teams'));
         echo $view->partial(
             'teams/partial/asset/detail',
@@ -1377,10 +1355,10 @@ SQL;
 
         if ($operation === 'create') {
             $response = $event->getParam('response');
-            $resource =  $response->getContent();
-            $site_id =  $resource->getId();
-            $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site_id]);
-            $teams =  $em->getRepository('Teams\Entity\Team');
+            $resource = $response->getContent();
+            $site_id = $resource->getId();
+            $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id]);
+            $teams = $em->getRepository('Teams\Entity\Team');
 
             $team_ids = $request->getContent()['team'];
 
@@ -1390,14 +1368,14 @@ SQL;
             //add team sites
             foreach ($team_ids as $team_id):
                 $team = $teams->findOneBy(['id' => $team_id]);
-            $team_site = new TeamSite($team, $site);
-            $em->persist($team_site);
+                $team_site = new TeamSite($team, $site);
+                $em->persist($team_site);
 
-            //get team users
-            $all_teams_users[] = $team->getTeamUsers();
+                //get team users
+                $all_teams_users[] = $team->getTeamUsers();
 
-            //get team items
-            $all_team_resources[] = $team->getTeamResources();
+                //get team items
+                $all_team_resources[] = $team->getTeamResources();
 
             endforeach;
             $em->flush();
@@ -1410,7 +1388,7 @@ SQL;
                         $this->updateUserSites($user_id);
                     }
 
-            endforeach;
+                endforeach;
             endforeach;
 
             //update all item-site to include all items from the site's teams
@@ -1418,19 +1396,18 @@ SQL;
             foreach ($all_team_resources as $team_resources):
                 foreach ($team_resources as $team_resource):
                     $item = $team_resource->getResource();
-            if ($item->getResourceName() == 'items') {
-                $item_sites = $item->getSites();
-                $site = $siteAdapter->findEntity($site_id);
-                $item_sites->set($site_id, $site);
-            }
-            endforeach;
+                    if ($item->getResourceName() == 'items') {
+                        $item_sites = $item->getSites();
+                        $site = $siteAdapter->findEntity($site_id);
+                        $item_sites->set($site_id, $site);
+                    }
+                endforeach;
             endforeach;
             $em->flush();
         }
     }
 
     /**
-     *
      * On Team Update, remove all TeamUser entities with user id and generates new ones based. Makes sure user has one
      * team that is set to 'active'.
      *
@@ -1440,7 +1417,7 @@ SQL;
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $request = $event->getParam('request');
-        $target_user =  $request->getId();
+        $target_user = $request->getId();
         $current_user = $this->getUser();
 
         $operation = $request->getOperation();
@@ -1449,7 +1426,6 @@ SQL;
         if ($operation == 'update') {
             $user_id = $request->getId();
             $response = $event->getParam('response');
-
 
             //stop if teams aren't part of the update
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
@@ -1464,75 +1440,74 @@ SQL;
                         if ($pre_team->getCurrent()) {
                             $current_team_id = $pre_team->getTeam()->getId();
                         }
-                    $em->remove($pre_team);
+                        $em->remove($pre_team);
                     endforeach;
                     $em->flush();
-                    $current_team_id = isset($current_team_id)? $current_team_id : 0;
+                    $current_team_id ??= 0;
 
                     //add the teams from the form
-                    $teams =  $em->getRepository('Teams\Entity\Team');
+                    $teams = $em->getRepository('Teams\Entity\Team');
                     $team_ids = [];
                     foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
                         $team_ids[] = (int) $team_id;
 
-                    //adding new team from the user form, indicated by an id of 0
-                    if ($team_id == -1) {
-                        $u_name = $request->getContent()['o:name'];
-                        $team_name = sprintf("%s's team", $u_name);
-                        $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name'=>$team_name]);
-                        if ($team_exists) {
-                            $messanger = new Messenger();
-                            $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
-                            $team = $team_exists;
+                        //adding new team from the user form, indicated by an id of 0
+                        if ($team_id == -1) {
+                            $u_name = $request->getContent()['o:name'];
+                            $team_name = sprintf("%s's team", $u_name);
+                            $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name' => $team_name]);
+                            if ($team_exists) {
+                                $messanger = new Messenger();
+                                $messanger->addWarning("The team you tried to add already exists. Added user to the team.");
+                                $team = $team_exists;
+                            } else {
+                                $team = new Team();
+                                $team->setName($team_name);
+                                $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
+                                $em->persist($team);
+                                $em->flush();
+                            }
                         } else {
-                            $team = new Team();
-                            $team->setName($team_name);
-                            $team->setDescription(sprintf('A team automatically generated for new user %s', $u_name));
-                            $em->persist($team);
+                            $team = $teams->findOneBy(['id' => $team_id]);
+                        }
+
+                        //get it this way because the roles are added dynamically as js and not part of pre-baked form
+                        $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
+                        $role = $em->getRepository('Teams\Entity\TeamRole')
+                                ->findOneBy(['id' => $role_id]);
+
+                        $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                                ->findOneBy(['team' => $team->getId(), 'user' => $user_id]);
+                        //TODO: review this section
+                        if ($team_user_exists) {
+                            echo $team_user_exists->getId();
+                        } else {
+                            $team_user = new TeamUser($team, $user, $role);
+                            $em->persist($team_user);
+                            if ($team_id == $current_team_id) {
+                                $team_user->setCurrent(true);
+                            }
+                            $em->persist($team_user);
+
+                            //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
+                            //TODO: catch this in chosen-trigger.js instead
                             $em->flush();
                         }
-                    } else {
-                        $team = $teams->findOneBy(['id'=> $team_id]);
-                    }
-
-                    //get it this way because the roles are added dynamically as js and not part of pre-baked form
-                    $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
-                    $role = $em->getRepository('Teams\Entity\TeamRole')
-                            ->findOneBy(['id'=>$role_id]);
-
-                    $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
-                            ->findOneBy(['team'=>$team->getId(), 'user'=>$user_id]);
-                    //TODO: review this section
-                    if ($team_user_exists) {
-                        echo $team_user_exists->getId();
-                    } else {
-                        $team_user = new TeamUser($team, $user, $role);
-                        $em->persist($team_user);
-                        if ($team_id == $current_team_id) {
-                            $team_user->setCurrent(true);
-                        }
-                        $em->persist($team_user);
-
-                        //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
-                        //TODO: catch this in chosen-trigger.js instead
-                        $em->flush();
-                    }
 
                     endforeach;
 
                     $em->flush();
                 }
                 if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
-                    if ($current_user->getRole()== 'global_admin' or $current_user->getId() == $target_user)
-                    {
+                    if ($current_user->getRole() == 'global_admin' or $current_user->getId() == $target_user) {
                         $default_team = $request->getContent()['o-module-teams:DefaultTeam'];
-                        $new_default_team = $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user'=>$user_id, 'team'=>$default_team]);
+                        $new_default_team = $em->getRepository('Teams\Entity\TeamUser')->findOneBy(['user' => $user_id, 'team' => $default_team]);
                         if ($new_default_team) {
                             if ($new_default_team->getCurrent() == null) {
 
                                 //unset the current default team
                                 $old_default_team = $em->getRepository('Teams\Entity\TeamUser')
-                                    ->findOneBy(['user'=>$user_id, 'is_current'=>true]);
+                                    ->findOneBy(['user' => $user_id, 'is_current' => true]);
 
                                 if ($old_default_team) {
                                     //must use null instead of false to keep integrity check for unique user_id+is_current
@@ -1545,7 +1520,7 @@ SQL;
                                 $new_default_team->setCurrent(true);
                                 $em->persist($new_default_team);
                                 $em->flush();
-                    }
+                            }
 
                         }
                     }
@@ -1553,7 +1528,6 @@ SQL;
 
             }
         }
-
 
         return;
     }
@@ -1595,7 +1569,7 @@ SQL;
                     $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                     $em->getRepository('Omeka\Entity\Asset')->findOneBy(['id' => $asset_id])
                 );
-            $em->persist($team_asset);
+                $em->persist($team_asset);
             endforeach;
             $em->flush();
         }
@@ -1650,7 +1624,7 @@ SQL;
                         $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
                         $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id])
                     );
-                $em->persist($team_site);
+                    $em->persist($team_site);
                 endforeach;
                 $em->flush();
 
@@ -1697,18 +1671,17 @@ SQL;
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-
         if ($operation == 'create') {
             $response = $event->getParam('response');
 
-            $resource =  $response->getContent();
+            $resource = $response->getContent();
 
             $teams = $request->getContent()['add_team'];
 
             foreach ($teams as $team_id):
-            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-            $tr = new TeamResource($team, $resource);
-            $em->persist($tr);
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                $tr = new TeamResource($team, $resource);
+                $em->persist($tr);
             endforeach;
             $em->flush();
         }
@@ -1734,9 +1707,9 @@ SQL;
         if ($operation == 'update') {
             $resource_id = $request->getId();
             foreach ($request->getContent()['remove_team'] as $team_id) {
-                if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
+                if ($teamAuth->teamAuthorized($this->getUser(), 'delete', 'resource', $team_id)) {
                     $team_resource = $em->getRepository('Teams\Entity\TeamResource')
-                        ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
+                        ->findOneBy(['team' => $team_id, 'resource' => $resource_id]);
                     if ($team_resource) {
                         $em->remove($team_resource);
                     }
@@ -1745,7 +1718,7 @@ SQL;
             $em->flush();
             foreach ($request->getContent()['add_team'] as $team_id) {
                 //if the user is authorized to add items to that team
-                if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
+                if ($teamAuth->teamAuthorized($this->getUser(), 'add', 'resource', $team_id)) {
                     $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                     if ($team) {
                         $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
@@ -1758,7 +1731,6 @@ SQL;
             }
             $em->flush();
 
-
         }
     }
 
@@ -1766,7 +1738,6 @@ SQL;
     // by a separate tables in Teams as well.
 
     /**
-     *
      * On create, get teams from Resource Template create form and add new TeamResourceTemplate entities
      *
      * @param Event $event
@@ -1777,10 +1748,9 @@ SQL;
         $operation = $request->getOperation();
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-
         if ($operation == 'create') {
-            $resource_template =  $event->getParam('entity');
-            $teams =  $em->getRepository('Teams\Entity\Team');
+            $resource_template = $event->getParam('entity');
+            $teams = $em->getRepository('Teams\Entity\Team');
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
                 foreach ($request->getContent()['o-module-teams:Team'] as $team_id) {
                     $team = $teams->findOneBy(['id' => $team_id]);
@@ -1801,7 +1771,6 @@ SQL;
     }
 
     /**
-     *
      * On update, remove all TeamResourceTemplate entities with ResourceTemplate id and generate new entities based on
      * form data
      *
@@ -1817,7 +1786,7 @@ SQL;
 
         if ($operation == 'update') {
             $resource_template_id = $request->getId();
-            $resource_template  = $em->getRepository('Omeka\Entity\ResourceTemplate')
+            $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')
                 ->findOneBy(['id' => $resource_template_id]);
 
             $pre_teams = $em->getRepository('Teams\Entity\TeamResourceTemplate')
@@ -1828,18 +1797,17 @@ SQL;
             endforeach;
             $em->flush();
 
-            $teams =  $em->getRepository('Teams\Entity\Team');
+            $teams = $em->getRepository('Teams\Entity\Team');
             foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
-                $team = $teams->findOneBy(['id'=>$team_id]);
-            $trt = new TeamResourceTemplate($team, $resource_template);
-            $em->persist($trt);
+                $team = $teams->findOneBy(['id' => $team_id]);
+                $trt = new TeamResourceTemplate($team, $resource_template);
+                $em->persist($trt);
             endforeach;
             $em->flush();
         }
     }
 
     /**
-     *
      * Adds resource template teams to the edit form
      *
      * @param Event $event
@@ -1849,9 +1817,9 @@ SQL;
         $view = $event->getTarget();
         $rt_id = $view->vars()->resourceTemplate->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $rt_teams = $entityManager->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template'=>$rt_id]);
+        $rt_teams = $entityManager->getRepository('Teams\Entity\TeamResourceTemplate')->findBy(['resource_template' => $rt_id]);
 
-        $team_ids = array();
+        $team_ids = [];
         foreach ($rt_teams as $rt_team):
             $team_ids[] = $rt_team->getTeam()->getId();
         endforeach;
@@ -1859,14 +1827,13 @@ SQL;
     }
 
     /**
-     *
      * Adds team field to the resource template add form. Warns users if they don't currently belong to a team
      *
      * @param Event $event
      */
     public function resourceTemplateTeamsAdd(Event $event)
     {
-        $view =  $event->getTarget();
+        $view = $event->getTarget();
 
         if ($has_team = $this->currentTeam()) {
             $team_id = $has_team->getId();
@@ -1894,7 +1861,6 @@ SQL;
     }
 
     /**
-     *
      * On update, remove all TeamResources associated with item and associated media, and generate new TeamResources
      * based on form data
      *
@@ -1911,17 +1877,17 @@ SQL;
         if ($operation == 'update') {
             if(array_key_exists('remove_team', $request->getContent())) {
                 if (!is_array($request->getContent()['remove_team'])) {
-                   $remove = array($request->getContent()['remove_team']);
+                    $remove = [$request->getContent()['remove_team']];
                 } else {
                     $remove = $request->getContent()['remove_team'];
-               }
+                }
             } else {
                 $remove = [];
             }
 
             if(array_key_exists('add_team', $request->getContent())) {
                 if (!is_array($request->getContent()['add_team'])) {
-                    $add = array($request->getContent()['add_team']);
+                    $add = [$request->getContent()['add_team']];
                 } else {
                     $add = $request->getContent()['add_team'];
                 }
@@ -1939,7 +1905,7 @@ SQL;
                 }
                 foreach ($add as $team_id) {
                     //if the user is authorized to add items to that team
-                    if ($teamAuth->teamAuthorized($this->getUser(),'add', 'resource', $team_id)) {
+                    if ($teamAuth->teamAuthorized($this->getUser(), 'add', 'resource', $team_id)) {
                         $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                         if ($team) {
                             foreach (array_keys($resource_ids) as $resource_id) {
@@ -1955,10 +1921,10 @@ SQL;
                 $em->flush();
 
                 foreach ($remove as $team_id) {
-                    if ($teamAuth->teamAuthorized($this->getUser(),'delete', 'resource', $team_id)) {
+                    if ($teamAuth->teamAuthorized($this->getUser(), 'delete', 'resource', $team_id)) {
                         foreach (array_keys($resource_ids) as $resource_id) {
                             $team_resource = $em->getRepository('Teams\Entity\TeamResource')
-                                    ->findOneBy(['team' => $team_id, 'resource'=>$resource_id]);
+                                    ->findOneBy(['team' => $team_id, 'resource' => $resource_id]);
                             if ($team_resource) {
                                 $em->remove($team_resource);
                             }
@@ -1983,12 +1949,12 @@ SQL;
             $response = $event->getParam('response');
             $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
 
-            $resource =  $response->getContent();
+            $resource = $response->getContent();
             foreach ($resource as $r) {
-                $res = $entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$r->getId()]);
+                $res = $entityManager->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $r->getId()]);
                 $owner = $r->getOwner()->getId();
                 $team = $entityManager->getRepository('Teams\Entity\TeamUser')
-                    ->findOneBy(['user' => $owner, 'is_current'=>1])->getTeam();
+                    ->findOneBy(['user' => $owner, 'is_current' => 1])->getTeam();
 
                 //todo: don't fail silently
                 if ($res && $owner && $team) {
@@ -2001,8 +1967,8 @@ SQL;
                             foreach ($media as $m):
                                 $r = $entityManager->getRepository('Omeka\Entity\Resource')
                                     ->findOneBy(['id' => $m->getId()]);
-                            $tr = new TeamResource($team, $r);
-                            $em->persist($tr);
+                                $tr = new TeamResource($team, $r);
+                                $em->persist($tr);
                             endforeach;
                         }
                     }
@@ -2014,7 +1980,6 @@ SQL;
     }
 
     /**
-     *
      * On create, add TeamResource entities for item and associated media based on form data
      *
      * @param Event $event
@@ -2027,22 +1992,22 @@ SQL;
 
         if ($operation == 'create') {
             $response = $event->getParam('response');
-            $resource =  $response->getContent();
+            $resource = $response->getContent();
             $team_key = '';
-            if (array_key_exists('team', $request->getContent())){
+            if (array_key_exists('team', $request->getContent())) {
                 $team_key = 'team';
-            } elseif (array_key_exists('add_team', $request->getContent())){
+            } elseif (array_key_exists('add_team', $request->getContent())) {
                 $team_key = 'add_team';
             }
 
             if ($team_key) {
                 $teams = $request->getContent()[$team_key];
-                if (!is_array($teams)){
+                if (!is_array($teams)) {
                     $teams = [$teams];
                 }
                 //add items to team
-                foreach ($teams as $team_id){
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
+                foreach ($teams as $team_id) {
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
                     $tr = new TeamResource($team, $resource);
                     $em->persist($tr);
 
@@ -2060,26 +2025,25 @@ SQL;
         }
     }
 
-
     public function addTeam(Resource $resource, array $teams)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
         foreach (array_keys($teams) as $team_id):
-            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id'=>$team_id]);
-        $tr = new TeamResource($team, $resource);
-        $em->persist($tr);
-
-        //if there is media, add those to the team as well
-
-        $media = $resource->getMedia();
-
-        if (count($media) > 0) {
-            foreach ($media as $m):
-                    $tr = new TeamResource($team, $m);
+            $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+            $tr = new TeamResource($team, $resource);
             $em->persist($tr);
-            endforeach;
-        }
+
+            //if there is media, add those to the team as well
+
+            $media = $resource->getMedia();
+
+            if (count($media) > 0) {
+                foreach ($media as $m):
+                    $tr = new TeamResource($team, $m);
+                    $em->persist($tr);
+                endforeach;
+            }
         endforeach;
         $em->flush();
     }
@@ -2090,7 +2054,7 @@ SQL;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $services = $this->getServiceLocator();
         $itemId = $request->getContent()['o:item']['o:id'];
-        $item = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id'=>$itemId]);
+        $item = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $itemId]);
         $sites = $item->getSites();
         $teams = [];
 
@@ -2107,12 +2071,10 @@ SQL;
         }
     }
 
-
     //Handle media
 
     //TODO: should this make sure that media and its associated item don't belong to different teams?
     /**
-     *
      * On create, add TeamResource based on information from the form
      *
      * @param Event $event
@@ -2124,15 +2086,14 @@ SQL;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $entity = $event->getParam('entity');
 
-
         if ($operation == 'create') {
             $item_id = $entity->getItem()->getId();
 
-            $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource'=>$item_id]);
+            $team_resources = $em->getRepository('Teams\Entity\TeamResource')->findBy(['resource' => $item_id]);
             foreach ($team_resources as $team_resource):
                 $team = $team_resource->getTeam();
-            $tr = new TeamResource($team, $entity);
-            $em->persist($tr);
+                $tr = new TeamResource($team, $entity);
+                $em->persist($tr);
             endforeach;
             $em->flush();
         }
@@ -2141,7 +2102,6 @@ SQL;
     //Handle sites
 
     /**
-     *
      * Adds team field to the create site form
      *
      * @param Event $event
@@ -2156,11 +2116,10 @@ SQL;
             $team_id = 0;
         }
         $view = $event->getTarget();
-        echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids'=>$team_id]);
+        echo $view->partial('teams/partial/site-admin/add.phtml', ['team_ids' => $team_id]);
     }
 
     /**
-     *
      *Adds team field to the edit site form
      *
      * @param Event $event
@@ -2170,8 +2129,8 @@ SQL;
         $view = $event->getTarget();
         $site_id = $view->vars()->site->id();
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $site_teams = $entityManager->getRepository('Teams\Entity\TeamSite')->findBy(['site'=>$site_id]);
-        $team_ids = array();
+        $site_teams = $entityManager->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site_id]);
+        $team_ids = [];
         foreach ($site_teams as $site_team):
             $team_ids[] = $site_team->getTeam()->getId();
         endforeach;
@@ -2179,7 +2138,6 @@ SQL;
     }
 
     /**
-     *
      * Returns the expected string for proxied resource class in cases where the class returned is the doctrine proxy.
      *
      * @param $resource
@@ -2192,7 +2150,7 @@ SQL;
         if ($doctrine_test === false) {
             $res_class = get_class($resource);
         } else {
-            $res_class = substr(get_class($resource), strlen($doctrine_ent)+1);
+            $res_class = substr(get_class($resource), strlen($doctrine_ent) + 1);
         }
         return $res_class;
     }
@@ -2202,9 +2160,7 @@ SQL;
         $manager = $this->getServiceLocator()->get('Omeka\ModuleManager');
     }
 
-
     /**
-     *
      * Check to see if the user and the object they are attempting to access or change are part of the same team.
      *
      * @param $resource
@@ -2223,33 +2179,33 @@ SQL;
         if (in_array($res_class, $resource_domains)) {
             $teamsRepo = 'Teams\Entity\TeamResource';
             $fk = 'resource';
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+            $criteria = ['team' => $team->getId(), $fk => $fk_id];
         } elseif ($res_class == 'Omeka\Entity\Site') {
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+            $criteria = ['team' => $team->getId(), $fk => $fk_id];
         } elseif ($res_class == 'Omeka\Entity\SitePage') {
             $teamsRepo = 'Teams\Entity\TeamSite';
             $fk = 'site';
             $fk_id = $resource->getSite()->getId();
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+            $criteria = ['team' => $team->getId(), $fk => $fk_id];
         } elseif ($res_class == 'Omeka\Entity\ResourceTemplate') {
             $teamsRepo = 'Teams\Entity\TeamResourceTemplate';
             $fk = 'resource_template';
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+            $criteria = ['team' => $team->getId(), $fk => $fk_id];
         } elseif ($res_class == 'Teams\Entity\Team') {
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
-            $criteria = ['team'=>$team->getId(), $fk =>$user->getId()];
+            $criteria = ['team' => $team->getId(), $fk => $user->getId()];
         } elseif ($res_class == 'Teams\Entity\TeamSite') {
             $teamsRepo = 'Teams\Entity\TeamUser';
             $fk = 'user';
-            $criteria = ['team'=>$resource->getTeam()->getId(), $fk =>$user->getId()];
+            $criteria = ['team' => $resource->getTeam()->getId(), $fk => $user->getId()];
         } elseif ($res_class == 'Teams\Entity\TeamResource') {
             $teamsRepo = 'Teams\Entity\TeamResource';
             $fk = 'resource';
             $fk_id = $resource->getResource()->getId();
-            $criteria = ['team'=>$team->getId(), $fk =>$fk_id];
+            $criteria = ['team' => $team->getId(), $fk => $fk_id];
         }
         /*
          * TeamRole is only accessible by global admin so doesn't need to be checked.
@@ -2282,7 +2238,6 @@ SQL;
     }
 
     /**
-     *
      * Checks to see if the user has the authority to do something based on their role in their current team. Users can
      * have different roles with different permissions in different teams.
      *
@@ -2318,7 +2273,6 @@ SQL;
 
         $is_glob_admin = ($user->getRole() === 'global_admin');
 
-
         //if it is the global admin, bypass any team controls (but will still apply filters)
         if ($is_glob_admin) {
             return true;
@@ -2335,7 +2289,7 @@ SQL;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $user_id = $user->getId();
         $team_user = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current'=>true, 'user'=>$user_id]);
+            ->findOneBy(['is_current' => true, 'user' => $user_id]);
         $team = $team_user->getTeam();
         $team_user_role = $team_user->getRole() ;
 
@@ -2345,7 +2299,7 @@ SQL;
             if (! $this->inTeam($resource, $team_user)) {
                 $authorized = false;
                 $err = sprintf(
-//                $this->getTranslator()->translate(
+                    //                $this->getTranslator()->translate(
                     'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s.
                     If you feel this is an error, try changing teams or talk to the administrator.
                     Action: %4$s
@@ -2411,13 +2365,13 @@ SQL;
             } elseif ($action == 'read') {
                 $authorized = true;
             }
-        } elseif ($res_class == 'Teams\Entity\Team'|| $res_class == 'Teams\Entity\TeamRole') {
+        } elseif ($res_class == 'Teams\Entity\Team' || $res_class == 'Teams\Entity\TeamRole') {
             if ($action == 'create') {
                 $authorized = $is_glob_admin;
             } elseif ($action == 'delete' || $action == 'batch_delete') {
                 $authorized = $is_glob_admin;
 
-            //this is going to let them update the name and description
+                //this is going to let them update the name and description
             } elseif ($action == 'update') {
                 $authorized = $team_user_role->getCanAddUsers();
             } elseif ($action == 'read') {
@@ -2434,7 +2388,7 @@ SQL;
         } elseif ($res_class == 'Teams\Entity\TeamUser') {
             if ($action == 'read') {
                 $authorized = true;
-            //deleting a site from a team
+                //deleting a site from a team
             } elseif ($action == 'create') {
                 $authorized = $team_user_role->getCanAddUsers();
             } elseif ($action == 'delete') {
@@ -2463,8 +2417,7 @@ SQL;
 
         if (!$authorized) {
             $msg = sprintf(
-                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.'
-                ,
+                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.',
                 get_class($resource),
                 $resource->getId(),
                 $action,
@@ -2472,8 +2425,7 @@ SQL;
                 $team->getName()
             );
             $diagnostic = sprintf(
-                'Diagnostic: --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s'
-                ,
+                'Diagnostic: --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s',
                 get_class($resource),
                 $resource->getId(),
                 $action,
@@ -2521,9 +2473,9 @@ SQL;
     /**
      * Add  "Add Team" and "Remove Team" select elements to the batch edit form
      * @param Event $event
-     * @return void
      */
-    public function addTeamToBatchEditForm(Event $event) {
+    public function addTeamToBatchEditForm(Event $event)
+    {
         $form = $event->getTarget();
         if ('item' !== $form->getOption('resource_type')) {
             return; // Include elements only on item batch edit.
@@ -2543,8 +2495,8 @@ SQL;
             ],
             'attributes' => [
                 'multiple' => true,
-                'data-collection-action' => 'append'
-            ]
+                'data-collection-action' => 'append',
+            ],
 
         ]);
         $form->add([
@@ -2553,26 +2505,27 @@ SQL;
             'options' => [
                 'element_group' => 'teams',
                 'label' => 'Remove resources from teams', // @translate
-                'chosen' => true
+                'chosen' => true,
             ],
             'attributes' => [
                 'multiple' => true,
-                'data-collection-action' => 'append'
+                'data-collection-action' => 'append',
 
-            ]
+            ],
         ]);
         $inputFilter = $form->getInputFilter();
         $inputFilter->add([
             'name' => 'remove_team',
-            'required' => false
+            'required' => false,
         ]);
         $inputFilter->add([
             'name' => 'add_team',
-            'required' => false
+            'required' => false,
         ]);
     }
 
-    public function processTeamBatchEditData (Event $event) {
+    public function processTeamBatchEditData(Event $event)
+    {
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
         $data = $event->getParam('data');
         $rawData = $event->getParam('request')->getContent();
@@ -2589,7 +2542,6 @@ SQL;
         $event->setParam('data', $data);
     }
 
-
     public function bypassTeamFilterOnAdvancedSearch(Event $event)
     {
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
@@ -2600,7 +2552,7 @@ SQL;
         }
 
         $user = $this->getUser();
-        if ($user && in_array($user->getRole(),$roles) ) {
+        if ($user && in_array($user->getRole(), $roles)) {
             $partials = $event->getParam('partials');
             $partials[] = 'teams/partial/bypass-team-filter-advanced-search-selector';
             $event->setParam('partials', $partials);
@@ -2657,12 +2609,11 @@ SQL;
             [$this, 'userTeamsEdit']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\User',
-//            'view.edit.form.after',
-//            [$this, 'userFormEdit']
-//        );
-
+        //        $sharedEventManager->attach(
+        //            'Omeka\Controller\Admin\User',
+        //            'view.edit.form.after',
+        //            [$this, 'userFormEdit']
+        //        );
 
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\User',
@@ -2675,8 +2626,6 @@ SQL;
             'view.add.before',
             [$this, 'siteFormAdd']
         );
-
-
 
         $adapters = [
             ItemSetAdapter::class,
@@ -2692,7 +2641,7 @@ SQL;
             // Add the group filter to the search.
             $sharedEventManager->attach(
                 $adapter,
-//                '*',
+                //                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
@@ -2756,11 +2705,11 @@ SQL;
             [$this, 'itemBatchCreate']
         );
 
-//        $sharedEventManager->attach(
-//            AssetAdapter::class,
-//            'api.delete.pre',
-//            [$this, 'assetDelete']
-//        );
+        //        $sharedEventManager->attach(
+        //            AssetAdapter::class,
+        //            'api.delete.pre',
+        //            [$this, 'assetDelete']
+        //        );
 
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Asset',
@@ -2849,7 +2798,6 @@ SQL;
             [$this, 'itemUpdate']
         );
 
-
         $sharedEventManager->attach(
             'Teams\Controller\IndexController',
             'api.execute.post',
@@ -2861,7 +2809,6 @@ SQL;
             'api.hydrate.post',
             [$this, 'addMedia']
         );
-
 
         $sharedEventManager->attach(
             'Teams\Controller\Add',
@@ -2888,13 +2835,11 @@ SQL;
             [$this, 'addAssetFormElement']
         );
 
-
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
             'view.add.section_nav',
             [$this, 'removeTab']
         );
-
 
         //ItemSet//
         $sharedEventManager->attach(
@@ -2918,7 +2863,7 @@ SQL;
             'view.edit.section_nav',
             [$this, 'addTab']
         );
-//            ResourceTemplate//
+        //            ResourceTemplate//
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\ResourceTemplate',
             'view.add.form.before',
@@ -2981,8 +2926,6 @@ SQL;
             'view.show.after',
             [$this, 'adminShowTeams']
         );
-
-
 
         //Browse pages//
         //Item//
@@ -3047,7 +2990,6 @@ SQL;
             [$this, 'addTab']
         );
 
-
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
             'view.add.form.before',
@@ -3060,12 +3002,11 @@ SQL;
             [$this, 'displayTeamFormNoId']
         );
 
-//        $sharedEventManager->attach(
-//            'Omeka\Controller\Admin\Item',
-//            'view.add.form.after',
-//            [$this, 'addItemSite']
-//        );
-
+        //        $sharedEventManager->attach(
+        //            'Omeka\Controller\Admin\Item',
+        //            'view.add.form.after',
+        //            [$this, 'addItemSite']
+        //        );
 
         //Advanced Search//
         $sharedEventManager->attach(
@@ -3101,7 +3042,6 @@ SQL;
             [$this, 'teamSelectorAdvancedSearch']
         );
 
-
         $sharedEventManager->attach(
             'Omeka\Controller\SiteAdmin\Index',
             'view.edit.after',
@@ -3122,7 +3062,7 @@ SQL;
             [$this, 'addRoleFormTemplate']
         );
 
-//         Add the team element form to the user form.
+        //         Add the team element form to the user form.
         $sharedEventManager->attach(
             \Omeka\Form\UserForm::class,
             'form.add_elements',
@@ -3167,7 +3107,7 @@ SQL;
             ],
             'attributes' => [
                 'multiple' => true,
-                'id' => 'team'
+                'id' => 'team',
             ],
 
         ]);
@@ -3184,15 +3124,15 @@ SQL;
         $roles_exist = $api->search('team-role')->getTotalResults() > 0;
 
         $user_role = $this->getUser()->getRole();
-        $has_team = (bool)$this->currentTeam();
+        $has_team = (bool) $this->currentTeam();
         $global_admin = $user_role === 'global_admin';
         $form = $event->getTarget();
 
         //don't add the form fields if there are no roles or teams
-        if ($teams_exist && $roles_exist){
+        if ($teams_exist && $roles_exist) {
             $form->get('user-information')->add([
                 'name' => 'o-module-teams:Team',
-                'type' => $global_admin ? AllTeamSelect::class: TeamSelect::class,
+                'type' => $global_admin ? AllTeamSelect::class : TeamSelect::class,
                 'options' => [
                     'label' => 'Teams', // @translate
                     'chosen' => true,
@@ -3201,7 +3141,7 @@ SQL;
                     'multiple' => true,
                     'id' => 'team',
                     'required' => $has_team,
-                    'data-mutable' => $global_admin
+                    'data-mutable' => $global_admin,
                 ],
             ]);
             $form->get('user-information')->add([
@@ -3231,7 +3171,7 @@ SQL;
 
                 ],
             ]);
-//            this needs to be in here so that the form will push the jQuery created team roles into the request object
+            //            this needs to be in here so that the form will push the jQuery created team roles into the request object
             $form->get('user-information')->add([
                 'name' => 'o-module-teams:TeamRole',
                 'type' => RoleSelect::class,
@@ -3248,8 +3188,7 @@ SQL;
         }
 
         //adjust validation for cases where a user doesn't need to belong to or hasn't yet been added to a team
-        if (!$has_team or $global_admin)
-        {
+        if (!$has_team or $global_admin) {
             $inputFilter = $form->getInputFilter();
 
             $inputFilter->get('user-information')->add([
@@ -3271,7 +3210,7 @@ SQL;
 
     public function addAssetFormElement(Event $event)
     {
-        $asset  = $event->getTarget()->vars()->asset;
+        $asset = $event->getTarget()->vars()->asset;
         $form = $event->getTarget()->vars()->form;
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
         $assetTeams = $em->getRepository('Teams\Entity\TeamAsset')->findBy(['asset' => $asset->id()]);
@@ -3292,7 +3231,7 @@ SQL;
                 'id' => 'team',
                 'required' => true,
                 'value' => $assetTeamIds, //set the actual option for this element
-                'data-placeholder' => 'No Teams Assigned Yet'
+                'data-placeholder' => 'No Teams Assigned Yet',
 
             ],
         ]);
@@ -3314,7 +3253,7 @@ SQL;
             ],
             'attributes' => [
                 'multiple' => true,
-                'id' => 'team_selected'
+                'id' => 'team_selected',
             ],
         ]);
     }
@@ -3329,14 +3268,14 @@ SQL;
         $entityManager = $this->getServiceLocator()->get('Omeka\EntityManager');
         $roles = $entityManager->getRepository('Teams\Entity\TeamRole')->findAll();
 
-        if (count($roles)>0) {
+        if (count($roles) > 0) {
 
             //this seems to encode the ids as characters
 
             foreach ($roles as $role):
                 $role_array[$role->getId()] = $role->getName();
             endforeach;
-            echo '<script> let role_array = '. json_encode($role_array) . ' </script>';
+            echo '<script> let role_array = ' . json_encode($role_array) . ' </script>';
             $view = $event->getTarget();
 
             $view->headScript()->prependFile($view->assetUrl('js/chosen-trigger.js', 'Teams'));
