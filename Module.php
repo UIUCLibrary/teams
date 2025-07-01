@@ -875,6 +875,11 @@ SQL;
             return;
         }
 
+//        site requests can be handled by site settings
+        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
+            return true;
+        }
+
         //catch cases where bypass_team_filter is passes, and it is a valid flag for the user's access level or the context,
         // e.g. certain non-admin site requests
 
