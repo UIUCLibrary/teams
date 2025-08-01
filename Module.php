@@ -913,6 +913,7 @@ SQL;
             $event->getParam('request')->getOperation() === 'search' &&
             $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()
         ) {
+
             //get the id for the current site
             $site_slug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
             $site_id = $em->getRepository('Omeka\Entity\Site')->findOneBy(['slug' => $site_slug])->getId();
@@ -961,60 +962,43 @@ SQL;
             return;
         }
 
-        ///If this is a case where someone is adding something and can choose which team to add it to, take that into
-        /// consideration and add it to that team. Otherwise, conduct the query filtering based on the current team
-        /// This turned out to be vital to making public facing browse and search work
-        if (isset($query['team_id'])) {
-            $team_id = (int) $query['team_id'];
-            $qb->leftJoin('Teams\Entity\TeamResource', 'tr_ti', Expr\Join::WITH, $alias . '.id = tr_ti.resource')
-                ->andWhere('tr_ti.team = :team_id')
-                ->setParameter('team_id', $team_id)
-            ;
-            return;
-        } else {
-            $team_id = $this->getTeamContext($query, $event);
-        }
 
+        $team_id = $this->getTeamContext($query, $event);
         if ($team_id === [0]) {
             return;
         }
         if (is_array($team_id)) {
             if ($entityClass == \Omeka\Entity\Site::class) {
-                $team_alias = 'ts';
-                if (!$this->getUser()) {
-                    return ;
-                } else {
-                    //TODO get the team_id's associated with the site and then do an orWhere()/orX()
-                    //Leaving this todo for now, but this should be covered by item-site now
-                    $qb->leftJoin('Teams\Entity\TeamSite', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.site")
-                        ->andWhere("$team_alias.team = :team_id")
-                        ->setParameter('team_id', $team_id[0]);
-                }
+                $teamAlias = 'ts';
+                $joinCol = 'site';
+                $teamsEntityClass = \Teams\Entity\TeamSite::class;
             } elseif ($entityClass == \Omeka\Entity\ResourceTemplate::class) {
-                $team_alias = 'trt';
-                $qb->leftJoin('Teams\Entity\TeamResourceTemplate', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.resource_template")
-                    ->andWhere($team_alias . '.team = :team_id')
-                    ->setParameter('team_id', $team_id[0]);
+                $teamAlias = 'trt';
+                $joinCol = 'resource_template';
+                $teamsEntityClass = \Teams\Entity\TeamResourceTemplate::class;
             } elseif ($entityClass == \Omeka\Entity\User::class) {
-                return;
+                $teamAlias = 'tu';
+                $joinCol = 'user';
+                $teamsEntityClass = \Teams\Entity\TeamUser::class;
             } elseif ($entityClass == \Omeka\Entity\Vocabulary::class) {
                 return;
             } elseif ($entityClass == \Omeka\Entity\Asset::class) {
-                $team_alias = 'ta';
-                $qb->leftJoin('Teams\Entity\TeamAsset', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.asset'")
-                    ->andWhere("{$team_alias}.team = :team_id")
-                    ->setParameter('team_id', $team_id[0]);
+                $teamAlias = 'ta';
+                $joinCol = 'asset';
+                $teamsEntityClass = \Teams\Entity\TeamAsset::class;
             } else {
-                $team_alias = 'tr';
-                $qb->leftJoin('Teams\Entity\TeamResource', $team_alias, Expr\Join::WITH, "{$alias}.id = {$team_alias}.resource")
-                    ->andWhere("{$team_alias}.team = :team_id")
-                    ->setParameter('team_id', $team_id[0]);
+                $teamAlias = 'tr';
+                $teamsEntityClass = \Teams\Entity\TeamResource::class;
+                $joinCol = 'resource';
             }
+            $qb->leftJoin($teamsEntityClass, $teamAlias, Expr\Join::WITH, "{$alias}.id = {$teamAlias}.{$joinCol}")
+                ->andWhere($teamAlias . '.team = :team_id')
+                ->setParameter('team_id', $team_id[0]);
             if (count($team_id) > 1) {
                 $orX = $qb->expr()->orX();
                 $i = 0;
                 foreach ($team_id as $value) {
-                    $orX->add($qb->expr()->eq("{$team_alias}.team", ':name' . $i));
+                    $orX->add($qb->expr()->eq("{$teamAlias}.team", ':name' . $i));
                     $qb->setParameter('name' . $i, $value);
                     $i++;
                 }
@@ -1037,25 +1021,6 @@ SQL;
             $resource_ids = array_column($q, 'tr_resource_id');
             $qb->andWhere($qb->expr()->notIn('omeka_root.id', $resource_ids));
         }
-    }
-
-    //Handle Users
-    public function filterByTeamUser(Event $event)
-    {
-        $query = $event->getParam('request')->getContent();
-        if (isset($query['bypass_team_filter']) && $query['bypass_team_filter']) {
-            return;
-        }
-        $qb = $event->getParam('queryBuilder');
-        $alias = 'omeka_root';
-        if (array_key_exists('team_id', $query) && is_int($query['team_id'])) {
-            $team = $query['team_id'];
-        } else {
-            $team = $this->getTeamContext($query, $event);
-        }
-        $qb->leftJoin('Teams\Entity\TeamUser', 'tu', Expr\Join::WITH, $alias . '.id = tu.user')
-            ->andWhere('tu.team = :team_id')
-            ->setParameter('team_id', $team);
     }
 
     /**
@@ -2639,6 +2604,7 @@ SQL;
             SiteAdapter::class,
             ResourceTemplateAdapter::class,
             AssetAdapter::class,
+            UserAdapter::class,
 
         ];
         foreach ($adapters as $adapter):
@@ -2646,7 +2612,6 @@ SQL;
             // Add the group filter to the search.
             $sharedEventManager->attach(
                 $adapter,
-                //                '*',
                 'api.search.query',
                 [$this, 'filterByTeam']
             );
@@ -2657,12 +2622,6 @@ SQL;
             ItemAdapter::class,
             'api.search.query',
             [$this, 'getOrphans']
-        );
-
-        $sharedEventManager->attach(
-            UserAdapter::class,
-            'api.search.query',
-            [$this, 'filterByTeamUser']
         );
 
         $sharedEventManager->attach(
