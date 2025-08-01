@@ -867,6 +867,8 @@ SQL;
         $entityClass = $event->getTarget()->getEntityClass();
         $alias = 'omeka_root';
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $isSiteRequest = $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest();
+
 
         //fist, catch some cases where we shouldn't filter by team
 
@@ -875,61 +877,57 @@ SQL;
             return;
         }
 
-//        site requests can be handled by site settings
-        if ($this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()) {
-            return true;
-        }
-
-        //catch cases where bypass_team_filter is passes, and it is a valid flag for the user's access level or the context,
-        // e.g. certain non-admin site requests
-
-        $site_request = $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest();
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        $bypass_teams_filter_roles = $globalSettings->get('teams_filter_bypass_roles');
-
-        if (!is_array($bypass_teams_filter_roles)) {
-            $bypass_teams_filter_roles[] = $bypass_teams_filter_roles;
-        } else {
-            $bypass_teams_filter_roles = ['global_admin'];
-        }
-        if (isset($query['bypass_team_filter'])
-            && $query['bypass_team_filter']
-            && in_array($this->getUser()->getRole(), $bypass_teams_filter_roles)
-        ) {
-            return;
-        }
-        if (isset($query['bypass_team_filter']) && $site_request) {
-            return;
-        }
-        if (isset($query['resource_class_id']) && $site_request) {
-            return;
-        }
-        if (isset($query['resource_template_id']) && $site_request) {
-            return;
-        }
-
-        //this is for the list-of-sites block.
+        //most site calls are handled by the site-item relationships, but this is for the list-of-sites block.
         if ($event->getParam('request')->getResource() === 'sites' &&
             $event->getParam('request')->getOperation() === 'search' &&
-            $this->getServiceLocator()->get('Omeka\Status')->isSiteRequest()
+            $isSiteRequest
         ) {
-
             //get the id for the current site
-            $site_slug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
-            $site_id = $em->getRepository('Omeka\Entity\Site')->findOneBy(['slug' => $site_slug])->getId();
+            $siteSlug = $this->getServiceLocator()->get('Omeka\Status')->getRouteMatch()->getParam('site-slug');
+            $siteId = $em->getRepository('Omeka\Entity\Site')->findOneBy(['slug' => $siteSlug])->getId();
 
             //get the teams of the current site because we only want to show sites within its teams.
-            $teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site_id]);
-            $team_ids = [];
+            $teams = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $siteId]);
+            $teamIds = [];
 
             foreach ($teams as $team):
-                $team_ids[] = $team->getTeam()->getId();
+                $teamIds[] = $team->getTeam()->getId();
             endforeach;
 
             //only get sites that share a team with the current site
             $qb->join('Teams\Entity\TeamSite', 'ts', Expr\Join::WITH, $alias . '.id = ts.site')
                 ->andWhere('ts.team IN (:team_ids)')
-                ->setParameter('team_ids', $team_ids);
+                ->setParameter('team_ids', $teamIds);
+            return;
+        }
+        // other site requests can be handled by site settings
+        if ($isSiteRequest) {
+            return true;
+        }
+
+        //catch cases where bypass_team_filter is passes, and it is a valid flag for the user's access level or the context,
+        // e.g. certain non-admin site requests
+        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
+        $bypassTeamsRilterRoles = $globalSettings->get('teams_filter_bypass_roles');
+
+        if (!is_array($bypassTeamsRilterRoles)) {
+            $bypassTeamsRilterRoles[] = $bypassTeamsRilterRoles;
+        } else {
+            $bypassTeamsRilterRoles = ['global_admin'];
+        }
+        if (isset($query['bypass_team_filter'])
+            && $query['bypass_team_filter']
+            && in_array($this->getUser()->getRole(), $bypassTeamsRilterRoles)
+        ) {
+            return;
+        }
+        if (isset($query['bypass_team_filter']) && $isSiteRequest) {
+            return;
+        }
+        if (isset($query['resource_class_id']) && $isSiteRequest) {
+            return;
+        }
+        if (isset($query['resource_template_id']) && $isSiteRequest) {
             return;
         }
 
@@ -961,7 +959,6 @@ SQL;
             }
             return;
         }
-
 
         $team_id = $this->getTeamContext($query, $event);
         if ($team_id === [0]) {
