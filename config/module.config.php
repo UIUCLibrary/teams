@@ -74,6 +74,11 @@ return [
             dirname(__DIR__) . '/data/doctrine-proxies',
         ],
     ],
+    'service_manager' => [
+        'factories' => [
+            Acl\InTeamAssertion::class => Service\Acl\InTeamAssertionFactory::class,
+        ],
+    ],
     'form_elements' => [
         'invokables' => [
             Form\TeamForm::class => Form\TeamForm::class,
