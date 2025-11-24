@@ -194,10 +194,8 @@ class InTeamAssertion implements AssertionInterface
             return true;
         } elseif ($res_class == 'Omeka\Entity\Property') {
             return true;
-        } elseif ($res_class == 'Teams\Entity\TeamRole') {
-            $authorized = $is_glob_admin;
-        } elseif (substr($res_class, 0, strlen('Omeka\Entity\\')) !== 'Omeka\Entity\\') {
-            // Don't police other modules by default
+        } elseif (strpos($res_class, 'Omeka\Entity') !== 0) {
+            // Don't police other modules by default (not an Omeka entity)
             return true;
         }
 
