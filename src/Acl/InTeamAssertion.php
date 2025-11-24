@@ -68,10 +68,9 @@ class InTeamAssertion implements AssertionInterface
          * First go through a couple of common cases where we don't need to judge permissions
          */
 
-        // If the user isn't logged in (e.g., the public), deny access
-        // Other ACL rules will handle public access if needed
+        // If the user isn't logged in (e.g., the public), use the default settings
         if (!$user) {
-            return false;
+            return true;
         }
 
         // If it isn't on the backend, let the public vs private rules take over
@@ -82,8 +81,6 @@ class InTeamAssertion implements AssertionInterface
         $is_glob_admin = ($user->getRole() === 'global_admin');
 
         // If it is the global admin, bypass any team controls
-        // Note: This is redundant with the explicit global_admin allow rule in Module.php
-        // but kept for clarity and defense in depth
         if ($is_glob_admin) {
             return true;
         }

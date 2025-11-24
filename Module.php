@@ -240,6 +240,37 @@ SQL;
         $services = $this->getServiceLocator();
         $acl = $services->get('Omeka\Acl');
 
+        // IMPORTANT: Use InTeamAssertion for entity-level permissions with deny-then-allow pattern
+        // This MUST come first before other ACL rules to ensure team restrictions are enforced
+        $inTeamAssertion = $services->get(\Teams\Acl\InTeamAssertion::class);
+        
+        // Define team-policed resources
+        $teamPolicedResources = [
+            Entity\Team::class,
+            Entity\TeamUser::class,
+            Entity\TeamResource::class,
+            Entity\TeamRole::class,
+            Entity\TeamAsset::class,
+            Entity\TeamSite::class,
+            Entity\TeamResourceTemplate::class,
+            \Omeka\Entity\Item::class,
+            \Omeka\Entity\ItemSet::class,
+            \Omeka\Entity\Media::class,
+            \Omeka\Entity\Asset::class,
+            \Omeka\Entity\Site::class,
+            \Omeka\Entity\SitePage::class,
+            \Omeka\Entity\ResourceTemplate::class,
+        ];
+        
+        // 1. First, add a broad deny rule for all team-policed resources
+        $acl->deny(null, $teamPolicedResources);
+        
+        // 2. Next, add the allow rule that uses the assertion to selectively grant permissions back
+        $acl->allow(null, $teamPolicedResources, null, $inTeamAssertion);
+        
+        // 3. Finally, ensure the global_admin role can still bypass everything by explicitly re-allowing it access
+        $acl->allow('global_admin', $teamPolicedResources);
+
         $roles = $acl->getRoles();
         //entity rights are the actions of controllers
         $entityRights = ['read', 'create', 'update', 'delete'];
@@ -393,36 +424,6 @@ SQL;
             'Teams\Controller\Trash',
             'update'
         );
-
-        // Use InTeamAssertion for entity-level permissions with deny-then-allow pattern
-        $inTeamAssertion = $services->get(\Teams\Acl\InTeamAssertion::class);
-        
-        // Define team-policed resources
-        $teamPolicedResources = [
-            Entity\Team::class,
-            Entity\TeamUser::class,
-            Entity\TeamResource::class,
-            Entity\TeamRole::class,
-            Entity\TeamAsset::class,
-            Entity\TeamSite::class,
-            Entity\TeamResourceTemplate::class,
-            \Omeka\Entity\Item::class,
-            \Omeka\Entity\ItemSet::class,
-            \Omeka\Entity\Media::class,
-            \Omeka\Entity\Asset::class,
-            \Omeka\Entity\Site::class,
-            \Omeka\Entity\SitePage::class,
-            \Omeka\Entity\ResourceTemplate::class,
-        ];
-        
-        // 1. First, add a broad deny rule for all team-policed resources
-        $acl->deny(null, $teamPolicedResources);
-        
-        // 2. Next, add the allow rule that uses the assertion to selectively grant permissions back
-        $acl->allow(null, $teamPolicedResources, null, $inTeamAssertion);
-        
-        // 3. Finally, ensure the global_admin role can still bypass everything by explicitly re-allowing it access
-        $acl->allow('global_admin', $teamPolicedResources);
 
     }
 
