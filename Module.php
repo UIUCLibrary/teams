@@ -244,7 +244,7 @@ SQL;
         // This MUST come first before other ACL rules to ensure team restrictions are enforced
         $inTeamAssertion = $services->get(\Teams\Acl\InTeamAssertion::class);
         
-        // Define team-policed resources
+        // Define team-policed resources (entities)
         $teamPolicedResources = [
             Entity\Team::class,
             Entity\TeamUser::class,
@@ -262,14 +262,27 @@ SQL;
             \Omeka\Entity\ResourceTemplate::class,
         ];
         
-        // 1. First, add a broad deny rule for all team-policed resources
-        $acl->deny(null, $teamPolicedResources);
+        // Define team-policed adapters (API adapters that operate on the entities)
+        $teamPolicedAdapters = [
+            \Omeka\Api\Adapter\ItemAdapter::class,
+            \Omeka\Api\Adapter\ItemSetAdapter::class,
+            \Omeka\Api\Adapter\MediaAdapter::class,
+            \Omeka\Api\Adapter\AssetAdapter::class,
+            \Omeka\Api\Adapter\SiteAdapter::class,
+            \Omeka\Api\Adapter\ResourceTemplateAdapter::class,
+        ];
         
-        // 2. Next, add the allow rule that uses the assertion to selectively grant permissions back
+        // 1. First, add broad deny rules for all team-policed resources and adapters
+        $acl->deny(null, $teamPolicedResources);
+        $acl->deny(null, $teamPolicedAdapters);
+        
+        // 2. Next, add the allow rules that use the assertion to selectively grant permissions back
         $acl->allow(null, $teamPolicedResources, null, $inTeamAssertion);
+        $acl->allow(null, $teamPolicedAdapters, null, $inTeamAssertion);
         
         // 3. Finally, ensure the global_admin role can still bypass everything by explicitly re-allowing it access
         $acl->allow('global_admin', $teamPolicedResources);
+        $acl->allow('global_admin', $teamPolicedAdapters);
 
         $roles = $acl->getRoles();
         //entity rights are the actions of controllers
