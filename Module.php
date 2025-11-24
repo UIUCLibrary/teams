@@ -11,6 +11,7 @@ use Omeka\Api\Exception;
 use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
+use Omeka\Api\Adapter\SitePageAdapter;
 use Omeka\Entity\EntityInterface;
 use Omeka\Permissions\Acl;
 use Teams\Entity\Team;
@@ -269,6 +270,7 @@ SQL;
             \Omeka\Api\Adapter\MediaAdapter::class,
             \Omeka\Api\Adapter\AssetAdapter::class,
             \Omeka\Api\Adapter\SiteAdapter::class,
+            \Omeka\Api\Adapter\SitePageAdapter::class,
             \Omeka\Api\Adapter\ResourceTemplateAdapter::class,
         ];
         
