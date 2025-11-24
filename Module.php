@@ -397,9 +397,12 @@ SQL;
         // Use InTeamAssertion for entity-level permissions
         $assertion = $services->get(\Teams\Acl\InTeamAssertion::class);
         
-        // Apply the assertion to all entity resources for non-admin roles
+        // Combine admin and viewer roles (excluding global_admin which is handled separately)
+        $rolesWithAssertion = array_merge($viewerRoles, ['site_admin']);
+        
+        // Apply the assertion to all entity resources for non-global-admin roles
         $acl->allow(
-            $viewerRoles,
+            $rolesWithAssertion,
             [
                 Entity\Team::class,
                 Entity\TeamUser::class,
@@ -2109,6 +2112,52 @@ SQL;
         }
     }
 
+    /**
+     * Check team authorization when reading an entity via API
+     *
+     * @param Event $event
+     */
+    public function teamAuthorizeOnRead(Event $event)
+    {
+        $entity = $event->getParam('entity');
+        $request = $event->getParam('request');
+        $operation = $request->getOperation();
+        
+        // Use ACL to check authorization
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $user = $this->getUser();
+        $role = $user ? $user->getRole() : null;
+        
+        if (!$acl->isAllowed($role, $entity, $operation)) {
+            throw new Exception\PermissionDeniedException(
+                sprintf('Permission denied for operation "%s" on resource.', $operation)
+            );
+        }
+    }
+
+    /**
+     * Check team authorization when hydrating an entity via API
+     *
+     * @param Event $event
+     */
+    public function teamAuthorizeOnHydrate(Event $event)
+    {
+        $request = $event->getParam('request');
+        $entity = $event->getParam('entity');
+        $operation = $request->getOperation();
+        
+        // Use ACL to check authorization
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $user = $this->getUser();
+        $role = $user ? $user->getRole() : null;
+        
+        if (!$acl->isAllowed($role, $entity, $operation)) {
+            throw new Exception\PermissionDeniedException(
+                sprintf('Permission denied for operation "%s" on resource.', $operation)
+            );
+        }
+    }
+
 
     /**
      * Disable the auto-add field on the site edit form. Teams manages this by automatically adding items to the
@@ -2308,10 +2357,24 @@ SQL;
             [$this, 'getOrphans']
         );
 
+        // Use ACL assertion for authorization on API operations
+        $sharedEventManager->attach(
+            '*',
+            'api.find.post',
+            [$this, 'teamAuthorizeOnRead']
+        );
+
         $sharedEventManager->attach(
             'Teams\Controller\Index',
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
+        );
+
+        // Use ACL assertion for authorization on API operations
+        $sharedEventManager->attach(
+            '*',
+            'api.hydrate.pre',
+            [$this, 'teamAuthorizeOnHydrate']
         );
 
         $sharedEventManager->attach(
