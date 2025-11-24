@@ -76,7 +76,7 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            Acl\InTeamAssertion::class => Service\Acl\InTeamAssertionFactory::class,
+            \Teams\Acl\InTeamAssertion::class => \Teams\Service\Acl\InTeamAssertionFactory::class,
         ],
     ],
     'form_elements' => [

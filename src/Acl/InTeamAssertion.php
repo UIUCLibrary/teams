@@ -7,8 +7,6 @@ use Laminas\Permissions\Acl\Resource\ResourceInterface;
 use Laminas\Permissions\Acl\Role\RoleInterface;
 use Laminas\Authentication\AuthenticationService;
 use Doctrine\ORM\EntityManager;
-use Omeka\Mvc\Controller\Plugin\Messenger;
-use Omeka\Permissions\Acl as OmekaAcl;
 use Omeka\Api\Exception;
 use Omeka\Entity\EntityInterface;
 
@@ -87,7 +85,6 @@ class InTeamAssertion implements AssertionInterface
             return true;
         }
 
-        $messenger = new Messenger();
         $authorized = false;
 
         $res_class = $this->getResourceClass($resource);
@@ -98,7 +95,9 @@ class InTeamAssertion implements AssertionInterface
 
         // If user doesn't have a current team, deny access
         if (!$team_user) {
-            return false;
+            throw new Exception\PermissionDeniedException(
+                'Permission denied. User does not have a current team assignment.'
+            );
         }
 
         $team = $team_user->getTeam();
@@ -108,17 +107,15 @@ class InTeamAssertion implements AssertionInterface
         if ($privilege != 'create') {
             // If resource not part of user's current team, no action at all
             if (!$this->inTeam($resource, $team_user)) {
-                $authorized = false;
                 $err = sprintf(
-                    'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s.
-                    If you feel this is an error, try changing teams or talk to the administrator.
-                    Action: %4$s',
+                    'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s. ' .
+                    'If you feel this is an error, try changing teams or talk to the administrator. ' .
+                    'Action: %4$s',
                     get_class($resource),
                     $resource->getId(),
                     $team->getName(),
                     $privilege
                 );
-                $messenger->addError($err);
                 throw new Exception\PermissionDeniedException($err);
             }
         }
@@ -199,7 +196,7 @@ class InTeamAssertion implements AssertionInterface
             return true;
         } elseif ($res_class == 'Teams\Entity\TeamRole') {
             $authorized = $is_glob_admin;
-        } elseif (substr($res_class, 0, 13) !== 'Omeka\Entity\\') {
+        } elseif (substr($res_class, 0, strlen('Omeka\\Entity\\')) !== 'Omeka\\Entity\\') {
             // Don't police other modules by default
             return true;
         }
@@ -213,17 +210,7 @@ class InTeamAssertion implements AssertionInterface
                 $team_user_role->getName(),
                 $team->getName()
             );
-            $diagnostic = sprintf(
-                'Diagnostic: --  Resource type: %1$s. Resource id: %2$s. Action: %3$s. Your role: %4$s',
-                get_class($resource),
-                $resource->getId(),
-                $privilege,
-                $team_user_role->getName(),
-                $team->getName()
-            );
 
-            $messenger->addError($msg);
-            $messenger->addError($diagnostic);
             throw new Exception\PermissionDeniedException($msg);
         }
 
@@ -306,7 +293,7 @@ class InTeamAssertion implements AssertionInterface
         if ($doctrine_test === false) {
             $res_class = get_class($resource);
         } else {
-            $res_class = substr(get_class($resource), strlen($doctrine_ent) + 1);
+            $res_class = substr(get_class($resource), strlen($doctrine_ent) + strlen('\\'));
         }
         return $res_class;
     }
