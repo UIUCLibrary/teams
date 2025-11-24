@@ -89,8 +89,23 @@ class InTeamAssertion implements AssertionInterface
         if ($isEntityInstance) {
             $res_class = $this->getResourceClass($resource);
         } elseif (is_string($resource)) {
-            // Resource is a class name string (e.g., during create operations)
+            // Resource is a class name string (e.g., during create operations or adapter checks)
             $res_class = $resource;
+            
+            // If it's an adapter class, map it to the corresponding entity class
+            $adapterToEntityMap = [
+                'Omeka\Api\Adapter\ItemAdapter' => 'Omeka\Entity\Item',
+                'Omeka\Api\Adapter\ItemSetAdapter' => 'Omeka\Entity\ItemSet',
+                'Omeka\Api\Adapter\MediaAdapter' => 'Omeka\Entity\Media',
+                'Omeka\Api\Adapter\AssetAdapter' => 'Omeka\Entity\Asset',
+                'Omeka\Api\Adapter\SiteAdapter' => 'Omeka\Entity\Site',
+                'Omeka\Api\Adapter\SitePageAdapter' => 'Omeka\Entity\SitePage',
+                'Omeka\Api\Adapter\ResourceTemplateAdapter' => 'Omeka\Entity\ResourceTemplate',
+            ];
+            
+            if (isset($adapterToEntityMap[$res_class])) {
+                $res_class = $adapterToEntityMap[$res_class];
+            }
         } else {
             // Unknown resource type, deny access
             return false;
