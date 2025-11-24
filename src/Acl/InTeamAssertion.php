@@ -57,11 +57,6 @@ class InTeamAssertion implements AssertionInterface
         ResourceInterface $resource = null,
         $privilege = null
     ) {
-        // If no resource is provided, we can't check team membership
-        if (!$resource instanceof EntityInterface) {
-            return true;
-        }
-
         $user = $this->auth->getIdentity();
 
         /*
@@ -87,7 +82,19 @@ class InTeamAssertion implements AssertionInterface
 
         $authorized = false;
 
-        $res_class = $this->getResourceClass($resource);
+        // Determine if resource is an entity instance or a class name
+        $isEntityInstance = $resource instanceof EntityInterface;
+        
+        // Get the resource class name
+        if ($isEntityInstance) {
+            $res_class = $this->getResourceClass($resource);
+        } elseif (is_string($resource)) {
+            // Resource is a class name string (e.g., during create operations)
+            $res_class = $resource;
+        } else {
+            // Unknown resource type, deny access
+            return false;
+        }
 
         $user_id = $user->getId();
         $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')
@@ -101,8 +108,9 @@ class InTeamAssertion implements AssertionInterface
         $team = $team_user->getTeam();
         $team_user_role = $team_user->getRole();
 
-        // Don't check if in same team if a create action, because items only assigned teams after creation
-        if ($privilege != 'create') {
+        // Only check team membership if resource is an actual entity instance
+        // For create operations, resource is just a class name, so skip team membership check
+        if ($isEntityInstance && $privilege != 'create') {
             // If resource not part of user's current team, no action at all
             if (!$this->inTeam($resource, $team_user)) {
                 return false;
