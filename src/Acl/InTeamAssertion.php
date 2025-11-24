@@ -95,9 +95,7 @@ class InTeamAssertion implements AssertionInterface
 
         // If user doesn't have a current team, deny access
         if (!$team_user) {
-            throw new Exception\PermissionDeniedException(
-                'Permission denied. User does not have a current team assignment.'
-            );
+            return false;
         }
 
         $team = $team_user->getTeam();
@@ -107,16 +105,7 @@ class InTeamAssertion implements AssertionInterface
         if ($privilege != 'create') {
             // If resource not part of user's current team, no action at all
             if (!$this->inTeam($resource, $team_user)) {
-                $err = sprintf(
-                    'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s. ' .
-                    'If you feel this is an error, try changing teams or talk to the administrator. ' .
-                    'Action: %4$s',
-                    get_class($resource),
-                    $resource->getId(),
-                    $team->getName(),
-                    $privilege
-                );
-                throw new Exception\PermissionDeniedException($err);
+                return false;
             }
         }
 
@@ -197,19 +186,6 @@ class InTeamAssertion implements AssertionInterface
         } elseif (strpos($res_class, 'Omeka\Entity') !== 0) {
             // Don't police other modules by default (not an Omeka entity)
             return true;
-        }
-
-        if (!$authorized) {
-            $msg = sprintf(
-                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.',
-                get_class($resource),
-                $resource->getId(),
-                $privilege,
-                $team_user_role->getName(),
-                $team->getName()
-            );
-
-            throw new Exception\PermissionDeniedException($msg);
         }
 
         return $authorized;
