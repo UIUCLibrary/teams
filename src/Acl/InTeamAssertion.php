@@ -196,7 +196,7 @@ class InTeamAssertion implements AssertionInterface
             return true;
         } elseif ($res_class == 'Teams\Entity\TeamRole') {
             $authorized = $is_glob_admin;
-        } elseif (substr($res_class, 0, strlen('Omeka\\Entity\\')) !== 'Omeka\\Entity\\') {
+        } elseif (substr($res_class, 0, strlen('Omeka\Entity\\')) !== 'Omeka\Entity\\') {
             // Don't police other modules by default
             return true;
         }
@@ -293,7 +293,8 @@ class InTeamAssertion implements AssertionInterface
         if ($doctrine_test === false) {
             $res_class = get_class($resource);
         } else {
-            $res_class = substr(get_class($resource), strlen($doctrine_ent) + strlen('\\'));
+            // Skip the doctrine proxy prefix and the backslash separator
+            $res_class = substr(get_class($resource), strlen($doctrine_ent) + 1);
         }
         return $res_class;
     }
