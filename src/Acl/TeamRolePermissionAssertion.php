@@ -124,6 +124,11 @@ class TeamRolePermissionAssertion implements AssertionInterface
             return false;
         }
         
+        // Ensure we have an actual entity instance for team membership check
+        if (!$resource instanceof EntityInterface) {
+            return false;
+        }
+        
         if (!$this->isResourceInTeam($resource, $teamUser)) {
             return false;
         }
