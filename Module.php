@@ -266,6 +266,7 @@ SQL;
             'Omeka\Api\Adapter\ItemSetAdapter',
             'Omeka\Api\Adapter\MediaAdapter',
             'Omeka\Api\Adapter\AssetAdapter',
+            'Omeka\Api\Adapter\SiteAdapter',
         ];
         $rolesToControl = ['site_admin', 'editor', 'author'];
 
