@@ -272,7 +272,8 @@ SQL;
             'Omeka\Api\Adapter\ResourceTemplateAdapter',
         ];
 
-        $rolesToControl = ['site_admin', 'editor', 'author'];
+        $rolesToControl = $acl->getRoles();
+        $rolesToControl = array_diff($rolesToControl, ["global_admin"]);
 
         $entityPrivileges =[
             'update',
