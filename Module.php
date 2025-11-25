@@ -13,6 +13,10 @@ use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\EntityInterface;
 use Omeka\Permissions\Acl;
+use Omeka\Permissions\Assertion\AssertionNegation;
+use Omeka\Permissions\Assertion\IsSelfAssertion;
+use Omeka\Permissions\Assertion\OwnsEntityAssertion;
+use Teams\Acl\InTeamAssertion;
 use Teams\Entity\Team;
 use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
@@ -48,6 +52,12 @@ class Module extends AbstractModule
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
+    }
+    /**
+     * The listener that calls our ACL setup.
+     */
+    public function addAclRulesOnDispatch(MvcEvent $event)
+    {
         $this->addAclRules();
     }
 
@@ -237,194 +247,73 @@ SQL;
     //TODO need to refactor to normalize and condense
     protected function addAclRules()
     {
-        $services = $this->getServiceLocator();
-        $acl = $services->get('Omeka\Acl');
+        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+        $inTeamAssertion = $this->getServiceLocator()->get(\Teams\Acl\InTeamAssertion::class);
 
-        $roles = $acl->getRoles();
-        //entity rights are the actions of controllers
-        $entityRights = ['read', 'create', 'update', 'delete'];
+        $omekaResources = [
+            \Omeka\Entity\Item::class,
+            \Omeka\Entity\ItemSet::class,
+            \Omeka\Entity\Media::class,
+            \Omeka\Entity\Site::class,
+            \Omeka\Entity\SitePage::class,
+            \Omeka\Entity\ResourceTemplate::class,
+            \Omeka\Entity\Asset::class,
+        ];
 
-        //allow everyone to see their teams
-        $acl->allow(
-            $roles,
+        $teamResources = [
+            \Teams\Entity\Team::class,
+            \Teams\Entity\TeamUser::class,
+            \Teams\Entity\TeamSite::class,
+            \Teams\Entity\TeamResource::class,
+            \Teams\Entity\TeamAsset::class,
+        ];
+        $adapters = [
+            'Omeka\Api\Adapter\ItemAdapter',
+            'Omeka\Api\Adapter\ItemSetAdapter',
+            'Omeka\Api\Adapter\MediaAdapter',
+            'Omeka\Api\Adapter\AssetAdapter',
+        ];
+        $rolesToControl = ['site_admin', 'editor', 'author'];
+
+        $privileges =[
+            'update',
+            'delete',
+            'create',
+            'batch-delete',
+            'batch-update',
+            'batch-create',
+            'batch_update',
+            'batch_delete',
+            'batch-edit-all',
+            'batch-upate-all',
+            'batch-edit',
+            'batch-delete-all',
+            'batch_delete_all',
+            ];
+        foreach ($omekaResources as $resource) {
+            foreach ($rolesToControl as $role) {
+                foreach ( $privileges as $privilege) {
+                    $acl->deny($role, $resource, $privilege,new AssertionNegation($inTeamAssertion));
+                }
+            }
+        }
+//         --- Team specific controls. ---
+        $acl->allow(null, 'Teams\Controller\Index', ['index', 'teamDetail', 'currentTeam']);
+        $acl->allow('global_admin', [
             'Teams\Controller\Index',
-            ['index', 'teamDetail']
-        );
-        //any level of core role can be given the team permission to update the team
-        $acl->allow(
-            $roles,
+            'Teams\Controller\Add',
             'Teams\Controller\Update',
-            ['teamUpdate']
-        );
-
-        //allow everyone to change their current team
-        $acl->allow(
-            $roles,
-            'Teams\Controller\Update',
-            ['currentTeam']
-        );
-
-        $acl->allow(
-            'global_admin',
-            [
-                'Teams\Controller\Index',
-                'Teams\Controller\Add',
-                'Teams\Controller\Update',
-            ],
-            [
-                'index',
-                'teamAdd',
-                'teamDetail',
-                'teamUpdate',
-            ]
-        );
-        $acl->allow(
-            'global_admin',
-            Entity\TeamRole::class,
-            $entityRights
-        );
-
-        // Only admin can manage teams.
-        $adminRoles = [
-            Acl::ROLE_GLOBAL_ADMIN,
-            Acl::ROLE_SITE_ADMIN,
-
-        ];
-
-        $viewerRoles = [
-            Acl::ROLE_AUTHOR,
-            Acl::ROLE_EDITOR,
-            Acl::ROLE_RESEARCHER,
-            Acl::ROLE_REVIEWER,
-        ];
-
-        $acl->allow(
-            $viewerRoles,
-            [Api\Adapter\TeamAdapter::class, Api\Adapter\TeamResourceAdapter::class],
-            ['search', 'read']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [
-                Api\Adapter\TeamResourceAdapter::class,
-                Api\Adapter\TeamResourceTemplateAdapter::class,
-                Api\Adapter\TeamRoleAdapter::class,
-                Api\Adapter\TeamUserAdapter::class,
-            ],
-            ['search', 'read']
-        );
+        ]);
+        $acl->allow('global_admin', \Teams\Entity\TeamRole::class);
 
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        if (! $globalSettings->get('teams_site_admin_make_user')) {
-            $acl->deny(
-                'site_admin',
-                'Omeka\Entity\User',
-                ['create', 'delete', 'change-password', 'edit-keys']
-            );
-
-            $acl->deny(
-                'site_admin',
-                'Omeka\Api\Adapter\UserAdapter',
-                ['create', 'delete']
-            );
+        if (!$globalSettings->get('teams_site_admin_make_site')) {
+            $acl->deny('site_admin', \Omeka\Entity\Site::class, 'create');
         }
-
-        $acl->allow(
-            $viewerRoles,
-            [Api\Adapter\TeamRoleAdapter::class],
-            ['search', 'read']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [Api\Adapter\TeamAdapter::class],
-            ['search', 'read', 'create', 'update', 'delete']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [Controller\AddController::class],
-            ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [Controller\DeleteController::class],
-            ['show', 'browse', 'add', 'edit', 'deleteRole', 'delete-confirm']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [Controller\IndexController::class],
-            ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
-        );
-
-        $acl->allow(
-            $viewerRoles,
-            [Controller\UpdateController::class],
-            ['show', 'browse', 'add', 'edit', 'delete', 'delete-confirm']
-        );
-        $acl->allow(
-            $adminRoles,
-            [Controller\IndexController::class],
-            ['roleIndex']
-        );
-        $acl->allow(
-            $viewerRoles,
-            [Controller\IndexController::class],
-            ['roleIndex']
-        );
-
-        $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        if (! $globalSettings->get('teams_site_admin_make_site')) {
-            $acl->deny(
-                'site_admin',
-                'Omeka\Entity\Site',
-                'create'
-            );
-        }
-
         if (!$globalSettings->get('teams_editor_make_site')) {
-            $acl->deny(
-                'editor',
-                'Omeka\Entity\Site',
-                'create'
-            );
+            $acl->deny('editor', \Omeka\Entity\Site::class, 'create');
         }
-
-        $acl->deny(
-            ['site_admin', 'editor', 'reviewer', 'author', 'researcher'],
-            'Teams\Controller\Trash',
-            'update'
-        );
-
-        // Use InTeamAssertion for entity-level permissions
-        $assertion = $services->get(\Teams\Acl\InTeamAssertion::class);
-        
-        // Combine admin and viewer roles (excluding global_admin which is handled separately)
-        $rolesWithAssertion = array_merge($viewerRoles, ['site_admin']);
-        
-        // Apply the assertion to all entity resources for non-global-admin roles
-        $acl->allow(
-            $rolesWithAssertion,
-            [
-                Entity\Team::class,
-                Entity\TeamUser::class,
-                Entity\TeamResource::class,
-                Entity\TeamRole::class,
-                Entity\TeamAsset::class,
-                Entity\TeamSite::class,
-                Entity\TeamResourceTemplate::class,
-                \Omeka\Entity\Item::class,
-                \Omeka\Entity\ItemSet::class,
-                \Omeka\Entity\Media::class,
-                \Omeka\Entity\Asset::class,
-                \Omeka\Entity\Site::class,
-                \Omeka\Entity\SitePage::class,
-                \Omeka\Entity\ResourceTemplate::class,
-            ],
-            $entityRights,
-            $assertion
-        );
-
     }
-
     /**
      * @param Event $event
      * The default teams behavior is to filter API class, including the ones that populate the available sites in forms.
@@ -2117,46 +2006,46 @@ SQL;
      *
      * @param Event $event
      */
-    public function teamAuthorizeOnRead(Event $event)
-    {
-        $entity = $event->getParam('entity');
-        $request = $event->getParam('request');
-        $operation = $request->getOperation();
-        
-        // Use ACL to check authorization
-        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $user = $this->getUser();
-        $role = $user ? $user->getRole() : null;
-        
-        if (!$acl->isAllowed($role, $entity, $operation)) {
-            throw new Exception\PermissionDeniedException(
-                sprintf('Permission denied for operation "%s" on resource.', $operation)
-            );
-        }
-    }
+//    public function teamAuthorizeOnRead(Event $event)
+//    {
+//        $entity = $event->getParam('entity');
+//        $request = $event->getParam('request');
+//        $operation = $request->getOperation();
+//
+//        // Use ACL to check authorization
+//        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+//        $user = $this->getUser();
+//        $role = $user ? $user->getRole() : null;
+//
+//        if (!$acl->isAllowed($role, $entity, $operation)) {
+//            throw new Exception\PermissionDeniedException(
+//                sprintf('Permission denied for operation "%s" on resource.', $operation)
+//            );
+//        }
+//    }
 
     /**
      * Check team authorization when hydrating an entity via API
      *
      * @param Event $event
      */
-    public function teamAuthorizeOnHydrate(Event $event)
-    {
-        $request = $event->getParam('request');
-        $entity = $event->getParam('entity');
-        $operation = $request->getOperation();
-        
-        // Use ACL to check authorization
-        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $user = $this->getUser();
-        $role = $user ? $user->getRole() : null;
-        
-        if (!$acl->isAllowed($role, $entity, $operation)) {
-            throw new Exception\PermissionDeniedException(
-                sprintf('Permission denied for operation "%s" on resource.', $operation)
-            );
-        }
-    }
+//    public function teamAuthorizeOnHydrate(Event $event)
+//    {
+//        $request = $event->getParam('request');
+//        $entity = $event->getParam('entity');
+//        $operation = $request->getOperation();
+//
+//        // Use ACL to check authorization
+//        $acl = $this->getServiceLocator()->get('Omeka\Acl');
+//        $user = $this->getUser();
+//        $role = $user ? $user->getRole() : null;
+//
+//        if (!$acl->isAllowed($role, $entity, $operation)) {
+//            throw new Exception\PermissionDeniedException(
+//                sprintf('Permission denied for operation "%s" on resource.', $operation)
+//            );
+//        }
+//    }
 
 
     /**
@@ -2267,6 +2156,14 @@ SQL;
     {
         $services = $this->getServiceLocator();
 
+        // The key change: attach the listener with a low priority to run it last.
+        $sharedEventManager->attach(
+            'Laminas\Mvc\Application',
+            MvcEvent::EVENT_DISPATCH,
+            [$this, 'addAclRulesOnDispatch'],
+            -1000 // Run after Omeka's default rules are established.
+        );
+
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
@@ -2358,11 +2255,11 @@ SQL;
         );
 
         // Use ACL assertion for authorization on API operations
-        $sharedEventManager->attach(
-            '*',
-            'api.find.post',
-            [$this, 'teamAuthorizeOnRead']
-        );
+//        $sharedEventManager->attach(
+//            '*',
+//            'api.find.post',
+//            [$this, 'teamAuthorizeOnRead']
+//        );
 
         $sharedEventManager->attach(
             'Teams\Controller\Index',
@@ -2371,11 +2268,11 @@ SQL;
         );
 
         // Use ACL assertion for authorization on API operations
-        $sharedEventManager->attach(
-            '*',
-            'api.hydrate.pre',
-            [$this, 'teamAuthorizeOnHydrate']
-        );
+//        $sharedEventManager->attach(
+//            '*',
+//            'api.hydrate.pre',
+//            [$this, 'teamAuthorizeOnHydrate']
+//        );
 
         $sharedEventManager->attach(
             ItemSetAdapter::class,

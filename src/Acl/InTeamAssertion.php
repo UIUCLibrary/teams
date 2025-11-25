@@ -9,33 +9,35 @@ use Laminas\Authentication\AuthenticationService;
 use Doctrine\ORM\EntityManager;
 use Omeka\Api\Exception;
 use Omeka\Entity\EntityInterface;
+use Omeka\Mvc\Status;
+use Teams\Entity\TeamUser;
 
 class InTeamAssertion implements AssertionInterface
 {
     /**
      * @var AuthenticationService
      */
-    protected $auth;
+    protected AuthenticationService $auth;
 
     /**
      * @var EntityManager
      */
-    protected $entityManager;
+    protected EntityManager $entityManager;
 
     /**
-     * @var \Omeka\Mvc\Status
+     * @var Status
      */
-    protected $status;
+    protected Status $status;
 
     /**
      * @param AuthenticationService $auth
      * @param EntityManager $entityManager
-     * @param \Omeka\Mvc\Status $status
+     * @param Status $status
      */
     public function __construct(
         AuthenticationService $auth,
         EntityManager $entityManager,
-        $status
+        Status $status
     ) {
         $this->auth = $auth;
         $this->entityManager = $entityManager;
@@ -56,173 +58,117 @@ class InTeamAssertion implements AssertionInterface
         RoleInterface $role = null,
         ResourceInterface $resource = null,
         $privilege = null
-    ) {
-        // If no resource is provided, we can't check team membership
-        if (!$resource instanceof EntityInterface) {
-            return true;
-        }
+    ): bool
+    {
+        $resourceDomains = [
+            \Omeka\Entity\Item::class, \Omeka\Entity\ItemSet::class, \Omeka\Entity\Media::class,
+            \Omeka\Entity\Asset::class, \Omeka\Entity\ResourceTemplate::class,
+            \Teams\Entity\TeamResource::class, \Teams\Entity\TeamAsset::class,
+        ];
 
         $user = $this->auth->getIdentity();
 
-        /*
-         * First go through a couple of common cases where we don't need to judge permissions
-         */
-
-        // If the user isn't logged in (e.g., the public), use the default settings
-        if (!$user) {
-            return true;
+        // The ACL rules in Module.php already handle bypass cases (global_admin).
+        // This assertion only runs for logged-in users on team-policed resources.
+        if (!$user || !$resource instanceof EntityInterface) {
+            return false;
         }
 
-        // If it isn't on the backend, let the public vs private rules take over
-        if ($this->status->isSiteRequest()) {
-            return true;
+        $teamUser = $this->entityManager->getRepository(TeamUser::class)
+            ->findOneBy(['is_current' => true, 'user' => $user->getId()]);
+
+        if (!$teamUser) {
+            // User has no active team, so they cannot perform any team-restricted actions.
+            return false;
         }
 
-        $is_glob_admin = ($user->getRole() === 'global_admin');
+        $teamUserRole = $teamUser->getRole();
+        $resClass = $this->getResourceClass($resource);
 
-        // If it is the global admin, bypass any team controls
-        if ($is_glob_admin) {
-            return true;
-        }
-
-        $authorized = false;
-
-        $res_class = $this->getResourceClass($resource);
-
-        $user_id = $user->getId();
-        $team_user = $this->entityManager->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['is_current' => true, 'user' => $user_id]);
-
-        // If user doesn't have a current team, deny access
-        if (!$team_user) {
-            throw new Exception\PermissionDeniedException(
-                'Permission denied. User does not have a current team assignment.'
-            );
-        }
-
-        $team = $team_user->getTeam();
-        $team_user_role = $team_user->getRole();
-
-        // Don't check if in same team if a create action, because items only assigned teams after creation
-        if ($privilege != 'create') {
-            // If resource not part of user's current team, no action at all
-            if (!$this->inTeam($resource, $team_user)) {
-                $err = sprintf(
-                    'Permission denied. Resource "%1$s: %2$s" is not part of your current team, %3$s. ' .
-                    'If you feel this is an error, try changing teams or talk to the administrator. ' .
-                    'Action: %4$s',
-                    get_class($resource),
-                    $resource->getId(),
-                    $team->getName(),
-                    $privilege
-                );
-                throw new Exception\PermissionDeniedException($err);
-            }
-        }
-
-        $resource_domains = [
-            'Omeka\Entity\Item',
-            'Omeka\Entity\ItemSet',
-            'Omeka\Entity\Media',
-            'Omeka\Entity\Asset',
-            'Omeka\Entity\ResourceTemplate',
-            'Teams\Entity\TeamResource',
-            'Teams\Entity\TeamAsset',
-        ];
-
-        if (in_array($res_class, $resource_domains)) {
-            if ($privilege == 'create') {
-                $authorized = $team_user_role->getCanAddItems();
-            } elseif ($privilege == 'delete' || $privilege == 'batch_delete') {
-                $authorized = $team_user_role->getCanDeleteResources();
-            } elseif ($privilege == 'update') {
-                $authorized = $team_user_role->getCanModifyResources();
-            } elseif ($privilege == 'read' || $privilege == 'search') {
-                $authorized = true;
-            }
-        } elseif ($res_class == 'Omeka\Entity\Site') {
-            if ($privilege == 'create') {
-                // Site creation permissions are handled separately in addAclRules
-                return true;
-            } elseif ($privilege == 'delete' || $privilege == 'batch_delete') {
-                $authorized = $team_user_role->getCanAddSitePages();
-            } elseif ($privilege == 'update') {
-                $authorized = $team_user_role->getCanAddSitePages();
-            } elseif ($privilege == 'read') {
-                $authorized = true;
-            }
-        } elseif ($res_class == 'Omeka\Entity\SitePage') {
-            if ($privilege == 'create') {
-                $authorized = $team_user_role->getCanAddSitePages();
-            } elseif ($privilege == 'delete' || $privilege == 'batch_delete') {
-                $authorized = $team_user_role->getCanAddSitePages();
-            } elseif ($privilege == 'update') {
-                $authorized = $team_user_role->getCanAddSitePages();
-            } elseif ($privilege == 'read') {
-                $authorized = true;
-            }
-        } elseif ($res_class == 'Teams\Entity\Team' || $res_class == 'Teams\Entity\TeamRole') {
-            if ($privilege == 'create') {
-                $authorized = $is_glob_admin;
-            } elseif ($privilege == 'delete' || $privilege == 'batch_delete') {
-                $authorized = $is_glob_admin;
-            } elseif ($privilege == 'update') {
-                $authorized = $team_user_role->getCanAddUsers();
-            } elseif ($privilege == 'read') {
-                $authorized = true;
-            }
-        } elseif ($res_class == 'Teams\Entity\TeamSite') {
-            if ($privilege == 'read') {
-                $authorized = true;
+        // For 'create' actions, we only check if the user's role has permission,
+        // as the resource doesn't belong to a team yet.
+        if ($privilege == 'create') {
+            if ($resClass == \Omeka\Entity\Site::class || $resClass == \Omeka\Entity\SitePage::class) {
+                return (bool)$teamUserRole->getCanAddSitePages();
+            } elseif (in_array($resClass,$resourceDomains)){
+                return (bool)$teamUserRole->getCanAddItems();
             } else {
-                // Adding or removing sites from a team
-                $authorized = $team_user_role->getCanAddSitePages();
+                // Other resources are not part of this scope
+                return false;
             }
-        } elseif ($res_class == 'Teams\Entity\TeamUser') {
-            if ($privilege == 'read') {
-                $authorized = true;
-            } elseif ($privilege == 'create') {
-                $authorized = $team_user_role->getCanAddUsers();
-            } elseif ($privilege == 'delete') {
-                $authorized = $team_user_role->getCanAddUsers();
-            } else {
-                $authorized = $is_glob_admin;
-            }
-        } elseif ($res_class == 'Omeka\Entity\User') {
-            return true;
-        } elseif ($res_class == 'Omeka\Entity\Job') {
-            return true;
-        } elseif ($res_class == 'Omeka\Entity\Property') {
-            return true;
-        } elseif (strpos($res_class, 'Omeka\Entity') !== 0) {
-            // Don't police other modules by default (not an Omeka entity)
-            return true;
         }
 
-        if (!$authorized) {
-            $msg = sprintf(
-                'Permission denied. Your role in %5$s, %4$s, does not permit you to %3$s this resource.',
-                get_class($resource),
-                $resource->getId(),
-                $privilege,
-                $team_user_role->getName(),
-                $team->getName()
-            );
-
-            throw new Exception\PermissionDeniedException($msg);
+        // For all other actions, first check if the resource is in the user's current team.
+        if (!$this->isResourceInTeam($resource, $teamUser)) {
+            return false;
         }
 
-        return $authorized;
+        // The resource is in the team. Now check if the team role grants the specific privilege.
+        $isAuthorized = false;
+
+        if (in_array($resClass, $resourceDomains)) {
+            switch ($privilege) {
+                case 'delete': case 'batch_delete':
+                $isAuthorized = (bool)$teamUserRole->getCanDeleteResources();
+                break;
+                case 'update':
+                    $isAuthorized = (bool)$teamUserRole->getCanModifyResources();
+                break;
+                case 'read': case 'search':
+                    $isAuthorized = true; // If it's in the team, they can read it.
+                break;
+            }
+        } elseif ($resClass == \Omeka\Entity\Site::class || $resClass == \Omeka\Entity\SitePage::class) {
+            switch ($privilege) {
+                case 'delete': case 'batch_delete': case 'update':
+                $isAuthorized = (bool)$teamUserRole->getCanAddSitePages();
+                break;
+                case 'read':
+                    $isAuthorized = true;
+                    break;
+            }
+        } elseif ($resClass == \Teams\Entity\Team::class || $resClass == \Teams\Entity\TeamRole::class) {
+            switch ($privilege) {
+                case 'create': case 'delete': case 'batch_delete':
+                $isAuthorized = false; // Only global admins can do this.
+                break;
+                case 'update':
+                    $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
+                    break;
+                case 'read':
+                    $isAuthorized = true;
+                    break;
+            }
+        } elseif ($resClass == \Teams\Entity\TeamSite::class) {
+            $isAuthorized = ($privilege == 'read') ? true : (bool)$teamUserRole->getCanAddSitePages();
+        } elseif ($resClass == TeamUser::class) {
+            switch ($privilege) {
+                case 'create': case 'delete':
+                $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
+                break;
+                case 'read':
+                    $isAuthorized = true;
+                    break;
+                default:
+                    $isAuthorized = false;
+            }
+        } else {
+            // If it's a resource we don't explicitly police (e.g., Job, Property),
+            // this assertion does not authorize it.
+            $isAuthorized = false;
+        }
+
+        return $isAuthorized;
     }
 
     /**
      * Check to see if the user and the object they are attempting to access or change are part of the same team.
      *
      * @param EntityInterface $resource
-     * @param \Teams\Entity\TeamUser $team_user
+     * @param TeamUser $team_user
      * @return bool
      */
-    private function inTeam($resource, $team_user)
+    private function isResourceInTeam(EntityInterface $resource, TeamUser $team_user): bool
     {
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         $fk_id = $resource->getId();
@@ -263,9 +209,10 @@ class InTeamAssertion implements AssertionInterface
         } else {
             /*
              * TeamRole is only accessible by global admin so doesn't need to be checked.
-             * Other classes should be controlled by their respective modules and components.
+             * Other classes should be controlled by their respective modules and components
+             * and should not be using this assertion.
              */
-            return true;
+            return false;
         }
 
         if ($team_resource = $this->entityManager->getRepository($teamsRepo)
@@ -284,7 +231,7 @@ class InTeamAssertion implements AssertionInterface
      * @param mixed $resource
      * @return string
      */
-    private function getResourceClass($resource)
+    private function getResourceClass($resource): string
     {
         $doctrine_ent = 'DoctrineProxies\__CG__';
         $doctrine_test = strpos(get_class($resource), $doctrine_ent);
