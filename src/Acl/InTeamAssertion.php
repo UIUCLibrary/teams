@@ -63,7 +63,8 @@ class InTeamAssertion implements AssertionInterface
         $resourceDomains = [
             \Omeka\Entity\Item::class, \Omeka\Entity\ItemSet::class, \Omeka\Entity\Media::class,
             \Omeka\Entity\Asset::class, \Omeka\Entity\ResourceTemplate::class,
-            \Teams\Entity\TeamResource::class, \Teams\Entity\TeamAsset::class,
+            \Teams\Entity\TeamResource::class, \Teams\Entity\TeamAsset::class, \Omeka\Api\Adapter\ItemAdapter::class,
+            \Omeka\Api\Adapter\ItemSetAdapter::class, \Omeka\Api\Adapter\ResourceTemplateAdapter::class
         ];
 
         $user = $this->auth->getIdentity();
@@ -91,6 +92,13 @@ class InTeamAssertion implements AssertionInterface
                 // Other resources are not part of this scope
                 return false;
             }
+        }
+
+        if (in_array($privilege, ['batch_delete', 'batch_delete_all']) ) {
+            return (bool)$teamUserRole->getCanDeleteResources();
+        }
+        if (in_array($privilege, ['batch_update', 'batch_update_all']) ) {
+            return (bool)$teamUserRole->getCanModifyResources();
         }
 
         // For all other actions, first check if the resource is in the user's current team.

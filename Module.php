@@ -261,37 +261,57 @@ SQL;
             \Teams\Entity\TeamResource::class,
             \Teams\Entity\TeamAsset::class,
         ];
+
         $adapters = [
             'Omeka\Api\Adapter\ItemAdapter',
             'Omeka\Api\Adapter\ItemSetAdapter',
             'Omeka\Api\Adapter\MediaAdapter',
             'Omeka\Api\Adapter\AssetAdapter',
             'Omeka\Api\Adapter\SiteAdapter',
+            'Omeka\Api\Adapter\SitePageAdapter',
+            'Omeka\Api\Adapter\ResourceTemplateAdapter',
         ];
+
         $rolesToControl = ['site_admin', 'editor', 'author'];
 
-        $privileges =[
+        $entityPrivileges =[
             'update',
             'delete',
             'create',
             'batch-delete',
             'batch-update',
             'batch-create',
-            'batch_update',
             'batch_delete',
             'batch-edit-all',
-            'batch-upate-all',
+            'batch-update-all',
             'batch-edit',
             'batch-delete-all',
-            'batch_delete_all',
             ];
+        $adapterPrivileges = [
+            'create',
+            'batch_delete',
+            'batch_create',
+            'batch_update',
+            'batch_delete_all',
+            'batch_update_all',
+        ];
         foreach ($omekaResources as $resource) {
             foreach ($rolesToControl as $role) {
-                foreach ( $privileges as $privilege) {
+                foreach ( $entityPrivileges as $privilege) {
                     $acl->deny($role, $resource, $privilege,new AssertionNegation($inTeamAssertion));
                 }
             }
         }
+
+        //there are some display adapters that use this permission to show add/edit links
+        foreach ($adapters as $adapter) {
+            foreach ($rolesToControl as $role) {
+                foreach ( $adapterPrivileges as $privilege) {
+                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($inTeamAssertion));
+                }
+            }
+        }
+
 //         --- Team specific controls. ---
         $acl->allow(null, 'Teams\Controller\Index', ['index', 'teamDetail', 'currentTeam']);
         $acl->allow('global_admin', [
