@@ -26,6 +26,36 @@ use Teams\Entity\TeamUser;
 class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
+     * Resource domains that are controlled by item/resource permissions.
+     * These constants ensure synchronization between ACL rules and assertion logic.
+     */
+    public const ITEM_RESOURCE_DOMAINS = [
+        \Omeka\Entity\Item::class,
+        \Omeka\Entity\ItemSet::class,
+        \Omeka\Entity\Media::class,
+        \Omeka\Entity\Asset::class,
+        \Omeka\Entity\ResourceTemplate::class,
+        \Teams\Entity\TeamResource::class,
+        \Teams\Entity\TeamAsset::class,
+        \Omeka\Api\Adapter\ItemAdapter::class,
+        \Omeka\Api\Adapter\ItemSetAdapter::class,
+        \Omeka\Api\Adapter\MediaAdapter::class,
+        \Omeka\Api\Adapter\AssetAdapter::class,
+        \Omeka\Api\Adapter\ResourceTemplateAdapter::class,
+    ];
+    
+    /**
+     * Site-related resource domains.
+     * These constants ensure synchronization between ACL rules and assertion logic.
+     */
+    public const SITE_RESOURCE_DOMAINS = [
+        \Omeka\Entity\Site::class,
+        \Omeka\Entity\SitePage::class,
+        \Omeka\Api\Adapter\SiteAdapter::class,
+        \Omeka\Api\Adapter\SitePageAdapter::class,
+    ];
+
+    /**
      * @var AuthenticationService
      */
     protected AuthenticationService $auth;
@@ -71,17 +101,6 @@ class TeamRolePermissionAssertion implements AssertionInterface
         $privilege = null
     ): bool
     {
-        $resourceDomains = [
-            \Omeka\Entity\Item::class, \Omeka\Entity\ItemSet::class, \Omeka\Entity\Media::class,
-            \Omeka\Entity\Asset::class, \Omeka\Entity\ResourceTemplate::class,
-            \Teams\Entity\TeamResource::class, \Teams\Entity\TeamAsset::class, \Omeka\Api\Adapter\ItemAdapter::class,
-            \Omeka\Api\Adapter\ItemSetAdapter::class, \Omeka\Api\Adapter\ResourceTemplateAdapter::class
-        ];
-        $siteDomains = [
-            \Omeka\Entity\Site::class, \Omeka\Entity\SitePage::class,
-            \Omeka\Api\Adapter\SiteAdapter::class, \Omeka\Api\Adapter\SitePageAdapter::class
-        ];
-
         $user = $this->auth->getIdentity();
         if (!$user) {
             return false;
@@ -101,9 +120,9 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // For 'create' actions, we only check if the user's role has permission,
         // as the resource doesn't belong to a team yet.
         if ($privilege == 'create') {
-            if (in_array($resourceClass,$siteDomains)) {
+            if (in_array($resourceClass, self::SITE_RESOURCE_DOMAINS)) {
                 return (bool)$teamUserRole->getCanAddSitePages();
-            } elseif (in_array($resourceClass, $resourceDomains)) {
+            } elseif (in_array($resourceClass, self::ITEM_RESOURCE_DOMAINS)) {
                 return (bool)$teamUserRole->getCanAddItems();
             } else {
                 // Other resources are not part of this scope
@@ -128,7 +147,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // The resource is in the team. Now check if the team role grants the specific privilege.
         $isAuthorized = false;
 
-        if (in_array($resourceClass, $resourceDomains)) {
+        if (in_array($resourceClass, self::ITEM_RESOURCE_DOMAINS)) {
             switch ($privilege) {
                 case 'delete':
                 case 'batch_delete':
@@ -142,7 +161,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
                     $isAuthorized = true; // If it's in the team, they can read it.
                     break;
             }
-        } elseif ($resourceClass == \Omeka\Entity\Site::class || $resourceClass == \Omeka\Entity\SitePage::class) {
+        } elseif (in_array($resourceClass, self::SITE_RESOURCE_DOMAINS)) {
             switch ($privilege) {
                 case 'delete':
                 case 'batch_delete':

@@ -244,15 +244,11 @@ SQL;
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
         $teamRolePermissionAssertion = $this->getServiceLocator()->get(\Teams\Acl\TeamRolePermissionAssertion::class);
 
-        $omekaResources = [
-            \Omeka\Entity\Item::class,
-            \Omeka\Entity\ItemSet::class,
-            \Omeka\Entity\Media::class,
-            \Omeka\Entity\Site::class,
-            \Omeka\Entity\SitePage::class,
-            \Omeka\Entity\ResourceTemplate::class,
-            \Omeka\Entity\Asset::class,
-        ];
+        // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
+        $allResourceDomains = array_merge(
+            \Teams\Acl\TeamRolePermissionAssertion::ITEM_RESOURCE_DOMAINS,
+            \Teams\Acl\TeamRolePermissionAssertion::SITE_RESOURCE_DOMAINS
+        );
 
         $teamResources = [
             \Teams\Entity\Team::class,
@@ -262,15 +258,14 @@ SQL;
             \Teams\Entity\TeamAsset::class,
         ];
 
-        $adapters = [
-            'Omeka\Api\Adapter\ItemAdapter',
-            'Omeka\Api\Adapter\ItemSetAdapter',
-            'Omeka\Api\Adapter\MediaAdapter',
-            'Omeka\Api\Adapter\AssetAdapter',
-            'Omeka\Api\Adapter\SiteAdapter',
-            'Omeka\Api\Adapter\SitePageAdapter',
-            'Omeka\Api\Adapter\ResourceTemplateAdapter',
-        ];
+        // Extract entities and adapters from the unified resource list
+        $entities = array_filter($allResourceDomains, function($resource) {
+            return strpos($resource, 'Entity') !== false;
+        });
+        
+        $adapters = array_filter($allResourceDomains, function($resource) {
+            return strpos($resource, 'Adapter') !== false;
+        });
 
         $rolesToControl = $acl->getRoles();
         $rolesToControl = array_diff($rolesToControl, ["global_admin"]);
@@ -296,7 +291,7 @@ SQL;
             'batch_delete_all',
             'batch_update_all',
         ];
-        foreach ($omekaResources as $resource) {
+        foreach ($entities as $resource) {
             foreach ($rolesToControl as $role) {
                 foreach ( $entityPrivileges as $privilege) {
                     $acl->deny($role, $resource, $privilege, new AssertionNegation($teamRolePermissionAssertion));
