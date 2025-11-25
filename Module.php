@@ -245,9 +245,14 @@ SQL;
         $teamRolePermissionAssertion = $this->getServiceLocator()->get(\Teams\Acl\TeamRolePermissionAssertion::class);
 
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
-        $allResourceDomains = array_merge(
-            \Teams\Acl\TeamRolePermissionAssertion::ITEM_RESOURCE_DOMAINS,
-            \Teams\Acl\TeamRolePermissionAssertion::SITE_RESOURCE_DOMAINS
+        $entities = array_merge(
+            \Teams\Acl\TeamRolePermissionAssertion::ITEM_ENTITIES_FOR_ACL,
+            \Teams\Acl\TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
+        );
+        
+        $adapters = array_merge(
+            \Teams\Acl\TeamRolePermissionAssertion::ITEM_ADAPTERS_FOR_ACL,
+            \Teams\Acl\TeamRolePermissionAssertion::SITE_ADAPTERS_FOR_ACL
         );
 
         $teamResources = [
@@ -257,15 +262,6 @@ SQL;
             \Teams\Entity\TeamResource::class,
             \Teams\Entity\TeamAsset::class,
         ];
-
-        // Extract entities and adapters from the unified resource list
-        $entities = array_filter($allResourceDomains, function($resource) {
-            return strpos($resource, 'Entity') !== false;
-        });
-        
-        $adapters = array_filter($allResourceDomains, function($resource) {
-            return strpos($resource, 'Adapter') !== false;
-        });
 
         $rolesToControl = $acl->getRoles();
         $rolesToControl = array_diff($rolesToControl, ["global_admin"]);

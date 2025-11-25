@@ -26,7 +26,7 @@ use Teams\Entity\TeamUser;
 class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
-     * Item-like entities that map to TeamResource
+     * Item-like entities that map to TeamResource repository
      */
     private const ITEM_ENTITIES = [
         \Omeka\Entity\Item::class,
@@ -35,10 +35,36 @@ class TeamRolePermissionAssertion implements AssertionInterface
     ];
     
     /**
-     * Resource domains that are controlled by item/resource permissions.
-     * These constants ensure synchronization between ACL rules and assertion logic.
+     * Entity classes controlled by item/resource permissions.
+     * Used by Module.php for configuring entity-level ACL rules.
      */
-    public const ITEM_RESOURCE_DOMAINS = [
+    public const ITEM_ENTITIES_FOR_ACL = [
+        \Omeka\Entity\Item::class,
+        \Omeka\Entity\ItemSet::class,
+        \Omeka\Entity\Media::class,
+        \Omeka\Entity\Asset::class,
+        \Omeka\Entity\ResourceTemplate::class,
+        \Teams\Entity\TeamResource::class,
+        \Teams\Entity\TeamAsset::class,
+    ];
+    
+    /**
+     * API adapter classes controlled by item/resource permissions.
+     * Used by Module.php for configuring adapter-level ACL rules.
+     */
+    public const ITEM_ADAPTERS_FOR_ACL = [
+        \Omeka\Api\Adapter\ItemAdapter::class,
+        \Omeka\Api\Adapter\ItemSetAdapter::class,
+        \Omeka\Api\Adapter\MediaAdapter::class,
+        \Omeka\Api\Adapter\AssetAdapter::class,
+        \Omeka\Api\Adapter\ResourceTemplateAdapter::class,
+    ];
+    
+    /**
+     * All item/resource domains (entities + adapters combined).
+     * Used internally by assert() method.
+     */
+    private const ITEM_RESOURCE_DOMAINS = [
         \Omeka\Entity\Item::class,
         \Omeka\Entity\ItemSet::class,
         \Omeka\Entity\Media::class,
@@ -54,10 +80,28 @@ class TeamRolePermissionAssertion implements AssertionInterface
     ];
     
     /**
-     * Site-related resource domains.
-     * These constants ensure synchronization between ACL rules and assertion logic.
+     * Site entity classes controlled by site permissions.
+     * Used by Module.php for configuring entity-level ACL rules.
      */
-    public const SITE_RESOURCE_DOMAINS = [
+    public const SITE_ENTITIES_FOR_ACL = [
+        \Omeka\Entity\Site::class,
+        \Omeka\Entity\SitePage::class,
+    ];
+    
+    /**
+     * Site API adapter classes controlled by site permissions.
+     * Used by Module.php for configuring adapter-level ACL rules.
+     */
+    public const SITE_ADAPTERS_FOR_ACL = [
+        \Omeka\Api\Adapter\SiteAdapter::class,
+        \Omeka\Api\Adapter\SitePageAdapter::class,
+    ];
+    
+    /**
+     * All site-related domains (entities + adapters combined).
+     * Used internally by assert() method.
+     */
+    private const SITE_RESOURCE_DOMAINS = [
         \Omeka\Entity\Site::class,
         \Omeka\Entity\SitePage::class,
         \Omeka\Api\Adapter\SiteAdapter::class,
