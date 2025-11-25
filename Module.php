@@ -52,12 +52,6 @@ class Module extends AbstractModule
     public function onBootstrap(MvcEvent $event)
     {
         parent::onBootstrap($event);
-    }
-    /**
-     * The listener that calls our ACL setup.
-     */
-    public function addAclRulesOnDispatch(MvcEvent $event)
-    {
         $this->addAclRules();
     }
 
@@ -2002,53 +1996,6 @@ SQL;
     }
 
     /**
-     * Check team authorization when reading an entity via API
-     *
-     * @param Event $event
-     */
-//    public function teamAuthorizeOnRead(Event $event)
-//    {
-//        $entity = $event->getParam('entity');
-//        $request = $event->getParam('request');
-//        $operation = $request->getOperation();
-//
-//        // Use ACL to check authorization
-//        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-//        $user = $this->getUser();
-//        $role = $user ? $user->getRole() : null;
-//
-//        if (!$acl->isAllowed($role, $entity, $operation)) {
-//            throw new Exception\PermissionDeniedException(
-//                sprintf('Permission denied for operation "%s" on resource.', $operation)
-//            );
-//        }
-//    }
-
-    /**
-     * Check team authorization when hydrating an entity via API
-     *
-     * @param Event $event
-     */
-//    public function teamAuthorizeOnHydrate(Event $event)
-//    {
-//        $request = $event->getParam('request');
-//        $entity = $event->getParam('entity');
-//        $operation = $request->getOperation();
-//
-//        // Use ACL to check authorization
-//        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-//        $user = $this->getUser();
-//        $role = $user ? $user->getRole() : null;
-//
-//        if (!$acl->isAllowed($role, $entity, $operation)) {
-//            throw new Exception\PermissionDeniedException(
-//                sprintf('Permission denied for operation "%s" on resource.', $operation)
-//            );
-//        }
-//    }
-
-
-    /**
      * Disable the auto-add field on the site edit form. Teams manages this by automatically adding items to the
      * appropriate team.
      * @param Event $event
@@ -2156,14 +2103,6 @@ SQL;
     {
         $services = $this->getServiceLocator();
 
-        // The key change: attach the listener with a low priority to run it last.
-        $sharedEventManager->attach(
-            'Laminas\Mvc\Application',
-            MvcEvent::EVENT_DISPATCH,
-            [$this, 'addAclRulesOnDispatch'],
-            -1000 // Run after Omeka's default rules are established.
-        );
-
         $sharedEventManager->attach(
             'Omeka\Controller\Admin\Item',
             'view.advanced_search',
@@ -2254,25 +2193,11 @@ SQL;
             [$this, 'getOrphans']
         );
 
-        // Use ACL assertion for authorization on API operations
-//        $sharedEventManager->attach(
-//            '*',
-//            'api.find.post',
-//            [$this, 'teamAuthorizeOnRead']
-//        );
-
         $sharedEventManager->attach(
             'Teams\Controller\Index',
             'view.browse.before',
             [$this, 'teamSelectorBrowse']
         );
-
-        // Use ACL assertion for authorization on API operations
-//        $sharedEventManager->attach(
-//            '*',
-//            'api.hydrate.pre',
-//            [$this, 'teamAuthorizeOnHydrate']
-//        );
 
         $sharedEventManager->attach(
             ItemSetAdapter::class,
