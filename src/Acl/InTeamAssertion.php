@@ -67,10 +67,7 @@ class InTeamAssertion implements AssertionInterface
         ];
 
         $user = $this->auth->getIdentity();
-
-        // The ACL rules in Module.php already handle bypass cases (global_admin).
-        // This assertion only runs for logged-in users on team-policed resources.
-        if (!$user || !$resource instanceof EntityInterface) {
+        if (!$user ) {
             return false;
         }
 
@@ -83,14 +80,12 @@ class InTeamAssertion implements AssertionInterface
         }
 
         $teamUserRole = $teamUser->getRole();
-        $resClass = $this->getResourceClass($resource);
-
         // For 'create' actions, we only check if the user's role has permission,
         // as the resource doesn't belong to a team yet.
         if ($privilege == 'create') {
-            if ($resClass == \Omeka\Entity\Site::class || $resClass == \Omeka\Entity\SitePage::class) {
+            if ($resource == \Omeka\Entity\Site::class || $resource == \Omeka\Entity\SitePage::class) {
                 return (bool)$teamUserRole->getCanAddSitePages();
-            } elseif (in_array($resClass,$resourceDomains)){
+            } elseif (in_array($resource,$resourceDomains)){
                 return (bool)$teamUserRole->getCanAddItems();
             } else {
                 // Other resources are not part of this scope
@@ -106,7 +101,7 @@ class InTeamAssertion implements AssertionInterface
         // The resource is in the team. Now check if the team role grants the specific privilege.
         $isAuthorized = false;
 
-        if (in_array($resClass, $resourceDomains)) {
+        if (in_array($resource, $resourceDomains)) {
             switch ($privilege) {
                 case 'delete': case 'batch_delete':
                 $isAuthorized = (bool)$teamUserRole->getCanDeleteResources();
@@ -118,7 +113,7 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true; // If it's in the team, they can read it.
                 break;
             }
-        } elseif ($resClass == \Omeka\Entity\Site::class || $resClass == \Omeka\Entity\SitePage::class) {
+        } elseif ($resource == \Omeka\Entity\Site::class || $resource == \Omeka\Entity\SitePage::class) {
             switch ($privilege) {
                 case 'delete': case 'batch_delete': case 'update':
                 $isAuthorized = (bool)$teamUserRole->getCanAddSitePages();
@@ -127,7 +122,7 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($resClass == \Teams\Entity\Team::class || $resClass == \Teams\Entity\TeamRole::class) {
+        } elseif ($resource == \Teams\Entity\Team::class || $resource == \Teams\Entity\TeamRole::class) {
             switch ($privilege) {
                 case 'create': case 'delete': case 'batch_delete':
                 $isAuthorized = false; // Only global admins can do this.
@@ -139,9 +134,9 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($resClass == \Teams\Entity\TeamSite::class) {
+        } elseif ($resource == \Teams\Entity\TeamSite::class) {
             $isAuthorized = ($privilege == 'read') ? true : (bool)$teamUserRole->getCanAddSitePages();
-        } elseif ($resClass == TeamUser::class) {
+        } elseif ($resource == TeamUser::class) {
             switch ($privilege) {
                 case 'create': case 'delete':
                 $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
