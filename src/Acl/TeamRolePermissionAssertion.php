@@ -244,20 +244,23 @@ class TeamRolePermissionAssertion implements AssertionInterface
     }
 
     /**
-     * Returns the class name of a resource, handling Doctrine proxies and GenericResource.
+     * Returns the class name of a resource, handling both entity instances and ACL resources.
      * 
-     * For GenericResource instances, returns the resource itself (as it contains the actual resource).
-     * For other resources, returns the fully qualified class name as a string.
+     * When the resource implements ResourceInterface (e.g., GenericResource), uses getResourceId()
+     * to get the resource identifier (typically a class name).
+     * For entity instances, returns the fully qualified class name.
      *
      * @param mixed $resource
-     * @return string|object The class name as string, or the GenericResource object
+     * @return string The class name or resource identifier
      */
-    private function getResourceClass($resource)
+    private function getResourceClass($resource): string
     {
-        if (get_class($resource) === 'Laminas\Permissions\Acl\Resource\GenericResource') {
-            return $resource;
-        } else {
-            return get_class($resource);
+        // If it's an ACL resource (like GenericResource), use its resource ID
+        if ($resource instanceof ResourceInterface) {
+            return $resource->getResourceId();
         }
+        
+        // Otherwise, get the class name directly
+        return get_class($resource);
     }
 }
