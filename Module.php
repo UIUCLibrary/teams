@@ -299,7 +299,7 @@ SQL;
         foreach ($omekaResources as $resource) {
             foreach ($rolesToControl as $role) {
                 foreach ( $entityPrivileges as $privilege) {
-                    $acl->deny($role, $resource, $privilege,new AssertionNegation($teamRolePermissionAssertion));
+                    $acl->deny($role, $resource, $privilege, new AssertionNegation($teamRolePermissionAssertion));
                 }
             }
         }

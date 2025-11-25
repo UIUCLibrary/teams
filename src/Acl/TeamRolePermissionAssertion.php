@@ -12,6 +12,16 @@ use Omeka\Entity\EntityInterface;
 use Omeka\Mvc\Status;
 use Teams\Entity\TeamUser;
 
+/**
+ * ACL assertion for team-based authorization.
+ * 
+ * This assertion enforces that users can only access resources that belong to their current team,
+ * and that their role within that team permits the requested action. It handles various resource
+ * types including Items, Sites, Media, and Team-specific entities.
+ * 
+ * The assertion is used with AssertionNegation in ACL deny rules, creating a pattern where
+ * access is denied unless the assertion grants permission (double-negative pattern).
+ */
 class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
@@ -68,7 +78,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         ];
 
         $user = $this->auth->getIdentity();
-        if (!$user ) {
+        if (!$user) {
             return false;
         }
 
@@ -81,12 +91,14 @@ class TeamRolePermissionAssertion implements AssertionInterface
         }
 
         $teamUserRole = $teamUser->getRole();
+        $resourceClass = $this->getResourceClass($resource);
+        
         // For 'create' actions, we only check if the user's role has permission,
         // as the resource doesn't belong to a team yet.
         if ($privilege == 'create') {
-            if ($this->getResourceClass($resource) == \Omeka\Entity\Site::class || $this->getResourceClass($resource) == \Omeka\Entity\SitePage::class) {
+            if ($resourceClass == \Omeka\Entity\Site::class || $resourceClass == \Omeka\Entity\SitePage::class) {
                 return (bool)$teamUserRole->getCanAddSitePages();
-            } elseif (in_array($this->getResourceClass($resource),$resourceDomains)){
+            } elseif (in_array($resourceClass, $resourceDomains)) {
                 return (bool)$teamUserRole->getCanAddItems();
             } else {
                 // Other resources are not part of this scope
@@ -94,10 +106,10 @@ class TeamRolePermissionAssertion implements AssertionInterface
             }
         }
 
-        if (in_array($privilege, ['batch_delete', 'batch_delete_all']) ) {
+        if (in_array($privilege, ['batch_delete', 'batch_delete_all'])) {
             return (bool)$teamUserRole->getCanDeleteResources();
         }
-        if (in_array($privilege, ['batch_update', 'batch_update_all']) ) {
+        if (in_array($privilege, ['batch_update', 'batch_update_all'])) {
             return (bool)$teamUserRole->getCanModifyResources();
         }
 
@@ -109,32 +121,38 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // The resource is in the team. Now check if the team role grants the specific privilege.
         $isAuthorized = false;
 
-        if (in_array($this->getResourceClass($resource), $resourceDomains)) {
+        if (in_array($resourceClass, $resourceDomains)) {
             switch ($privilege) {
-                case 'delete': case 'batch_delete':
-                $isAuthorized = (bool)$teamUserRole->getCanDeleteResources();
-                break;
+                case 'delete':
+                case 'batch_delete':
+                    $isAuthorized = (bool)$teamUserRole->getCanDeleteResources();
+                    break;
                 case 'update':
                     $isAuthorized = (bool)$teamUserRole->getCanModifyResources();
-                break;
-                case 'read': case 'search':
+                    break;
+                case 'read':
+                case 'search':
                     $isAuthorized = true; // If it's in the team, they can read it.
-                break;
+                    break;
             }
-        } elseif ($this->getResourceClass($resource) == \Omeka\Entity\Site::class || $this->getResourceClass($resource) == \Omeka\Entity\SitePage::class) {
+        } elseif ($resourceClass == \Omeka\Entity\Site::class || $resourceClass == \Omeka\Entity\SitePage::class) {
             switch ($privilege) {
-                case 'delete': case 'batch_delete': case 'update':
-                $isAuthorized = (bool)$teamUserRole->getCanAddSitePages();
-                break;
+                case 'delete':
+                case 'batch_delete':
+                case 'update':
+                    $isAuthorized = (bool)$teamUserRole->getCanAddSitePages();
+                    break;
                 case 'read':
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($this->getResourceClass($resource) == \Teams\Entity\Team::class || $this->getResourceClass($resource) == \Teams\Entity\TeamRole::class) {
+        } elseif ($resourceClass == \Teams\Entity\Team::class || $resourceClass == \Teams\Entity\TeamRole::class) {
             switch ($privilege) {
-                case 'create': case 'delete': case 'batch_delete':
-                $isAuthorized = false; // Only global admins can do this.
-                break;
+                case 'create':
+                case 'delete':
+                case 'batch_delete':
+                    $isAuthorized = false; // Only global admins can do this.
+                    break;
                 case 'update':
                     $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
                     break;
@@ -142,13 +160,14 @@ class TeamRolePermissionAssertion implements AssertionInterface
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($this->getResourceClass($resource) == \Teams\Entity\TeamSite::class) {
+        } elseif ($resourceClass == \Teams\Entity\TeamSite::class) {
             $isAuthorized = ($privilege == 'read') ? true : (bool)$teamUserRole->getCanAddSitePages();
-        } elseif ($this->getResourceClass($resource) == TeamUser::class) {
+        } elseif ($resourceClass == TeamUser::class) {
             switch ($privilege) {
-                case 'create': case 'delete':
-                $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
-                break;
+                case 'create':
+                case 'delete':
+                    $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
+                    break;
                 case 'read':
                     $isAuthorized = true;
                     break;
@@ -172,7 +191,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
      * @param TeamUser $team_user
      * @return bool
      */
-    private function isResourceInTeam( ResourceInterface $resource, TeamUser $team_user): bool
+    private function isResourceInTeam(ResourceInterface $resource, TeamUser $team_user): bool
     {
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         $fk_id = $resource->getId();
@@ -220,28 +239,22 @@ class TeamRolePermissionAssertion implements AssertionInterface
         }
         $team_resource = $this->entityManager->getRepository($teamsRepo)
             ->findOneBy($criteria);
-        if ($team_resource) {
-            $in_team = true;
-        } else {
-            $in_team = false;
-        }
-
-        return $in_team;
+        
+        return (bool)$team_resource;
     }
 
     /**
      * Returns the expected string for proxied resource class in cases where the class returned is the doctrine proxy.
      *
      * @param mixed $resource
-     * @return string
+     * @return string|ResourceInterface
      */
-    private function getResourceClass($resource): string
+    private function getResourceClass($resource)
     {
-        if( get_class($resource) === 'Laminas\Permissions\Acl\Resource\GenericResource'){
+        if (get_class($resource) === 'Laminas\Permissions\Acl\Resource\GenericResource') {
             return $resource;
         } else {
             return get_class($resource);
         }
-
     }
 }

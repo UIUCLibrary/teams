@@ -5,7 +5,7 @@ use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 use Teams\Acl\TeamRolePermissionAssertion;
 
-class InTeamAssertionFactory implements FactoryInterface
+class TeamRolePermissionAssertionFactory implements FactoryInterface
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null)
     {
