@@ -198,11 +198,11 @@ class TeamRolePermissionAssertion implements AssertionInterface
      * Requires an entity instance to verify team membership because it needs to access
      * entity-specific methods like getId(), getSite(), getTeam(), and getResource().
      *
-     * @param ResourceInterface|null $resource The resource to check
+     * @param mixed $resource The resource to check (accepts ResourceInterface or entity instances)
      * @param TeamUser $team_user The user's team membership record
      * @return bool True if the resource belongs to the user's team, false otherwise
      */
-    private function isResourceInTeam($resource, TeamUser $team_user): bool
+    private function isResourceInTeam(mixed $resource, TeamUser $team_user): bool
     {
         // Can't verify team membership without an actual entity instance
         if ($resource instanceof GenericResource) {
