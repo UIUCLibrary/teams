@@ -77,6 +77,10 @@ class TeamRolePermissionAssertion implements AssertionInterface
             \Teams\Entity\TeamResource::class, \Teams\Entity\TeamAsset::class, \Omeka\Api\Adapter\ItemAdapter::class,
             \Omeka\Api\Adapter\ItemSetAdapter::class, \Omeka\Api\Adapter\ResourceTemplateAdapter::class
         ];
+        $siteDomains = [
+            \Omeka\Entity\Site::class, \Omeka\Entity\SitePage::class,
+            \Omeka\Api\Adapter\SiteAdapter::class, \Omeka\Api\Adapter\SitePageAdapter::class
+        ];
 
         $user = $this->auth->getIdentity();
         if (!$user) {
@@ -97,7 +101,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // For 'create' actions, we only check if the user's role has permission,
         // as the resource doesn't belong to a team yet.
         if ($privilege == 'create') {
-            if ($resourceClass == \Omeka\Entity\Site::class || $resourceClass == \Omeka\Entity\SitePage::class) {
+            if (in_array($resourceClass,$siteDomains)) {
                 return (bool)$teamUserRole->getCanAddSitePages();
             } elseif (in_array($resourceClass, $resourceDomains)) {
                 return (bool)$teamUserRole->getCanAddItems();
