@@ -107,6 +107,8 @@ class TeamRolePermissionAssertion implements AssertionInterface
             }
         }
 
+        //In practice, batch operations are handled as a series of individual operations,
+        //but the batch privileges are checked first and used to control certain form controls
         if (in_array($privilege, ['batch_delete', 'batch_delete_all'])) {
             return (bool)$teamUserRole->getCanDeleteResources();
         }
