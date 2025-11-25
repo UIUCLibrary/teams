@@ -114,6 +114,12 @@ class TeamRolePermissionAssertion implements AssertionInterface
         }
 
         // For all other actions, first check if the resource is in the user's current team.
+        // If the resource is just a GenericResource (only has class name, not entity instance),
+        // we can't verify team membership, so deny access.
+        if ($resource instanceof \Laminas\Permissions\Acl\Resource\GenericResource) {
+            return false;
+        }
+        
         if (!$this->isResourceInTeam($resource, $teamUser)) {
             return false;
         }
@@ -186,12 +192,15 @@ class TeamRolePermissionAssertion implements AssertionInterface
 
     /**
      * Check to see if the user and the object they are attempting to access or change are part of the same team.
+     * 
+     * This method requires an actual entity instance (not just a ResourceInterface) because it needs
+     * to access entity-specific methods like getId() and getSite().
      *
-     * @param  ResourceInterface $resource
+     * @param object $resource The entity instance to check
      * @param TeamUser $team_user
      * @return bool
      */
-    private function isResourceInTeam(ResourceInterface $resource, TeamUser $team_user): bool
+    private function isResourceInTeam(object $resource, TeamUser $team_user): bool
     {
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         $fk_id = $resource->getId();
