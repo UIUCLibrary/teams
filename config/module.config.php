@@ -76,7 +76,7 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            \Teams\Acl\InTeamAssertion::class => \Teams\Service\Acl\InTeamAssertionFactory::class,
+            \Teams\Acl\TeamRolePermissionAssertion::class => \Teams\Service\Acl\InTeamAssertionFactory::class,
         ],
     ],
     'form_elements' => [

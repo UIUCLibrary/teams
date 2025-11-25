@@ -12,7 +12,7 @@ use Omeka\Entity\EntityInterface;
 use Omeka\Mvc\Status;
 use Teams\Entity\TeamUser;
 
-class InTeamAssertion implements AssertionInterface
+class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
      * @var AuthenticationService

@@ -16,7 +16,7 @@ use Omeka\Permissions\Acl;
 use Omeka\Permissions\Assertion\AssertionNegation;
 use Omeka\Permissions\Assertion\IsSelfAssertion;
 use Omeka\Permissions\Assertion\OwnsEntityAssertion;
-use Teams\Acl\InTeamAssertion;
+use Teams\Acl\TeamRolePermissionAssertion;
 use Teams\Entity\Team;
 use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
@@ -242,7 +242,7 @@ SQL;
     protected function addAclRules()
     {
         $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $inTeamAssertion = $this->getServiceLocator()->get(\Teams\Acl\InTeamAssertion::class);
+        $teamRolePermissionAssertion = $this->getServiceLocator()->get(\Teams\Acl\TeamRolePermissionAssertion::class);
 
         $omekaResources = [
             \Omeka\Entity\Item::class,
@@ -299,7 +299,7 @@ SQL;
         foreach ($omekaResources as $resource) {
             foreach ($rolesToControl as $role) {
                 foreach ( $entityPrivileges as $privilege) {
-                    $acl->deny($role, $resource, $privilege,new AssertionNegation($inTeamAssertion));
+                    $acl->deny($role, $resource, $privilege,new AssertionNegation($teamRolePermissionAssertion));
                 }
             }
         }
@@ -308,7 +308,7 @@ SQL;
         foreach ($adapters as $adapter) {
             foreach ($rolesToControl as $role) {
                 foreach ( $adapterPrivileges as $privilege) {
-                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($inTeamAssertion));
+                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($teamRolePermissionAssertion));
                 }
             }
         }
