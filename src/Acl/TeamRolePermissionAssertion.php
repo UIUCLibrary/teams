@@ -244,10 +244,13 @@ class TeamRolePermissionAssertion implements AssertionInterface
     }
 
     /**
-     * Returns the expected string for proxied resource class in cases where the class returned is the doctrine proxy.
+     * Returns the class name of a resource, handling Doctrine proxies and GenericResource.
+     * 
+     * For GenericResource instances, returns the resource itself (as it contains the actual resource).
+     * For other resources, returns the fully qualified class name as a string.
      *
      * @param mixed $resource
-     * @return string|ResourceInterface
+     * @return string|object The class name as string, or the GenericResource object
      */
     private function getResourceClass($resource)
     {
