@@ -26,6 +26,15 @@ use Teams\Entity\TeamUser;
 class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
+     * Item-like entities that map to TeamResource
+     */
+    private const ITEM_ENTITIES = [
+        \Omeka\Entity\Item::class,
+        \Omeka\Entity\ItemSet::class,
+        \Omeka\Entity\Media::class,
+    ];
+    
+    /**
      * Resource domains that are controlled by item/resource permissions.
      * These constants ensure synchronization between ACL rules and assertion logic.
      */
@@ -237,13 +246,12 @@ class TeamRolePermissionAssertion implements AssertionInterface
             return false;
         }
         
-        $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         $fk_id = $resource->getId();
         $team = $team_user->getTeam();
         $user = $team_user->getUser();
         $res_class = $this->getResourceClass($resource);
 
-        if (in_array($res_class, $resource_domains)) {
+        if (in_array($res_class, self::ITEM_ENTITIES)) {
             $teamsRepo = 'Teams\Entity\TeamResource';
             $fk = 'resource';
             $criteria = ['team' => $team->getId(), $fk => $fk_id];
