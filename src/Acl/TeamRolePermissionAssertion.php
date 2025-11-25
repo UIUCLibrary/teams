@@ -26,7 +26,7 @@ use Teams\Entity\TeamUser;
 class TeamRolePermissionAssertion implements AssertionInterface
 {
     /**
-     * Item-like entities that map to TeamResource repository (Item, ItemSet, Media only)
+     * Item-like entities (Item, ItemSet, Media) that map to TeamResource repository
      */
     private const ITEM_ENTITIES = [
         \Omeka\Entity\Item::class,
@@ -35,10 +35,11 @@ class TeamRolePermissionAssertion implements AssertionInterface
     ];
     
     /**
-     * Entity classes controlled by item/resource permissions.
+     * Resource entity classes controlled by resource permissions.
+     * Includes Items, ItemSets, Media, Assets, ResourceTemplates, and team resource entities.
      * Used by Module.php for configuring entity-level ACL rules.
      */
-    public const ITEM_ENTITIES_FOR_ACL = [
+    public const RESOURCE_ENTITIES_FOR_ACL = [
         \Omeka\Entity\Item::class,
         \Omeka\Entity\ItemSet::class,
         \Omeka\Entity\Media::class,
@@ -49,10 +50,10 @@ class TeamRolePermissionAssertion implements AssertionInterface
     ];
     
     /**
-     * API adapter classes controlled by item/resource permissions.
+     * Resource API adapter classes controlled by resource permissions.
      * Used by Module.php for configuring adapter-level ACL rules.
      */
-    public const ITEM_ADAPTERS_FOR_ACL = [
+    public const RESOURCE_ADAPTERS_FOR_ACL = [
         \Omeka\Api\Adapter\ItemAdapter::class,
         \Omeka\Api\Adapter\ItemSetAdapter::class,
         \Omeka\Api\Adapter\MediaAdapter::class,
@@ -141,7 +142,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         $resourceClass = $this->getResourceClass($resource);
         
         // Get combined resource domains dynamically
-        $itemResourceDomains = array_merge(self::ITEM_ENTITIES_FOR_ACL, self::ITEM_ADAPTERS_FOR_ACL);
+        $resourceDomains = array_merge(self::RESOURCE_ENTITIES_FOR_ACL, self::RESOURCE_ADAPTERS_FOR_ACL);
         $siteResourceDomains = array_merge(self::SITE_ENTITIES_FOR_ACL, self::SITE_ADAPTERS_FOR_ACL);
         
         // For 'create' actions, we only check if the user's role has permission,
@@ -149,7 +150,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         if ($privilege == 'create') {
             if (in_array($resourceClass, $siteResourceDomains)) {
                 return (bool)$teamUserRole->getCanAddSitePages();
-            } elseif (in_array($resourceClass, $itemResourceDomains)) {
+            } elseif (in_array($resourceClass, $resourceDomains)) {
                 return (bool)$teamUserRole->getCanAddItems();
             } else {
                 // Other resources are not part of this scope
@@ -174,7 +175,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // The resource is in the team. Now check if the team role grants the specific privilege.
         $isAuthorized = false;
 
-        if (in_array($resourceClass, $itemResourceDomains)) {
+        if (in_array($resourceClass, $resourceDomains)) {
             switch ($privilege) {
                 case 'delete':
                 case 'batch_delete':

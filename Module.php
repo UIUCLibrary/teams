@@ -246,12 +246,12 @@ SQL;
 
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
         $entities = array_merge(
-            \Teams\Acl\TeamRolePermissionAssertion::ITEM_ENTITIES_FOR_ACL,
+            \Teams\Acl\TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
             \Teams\Acl\TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
         );
         
         $adapters = array_merge(
-            \Teams\Acl\TeamRolePermissionAssertion::ITEM_ADAPTERS_FOR_ACL,
+            \Teams\Acl\TeamRolePermissionAssertion::RESOURCE_ADAPTERS_FOR_ACL,
             \Teams\Acl\TeamRolePermissionAssertion::SITE_ADAPTERS_FOR_ACL
         );
 
