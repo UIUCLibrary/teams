@@ -4,6 +4,7 @@ namespace Teams\Acl;
 use Laminas\Permissions\Acl\Acl;
 use Laminas\Permissions\Acl\Assertion\AssertionInterface;
 use Laminas\Permissions\Acl\Resource\ResourceInterface;
+use Laminas\Permissions\Acl\Resource\GenericResource;
 use Laminas\Permissions\Acl\Role\RoleInterface;
 use Laminas\Authentication\AuthenticationService;
 use Doctrine\ORM\EntityManager;
@@ -116,7 +117,7 @@ class TeamRolePermissionAssertion implements AssertionInterface
         // For all other actions, first check if the resource is in the user's current team.
         // If the resource is just a GenericResource (only has class name, not entity instance),
         // we can't verify team membership, so deny access.
-        if ($resource instanceof \Laminas\Permissions\Acl\Resource\GenericResource) {
+        if ($resource instanceof GenericResource) {
             return false;
         }
         
@@ -193,10 +194,10 @@ class TeamRolePermissionAssertion implements AssertionInterface
     /**
      * Check to see if the user and the object they are attempting to access or change are part of the same team.
      * 
-     * This method requires an actual entity instance (not just a ResourceInterface) because it needs
+     * This method requires an actual entity instance (not a GenericResource) because it needs
      * to access entity-specific methods like getId() and getSite().
      *
-     * @param object $resource The entity instance to check
+     * @param EntityInterface|object $resource The entity instance to check
      * @param TeamUser $team_user
      * @return bool
      */
