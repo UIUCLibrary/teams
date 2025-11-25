@@ -83,9 +83,9 @@ class InTeamAssertion implements AssertionInterface
         // For 'create' actions, we only check if the user's role has permission,
         // as the resource doesn't belong to a team yet.
         if ($privilege == 'create') {
-            if ($resource == \Omeka\Entity\Site::class || $resource == \Omeka\Entity\SitePage::class) {
+            if ($this->getResourceClass($resource) == \Omeka\Entity\Site::class || $this->getResourceClass($resource) == \Omeka\Entity\SitePage::class) {
                 return (bool)$teamUserRole->getCanAddSitePages();
-            } elseif (in_array($resource,$resourceDomains)){
+            } elseif (in_array($this->getResourceClass($resource),$resourceDomains)){
                 return (bool)$teamUserRole->getCanAddItems();
             } else {
                 // Other resources are not part of this scope
@@ -101,7 +101,7 @@ class InTeamAssertion implements AssertionInterface
         // The resource is in the team. Now check if the team role grants the specific privilege.
         $isAuthorized = false;
 
-        if (in_array($resource, $resourceDomains)) {
+        if (in_array($this->getResourceClass($resource), $resourceDomains)) {
             switch ($privilege) {
                 case 'delete': case 'batch_delete':
                 $isAuthorized = (bool)$teamUserRole->getCanDeleteResources();
@@ -113,7 +113,7 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true; // If it's in the team, they can read it.
                 break;
             }
-        } elseif ($resource == \Omeka\Entity\Site::class || $resource == \Omeka\Entity\SitePage::class) {
+        } elseif ($this->getResourceClass($resource) == \Omeka\Entity\Site::class || $this->getResourceClass($resource) == \Omeka\Entity\SitePage::class) {
             switch ($privilege) {
                 case 'delete': case 'batch_delete': case 'update':
                 $isAuthorized = (bool)$teamUserRole->getCanAddSitePages();
@@ -122,7 +122,7 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($resource == \Teams\Entity\Team::class || $resource == \Teams\Entity\TeamRole::class) {
+        } elseif ($this->getResourceClass($resource) == \Teams\Entity\Team::class || $this->getResourceClass($resource) == \Teams\Entity\TeamRole::class) {
             switch ($privilege) {
                 case 'create': case 'delete': case 'batch_delete':
                 $isAuthorized = false; // Only global admins can do this.
@@ -134,9 +134,9 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = true;
                     break;
             }
-        } elseif ($resource == \Teams\Entity\TeamSite::class) {
+        } elseif ($this->getResourceClass($resource) == \Teams\Entity\TeamSite::class) {
             $isAuthorized = ($privilege == 'read') ? true : (bool)$teamUserRole->getCanAddSitePages();
-        } elseif ($resource == TeamUser::class) {
+        } elseif ($this->getResourceClass($resource) == TeamUser::class) {
             switch ($privilege) {
                 case 'create': case 'delete':
                 $isAuthorized = (bool)$teamUserRole->getCanAddUsers();
@@ -148,6 +148,7 @@ class InTeamAssertion implements AssertionInterface
                     $isAuthorized = false;
             }
         } else {
+
             // If it's a resource we don't explicitly police (e.g., Job, Property),
             // this assertion does not authorize it.
             $isAuthorized = false;
@@ -159,11 +160,11 @@ class InTeamAssertion implements AssertionInterface
     /**
      * Check to see if the user and the object they are attempting to access or change are part of the same team.
      *
-     * @param EntityInterface $resource
+     * @param  ResourceInterface $resource
      * @param TeamUser $team_user
      * @return bool
      */
-    private function isResourceInTeam(EntityInterface $resource, TeamUser $team_user): bool
+    private function isResourceInTeam( ResourceInterface $resource, TeamUser $team_user): bool
     {
         $resource_domains = ['Omeka\Entity\Item', 'Omeka\Entity\ItemSet', 'Omeka\Entity\Media'];
         $fk_id = $resource->getId();
@@ -228,14 +229,11 @@ class InTeamAssertion implements AssertionInterface
      */
     private function getResourceClass($resource): string
     {
-        $doctrine_ent = 'DoctrineProxies\__CG__';
-        $doctrine_test = strpos(get_class($resource), $doctrine_ent);
-        if ($doctrine_test === false) {
-            $res_class = get_class($resource);
+        if( get_class($resource) === 'Laminas\Permissions\Acl\Resource\GenericResource'){
+            return $resource;
         } else {
-            // Skip the doctrine proxy prefix and the backslash separator
-            $res_class = substr(get_class($resource), strlen($doctrine_ent) + 1);
+            return get_class($resource);
         }
-        return $res_class;
+
     }
 }
