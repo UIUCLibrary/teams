@@ -218,9 +218,9 @@ class TeamRolePermissionAssertion implements AssertionInterface
              */
             return false;
         }
-
-        if ($team_resource = $this->entityManager->getRepository($teamsRepo)
-            ->findOneBy($criteria)) {
+        $team_resource = $this->entityManager->getRepository($teamsRepo)
+            ->findOneBy($criteria);
+        if ($team_resource) {
             $in_team = true;
         } else {
             $in_team = false;
