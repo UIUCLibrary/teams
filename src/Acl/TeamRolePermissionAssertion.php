@@ -114,10 +114,11 @@ class TeamRolePermissionAssertion implements AssertionInterface
             return (bool)$teamUserRole->getCanModifyResources();
         }
 
-        // For all other actions, first check if the resource is in the user's current team.
-        // If the resource is a GenericResource (only has class identifier, not entity instance),
-        // we cannot verify team membership. Since team membership is required for these operations,
-        // we deny access as a conservative security measure. ACL checks with actual entity instances
+        // For all other actions (update, delete, read, etc.), first check if the resource 
+        // is in the user's current team. If the resource is a GenericResource (only has 
+        // class identifier, not entity instance), we cannot verify team membership. 
+        // Since team membership is required for non-create operations, we deny access 
+        // as a conservative security measure. ACL checks with actual entity instances
         // will properly evaluate team membership.
         if ($resource instanceof GenericResource) {
             return false;
@@ -194,15 +195,15 @@ class TeamRolePermissionAssertion implements AssertionInterface
     }
 
     /**
-     * Check to see if the user and the object they are attempting to access or change are part of the same team.
+     * Check if a resource belongs to the user's current team.
      * 
-     * This method requires an actual entity instance (not a GenericResource) because it needs
-     * to access entity-specific methods like getId() and getSite(). The caller should verify
-     * the resource is not a GenericResource before calling this method.
+     * Requires an entity instance (implementing EntityInterface) because it needs to access
+     * entity-specific methods like getId(), getSite(), getTeam(), and getResource().
+     * The caller should filter out GenericResource instances before calling this method.
      *
-     * @param EntityInterface $resource The entity instance to check
-     * @param TeamUser $team_user
-     * @return bool
+     * @param EntityInterface $resource The entity instance to check (e.g., Item, Site, TeamResource)
+     * @param TeamUser $team_user The user's team membership record
+     * @return bool True if the resource belongs to the user's team, false otherwise
      */
     private function isResourceInTeam(EntityInterface $resource, TeamUser $team_user): bool
     {
