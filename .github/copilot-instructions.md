@@ -110,8 +110,8 @@ Omeka S Module (PHP-based)
 ## Architecture and Design
 
 ### Critical Design Constraint
-**The module must be safely turn-off-able**: Users should be able to disable the Teams module without breaking their Omeka S installation. This means:
-- Sync relationships with core Omeka features where they exist (e.g., item-site relationships, user default sites)
+**The module must be safely turn-offable**: Users should be able to disable the Teams module without breaking their Omeka S installation. This means:
+- Synchronize relationships with core Omeka features where they exist (e.g., item-site relationships, user default sites)
 - Avoid hard dependencies that would cause errors when module is disabled
 - Gracefully degrade functionality
 
