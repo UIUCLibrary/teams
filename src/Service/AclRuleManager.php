@@ -8,20 +8,32 @@ use Omeka\Permissions\Assertion\AssertionNegation;
 class AclRuleManager
 {
     /**
-     * Roles that should have team-based access control applied
+     * Entity-level privileges that should be controlled by team permissions
      */
-    private const ROLES_TO_CONTROL = ['site_admin', 'editor', 'author'];
+    private const ENTITY_PRIVILEGES = [
+        'update',
+        'delete',
+        'create',
+        'batch-delete',
+        'batch-update',
+        'batch-create',
+        'batch_delete',
+        'batch-edit-all',
+        'batch-update-all',
+        'batch-edit',
+        'batch-delete-all',
+    ];
 
     /**
-     * Privileges that should be controlled by team permissions
+     * Adapter-level privileges that should be controlled by team permissions
      */
-    private const PRIVILEGES_TO_CONTROL = [
-        'update', 'edit',
-        'delete', 'delete-confirm',
-        'create', 'add',
-        'batch-delete', 'batch_delete', 'batch_delete_all',
-        'batch-update', 'batch_update_all',
-        'batch-edit', 'batch-edit-all',
+    private const ADAPTER_PRIVILEGES = [
+        'create',
+        'batch_delete',
+        'batch_create',
+        'batch_update',
+        'batch_delete_all',
+        'batch_update_all',
     ];
 
     /**
@@ -32,7 +44,12 @@ class AclRuleManager
     /**
      * @var array|null Cached list of resource entities for ACL rules
      */
-    private $omekaResources;
+    private $entities;
+
+    /**
+     * @var array|null Cached list of resource adapters for ACL rules
+     */
+    private $adapters;
 
     public function __construct(TeamRolePermissionAssertion $assertion)
     {
@@ -41,19 +58,55 @@ class AclRuleManager
 
     public function applyRules(Acl $acl)
     {
+        $teamRolePermissionAssertion = $this->assertion;
+
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
         // Lazy-load and cache the merged resources (instance-level cache, service is typically instantiated once per request)
-        if ($this->omekaResources === null) {
-            $this->omekaResources = [
-                ...TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
-                ...TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
-            ];
+        if ($this->entities === null) {
+            $this->entities = array_merge(
+                TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
+                TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
+            );
         }
-        
-        $denyAssertion = new AssertionNegation($this->assertion);
 
-        foreach (self::ROLES_TO_CONTROL as $role) {
-            $acl->deny($role, $this->omekaResources, self::PRIVILEGES_TO_CONTROL, $denyAssertion);
+        if ($this->adapters === null) {
+            $this->adapters = array_merge(
+                TeamRolePermissionAssertion::RESOURCE_ADAPTERS_FOR_ACL,
+                TeamRolePermissionAssertion::SITE_ADAPTERS_FOR_ACL
+            );
         }
+
+        // Get all roles from ACL and exclude global_admin
+        // This is better than hardcoding because it stays up to date with all roles
+        $rolesToControl = $acl->getRoles();
+        $rolesToControl = array_diff($rolesToControl, ["global_admin"]);
+
+        // Apply entity-level ACL rules
+        foreach ($this->entities as $resource) {
+            foreach ($rolesToControl as $role) {
+                foreach (self::ENTITY_PRIVILEGES as $privilege) {
+                    $acl->deny($role, $resource, $privilege, new AssertionNegation($teamRolePermissionAssertion));
+                }
+            }
+        }
+
+        // Apply adapter-level ACL rules
+        // There are some display adapters that use this permission to show add/edit links
+        foreach ($this->adapters as $adapter) {
+            foreach ($rolesToControl as $role) {
+                foreach (self::ADAPTER_PRIVILEGES as $privilege) {
+                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($teamRolePermissionAssertion));
+                }
+            }
+        }
+
+        // Team-specific controls
+        $acl->allow(null, 'Teams\Controller\Index', ['index', 'teamDetail', 'currentTeam']);
+        $acl->allow('global_admin', [
+            'Teams\Controller\Index',
+            'Teams\Controller\Add',
+            'Teams\Controller\Update',
+        ]);
+        $acl->allow('global_admin', \Teams\Entity\TeamRole::class);
     }
 }
