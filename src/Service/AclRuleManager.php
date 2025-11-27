@@ -42,7 +42,7 @@ class AclRuleManager
     public function applyRules(Acl $acl)
     {
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
-        // Cache the merged resources to avoid repeated operations
+        // Lazy-load and cache the merged resources (instance-level cache, service is typically instantiated once per request)
         if ($this->omekaResources === null) {
             $this->omekaResources = [
                 ...TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
