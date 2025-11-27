@@ -34,7 +34,7 @@ class AclRuleManagerTest extends TestCase
         $acl->addResource($resource);
         $acl->allow($role, $resource, 'update');
         $this->assertTrue($acl->isAllowed($role, $resource, 'update'));
-        
+
         $this->assertionMock->method('assert')->willReturn(false);
 
         // Act
