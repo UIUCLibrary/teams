@@ -30,7 +30,7 @@ class AclRuleManager
     private $assertion;
 
     /**
-     * @var array|null Cached list of Omeka resources
+     * @var array|null Cached list of resource entities for ACL rules
      */
     private $omekaResources;
 
