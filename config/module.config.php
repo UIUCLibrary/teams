@@ -76,9 +76,9 @@ return [
     ],
     'service_manager' => [
         'factories' => [
-            'Teams\Acl\TeamRolePermissionAssertion' => 'Teams\Acl\TeamRolePermissionAssertionFactory',
-            'Teams\Service\AclRuleManager' => 'Teams\Service\AclRuleManagerFactory',
-            'Teams\Service\TeamService' => 'Teams\Service\TeamServiceFactory',
+            \Teams\Acl\TeamRolePermissionAssertion::class => \Teams\Acl\TeamRolePermissionAssertionFactory::class,
+            \Teams\Service\AclRuleManager::class => \Teams\Service\AclRuleManagerFactory::class,
+            \Teams\Service\TeamService::class => \Teams\Service\TeamServiceFactory::class,
         ],
     ],
     'form_elements' => [

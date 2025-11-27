@@ -31,7 +31,7 @@ class AclRuleManager
         
         $rolesToControl = ['site_admin', 'editor', 'author'];
 
-        $privilegesToControl =[
+        $privilegesToControl = [
             'update', 'edit',
             'delete', 'delete-confirm',
             'create', 'add',
