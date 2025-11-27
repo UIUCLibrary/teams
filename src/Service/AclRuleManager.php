@@ -8,6 +8,23 @@ use Omeka\Permissions\Assertion\AssertionNegation;
 class AclRuleManager
 {
     /**
+     * Roles that should have team-based access control applied
+     */
+    private const ROLES_TO_CONTROL = ['site_admin', 'editor', 'author'];
+
+    /**
+     * Privileges that should be controlled by team permissions
+     */
+    private const PRIVILEGES_TO_CONTROL = [
+        'update', 'edit',
+        'delete', 'delete-confirm',
+        'create', 'add',
+        'batch-delete', 'batch_delete', 'batch_delete_all',
+        'batch-update', 'batch_update_all',
+        'batch-edit', 'batch-edit-all',
+    ];
+
+    /**
      * @var TeamRolePermissionAssertion
      */
     private $assertion;
@@ -19,31 +36,16 @@ class AclRuleManager
 
     public function applyRules(Acl $acl)
     {
-        $omekaResources = [
-            \Omeka\Entity\Item::class,
-            \Omeka\Entity\ItemSet::class,
-            \Omeka\Entity\Media::class,
-            \Omeka\Entity\Site::class,
-            \Omeka\Entity\SitePage::class,
-            \Omeka\Entity\ResourceTemplate::class,
-            \Omeka\Entity\Asset::class,
-        ];
-        
-        $rolesToControl = ['site_admin', 'editor', 'author'];
-
-        $privilegesToControl =[
-            'update', 'edit',
-            'delete', 'delete-confirm',
-            'create', 'add',
-            'batch-delete', 'batch_delete', 'batch_delete_all',
-            'batch-update', 'batch_update_all',
-            'batch-edit', 'batch-edit-all',
-        ];
+        // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
+        $omekaResources = array_merge(
+            TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
+            TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
+        );
         
         $denyAssertion = new AssertionNegation($this->assertion);
 
-        foreach ($rolesToControl as $role) {
-            $acl->deny($role, $omekaResources, $privilegesToControl, $denyAssertion);
+        foreach (self::ROLES_TO_CONTROL as $role) {
+            $acl->deny($role, $omekaResources, self::PRIVILEGES_TO_CONTROL, $denyAssertion);
         }
     }
 }

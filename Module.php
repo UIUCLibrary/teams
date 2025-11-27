@@ -245,7 +245,7 @@ SQL;
         $acl = $serviceLocator->get('Omeka\Acl');
         
         // Get our new service from the service manager
-        $aclRuleManager = $serviceLocator->get('Teams\Service\AclRuleManager');
+        $aclRuleManager = $serviceLocator->get(\Teams\Service\AclRuleManager::class);
 
         // Delegate the complex task to our new, testable service
         $aclRuleManager->applyRules($acl);
