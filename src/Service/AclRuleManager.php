@@ -42,12 +42,12 @@ class AclRuleManager
     public function applyRules(Acl $acl)
     {
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
-        // Cache the merged resources to avoid repeated array_merge operations
+        // Cache the merged resources to avoid repeated operations
         if ($this->omekaResources === null) {
-            $this->omekaResources = array_merge(
-                TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
-                TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
-            );
+            $this->omekaResources = [
+                ...TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
+                ...TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
+            ];
         }
         
         $denyAssertion = new AssertionNegation($this->assertion);
