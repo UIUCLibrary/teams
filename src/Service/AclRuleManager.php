@@ -58,8 +58,6 @@ class AclRuleManager
 
     public function applyRules(Acl $acl)
     {
-        $teamRolePermissionAssertion = $this->assertion;
-
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
         // Lazy-load and cache the merged resources (instance-level cache, service is typically instantiated once per request)
         if ($this->entities === null) {
@@ -81,11 +79,14 @@ class AclRuleManager
         $rolesToControl = $acl->getRoles();
         $rolesToControl = array_diff($rolesToControl, ["global_admin"]);
 
+        // Create a single AssertionNegation instance to reuse across all deny rules
+        $denyAssertion = new AssertionNegation($this->assertion);
+
         // Apply entity-level ACL rules
         foreach ($this->entities as $resource) {
             foreach ($rolesToControl as $role) {
                 foreach (self::ENTITY_PRIVILEGES as $privilege) {
-                    $acl->deny($role, $resource, $privilege, new AssertionNegation($teamRolePermissionAssertion));
+                    $acl->deny($role, $resource, $privilege, $denyAssertion);
                 }
             }
         }
@@ -95,7 +96,7 @@ class AclRuleManager
         foreach ($this->adapters as $adapter) {
             foreach ($rolesToControl as $role) {
                 foreach (self::ADAPTER_PRIVILEGES as $privilege) {
-                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($teamRolePermissionAssertion));
+                    $acl->deny($role, $adapter, $privilege, $denyAssertion);
                 }
             }
         }
