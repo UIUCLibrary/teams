@@ -237,8 +237,16 @@ SQL;
     //TODO need to refactor to normalize and condense
     protected function addAclRules()
     {
+        $serviceLocator = $this->getServiceLocator();
+        $acl = $serviceLocator->get('Omeka\Acl');
+        
+        // Get our new service from the service manager
+        $aclRuleManager = $serviceLocator->get('Teams\Service\AclRuleManager');
+
+        // Delegate the complex task to our new, testable service
+        $aclRuleManager->applyRules($acl);
+
         $services = $this->getServiceLocator();
-        $acl = $services->get('Omeka\Acl');
 
         $roles = $acl->getRoles();
         //entity rights are the actions of controllers
@@ -409,21 +417,13 @@ SQL;
             ['roleIndex']
         );
 
+        // This remaining logic can also be moved to a service in a future refactoring
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
-        if (! $globalSettings->get('teams_site_admin_make_site')) {
-            $acl->deny(
-                'site_admin',
-                'Omeka\Entity\Site',
-                'create'
-            );
+        if (!$globalSettings->get('teams_site_admin_make_site')) {
+            $acl->deny('site_admin', \Omeka\Entity\Site::class, 'create');
         }
-
         if (!$globalSettings->get('teams_editor_make_site')) {
-            $acl->deny(
-                'editor',
-                'Omeka\Entity\Site',
-                'create'
-            );
+            $acl->deny('editor', \Omeka\Entity\Site::class, 'create');
         }
 
         $acl->deny(

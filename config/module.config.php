@@ -74,6 +74,13 @@ return [
             dirname(__DIR__) . '/data/doctrine-proxies',
         ],
     ],
+    'service_manager' => [
+        'factories' => [
+            'Teams\Acl\TeamRolePermissionAssertion' => 'Teams\Acl\TeamRolePermissionAssertionFactory',
+            'Teams\Service\AclRuleManager' => 'Teams\Service\AclRuleManagerFactory',
+            'Teams\Service\TeamService' => 'Teams\Service\TeamServiceFactory',
+        ],
+    ],
     'form_elements' => [
         'invokables' => [
             Form\TeamForm::class => Form\TeamForm::class,
