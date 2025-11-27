@@ -29,6 +29,11 @@ class AclRuleManager
      */
     private $assertion;
 
+    /**
+     * @var array|null Cached list of Omeka resources
+     */
+    private $omekaResources;
+
     public function __construct(TeamRolePermissionAssertion $assertion)
     {
         $this->assertion = $assertion;
@@ -37,15 +42,18 @@ class AclRuleManager
     public function applyRules(Acl $acl)
     {
         // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
-        $omekaResources = array_merge(
-            TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
-            TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
-        );
+        // Cache the merged resources to avoid repeated array_merge operations
+        if ($this->omekaResources === null) {
+            $this->omekaResources = array_merge(
+                TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
+                TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
+            );
+        }
         
         $denyAssertion = new AssertionNegation($this->assertion);
 
         foreach (self::ROLES_TO_CONTROL as $role) {
-            $acl->deny($role, $omekaResources, self::PRIVILEGES_TO_CONTROL, $denyAssertion);
+            $acl->deny($role, $this->omekaResources, self::PRIVILEGES_TO_CONTROL, $denyAssertion);
         }
     }
 }
