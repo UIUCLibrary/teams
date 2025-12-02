@@ -108,6 +108,6 @@ class AclRuleManager
             'Teams\Controller\Add',
             'Teams\Controller\Update',
         ]);
-        $acl->allow('global_admin', \Teams\Entity\TeamRole::class);
+        $acl->allow('global_admin', 'Teams\Entity\TeamRole');
     }
 }

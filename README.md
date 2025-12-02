@@ -97,3 +97,29 @@ Since we started developing Teams, Omeka has started to natively implement some 
 
 For example, when a user changes their current team, it will also update their default sites in their user profile based on the sites associated with their new current team. Likewise, when an item is added to a team, all of that team’s sites are added to that item, generating new item-site entries in the core Omeka database. Likewise, when a site is added to a team, that site is also added to all of the team's items and new item-sites are generated. That way, if you need to stop using Teams, you can uninstall it without having to re-associate all of your items with the appropriate sites.
 
+
+## Running Tests
+
+The Teams module includes unit tests to ensure code quality and prevent regressions. Tests are located in the `tests/` directory.
+
+### Prerequisites
+- PHPUnit installed in your Omeka S installation
+- Omeka S test environment configured
+
+### Running Tests
+Tests should be run from the Omeka S root directory (not from the module directory):
+
+```bash
+# From your Omeka S root directory
+cd /path/to/omeka-s
+vendor/bin/phpunit --bootstrap test/bootstrap.php modules/Teams/tests
+```
+
+### Test Structure
+- `tests/Service/` - Service layer tests (e.g., AclRuleManager)
+
+### Writing Tests
+When contributing to the Teams module, please include tests for new functionality:
+- Service classes should have corresponding test classes in `tests/Service/`
+- Follow existing test patterns for consistency
+- Use PHPUnit mocking for dependencies
