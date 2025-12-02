@@ -241,78 +241,16 @@ SQL;
     //TODO need to refactor to normalize and condense
     protected function addAclRules()
     {
-        $acl = $this->getServiceLocator()->get('Omeka\Acl');
-        $teamRolePermissionAssertion = $this->getServiceLocator()->get(\Teams\Acl\TeamRolePermissionAssertion::class);
-
-        // Use constants from assertion class to ensure synchronization between ACL rules and assertion logic
-        $entities = array_merge(
-            \Teams\Acl\TeamRolePermissionAssertion::RESOURCE_ENTITIES_FOR_ACL,
-            \Teams\Acl\TeamRolePermissionAssertion::SITE_ENTITIES_FOR_ACL
-        );
+        $serviceLocator = $this->getServiceLocator();
+        $acl = $serviceLocator->get('Omeka\Acl');
         
-        $adapters = array_merge(
-            \Teams\Acl\TeamRolePermissionAssertion::RESOURCE_ADAPTERS_FOR_ACL,
-            \Teams\Acl\TeamRolePermissionAssertion::SITE_ADAPTERS_FOR_ACL
-        );
+        // Get our new service from the service manager
+        $aclRuleManager = $serviceLocator->get(\Teams\Service\AclRuleManager::class);
 
-        $teamResources = [
-            \Teams\Entity\Team::class,
-            \Teams\Entity\TeamUser::class,
-            \Teams\Entity\TeamSite::class,
-            \Teams\Entity\TeamResource::class,
-            \Teams\Entity\TeamAsset::class,
-        ];
+        // Delegate the complex task to our new, testable service
+        $aclRuleManager->applyRules($acl);
 
-        $rolesToControl = $acl->getRoles();
-        $rolesToControl = array_diff($rolesToControl, ["global_admin"]);
-
-        $entityPrivileges =[
-            'update',
-            'delete',
-            'create',
-            'batch-delete',
-            'batch-update',
-            'batch-create',
-            'batch_delete',
-            'batch-edit-all',
-            'batch-update-all',
-            'batch-edit',
-            'batch-delete-all',
-            ];
-        $adapterPrivileges = [
-            'create',
-            'batch_delete',
-            'batch_create',
-            'batch_update',
-            'batch_delete_all',
-            'batch_update_all',
-        ];
-        foreach ($entities as $resource) {
-            foreach ($rolesToControl as $role) {
-                foreach ( $entityPrivileges as $privilege) {
-                    $acl->deny($role, $resource, $privilege, new AssertionNegation($teamRolePermissionAssertion));
-                }
-            }
-        }
-
-        //there are some display adapters that use this permission to show add/edit links
-        foreach ($adapters as $adapter) {
-            foreach ($rolesToControl as $role) {
-                foreach ( $adapterPrivileges as $privilege) {
-                    $acl->deny($role, $adapter, $privilege, new AssertionNegation($teamRolePermissionAssertion));
-                }
-            }
-        }
-
-//         --- Team specific controls. ---
-        $acl->allow(null, 'Teams\Controller\Index', ['index', 'teamDetail', 'currentTeam']);
-        $acl->allow('global_admin', [
-            'Teams\Controller\Index',
-            'Teams\Controller\Add',
-            'Teams\Controller\Update',
-        ]);
-        $acl->allow('global_admin', \Teams\Entity\TeamRole::class);
-
+        // This remaining logic can also be moved to a service in a future refactoring
         $globalSettings = $this->getServiceLocator()->get('Omeka\Settings');
         if (!$globalSettings->get('teams_site_admin_make_site')) {
             $acl->deny('site_admin', \Omeka\Entity\Site::class, 'create');
