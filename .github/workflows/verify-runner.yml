@@ -1,0 +1,29 @@
+name: Minimal Runner Environment Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+
+jobs:
+  check-runner:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Runner: ${{ runner.name }}"
+          uname -a
+          lsb_release -a || cat /etc/os-release
+          df -hT
+          whoami
+      - name: Check Docker install
+        run: |
+          docker --version
+          docker info
+      - name: Test Docker build
+        run: |
+          echo -e "FROM alpine:3.18\nCMD ['echo', 'hello from alpine!']" > Dockerfile
+          docker build -t test-alpine .
+          docker run --rm test-alpine echo "hello from inside Docker"
+          docker rmi test-alpine
