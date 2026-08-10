@@ -26,8 +26,7 @@ class SitePermissionManager
      * that share a site. Higher number = higher privilege.
      */
     private const ROLE_PRIORITY = [
-        SitePermission::ROLE_ADMIN => 2,
-        SitePermission::ROLE_EDITOR => 1,
+        SitePermission::ROLE_MANAGER => 1,
         SitePermission::ROLE_VIEWER => 0,
     ];
 
@@ -50,7 +49,7 @@ class SitePermissionManager
     /**
      * Sync Omeka site permissions for a user in a specific team.
      *
-     * Assigns ROLE_ADMIN if the team role has `can_add_site_pages`, otherwise ROLE_VIEWER,
+     * Assigns ROLE_MANAGER if the team role has `can_add_site_pages`, otherwise ROLE_VIEWER,
      * for every site associated with the team. The role is set unconditionally so that
      * downgrading a team role is immediately reflected in the site permission.
      *
@@ -68,7 +67,7 @@ class SitePermissionManager
 
         $user = $teamUser->getUser();
         $omekaRole = $teamUser->getRole()->getCanAddSitePages()
-            ? SitePermission::ROLE_ADMIN
+            ? SitePermission::ROLE_MANAGER
             : SitePermission::ROLE_VIEWER;
 
         $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $teamId]);
@@ -226,6 +225,28 @@ class SitePermissionManager
     }
 
     /**
+     * Sync Omeka site permissions for every team-user-site combination.
+     *
+     * Iterates all TeamUser records and calls syncSitePermissionsForUser for
+     * each, ensuring every user has the correct SitePermission row for every
+     * site their team is associated with. Used by the module upgrade routine
+     * to bring existing installations into sync.
+     */
+    public function syncAllSitePermissions(): void
+    {
+        $teamUsers = $this->entityManager
+            ->getRepository('Teams\Entity\TeamUser')
+            ->findAll();
+
+        foreach ($teamUsers as $teamUser) {
+            $this->syncSitePermissionsForUser(
+                $teamUser->getUser()->getId(),
+                $teamUser->getTeam()->getId()
+            );
+        }
+    }
+
+    /**
      * Determine the highest Omeka site role granted to a user by any team *other than*
      * the one being removed. Returns null if no other team grants access to that site.
      *
@@ -253,7 +274,7 @@ class SitePermissionManager
             }
 
             $role = $teamUser->getRole()->getCanAddSitePages()
-                ? SitePermission::ROLE_ADMIN
+                ? SitePermission::ROLE_MANAGER
                 : SitePermission::ROLE_VIEWER;
 
             $highestRole = $this->resolveHighestRole($highestRole, $role);

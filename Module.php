@@ -191,6 +191,13 @@ SQL;
             $globalSettings = $serviceLocator->get('Omeka\Settings');
             $globalSettings->set('teams_filter_bypass_roles', ["global_admin"]);
         }
+        if (version_compare($oldVersion, '4.2.0', '<')) {
+            // Sync Omeka site permissions for all existing team members so that
+            // every user has the correct SitePermission row for every site their
+            // team is associated with. This backfills installations that were
+            // running before site-permission sync was introduced.
+            $serviceLocator->get(SitePermissionManager::class)->syncAllSitePermissions();
+        }
     }
 
     public function updateAllUserSites()
