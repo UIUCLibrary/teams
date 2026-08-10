@@ -14,7 +14,6 @@ use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamDetailsForm;
-use Teams\Service\SitePermissionManager;
 use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
@@ -29,18 +28,11 @@ class UpdateController extends AbstractActionController
     protected $entityManager;
 
     /**
-     * @var SitePermissionManager
-     */
-    protected SitePermissionManager $sitePermissionManager;
-
-    /**
      * @param EntityManager $entityManager
-     * @param SitePermissionManager $sitePermissionManager
      */
-    public function __construct(EntityManager $entityManager, SitePermissionManager $sitePermissionManager)
+    public function __construct(EntityManager $entityManager)
     {
         $this->entityManager = $entityManager;
-        $this->sitePermissionManager = $sitePermissionManager;
     }
 
     public function createNamedParameter(
@@ -420,10 +412,6 @@ class UpdateController extends AbstractActionController
             }
             $em->flush();
         }
-
-        // Sync all site permissions now that all role and site changes are persisted,
-        // using the same logic as the sync button to guarantee correctness.
-        $this->sitePermissionManager->syncAllSitePermissions();
 
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
         $this->messenger()->addSuccess($successMessage);
