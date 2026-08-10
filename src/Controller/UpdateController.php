@@ -18,6 +18,7 @@ use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
 use Laminas\View\Model\ViewModel;
+use Teams\Service\SitePermissionManager;
 
 
 class UpdateController extends AbstractActionController
@@ -28,11 +29,18 @@ class UpdateController extends AbstractActionController
     protected $entityManager;
 
     /**
-     * @param EntityManager $entityManager
+     * @var SitePermissionManager
      */
-    public function __construct(EntityManager $entityManager)
+    protected SitePermissionManager $sitePermissionManager;
+
+    /**
+     * @param EntityManager $entityManager
+     * @param SitePermissionManager $sitePermissionManager
+     */
+    public function __construct(EntityManager $entityManager, SitePermissionManager $sitePermissionManager)
     {
         $this->entityManager = $entityManager;
+        $this->sitePermissionManager = $sitePermissionManager;
     }
 
     public function createNamedParameter(
@@ -412,7 +420,7 @@ class UpdateController extends AbstractActionController
             }
             $em->flush();
         }
-
+        $this->sitePermissionManager->syncAllSitePermissions();
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
         $this->messenger()->addSuccess($successMessage);
 
