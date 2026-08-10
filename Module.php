@@ -1950,6 +1950,43 @@ SQL;
         echo $view->partial('teams/partial/site-admin/edit', ['site_teams' => $site_teams, 'team_ids' => $team_ids]);
     }
 
+    /**
+     * Warns that site user roles are managed by Teams, and annotates each user
+     * row in the Omeka site-admin permissions table with the team(s) responsible.
+     *
+     * @param Event $event
+     */
+    public function siteUsersTeamsInfo(Event $event)
+    {
+        $view = $event->getTarget();
+        $site = $view->vars()->site;
+        if (!$site) {
+            return;
+        }
+
+        $messenger = new Messenger();
+        $messenger->addWarning(
+            'User roles on this site are managed by the Teams module. '
+            . 'Manual changes made here may be overwritten the next time team memberships or roles are updated.'
+        );
+
+        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['site' => $site->id()]);
+
+        // Build userId => [teamName, ...] for every user who has a team-managed
+        // permission on this site.
+        $teamManagedUsers = [];
+        foreach ($teamSites as $teamSite) {
+            $team = $teamSite->getTeam();
+            $teamUsers = $em->getRepository('Teams\Entity\TeamUser')->findBy(['team' => $team->getId()]);
+            foreach ($teamUsers as $teamUser) {
+                $userId = $teamUser->getUser()->getId();
+                $teamManagedUsers[$userId][] = $team->getName();
+            }
+        }
+
+        echo $view->partial('teams/partial/site-admin/users-teams-info', ['teamManagedUsers' => $teamManagedUsers]);
+    }
 
     public function getModules()
     {
@@ -2538,6 +2575,12 @@ SQL;
             'Omeka\Controller\SiteAdmin\Index',
             'view.edit.after',
             [$this, 'siteEdit']
+        );
+
+        $sharedEventManager->attach(
+            'Omeka\Controller\SiteAdmin\Index',
+            'view.edit.after',
+            [$this, 'siteUsersTeamsInfo']
         );
 
         //put the roles data in the user page

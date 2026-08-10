@@ -1,0 +1,71 @@
+<?php
+/**
+ * Annotates the Omeka site admin user-permissions table with the team that
+ * granted each user their site role.
+ *
+ * Variables:
+ *   $this->teamManagedUsers  array  userId (int) => array of team names (string[])
+ */
+$teamManagedUsers = $this->teamManagedUsers;
+$translate = $this->plugin('translate');
+?>
+<script>
+(function () {
+    var teamManagedUsers = <?php echo json_encode($teamManagedUsers); ?>;
+
+    function annotate() {
+        var table = document.getElementById('site-user-permissions');
+        if (!table) {
+            return;
+        }
+
+        // Annotate each user row with the team(s) that granted the role.
+        var rows = table.querySelectorAll('tbody tr');
+        rows.forEach(function (row) {
+            var input = row.querySelector('input.resource-id');
+            if (!input) {
+                return;
+            }
+            var userId = parseInt(input.value, 10);
+            var teams = teamManagedUsers[userId];
+            if (!teams || teams.length === 0) {
+                return;
+            }
+            // Only add the label once (in case annotate() is called again).
+            if (row.querySelector('.teams-attribution')) {
+                return;
+            }
+            var label = document.createElement('small');
+            label.className = 'teams-attribution';
+            label.style.display = 'block';
+            label.style.color = '#666';
+            label.textContent = '<?php echo $this->escapeJs($translate('Managed by team:')); ?> ' + teams.join(', ');
+
+            // Append the label to the first data cell in the row.
+            var firstCell = row.querySelector('td');
+            if (firstCell) {
+                firstCell.appendChild(label);
+            }
+        });
+    }
+
+    // Run after the DOM and Omeka's selector JS have both initialised.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', annotate);
+    } else {
+        annotate();
+    }
+
+    // Also observe for dynamically added rows (Omeka adds them via JS).
+    var tbody = document.querySelector('#site-user-permissions tbody');
+    if (tbody) {
+        new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.addedNodes.length) {
+                    annotate();
+                }
+            });
+        }).observe(tbody, { childList: true });
+    }
+}());
+</script>

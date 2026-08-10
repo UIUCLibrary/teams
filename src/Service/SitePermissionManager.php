@@ -22,15 +22,6 @@ use Omeka\Settings\UserSettings;
 class SitePermissionManager
 {
     /**
-     * Role priority for resolving conflicts when a user belongs to multiple teams
-     * that share a site. Higher number = higher privilege.
-     */
-    private const ROLE_PRIORITY = [
-        SitePermission::ROLE_MANAGER => 1,
-        SitePermission::ROLE_VIEWER => 0,
-    ];
-
-    /**
      * @var EntityManager
      */
     private EntityManager $entityManager;
@@ -247,8 +238,15 @@ class SitePermissionManager
     }
 
     /**
-     * Determine the highest Omeka site role granted to a user by any team *other than*
-     * the one being removed. Returns null if no other team grants access to that site.
+     * Determine the Omeka site role a user should hold on a site based on their
+     * remaining team memberships, excluding one team (the one being removed).
+     *
+     * Logic:
+     * - If the user has no other team that includes this site, returns null
+     *   (the site permission should be removed entirely).
+     * - If any remaining team with this site has can_add_site_pages = true,
+     *   returns ROLE_MANAGER.
+     * - Otherwise returns ROLE_VIEWER.
      *
      * @param int $userId
      * @param int $excludeTeamId The team being removed, which should be ignored.
@@ -260,7 +258,9 @@ class SitePermissionManager
         $em = $this->entityManager;
         $teamUsers = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $userId]);
 
-        $highestRole = null;
+        $hasAnySite = false;
+        $canManage = false;
+
         foreach ($teamUsers as $teamUser) {
             if ($teamUser->getTeam()->getId() === $excludeTeamId) {
                 continue;
@@ -273,32 +273,17 @@ class SitePermissionManager
                 continue;
             }
 
-            $role = $teamUser->getRole()->getCanAddSitePages()
-                ? SitePermission::ROLE_MANAGER
-                : SitePermission::ROLE_VIEWER;
-
-            $highestRole = $this->resolveHighestRole($highestRole, $role);
+            $hasAnySite = true;
+            if ($teamUser->getRole()->getCanAddSitePages()) {
+                $canManage = true;
+                break; // No need to check further — manager wins.
+            }
         }
 
-        return $highestRole;
-    }
-
-    /**
-     * Return whichever of two Omeka site permission roles conveys higher privilege.
-     *
-     * @param string|null $current
-     * @param string      $new
-     * @return string
-     */
-    private function resolveHighestRole(?string $current, string $new): string
-    {
-        if ($current === null) {
-            return $new;
+        if (!$hasAnySite) {
+            return null;
         }
 
-        $currentPriority = self::ROLE_PRIORITY[$current] ?? -1;
-        $newPriority = self::ROLE_PRIORITY[$new] ?? -1;
-
-        return $newPriority > $currentPriority ? $new : $current;
+        return $canManage ? SitePermission::ROLE_MANAGER : SitePermission::ROLE_VIEWER;
     }
 }
