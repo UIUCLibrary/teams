@@ -21,15 +21,6 @@ use Omeka\Settings\UserSettings;
  */
 class SitePermissionManager
 {
-    /**
-     * Role priority for resolving conflicts when a user belongs to multiple teams
-     * that share a site. Higher number = higher privilege.
-     */
-    private const ROLE_PRIORITY = [
-        SitePermission::ROLE_ADMIN => 2,
-        SitePermission::ROLE_EDITOR => 1,
-        SitePermission::ROLE_VIEWER => 0,
-    ];
 
     /**
      * @var EntityManager
@@ -51,10 +42,8 @@ class SitePermissionManager
      * Sync Omeka site permissions for a user in a specific team.
      *
      * Assigns ROLE_ADMIN if the team role has `can_add_site_pages`, otherwise ROLE_VIEWER,
-     * for every site associated with the team.
-     *
-     * When the user already has a permission on a site (e.g. from another team), the
-     * higher of the two roles is kept, so no privilege is silently downgraded.
+     * for every site associated with the team. The role is set unconditionally so that
+     * downgrading a team role is immediately reflected in the site permission.
      *
      * @param int $userId
      * @param int $teamId
@@ -83,10 +72,7 @@ class SitePermissionManager
             $existingPermission = $sitePermissions->matching($criteria)->first();
 
             if ($existingPermission) {
-                // Keep the higher of the existing and new role (multi-team safety).
-                $existingPermission->setRole(
-                    $this->resolveHighestRole($existingPermission->getRole(), $omekaRole)
-                );
+                $existingPermission->setRole($omekaRole);
             } else {
                 $sitePermission = new SitePermission();
                 $sitePermission->setSite($site);
