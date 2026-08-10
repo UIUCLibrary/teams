@@ -56,6 +56,10 @@ class SitePermissionManager
             return;
         }
 
+        // Refresh to ensure the role reflects the latest persisted state,
+        // not a potentially stale identity-map proxy.
+        $em->refresh($teamUser);
+
         $user = $teamUser->getUser();
         $omekaRole = $teamUser->getRole()->getCanAddSitePages()
             ? SitePermission::ROLE_ADMIN
