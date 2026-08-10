@@ -29,6 +29,7 @@ use Teams\Form\Element\AllTeamSelect;
 use Teams\Form\Element\BlankTeamSelect;
 use Teams\Form\Element\RoleSelect;
 use Teams\Form\Element\TeamSelect;
+use Teams\Service\SitePermissionManager;
 use Omeka\Api\Adapter\ItemAdapter;
 use Omeka\Api\Adapter\ItemSetAdapter;
 use Omeka\Api\Adapter\MediaAdapter;
@@ -194,12 +195,7 @@ SQL;
 
     public function updateAllUserSites()
     {
-        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $active_users = $em->getRepository('Teams\Entity\TeamUser')->findAllBy(['is_active' => true]);
-
-        foreach ($active_users as $user) {
-            $this->updateUserSites($user->getUser()->getId());
-        }
+        $this->getServiceLocator()->get(SitePermissionManager::class)->updateAllUserDefaultSites();
     }
 
     public function handleConfigForm(AbstractController $controller)
@@ -1039,27 +1035,7 @@ SQL;
 
     public function updateUserSites($user_id)
     {
-        $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-
-        $userSettings = $this->getServiceLocator()->get('Omeka\Settings\User');
-
-        $site_ids = [];
-        $settingId = 'default_item_sites';
-
-        $active_team = $em->getRepository('Teams\Entity\TeamUser')
-            ->findOneBy(['user' => $user_id, 'is_current' => true]);
-        if ($active_team) {
-            $active_team = $active_team->getTeam();
-
-            $team_sites = $active_team->getTeamSites();
-
-            foreach ($team_sites as $team_site):
-                $site_ids[] = $team_site->getSite()->getId();
-            endforeach;
-
-            //update default sites
-            $userSettings->set($settingId, $site_ids, $user_id);
-        }
+        $this->getServiceLocator()->get(SitePermissionManager::class)->updateUserDefaultSites($user_id);
     }
 
     /**
@@ -1181,6 +1157,12 @@ SQL;
                     }
 
                 endforeach;
+            endforeach;
+
+            // Sync Omeka site permissions for all users in each new team-site relationship.
+            $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
+            foreach ($team_ids as $team_id):
+                $sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded((int)$team_id, $site_id);
             endforeach;
 
             //update all item-site to include all items from the site's teams
@@ -1444,6 +1426,15 @@ SQL;
                     foreach ($team_item_collection as $team_item) {
                         $this->updateItemSites($team_item->getResource()->getId());
                     }
+                }
+
+                // Sync Omeka site permissions for teams that gained or lost this site.
+                $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
+                foreach ($added_teams as $team_id) {
+                    $sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded((int)$team_id, $site_id);
+                }
+                foreach ($removed_teams as $team_id) {
+                    $sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved((int)$team_id, $site_id);
                 }
             }
         }

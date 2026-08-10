@@ -14,6 +14,7 @@ use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamDetailsForm;
+use Teams\Service\SitePermissionManager;
 use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
@@ -28,11 +29,18 @@ class UpdateController extends AbstractActionController
     protected $entityManager;
 
     /**
-     * @param EntityManager $entityManager
+     * @var SitePermissionManager
      */
-    public function __construct(EntityManager $entityManager)
+    protected SitePermissionManager $sitePermissionManager;
+
+    /**
+     * @param EntityManager $entityManager
+     * @param SitePermissionManager $sitePermissionManager
+     */
+    public function __construct(EntityManager $entityManager, SitePermissionManager $sitePermissionManager)
     {
         $this->entityManager = $entityManager;
+        $this->sitePermissionManager = $sitePermissionManager;
     }
 
     public function createNamedParameter(
@@ -62,6 +70,9 @@ class UpdateController extends AbstractActionController
             //flushing here because this is a mini-form and we want to see the name pop up
             //more efficient solution would be to have JS handle the popping and batch update
             $this->entityManager->flush();
+
+            $this->sitePermissionManager->syncSitePermissionsForUser($user_id, $team_id);
+
             return $team_user;
         }
     }
@@ -74,6 +85,9 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("removed user");
 
             $em = $this->entityManager;
+
+            $this->sitePermissionManager->removeSitePermissionsForUser($user, $team_id);
+
             $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user' => $user]);
             $em->remove($team_user);
 
@@ -93,6 +107,8 @@ class UpdateController extends AbstractActionController
             $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
             $team_user->setRole($user_role);
             $em->flush();
+
+            $this->sitePermissionManager->syncSitePermissionsForUser($user_id, $team_id);
         }
 
     }
@@ -382,8 +398,10 @@ class UpdateController extends AbstractActionController
 
             $em = $this->entityManager;
             //handle new sites
+            $added_site_ids = [];
             foreach ($post_data['teamSites']['o:site'] as $site) {
                 if (!in_array($site, $current_sites)) {
+                    $added_site_ids[] = (int)$site;
                     $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
                     $ts = new TeamSite($team, $site);
                     $request = new Request('create', 'team_site');
@@ -398,8 +416,10 @@ class UpdateController extends AbstractActionController
             }
 
             //handle removed sites
+            $removed_site_ids = [];
             foreach ($current_sites as $site) {
                 if (!in_array($site, $post_data['teamSites']['o:site'])) {
+                    $removed_site_ids[] = (int)$site;
                     $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
                     $request = new Request('delete', 'team_site');
                     $event = new Event('api.hydrate.pre', $this, [
@@ -411,6 +431,14 @@ class UpdateController extends AbstractActionController
                 }
             }
             $em->flush();
+
+            // Sync Omeka site permissions for all team users when sites are added or removed.
+            foreach ($added_site_ids as $added_site_id) {
+                $this->sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded($team_id, $added_site_id);
+            }
+            foreach ($removed_site_ids as $removed_site_id) {
+                $this->sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved($team_id, $removed_site_id);
+            }
         }
 
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
