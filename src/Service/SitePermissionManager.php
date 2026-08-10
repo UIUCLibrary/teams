@@ -21,6 +21,15 @@ use Omeka\Settings\UserSettings;
  */
 class SitePermissionManager
 {
+    /**
+     * Role priority for resolving conflicts when a user belongs to multiple teams
+     * that share a site. Higher number = higher privilege.
+     */
+    private const ROLE_PRIORITY = [
+        SitePermission::ROLE_ADMIN => 2,
+        SitePermission::ROLE_EDITOR => 1,
+        SitePermission::ROLE_VIEWER => 0,
+    ];
 
     /**
      * @var EntityManager

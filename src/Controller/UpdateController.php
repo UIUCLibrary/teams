@@ -315,6 +315,7 @@ class UpdateController extends AbstractActionController
             foreach ($oldTeamUsers as $oldTeamUser) {
                 if (!in_array($oldTeamUser,$formTeamUsers)) {
                     $this->api()->delete('team-user',['team'=>$team_id, 'user'=>$oldTeamUser]);
+                    $this->sitePermissionManager->removeSitePermissionsForUser((int)$oldTeamUser, (int)$team_id);
                 }
             }
             //add team users or update permissions
@@ -325,6 +326,8 @@ class UpdateController extends AbstractActionController
                 if ($teamUserExists){
                     $role = $this->api()->read('team-role',['id'=>$teamUser['o:team_role']['o:id']])->getContent();
                     $teamUserExists[0]->getEntity()->setRole($role->getEntity());
+                    $this->entityManager->flush();
+                    $this->sitePermissionManager->syncSitePermissionsForUser((int)$teamUser['o:user']['o:id'], (int)$team_id);
                 } else {
                     $this->api()
                         ->create('team-user',
@@ -333,6 +336,7 @@ class UpdateController extends AbstractActionController
                                 'user'=>$teamUser['o:user']['o:id'],
                                 'role'=>$teamUser['o:team_role']['o:id']
                             ]);
+                    $this->sitePermissionManager->syncSitePermissionsForUser((int)$teamUser['o:user']['o:id'], (int)$team_id);
                 }
             }
         }
