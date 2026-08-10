@@ -196,7 +196,15 @@ SQL;
             // every user has the correct SitePermission row for every site their
             // team is associated with. This backfills installations that were
             // running before site-permission sync was introduced.
-            $serviceLocator->get(SitePermissionManager::class)->syncAllSitePermissions();
+            // NOTE: The service locator does not have module services available
+            // during upgrade, and the module autoloader is not yet registered,
+            // so we require the class file and instantiate it directly.
+            require_once __DIR__ . '/src/Service/SitePermissionManager.php';
+            $sitePermissionManager = new SitePermissionManager(
+                $serviceLocator->get('Omeka\EntityManager'),
+                $serviceLocator->get('Omeka\Settings\User')
+            );
+            $sitePermissionManager->syncAllSitePermissions();
         }
     }
 
