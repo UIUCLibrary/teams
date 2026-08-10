@@ -86,7 +86,7 @@ class UpdateController extends AbstractActionController
 
             $em = $this->entityManager;
 
-            $this->sitePermissionManager->removeSitePermissionsForUser($user, $team_id);
+            $this->sitePermissionManager->syncSitePermissionsForUser($user, $team_id);
 
             $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user' => $user]);
             $em->remove($team_user);
@@ -315,7 +315,7 @@ class UpdateController extends AbstractActionController
             foreach ($oldTeamUsers as $oldTeamUser) {
                 if (!in_array($oldTeamUser,$formTeamUsers)) {
                     $this->api()->delete('team-user',['team'=>$team_id, 'user'=>$oldTeamUser]);
-                    $this->sitePermissionManager->removeSitePermissionsForUser((int)$oldTeamUser, (int)$team_id);
+                    $this->sitePermissionManager->syncSitePermissionsForUser((int)$oldTeamUser, (int)$team_id);
                 }
             }
             //add team users or update permissions
