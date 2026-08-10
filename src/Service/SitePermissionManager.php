@@ -123,8 +123,8 @@ class SitePermissionManager
                 continue;
             }
 
-            // Check whether any other team still grants this user access to this site.
-            $remainingRole = $this->getHighestRoleFromOtherTeams($userId, $teamId, $site->getId());
+            // Check whether any team still grants this user access to this site.
+            $remainingRole = $this->getHighestRoleFromOtherTeams($userId, $site->getId());
 
             if ($remainingRole !== null) {
                 // User retains access via another team — update the role accordingly.
