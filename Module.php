@@ -192,19 +192,9 @@ SQL;
             $globalSettings->set('teams_filter_bypass_roles', ["global_admin"]);
         }
         if (version_compare($oldVersion, '4.2.0', '<')) {
-            // Sync Omeka site permissions for all existing team members so that
-            // every user has the correct SitePermission row for every site their
-            // team is associated with. This backfills installations that were
-            // running before site-permission sync was introduced.
-            // NOTE: The service locator does not have module services available
-            // during upgrade, and the module autoloader is not yet registered,
-            // so we require the class file and instantiate it directly.
-            require_once __DIR__ . '/src/Service/SitePermissionManager.php';
-            $sitePermissionManager = new SitePermissionManager(
-                $serviceLocator->get('Omeka\EntityManager'),
-                $serviceLocator->get('Omeka\Settings\User')
-            );
-            $sitePermissionManager->syncAllSitePermissions();
+            // Site permission sync cannot run here: module entities are not
+            // registered with Doctrine during the upgrade step. Use the
+            // "Sync Site Permissions" button on the module config page instead.
         }
     }
 
@@ -224,6 +214,9 @@ SQL;
         $globalSettings->set('teams_site_admin_make_user', $params['teams_site_admin_make_user']);
         $globalSettings->set('teams_filter_bypass_roles', $params['teams_filter_bypass_roles']);
 
+        if (!empty($params['teams_sync_site_permissions'])) {
+            $this->getServiceLocator()->get(SitePermissionManager::class)->syncAllSitePermissions();
+        }
     }
 
     public function getConfigForm(PhpRenderer $renderer)
