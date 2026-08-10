@@ -40,9 +40,9 @@ class SitePermissionManager
     /**
      * Sync Omeka site permissions for a user in a specific team.
      *
-     * Assigns ROLE_MANAGER if the team role has `can_add_site_pages`, otherwise ROLE_VIEWER,
+     * Assigns ROLE_ADMIN if the team role has `can_add_site_pages`, otherwise ROLE_VIEWER,
      * for every site associated with the team. The role is set unconditionally so that
-     * downgrading a team role is immediately reflected in the site permission.
+     * any change to a team role is immediately reflected in the site permission.
      *
      * @param int $userId
      * @param int $teamId
@@ -58,7 +58,7 @@ class SitePermissionManager
 
         $user = $teamUser->getUser();
         $omekaRole = $teamUser->getRole()->getCanAddSitePages()
-            ? SitePermission::ROLE_MANAGER
+            ? SitePermission::ROLE_ADMIN
             : SitePermission::ROLE_VIEWER;
 
         $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $teamId]);
@@ -86,11 +86,12 @@ class SitePermissionManager
     }
 
     /**
-     * Remove or recalculate Omeka site permissions for a user leaving a team.
+     * Sync or remove Omeka site permissions for a user leaving a team.
      *
      * If the user still belongs to other teams that share a given site, their
-     * permission is recalculated from those remaining memberships rather than
-     * simply removed, so a shared-site privilege is never accidentally revoked.
+     * permission is recalculated across all team memberships so that the role
+     * reflects the current state — which may be unchanged, lowered, or elevated.
+     * If no team grants access to a site, the permission is removed entirely.
      *
      * @param int      $userId
      * @param int      $teamId       The team the user is being removed from.
@@ -123,14 +124,14 @@ class SitePermissionManager
                 continue;
             }
 
-            // Check whether any team still grants this user access to this site.
-            $remainingRole = $this->getHighestRoleFromOtherTeams($userId, $site->getId());
+            // Recalculate the role across all team memberships after the change.
+            $syncedRole = $this->getHighestRoleFromTeams($userId, $site->getId());
 
-            if ($remainingRole !== null) {
-                // User retains access via another team — update the role accordingly.
-                $existingPermission->setRole($remainingRole);
+            if ($syncedRole !== null) {
+                // User still has access — sync to the recalculated role.
+                $existingPermission->setRole($syncedRole);
             } else {
-                // No other team grants access; remove the permission entirely.
+                // No team grants access to this site; remove the permission.
                 $sitePermissions->removeElement($existingPermission);
                 $em->remove($existingPermission);
             }
@@ -238,22 +239,21 @@ class SitePermissionManager
     }
 
     /**
-     * Determine the Omeka site role a user should hold on a site based on their
-     * remaining team memberships, excluding one team (the one being removed).
+     * Determine the Omeka site role a user should hold on a site based on all
+     * of their current team memberships.
      *
      * Logic:
-     * - If the user has no other team that includes this site, returns null
+     * - If no team the user belongs to includes this site, returns null
      *   (the site permission should be removed entirely).
-     * - If any remaining team with this site has can_add_site_pages = true,
-     *   returns ROLE_MANAGER.
+     * - If any team with this site has can_add_site_pages = true,
+     *   returns ROLE_ADMIN.
      * - Otherwise returns ROLE_VIEWER.
      *
      * @param int $userId
-     * @param int $excludeTeamId The team being removed, which should be ignored.
      * @param int $siteId
      * @return string|null
      */
-    private function getHighestRoleFromOtherTeams(int $userId, int $excludeTeamId, int $siteId): ?string
+    private function getHighestRoleFromTeams(int $userId, int $siteId): ?string
     {
         $em = $this->entityManager;
         $teamUsers = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $userId]);
@@ -262,10 +262,6 @@ class SitePermissionManager
         $canManage = false;
 
         foreach ($teamUsers as $teamUser) {
-            if ($teamUser->getTeam()->getId() === $excludeTeamId) {
-                continue;
-            }
-
             $teamSite = $em->getRepository('Teams\Entity\TeamSite')
                 ->findOneBy(['team' => $teamUser->getTeam()->getId(), 'site' => $siteId]);
 
@@ -276,7 +272,7 @@ class SitePermissionManager
             $hasAnySite = true;
             if ($teamUser->getRole()->getCanAddSitePages()) {
                 $canManage = true;
-                break; // No need to check further — manager wins.
+                break; // No need to check further — admin wins.
             }
         }
 
@@ -284,6 +280,6 @@ class SitePermissionManager
             return null;
         }
 
-        return $canManage ? SitePermission::ROLE_MANAGER : SitePermission::ROLE_VIEWER;
+        return $canManage ? SitePermission::ROLE_ADMIN : SitePermission::ROLE_VIEWER;
     }
 }
