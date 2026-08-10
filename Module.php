@@ -1813,6 +1813,29 @@ SQL;
                     }
                 }
                 $em->flush();
+            } else {
+                // No team explicitly specified (e.g. item stub created via the
+                // sidebar quick-create form). Fall back to the creating user's
+                // current team so the new item is visible to team members.
+                $user = $this->getUser();
+                if ($user) {
+                    $teamUser = $em->getRepository('Teams\Entity\TeamUser')
+                        ->findOneBy(['user' => $user->getId(), 'is_current' => 1]);
+                    if ($teamUser) {
+                        $team = $teamUser->getTeam();
+                        $tr = new TeamResource($team, $resource);
+                        $em->persist($tr);
+
+                        $media = $resource->getMedia();
+                        if (count($media) > 0) {
+                            foreach ($media as $m) {
+                                $tr = new TeamResource($team, $m);
+                                $em->persist($tr);
+                            }
+                        }
+                        $em->flush();
+                    }
+                }
             }
         }
     }
