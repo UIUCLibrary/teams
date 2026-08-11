@@ -1,0 +1,123 @@
+<?php
+/**
+ * Overrides the Omeka S core site-admin users template to add a "Managed by Teams"
+ * column to the permissions table, showing which team(s) grant each user their role.
+ *
+ * Copied from omeka/omeka-s at commit e107b1c1d993ea93f10b587330b1f3e1b88aebcc
+ * (application/view/omeka/site-admin/index/users.phtml) and modified to inject
+ * Teams module data.
+ */
+$translate = $this->plugin('translate');
+$this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
+$this->htmlElement('body')->appendAttribute('class', 'sites users');
+$form->prepare();
+$escape = $this->plugin('escapeHtml');
+$delete = $translate('Delete');
+$restore = $translate('Restore');
+$roles = [
+    'viewer' => $translate('Viewer'),
+    'editor' => $translate('Creator'),
+    'admin' => $translate('Manager'),
+];
+
+// Build userId => [teamName, ...] map for the teams column.
+$teamManagedUsers = [];
+try {
+    $services = $this->getHelperPluginManager()->getServiceLocator();
+    $entityManager = $services->get('Omeka\EntityManager');
+    $teamSites = $entityManager->getRepository('Teams\Entity\TeamSite')
+        ->findBy(['site' => $site->id()]);
+    foreach ($teamSites as $teamSite) {
+        $team = $teamSite->getTeam();
+        $teamUsers = $entityManager->getRepository('Teams\Entity\TeamUser')
+            ->findBy(['team' => $team->getId()]);
+        foreach ($teamUsers as $teamUser) {
+            $userId = $teamUser->getUser()->getId();
+            $teamManagedUsers[$userId][] = $team->getName();
+        }
+    }
+} catch (\Exception $e) {
+    // If Teams module data is unavailable, silently omit the column.
+    $teamManagedUsers = null;
+}
+
+$userRowTemplate = '
+<tr class="resource-row">
+    <td class="data-value" data-row-key="child-search"></td>
+    <td><select name="o:site_permission[__index__][o:role]">';
+foreach ($roles as $key => $value) {
+    $userRowTemplate .= '<option value="' . $key . '">' . $value . '</option>';
+}
+$userRowTemplate .= '</select></td>';
+if ($teamManagedUsers !== null) {
+    $userRowTemplate .= '
+    <td class="teams-managed-cell" data-row-key="teams-managed"></td>';
+}
+$userRowTemplate .= '
+    <td>
+        <ul class="actions">
+            <li>' . $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $delete]) . '</li>
+        </ul>
+        <input type="hidden" class="resource-id" name="o:site_permission[__index__][o:user][o:id]">
+    </td>
+</tr>
+';
+$sitePermissions = $site->sitePermissions();
+$users = [];
+foreach ($sitePermissions as $sitePermission) {
+    $user = $sitePermission->user();
+    $entry = [
+        'id' => $user->id(),
+        'role' => $sitePermission->role(),
+    ];
+    if ($teamManagedUsers !== null) {
+        $entry['teams-managed'] = !empty($teamManagedUsers[$user->id()])
+            ? implode(', ', array_unique($teamManagedUsers[$user->id()]))
+            : '';
+    }
+    $users[] = $entry;
+}
+?>
+
+<?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
+
+<?php if ($teamManagedUsers !== null): ?>
+<div class="messages">
+    <div class="warning"><?php echo $escape($translate(
+        'User roles on this site are managed by the Teams module. Manual changes made here may be overwritten when team memberships or roles are next updated.'
+    )); ?></div>
+</div>
+<?php endif; ?>
+
+<?php echo $this->form()->openTag($form); ?>
+<?php echo $this->formCollection($form, false); ?>
+
+<div id="page-actions">
+    <?php echo $this->cancelButton(); ?>
+    <button><?php echo $translate('Save'); ?></button>
+</div>
+
+<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($sitePermissions) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th scope="col"><?php echo $translate('User'); ?></th>
+            <th scope="col"><?php echo $translate('Role'); ?></th>
+            <?php if ($teamManagedUsers !== null): ?>
+            <th scope="col"><?php echo $translate('Managed by Team(s)'); ?></th>
+            <?php endif; ?>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody class="resource-rows"></tbody>
+</table>
+<div class="no-resources">
+    <p><?php echo $translate('This site has no users. Add users using the interface to the right.'); ?></p>
+</div>
+<button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
+<?php echo $this->userSelector($translate('Click on a user to add them to the site.')); ?>
+
+<?php echo $this->form()->closeTag(); ?>
+
+<script>
+  Omeka.initializeSelector('#site-user-permissions', '#user-selector');
+</script>

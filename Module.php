@@ -2578,12 +2578,6 @@ SQL;
             [$this, 'siteEdit']
         );
 
-        $sharedEventManager->attach(
-            'Omeka\Controller\SiteAdmin\Index',
-            'view.edit.after',
-            [$this, 'siteUsersTeamsInfo']
-        );
-
         //put the roles data in the user page
 
         $sharedEventManager->attach(

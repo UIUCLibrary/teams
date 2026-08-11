@@ -229,7 +229,7 @@ class UpdateController extends AbstractActionController
             }
 
             //handle new sites
-            $postSites = $post_data['teamSites']['o:site'];
+            $postSites = $post_data['teamSites']['o:site'] ?? [];
             foreach ($postSites as $site_id) {
                 if (!in_array($site_id, $current_sites)) {
                     $this->api()->create('team-site', ['team' => $team_id, 'site' => $site_id]);
