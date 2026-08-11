@@ -1,0 +1,14 @@
+{
+    "name": "uiuclibrary/teams",
+    "description": "Omeka S module for team-based resource visibility and permission management",
+    "type": "omeka-module",
+    "license": "Apache-2.0",
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true
+        }
+    }
+}
