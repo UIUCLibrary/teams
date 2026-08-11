@@ -167,7 +167,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $data = [];
         if (Request::CREATE === $request->getOperation()){
             $data = $request->getContent();
-        } elseif (Request::DELETE === $request->getOperation()) {
+        } elseif (Request::UPDATE === $request->getOperation() || Request::DELETE === $request->getOperation()) {
             $data = $request->getId();
         }
         if (!is_array($data)){
