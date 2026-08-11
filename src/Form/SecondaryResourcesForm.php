@@ -8,13 +8,13 @@ use Laminas\Authentication\AuthenticationService;
 use Laminas\Form\Element\Select;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Api\Representation\AbstractResourceRepresentation;
-use Laminas\Form\Form;
+use Laminas\Form\Fieldset;
 use Omeka\Settings\Settings;
 use Teams\Form\Element\ItemSetTeamSelect;
 use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
 
-class SecondaryResourcesForm extends Form
+class SecondaryResourcesForm extends Fieldset
 {
 
     protected $options;

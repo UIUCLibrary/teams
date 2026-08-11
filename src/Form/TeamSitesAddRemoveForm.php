@@ -3,10 +3,10 @@
 
 namespace Teams\Form;
 
-use Laminas\Form\Form;
+use Laminas\Form\Fieldset;
 use Omeka\Api\Manager as ApiManager;
 
-class TeamSitesAddRemoveForm extends Form
+class TeamSitesAddRemoveForm extends Fieldset
 {
     protected ?ApiManager $apiManager = null;
 
@@ -23,6 +23,7 @@ class TeamSitesAddRemoveForm extends Form
         ]);
 
         $siteSelect = $this->get('teamSites')->get('o:site');
+        $siteSelect->setName('teamSites[o:site]');
         $siteSelect->setAttribute('multiple', true);
         $siteSelect->setAttribute('id', 'sites');
         $siteSelect->setEmptyOption('None');
