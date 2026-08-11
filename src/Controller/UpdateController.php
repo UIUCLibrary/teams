@@ -185,32 +185,7 @@ class UpdateController extends AbstractActionController
         $user = $this->identity();
         //TODO rename this to TeamDetail form or find a way to string these all together
         $teamDetailsForm = $this->getForm(TeamDetailsForm::class);
-
-        //TODO: get team with a one line entity manager call
-        $criteria = ['id' => $team_id];
-        $qb = $this->entityManager->createQueryBuilder();
-        $entityClass = 'Teams\Entity\Team';
-
-        $qb->select('omeka_root')->from($entityClass, 'omeka_root');
-        foreach ($criteria as $field => $value) {
-            $qb->andWhere($qb->expr()->eq(
-                "omeka_root.$field",
-                $this->createNamedParameter($qb, $value)
-            ));
-        }
-        $qb->setMaxResults(1);
-
-        $entity = $qb->getQuery()->getOneOrNullResult();
-
-
         $data = $this->api()->read('team', ['id'=>$team_id])->getContent();
-        $request = new Request('update', 'team');
-        $event = new Event('api.hydrate.pre', $this, [
-            'entity' => $entity,
-            'request' => $request,
-        ]);
-        $this->getEventManager()->triggerEvent($event);
-
 
         //TODO (refactor) this is probably a stupid way to do this
 
@@ -231,15 +206,7 @@ class UpdateController extends AbstractActionController
         //get the users available to be added to the team
         $available_u_array = array_diff($all_u_array, $team_u_array);
 
-        //TODO (refactor) was trying to see if there was an easier way to get these objects into an array but consistency is more important
-        // Use HYDRATE_ARRAY so that TeamRole entities are not partially loaded
-        // into the Doctrine identity map. A partial select (partial r.{id, name})
-        // caches TeamRole objects with only id/name populated; any later access
-        // via lazy-loading (e.g. getCanAddSitePages()) then returns the empty
-        // default instead of the real database value.
-        $role_query = $this->entityManager->createQuery('select r from Teams\Entity\TeamRole r');
-        $roles_array = $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
-        $roles = $roles_array;
+        $roles = $this->api()->search('team-role')->getContent();
 
         //create an array object to hold the contents to pre-fill the form with
         //TODO (emulate) this is the procedure to use to populate forms. Copy this.
@@ -285,17 +252,7 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addError("You aren't authorized to change the team details");
             return $view;
         } else {
-            //first update the team name and description
-            $qb = $this->entityManager->createQueryBuilder();
-            $qb->update('Teams\Entity\Team', 'team')
-                ->set('team.name', '?1')
-                ->set('team.description', '?2')
-                ->where('team.id = ?3')
-                ->setParameter(1, $post_data['o:name'])
-                ->setParameter(2, $post_data['o:description'])
-                ->setParameter(3, $team_id)
-                ->getQuery()
-                ->execute();
+            $this->api()->update('team', $team_id, ['o:name' => $post_data['o:name'], 'o:description' => $post_data['o:description']]);
         }
         if (!$this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team_user', $team_id)) {
             $this->messenger()->addError("You aren't authorized to change team members");
@@ -320,8 +277,7 @@ class UpdateController extends AbstractActionController
                 $teamUserExists = $this->api()->search('team-user', ['team'=>$team_id, 'user'=>$teamUser['o:user']['o:id']])->getContent();
 
                 if ($teamUserExists){
-                    $role = $this->api()->read('team-role',['id'=>$teamUser['o:team_role']['o:id']])->getContent();
-                    $teamUserExists[0]->getEntity()->setRole($role->getEntity());
+                    $this->api()->update('team-user', ['team' => $team_id, 'user' => $teamUser['o:user']['o:id']], ['role' => $teamUser['o:team_role']['o:id']]);
                 } else {
                     $this->api()
                         ->create('team-user',
@@ -430,75 +386,5 @@ class UpdateController extends AbstractActionController
         $this->messenger()->addSuccess($successMessage);
 
         return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
-    }
-
-    public function userAction()
-    {
-        $request = $this->getRequest();
-        if ($request->isPost()) {
-            $data = $request->getPost();
-            $user_teams = $data['user-information']['o-module-teams:Team'];
-            //wrong!! not really able to get from the param, would need to extract from the return url
-            $user_id = $this->params('id');
-            $em = $this->entityManager;
-
-            foreach ($user_teams as $team_id):
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-            $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id'=>$user_id]);
-            $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
-            $team_user = new TeamUser($team, $user, $role);
-            $team_user->setCurrent(null);
-            $em->persist($team_user);
-            endforeach;
-            $em->flush();
-            $request = $this->getRequest();
-            $return = $request->getHeader('referer');
-//            return $this->redirect()->toUrl($data['return_url']);
-            return $this->redirect()->toUrl($return);
-        }
-    }
-
-    public function currentTeamAction()
-    {
-        $user_id = $this->identity()->getId();
-        $request = $this->getRequest();
-
-        if ($request->isPost()) {
-            $data =  $request->getPost();
-
-            $em = $this->entityManager;
-            $team_user = $em->getRepository('Teams\Entity\TeamUser');
-            $old_current = $team_user->findOneBy(['user' => $user_id, 'is_current' => 1]);
-            $new_current = $team_user->findOneBy(['user'=> $user_id, 'team'=>$data['team_id']]);
-
-            if ($old_current) {
-                $old_current->setCurrent(null);
-                $em->flush();
-            }
-            if ($new_current) {
-                $new_current->setCurrent(true);
-                $em->flush();
-                $team = $new_current->getTeam();
-
-                //the sites for the team the user just switched to
-
-                $team_sites = $team->getTeamSites();
-                $site_ids = [];
-                foreach ($team_sites as $team_site):
-                    $site_ids[] = strval($team_site->getSite()->getId());
-                endforeach;
-
-                //update so those are the user's default sites for items
-                $settingId = 'default_item_sites';
-                $settingValue = $site_ids;
-                $this->userSettings()->set($settingId, $settingValue, $user_id);
-            } else {
-                $this->messenger()->addError("Team not found");
-            }
-
-
-
-            return $this->redirect()->toUrl($data['return_url']);
-        }
     }
 }
