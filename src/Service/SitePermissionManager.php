@@ -76,17 +76,19 @@ class SitePermissionManager
         $user = $teamUser->getUser();
         $teamRole = $teamUser->getRole();
         $canAddSitePages = $teamRole->getCanAddSitePages();
+        $rawCanAddSitePages = $teamRole->getRawCanAddSitePages();
         $omekaSiteRole = $canAddSitePages
             ? SitePermission::ROLE_ADMIN
             : SitePermission::ROLE_VIEWER;
         $this->logger->info(sprintf(
-            '[SitePermissionManager] syncSitePermissionsForUser: userId=%d, teamId=%d, teamRoleId=%d, teamRoleName="%s", canAddSitePages=%s => omekaSiteRole="%s"',
+            '[SitePermissionManager] syncSitePermissionsForUser: userId=%d, teamId=%d, teamRoleId=%d, teamRoleName="%s", canAddSitePages=%s => omekaSiteRole="%s", rawCanAddSitePages=%s',
             $userId,
             $teamId,
             $teamRole->getId(),
             $teamRole->getName(),
             $canAddSitePages ? 'true' : 'false',
-            $omekaSiteRole
+            $omekaSiteRole,
+            $rawCanAddSitePages
         ));
 
         $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $teamId]);
