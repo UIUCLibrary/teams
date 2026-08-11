@@ -96,6 +96,7 @@ return [
             Form\Element\AllSiteSelectOrdered::class => Service\Form\Element\AllSiteSelectOrderedFactory::class,
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
             Form\SecondaryResourcesForm::class => Service\Form\SecondaryResourceFormFactory::class,
+            Form\TeamSitesAddRemoveForm::class => Service\Form\TeamSitesAddRemoveFormFactory::class,
             Form\Element\TeamName::class => Service\Form\Element\TeamNameFactory::class,
             Form\Element\RoleName::class => Service\Form\Element\RoleNameFactory::class,
             Form\Element\ItemSetTeamSelect::class => Service\Form\Element\ItemSetTeamSelectFactory::class,
@@ -194,18 +195,6 @@ return [
                                         //TODO change to correct controller when complete
                                         'controller' => 'Add',
                                         'action' => 'teamAdd'
-                                    ]
-
-                                ]
-                            ],
-                            'user' => [
-                                'type' => 'Literal',
-                                'options' => [
-                                    'route' => '/user',
-                                    'defaults' => [
-                                        //TODO change to correct controller when complete
-                                        'controller' => 'Update',
-                                        'action' => 'user'
                                     ]
 
                                 ]

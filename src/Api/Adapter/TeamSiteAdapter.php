@@ -2,8 +2,6 @@
 namespace Teams\Api\Adapter;
 
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator;
-use Laminas\EventManager\Event;
 use Omeka\Api\Adapter\AbstractAdapter;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Exception;
@@ -50,17 +48,25 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
         ErrorStore $errorStore
     ) {
         if ($this->shouldHydrate($request, 'team')) {
-            $team_id = $request->getValue('team');
-            if (!is_null($team_id)) {
-                $team_id = trim($team_id);
-                $entity->setTeamId($team_id);
+            $teamId = $request->getValue('team');
+            if (!is_null($teamId)) {
+                $team = $this->getEntityManager()
+                    ->getRepository('Teams\Entity\Team')
+                    ->findOneBy(['id' => (int) $teamId]);
+                if ($team) {
+                    $entity->setTeam($team);
+                }
             }
         }
         if ($this->shouldHydrate($request, 'site')) {
-            $team_site_id = $request->getValue('site');
-            if (!is_null($team_site_id)) {
-                $team_site_id = trim($team_site_id);
-                $entity->setTeamSiteId($team_site_id);
+            $siteId = $request->getValue('site');
+            if (!is_null($siteId)) {
+                $site = $this->getEntityManager()
+                    ->getRepository('Omeka\Entity\Site')
+                    ->findOneBy(['id' => (int) $siteId]);
+                if ($site) {
+                    $entity->setSite($site);
+                }
             }
         }
     }
@@ -108,14 +114,32 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
     {
         AbstractTeamEntityAdapter::read($request);
     }
+
     public function create(Request $request)
     {
-        AbstractTeamEntityAdapter::create($request);
+        $user = $this->getServiceLocator()->get('Omeka\AuthenticationService')->getIdentity();
+        $this->validateRequest($request, new ErrorStore());
+        $this->teamAuthority($request, $request->getValue('team'), $user);
+
+        $teamEntity = $this->getEntityManager()
+            ->getRepository('Teams\Entity\Team')
+            ->findOneBy(['id' => $request->getValue('team')]);
+        $siteEntity = $this->getEntityManager()
+            ->getRepository('Omeka\Entity\Site')
+            ->findOneBy(['id' => $request->getValue('site')]);
+
+        $teamSite = new TeamSite($teamEntity, $siteEntity);
+        $this->getEntityManager()->persist($teamSite);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+            $this->getEntityManager()->refresh($teamSite);
+        }
+        return new Response($teamSite);
     }
 
     public function batchCreate(Request $request)
     {
-        AbstractTeamEntityAdapter::batchCreate($request);
+        AbstractAdapter::batchCreate($request);
     }
 
     public function update(Request $request)
@@ -125,17 +149,33 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
 
     public function batchUpdate(Request $request)
     {
-        AbstractTeamEntityAdapter::batchUpdate($request);
+        AbstractAdapter::batchUpdate($request);
     }
 
     public function delete(Request $request)
     {
-        AbstractTeamEntityAdapter::delete($request);
+        $id = $request->getId();
+        $entity = $this->getEntityManager()
+            ->getRepository(TeamSite::class)
+            ->findOneBy(['team' => $id['team'], 'site' => $id['site']]);
+
+        if (!$entity) {
+            throw new Exception\NotFoundException(sprintf(
+                $this->getTranslator()->translate('TeamSite with team=%1$s site=%2$s not found'),
+                $id['team'], $id['site']
+            ));
+        }
+
+        $this->getEntityManager()->remove($entity);
+        if ($request->getOption('flushEntityManager', true)) {
+            $this->getEntityManager()->flush();
+        }
+        return new Response($entity);
     }
 
     public function batchDelete(Request $request)
     {
-        AbstractTeamEntityAdapter::batchDelete($request);
+        AbstractAdapter::batchDelete($request);
     }
 
     public function getMappedEntityClass()

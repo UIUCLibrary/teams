@@ -5,15 +5,11 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
-use Omeka\Api\Request;
-use Teams\Entity\TeamSite;
-use Teams\Entity\TeamUser;
 use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamItemsetAddRemoveForm;
 use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamDetailsForm;
-use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\Stdlib\ArrayObject;
 use Laminas\View\Model\ViewModel;
@@ -52,46 +48,9 @@ class UpdateController extends AbstractActionController
 
         $team_id = $this->params()->fromRoute('id');
         $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-        $team_sites = $this->entityManager
-            ->getRepository('Teams\Entity\TeamSite')
-            ->findBy(['team'=>$team_id]);
+        $current_sites = $this->api()->search('team-site', ['team' => $team_id], ['returnScalar' => 'site'])->getContent();
 
-        $current_sites = [];
-        $valueOptions = [];
-
-//        get current sites for the team and populate the sites chosen select element
-//        set up the sites form TODO:refactor most of this into the form, which is only used here
-        foreach ($team_sites as $team_site) {
-            $current_sites[] = $team_site->getSite()->getId();
-        }
-
-        $all_sites = $this->api()->search('sites', ['bypass_team_filter'=>true])->getContent();
-        foreach ($all_sites as $site) {
-            if ($site->owner()) {
-                $owner = $site->owner()->name();
-            } else {
-                $owner = 'No One';
-            }
-            $site_name = $site->title() . ' (' . $owner . ')';
-            $site_id = $site->id();
-
-
-            $valueOption = [];
-            $valueOption['value'] = $site_id;
-            $valueOption['label'] = $site_name;
-            if (in_array($site_id, $current_sites)) {
-                $valueOption['attributes'] = ['selected' => true];
-            }
-            $valueOptions[] = $valueOption;
-        }
-
-        $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class);
-        $sites = $sitesForm->get('teamSites')->get('o:site');
-        $sites->setAttribute('multiple', true);
-        $sites->setAttribute('id', 'sites');
-
-        $sites->setEmptyOption('None');
-        $sites->setValueOptions($valueOptions);
+        $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class, ['team_id' => $team_id]);
 
 
         //set up the item set form
@@ -269,72 +228,26 @@ class UpdateController extends AbstractActionController
                 }
             }
 
-            $em = $this->entityManager;
             //handle new sites
-            foreach ($post_data['teamSites']['o:site'] as $site) {
-                if (!in_array($site, $current_sites)) {
-                    $site = $em->getRepository('Omeka\Entity\Site')->findOneBy(['id'=>$site]);
-                    $ts = new TeamSite($team, $site);
-                    $request = new Request('create', 'team_site');
-                    $event = new Event('api.hydrate.pre', $this, [
-                        'entity' => $ts,
-                        'request' => $request,
-                    ]);
-                    $this->getEventManager()->triggerEvent($event);
-
-                    $em->persist($ts);
+            $postSites = $post_data['teamSites']['o:site'];
+            foreach ($postSites as $site_id) {
+                if (!in_array($site_id, $current_sites)) {
+                    $this->api()->create('team-site', ['team' => $team_id, 'site' => $site_id]);
                 }
             }
 
             //handle removed sites
-            foreach ($current_sites as $site) {
-                if (!in_array($site, $post_data['teamSites']['o:site'])) {
-                    $ts = $em->getRepository('Teams\Entity\TeamSite')->findOneBy(['team'=>$team_id, 'site'=>$site]);
-                    $request = new Request('delete', 'team_site');
-                    $event = new Event('api.hydrate.pre', $this, [
-                        'entity' => $ts,
-                        'request' => $request,
-                    ]);
-                    $this->getEventManager()->triggerEvent($event);
-                    $em->remove($ts);
+            foreach ($current_sites as $site_id) {
+                if (!in_array($site_id, $postSites)) {
+                    $this->api()->delete('team-site', ['team' => $team_id, 'site' => $site_id]);
                 }
             }
-            $em->flush();
         }
         $this->sitePermissionManager->syncAllSitePermissions();
         $successMessage = sprintf("Successfully updated the %s team", $team->getName());
         $this->messenger()->addSuccess($successMessage);
 
         return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
-    }
-
-    /**
-     * Adds a user to teams via the user-edit form.
-     *
-     * TODO: Role id=1 is hardcoded here. Should be made configurable or
-     * resolved to a named default role rather than relying on a magic integer.
-     */
-    public function userAction()
-    {
-        $request = $this->getRequest();
-        if ($request->isPost()) {
-            $data = $request->getPost();
-            $user_teams = $data['user-information']['o-module-teams:Team'];
-            $user_id = $this->params('id');
-            $em = $this->entityManager;
-
-            foreach ($user_teams as $team_id):
-                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
-                // TODO: resolve a proper default role instead of hardcoding id=1
-                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
-                $team_user = new TeamUser($team, $user, $role);
-                $team_user->setCurrent(null);
-                $em->persist($team_user);
-            endforeach;
-            $em->flush();
-            return $this->redirect()->toUrl($request->getHeader('referer'));
-        }
     }
 
     /**
