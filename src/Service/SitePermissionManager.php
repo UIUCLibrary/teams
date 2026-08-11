@@ -4,7 +4,7 @@ namespace Teams\Service;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManager;
 use Omeka\Entity\SitePermission;
-use Omeka\Mvc\Controller\Plugin\Logger;
+use Laminas\Log\Logger;
 use Omeka\Settings\UserSettings;
 
 /**
