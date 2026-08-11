@@ -44,8 +44,8 @@
 
                 }
 
-                users = <?php echo json_encode($this->available_u_array);?>;
-                roles = <?php echo json_encode($this->roles);?>;
+                users = <?php echo json_encode($this->available_u_array, JSON_HEX_TAG | JSON_HEX_AMP);?>;
+                roles = <?php echo json_encode($this->roles, JSON_HEX_TAG | JSON_HEX_AMP);?>;
                 function addUser() {
                     let nm = document.getElementById("new-member-choice");
                     let nmr = document.getElementById("new-member-role");

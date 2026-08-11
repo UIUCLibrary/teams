@@ -11,7 +11,7 @@ $translate = $this->plugin('translate');
 ?>
 <script>
 (function () {
-    var teamManagedUsers = <?php echo json_encode($teamManagedUsers); ?>;
+    var teamManagedUsers = <?php echo json_encode($teamManagedUsers, JSON_HEX_TAG | JSON_HEX_AMP); ?>;
 
     function annotate() {
         var table = document.getElementById('site-user-permissions');

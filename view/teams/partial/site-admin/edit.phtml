@@ -3,7 +3,7 @@
 window.addEventListener("load", function () {
 
 
-        let current_teams = <?php echo json_encode($this->team_ids)?>;
+        let current_teams = <?php echo json_encode($this->team_ids, JSON_HEX_TAG | JSON_HEX_AMP)?>;
 
 
         let select = document.getElementById('team_selected');

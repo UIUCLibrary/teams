@@ -79,7 +79,7 @@ class SitePermissionManager
         $omekaSiteRole = $canAddSitePages
             ? SitePermission::ROLE_ADMIN
             : SitePermission::ROLE_VIEWER;
-        $this->logger->err(sprintf(
+        $this->logger->info(sprintf(
             '[SitePermissionManager] syncSitePermissionsForUser: userId=%d, teamId=%d, teamRoleId=%d, teamRoleName="%s", canAddSitePages=%s => omekaSiteRole="%s", rawCanAddSitePages=%s',
             $userId,
             $teamId,
