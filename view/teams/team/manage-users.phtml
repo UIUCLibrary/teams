@@ -1,6 +1,5 @@
 <?php
 $translate = $this->plugin('translate');
-$this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
 $this->htmlElement('body')->appendAttribute('class', 'sites users');
 $escape = $this->plugin('escapeHtml');
 $delete = $translate('Delete');
@@ -53,10 +52,4 @@ if ($team) {
     <p><?php echo $translate('This team has no users. Add users using the interface to the right.'); ?></p>
 </div>
 <button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
-<?php echo $this->allUserSelector($translate('Click on a user to add them to the team.'),true,$this->bypass_teams_filter); ?>
-
-
-
-<script>
-    Omeka.initializeSelector('#site-user-permissions', '#user-selector');
-</script>
+<?php echo $this->allUserSelector($translate('Click on a user to add them to the team.'), true, $this->bypass_teams_filter); ?>

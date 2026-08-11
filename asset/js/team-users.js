@@ -26,4 +26,7 @@ $(document).ready(function() {
     permissionsTable.on('appendRow', function() {
         updateRowIndex($('[name="o:team_users[__index__][o:user][o:id]"]').val());
     });
+
+    // Initialize the user selector once the table is ready.
+    Omeka.initializeSelector('#site-user-permissions', '#user-selector');
 });

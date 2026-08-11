@@ -75,9 +75,13 @@ class AddController extends AbstractActionController
             return $view;
         }
 
-        $data = $request->getPost('team');
+        $data = $request->getPost()->toArray();
+        $teamData = [
+            'o:name' => $data['o:name'] ?? '',
+            'o:description' => $data['o:description'] ?? '',
+        ];
 
-        $newTeam = $this->api($form)->create('team', $data);
+        $newTeam = $this->api($form)->create('team', $teamData);
 
         //add the users, resources and sites to the team
         if ($newTeam) {
