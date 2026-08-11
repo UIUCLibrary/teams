@@ -74,13 +74,18 @@ class SitePermissionManager
         $em->refresh($teamUser);
 
         $user = $teamUser->getUser();
-        $omekaSiteRole = $teamUser->getRole()->getCanAddSitePages()
+        $teamRole = $teamUser->getRole();
+        $canAddSitePages = $teamRole->getCanAddSitePages();
+        $omekaSiteRole = $canAddSitePages
             ? SitePermission::ROLE_ADMIN
             : SitePermission::ROLE_VIEWER;
         $this->logger->info(sprintf(
-            'Syncing Omeka site permissions for user %d in team %d: setting role %s for all team sites.',
+            '[SitePermissionManager] syncSitePermissionsForUser: userId=%d, teamId=%d, teamRoleId=%d, teamRoleName="%s", canAddSitePages=%s => omekaSiteRole="%s"',
             $userId,
             $teamId,
+            $teamRole->getId(),
+            $teamRole->getName(),
+            $canAddSitePages ? 'true' : 'false',
             $omekaSiteRole
         ));
 
@@ -94,12 +99,25 @@ class SitePermissionManager
             $existingPermission = $sitePermissions->matching($criteria)->first();
 
             if ($existingPermission) {
+                $this->logger->info(sprintf(
+                    '[SitePermissionManager] siteId=%d: updating existing SitePermission from "%s" to "%s" for userId=%d',
+                    $site->getId(),
+                    $existingPermission->getRole(),
+                    $omekaSiteRole,
+                    $userId
+                ));
                 $existingPermission->setRole($omekaSiteRole);
             } else {
+                $this->logger->info(sprintf(
+                    '[SitePermissionManager] siteId=%d: creating new SitePermission with role "%s" for userId=%d',
+                    $site->getId(),
+                    $omekaSiteRole,
+                    $userId
+                ));
                 $sitePermission = new SitePermission();
                 $sitePermission->setSite($site);
                 $sitePermission->setUser($user);
-                $sitePermission->setRole($omekaRole);
+                $sitePermission->setRole($omekaSiteRole);
                 $em->persist($sitePermission);
                 $sitePermissions->add($sitePermission);
             }
