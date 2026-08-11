@@ -3,10 +3,10 @@
 
 namespace Teams\Form;
 
-use Laminas\Form\Fieldset;
+use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
 
-class TeamSitesAddRemoveForm extends Fieldset
+class TeamSitesAddRemoveForm extends Form
 {
     protected ?ApiManager $apiManager = null;
 
