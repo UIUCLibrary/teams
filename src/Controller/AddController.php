@@ -7,7 +7,6 @@ use Omeka\Form\ResourceBatchUpdateForm;
 use Omeka\Form\ResourceForm;
 use Omeka\Media\Ingester\Manager;
 use Omeka\Stdlib\Message;
-use phpDocumentor\Reflection\Types\This;
 use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;

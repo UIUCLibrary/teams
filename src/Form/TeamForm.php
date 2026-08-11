@@ -31,6 +31,5 @@ class TeamForm extends Form
             ],
         ]);
 
-        $this->addCsrf();
     }
 }

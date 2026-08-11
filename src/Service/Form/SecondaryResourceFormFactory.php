@@ -2,7 +2,7 @@
 
 namespace Teams\Service\Form;
 
-use Interop\Container\Containerinterface;
+use Interop\Container\ContainerInterface;
 use Teams\Form\SecondaryResourcesForm;
 
 class SecondaryResourceFormFactory
