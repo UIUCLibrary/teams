@@ -183,7 +183,7 @@ class TeamAdapter extends AbstractEntityAdapter
 
     public function update(Request $request)
     {
-        AbstractAdapter::batchCreate($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)

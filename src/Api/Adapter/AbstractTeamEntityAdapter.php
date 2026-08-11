@@ -301,7 +301,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
     public function update(Request $request)
     {
-        AbstractAdapter::update($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)

@@ -120,7 +120,7 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
 
     public function update(Request $request)
     {
-        AbstractTeamEntityAdapter::batchCreate($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)

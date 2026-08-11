@@ -68,11 +68,18 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
             }
         }
 
-        if ($this->shouldHydrate($request, 'o:role')) {
-            $role = $request->getValue('o:role');
-            if (!is_null($role)) {
-                $role = trim($role);
-                $entity->setRole($role);
+        // Accept 'role' (plain key used by update) or 'o:role' (JSON-LD key).
+        // Both must resolve to a TeamRole entity before setting.
+        $roleId = null;
+        if ($this->shouldHydrate($request, 'role')) {
+            $roleId = $request->getValue('role');
+        } elseif ($this->shouldHydrate($request, 'o:role')) {
+            $roleId = $request->getValue('o:role');
+        }
+        if (!is_null($roleId)) {
+            $roleEntity = $this->getEntityManager()->find('Teams\Entity\TeamRole', (int) $roleId);
+            if ($roleEntity) {
+                $entity->setRole($roleEntity);
             }
         }
 
@@ -184,7 +191,7 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
 
     public function update(Request $request)
     {
-        AbstractAdapter::batchCreate($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)

@@ -12,7 +12,6 @@ use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
 use Teams\Entity\TeamSite;
-use Teams\Entity\TeamUser;
 use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamResourcesForm;
@@ -85,17 +84,13 @@ class AddController extends AbstractActionController
             $teamEntity = $this->entityManager->getRepository('Teams\Entity\Team')
                 ->findOneBy(['id' => (int)$newTeam->getContent()->id()]);
             if ($request->getPost('o:team_users')) {
-                foreach ($request->getPost('o:team_users') as $team_user):
-                    $user = $this->entityManager->getRepository('Omeka\Entity\User')
-                        ->findOneBy(['id' => (int)$team_user['o:user']['o:id']]);
-                    $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-                        ->findOneBy(['id' => (int)$team_user['o:team_role']['o:id']]);
-
-                    $teamUser = new TeamUser($teamEntity, $user, $role);
-                    $teamUser->setCurrent(null);
-                    $this->entityManager->persist($teamUser);
-                endforeach;
-                $this->entityManager->flush();
+                foreach ($request->getPost('o:team_users') as $team_user) {
+                    $this->api()->create('team-user', [
+                        'team' => $newTeam->getContent()->id(),
+                        'user' => (int) $team_user['o:user']['o:id'],
+                        'role' => (int) $team_user['o:team_role']['o:id'],
+                    ]);
+                }
             }
 
             //persist the sites (no possibility of duplicates, so don't need to save to associative array)

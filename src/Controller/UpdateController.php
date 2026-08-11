@@ -5,7 +5,6 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMException;
-use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Request;
 use Teams\Entity\TeamSite;
 use Teams\Entity\TeamUser;
@@ -41,91 +40,6 @@ class UpdateController extends AbstractActionController
     {
         $this->entityManager = $entityManager;
         $this->sitePermissionManager = $sitePermissionManager;
-    }
-
-    public function createNamedParameter(
-        QueryBuilder $qb,
-        $value,
-        $prefix = 'omeka_'
-    ) {
-        $index = 0;
-        $placeholder = $prefix . $index;
-        $index++;
-        $qb->setParameter($placeholder, $value);
-        return ":$placeholder";
-    }
-
-    public function addTeamUser(int $team_id, int $user_id, int $role_id)
-    {
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
-            $this->messenger()->addError("You aren't authorized to change this team");
-            return null;
-        } else {
-            $team = $this->entityManager->find('Teams\Entity\Team', $team_id);
-            $user = $this->entityManager->find('Omeka\Entity\User', $user_id);
-            $role = $this->entityManager->find('Teams\Entity\TeamRole', $role_id);
-            $team_user = new TeamUser($team, $user, $role);
-            $this->entityManager->persist($team_user);
-
-            //flushing here because this is a mini-form and we want to see the name pop up
-            //more efficient solution would be to have JS handle the popping and batch update
-            $this->entityManager->flush();
-            return $team_user;
-        }
-    }
-
-    public function removeTeamUser(int $team_id, int $user)
-    {
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
-            $this->messenger()->addError("You aren't authorized to change this team");
-        } else {
-            $this->messenger()->addError("removed user");
-
-            $em = $this->entityManager;
-            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user' => $user]);
-            $em->remove($team_user);
-
-            //flushing here because this is a mini-form and we want to see the name pop up
-            //more efficient solution would be to have JS handle the popping and batch update
-            $em->flush();
-        }
-    }
-
-    public function updateRole(int $team_id, int $user_id, int $role_id)
-    {
-        if (! $this->teamAuth()->teamAuthorized($this->identity(), 'update', 'team', $team_id)){
-            $this->messenger()->addError("You aren't authorized to change this team");
-        } else {
-            $em = $this->entityManager;
-            $team_user = $em->find('Teams\Entity\TeamUser', ['team' => $team_id, 'user'=>$user_id]);
-            $user_role = $em->find('Teams\Entity\TeamRole', $role_id);
-            $team_user->setRole($user_role);
-            $em->flush();
-        }
-
-    }
-
-    public function processItemSets(int $item_set_id)
-    {
-        $resource_array = array();
-        if ((int)$item_set_id>0) {
-            $item_set_id = (int)$item_set_id;
-
-            //TODO: why isn't this a list?
-            //add all items belonging to itemset
-            foreach ($this->api()->search('items', ['item_set_id'=>$item_set_id, 'bypass_team_filter' => true])->getContent() as $item):
-                $resource_array += [$item->id() => true];
-
-            //add all media belonging to to the item
-            foreach ($this->api()->search('media', ['item_id'=>$item->id(), 'bypass_team_filter' => true])->getContent() as $media):
-                    $resource_array += [$media->id()=>true];
-            endforeach;
-            endforeach;
-        }
-        //add itemset itself
-        $resource_array += [$item_set_id => true];
-
-        return $resource_array;
     }
 
     /**
@@ -206,7 +120,14 @@ class UpdateController extends AbstractActionController
         //get the users available to be added to the team
         $available_u_array = array_diff($all_u_array, $team_u_array);
 
-        $roles = $this->api()->search('team-role')->getContent();
+        // Build a name => id map for the view's role selector.
+        // Using api()->search() avoids loading partial entities into the Doctrine
+        // identity map, which was the root cause of the canAddSitePages=false bug.
+        $roleRepresentations = $this->api()->search('team-role')->getContent();
+        $roles = [];
+        foreach ($roleRepresentations as $roleRep) {
+            $roles[$roleRep->name()] = $roleRep->id();
+        }
 
         //create an array object to hold the contents to pre-fill the form with
         //TODO (emulate) this is the procedure to use to populate forms. Copy this.
@@ -233,7 +154,6 @@ class UpdateController extends AbstractActionController
             'bypassTeamFilterRoles' => $bypass_team_filter_roles,
             'id' => $team_id,
             'roles'=> $roles,
-            'roles_array' => $roles_array,
             'all_u_collection' => $all_u_collection,
             'team_u_collection' => $team_u_collection,
             'team_u_array'=>$team_u_array,
@@ -386,5 +306,66 @@ class UpdateController extends AbstractActionController
         $this->messenger()->addSuccess($successMessage);
 
         return $this->redirect()->toRoute('admin/teams/detail',['id'=>$team_id]);
+    }
+
+    /**
+     * Adds a user to teams via the user-edit form.
+     *
+     * TODO: Role id=1 is hardcoded here. Should be made configurable or
+     * resolved to a named default role rather than relying on a magic integer.
+     */
+    public function userAction()
+    {
+        $request = $this->getRequest();
+        if ($request->isPost()) {
+            $data = $request->getPost();
+            $user_teams = $data['user-information']['o-module-teams:Team'];
+            $user_id = $this->params('id');
+            $em = $this->entityManager;
+
+            foreach ($user_teams as $team_id):
+                $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
+                // TODO: resolve a proper default role instead of hardcoding id=1
+                $role = $em->getRepository('Teams\Entity\TeamRole')->findOneBy(['id' => 1]);
+                $team_user = new TeamUser($team, $user, $role);
+                $team_user->setCurrent(null);
+                $em->persist($team_user);
+            endforeach;
+            $em->flush();
+            return $this->redirect()->toUrl($request->getHeader('referer'));
+        }
+    }
+
+    /**
+     * Switches the user's active team and updates their default item sites.
+     */
+    public function currentTeamAction()
+    {
+        $user_id = $this->identity()->getId();
+        $request = $this->getRequest();
+
+        if ($request->isPost()) {
+            $data = $request->getPost();
+            $em = $this->entityManager;
+            $teamUserRepo = $em->getRepository('Teams\Entity\TeamUser');
+
+            $old_current = $teamUserRepo->findOneBy(['user' => $user_id, 'is_current' => 1]);
+            $new_current = $teamUserRepo->findOneBy(['user' => $user_id, 'team' => $data['team_id']]);
+
+            if ($old_current) {
+                $old_current->setCurrent(null);
+                $em->flush();
+            }
+            if ($new_current) {
+                $new_current->setCurrent(true);
+                $em->flush();
+                $this->sitePermissionManager->updateUserDefaultSites($user_id);
+            } else {
+                $this->messenger()->addError("Team not found");
+            }
+
+            return $this->redirect()->toUrl($data['return_url']);
+        }
     }
 }
