@@ -4,6 +4,7 @@ namespace Teams\Service;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\EntityManager;
 use Omeka\Entity\SitePermission;
+use Omeka\Mvc\Controller\Plugin\Logger;
 use Omeka\Settings\UserSettings;
 
 /**
@@ -31,10 +32,22 @@ class SitePermissionManager
      */
     private UserSettings $userSettings;
 
-    public function __construct(EntityManager $entityManager, UserSettings $userSettings)
+    /**
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
+     * @param EntityManager $entityManager
+     * @param UserSettings $userSettings
+     * @param Logger $logger
+     */
+
+    public function __construct(EntityManager $entityManager, UserSettings $userSettings, Logger $logger)
     {
         $this->entityManager = $entityManager;
         $this->userSettings = $userSettings;
+        $this->logger = $logger;
     }
 
     /**
@@ -61,9 +74,15 @@ class SitePermissionManager
         $em->refresh($teamUser);
 
         $user = $teamUser->getUser();
-        $omekaRole = $teamUser->getRole()->getCanAddSitePages()
+        $omekaSiteRole = $teamUser->getRole()->getCanAddSitePages()
             ? SitePermission::ROLE_ADMIN
             : SitePermission::ROLE_VIEWER;
+        $this->logger->info(sprintf(
+            'Syncing Omeka site permissions for user %d in team %d: setting role %s for all team sites.',
+            $userId,
+            $teamId,
+            $omekaSiteRole
+        ));
 
         $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $teamId]);
 
@@ -75,7 +94,7 @@ class SitePermissionManager
             $existingPermission = $sitePermissions->matching($criteria)->first();
 
             if ($existingPermission) {
-                $existingPermission->setRole($omekaRole);
+                $existingPermission->setRole($omekaSiteRole);
             } else {
                 $sitePermission = new SitePermission();
                 $sitePermission->setSite($site);
