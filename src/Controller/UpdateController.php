@@ -232,9 +232,14 @@ class UpdateController extends AbstractActionController
         $available_u_array = array_diff($all_u_array, $team_u_array);
 
         //TODO (refactor) was trying to see if there was an easier way to get these objects into an array but consistency is more important
-        $role_query = $this->entityManager->createQuery('select partial r.{id, name} from Teams\Entity\TeamRole r');
-        $roles = $role_query->getResult();
-        $roles_array =  $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
+        // Use HYDRATE_ARRAY so that TeamRole entities are not partially loaded
+        // into the Doctrine identity map. A partial select (partial r.{id, name})
+        // caches TeamRole objects with only id/name populated; any later access
+        // via lazy-loading (e.g. getCanAddSitePages()) then returns the empty
+        // default instead of the real database value.
+        $role_query = $this->entityManager->createQuery('select r from Teams\Entity\TeamRole r');
+        $roles_array = $role_query->getResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
+        $roles = $roles_array;
 
         //create an array object to hold the contents to pre-fill the form with
         //TODO (emulate) this is the procedure to use to populate forms. Copy this.
