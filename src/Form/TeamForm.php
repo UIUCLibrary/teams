@@ -11,16 +11,13 @@ use Teams\Form\Element\ItemSetTeamSelect;
 use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
 /**
- * Single consolidated form for creating and editing a team.
+ * Form for creating and editing a team.
  *
- * Replaces the previous collection of separate forms
- * (TeamResourcesForm, SecondaryResourcesForm, TeamSitesAddRemoveForm) that
- * the controllers assembled manually. Following the Omeka S ResourceForm
- * pattern, all fields live here and are assembled by TeamFormFactory, which
- * injects the required services before the form manager calls init().
+ * All fields are assembled by TeamFormFactory, which injects the required
+ * services before the form manager calls init().
  *
- * Options (passed via $this->getForm(TeamForm::class, $options)):
- *   team_id  int  The id of the team being edited, or 0 / absent for a new team.
+ * Options:
+ *   team_id (int): The id of the team being edited, or 0 / absent for a new team.
  */
 class TeamForm extends Form
 {
@@ -212,17 +209,15 @@ class TeamForm extends Form
             ],
         ]);
 
-        // --- Sites (originally TeamSitesAddRemoveForm) ---
+        // --- Sites ---
 
         $this->add([
-            'name' => 'teamSites',
+            'name' => 'team_sites',
             'type' => TeamSitesFieldset::class,
         ]);
 
-        // Flatten the nested element name so the POST key is teamSites[o:site][],
-        // pre-populate with the team's current sites, and add a blank option.
-        $siteSelect = $this->get('teamSites')->get('o:site');
-        $siteSelect->setName('teamSites[o:site]');
+        $siteSelect = $this->get('team_sites')->get('o:site');
+        $siteSelect->setName('team_sites[o:site]');
         $siteSelect->setAttribute('multiple', true);
         $siteSelect->setAttribute('id', 'sites');
         $siteSelect->setEmptyOption('None');
@@ -233,22 +228,19 @@ class TeamForm extends Form
             $siteSelect->setValue(array_values($currentSiteIds));
         }
 
-        // Input-filter adjustments inherited from SiteResourcesForm.
         $inputFilter = $this->getInputFilter();
         $inputFilter->add(['name' => 'item_assignment_action', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'save_search', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'remove_resource_templates', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'remove_item_sets', 'allow_empty' => true]);
+        $inputFilter->get('team_sites')->add(['name' => 'o:site', 'allow_empty' => true, 'required' => false]);
 
 
         parent::init();
     }
 
     /**
-     * Determines whether the current user may assign the given resource to
-     * another team by checking whether they can edit it in any of their teams.
-     *
-     * Extracted from SecondaryResourcesForm::userAllowed() unchanged.
+     * Returns true if the current user may assign the given resource to another team.
      *
      * @param \Omeka\Api\Representation\AbstractResourceRepresentation $resource
      */
@@ -259,9 +251,9 @@ class TeamForm extends Form
             ->search('team-user', ['user' => $user, 'can_delete_resources' => 1], ['returnScalar' => 'team'])
             ->getContent();
 
-        if (str_contains('resource-template', $resource->getControllerName())) {
+        if (str_contains($resource->getControllerName(), 'resource-template')) {
             $resourceType = 'resource-template';
-        } elseif (str_contains($resource->getControllerName(), 'item') || str_contains('media', $resource->getControllerName())) {
+        } elseif (str_contains($resource->getControllerName(), 'item') || str_contains($resource->getControllerName(), 'media')) {
             $resourceType = 'resource';
         } else {
             return false;

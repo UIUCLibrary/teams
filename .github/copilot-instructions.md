@@ -75,7 +75,8 @@ Omeka S Module (PHP-based)
 ### PHP Standards
 - Follow PSR-12 coding standards where applicable
 - Use proper type hints and return types
-- Document complex logic with clear comments
+- Document complex logic with inline comments only where strictly needed; comments must describe the current code, never reference previous versions or prior fixes
+- Class and method docblocks follow Python/Google style: a single summary sentence, followed by an optional blank line and longer description, `Args:`/`Returns:`/`Throws:` sections where appropriate, and `@param`/`@return` PHPDoc tags for type information
 - Prefer dependency injection over global state
 - Use Omeka S service manager patterns
 

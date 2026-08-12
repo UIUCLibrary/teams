@@ -18,12 +18,12 @@ class TeamSitesAddRemoveForm extends Form
     public function init()
     {
         $this->add([
-            'name' => 'teamSites',
+            'name' => 'team_sites',
             'type' => TeamSitesFieldset::class,
         ]);
 
-        $siteSelect = $this->get('teamSites')->get('o:site');
-        $siteSelect->setName('teamSites[o:site]');
+        $siteSelect = $this->get('team_sites')->get('o:site');
+        $siteSelect->setName('team_sites[o:site]');
         $siteSelect->setAttribute('multiple', true);
         $siteSelect->setAttribute('id', 'sites');
         $siteSelect->setEmptyOption('None');
