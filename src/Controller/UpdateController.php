@@ -75,6 +75,16 @@ class UpdateController extends AbstractActionController
             return $view;
         }
 
+        // Snapshot the pre-update state so we can compute targeted sync diffs.
+        $beforeUserRoles = [];
+        foreach ($team->getTeamUsers() as $teamUser) {
+            $beforeUserRoles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
+        }
+        $beforeSiteIds = [];
+        foreach ($team->getTeamSites() as $teamSite) {
+            $beforeSiteIds[] = $teamSite->getSite()->getId();
+        }
+
         $this->api($form)->update('team', $teamId, [
             'o:name'               => $postData['o:name'],
             'o:description'        => $postData['o:description'],
@@ -95,7 +105,45 @@ class UpdateController extends AbstractActionController
             $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
         }
 
-        $this->sitePermissionManager->syncAllSitePermissions();
+        // Compute targeted site-permission syncs by diffing the pre-update
+        // snapshot against submitted data instead of rebuilding all permissions.
+
+        // Diff team users: added, removed, or role-changed.
+        $submittedTeamUsers = $postData['o:team_users'] ?? [];
+        $afterUserRoles = [];
+        foreach ($submittedTeamUsers as $entry) {
+            $uid  = (int) $entry['o:user']['o:id'];
+            $rid  = (int) $entry['o:team_role']['o:id'];
+            $afterUserRoles[$uid] = $rid;
+        }
+
+        $addedUserIds   = array_diff_key($afterUserRoles, $beforeUserRoles);
+        $removedUserIds = array_diff_key($beforeUserRoles, $afterUserRoles);
+        $keptUserIds    = array_intersect_key($beforeUserRoles, $afterUserRoles);
+
+        foreach (array_keys($addedUserIds) as $userId) {
+            $this->sitePermissionManager->syncSitePermissionsForUser($userId, $teamId);
+        }
+        foreach (array_keys($removedUserIds) as $userId) {
+            $this->sitePermissionManager->removeSitePermissionsForUser($userId, $teamId);
+        }
+        foreach (array_keys($keptUserIds) as $userId) {
+            if ($beforeUserRoles[$userId] !== $afterUserRoles[$userId]) {
+                $this->sitePermissionManager->syncSitePermissionsForUser($userId, $teamId);
+            }
+        }
+
+        // Diff team sites: added and removed.
+        $afterSiteIds  = array_map('intval', (array) ($postData['team_sites'] ?? []));
+        $addedSiteIds  = array_diff($afterSiteIds, $beforeSiteIds);
+        $removedSiteIds = array_diff($beforeSiteIds, $afterSiteIds);
+
+        foreach ($addedSiteIds as $siteId) {
+            $this->sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded($teamId, $siteId);
+        }
+        foreach ($removedSiteIds as $siteId) {
+            $this->sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved($teamId, $siteId);
+        }
         $this->messenger()->addSuccess(sprintf("Successfully updated the %s team", $team->getName()));
 
         return $this->redirect()->toRoute('admin/teams/detail', ['id' => $teamId]);
