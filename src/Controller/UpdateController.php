@@ -42,7 +42,6 @@ class UpdateController extends AbstractActionController
 
         $teamRepresentation = $this->api()->read('team', ['id' => $teamId])->getContent();
         $team = $this->entityManager->getRepository('Teams\Entity\Team')->findOneBy(['id' => $teamId]);
-        $currentSites = $this->api()->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])->getContent();
 
         /** @var TeamForm $form */
         $form = $this->getForm(TeamForm::class, ['team_id' => $teamId]);
@@ -77,30 +76,14 @@ class UpdateController extends AbstractActionController
         }
 
         $this->api($form)->update('team', $teamId, [
-            'o:name' => $postData['o:name'],
-            'o:description' => $postData['o:description'],
+            'o:name'               => $postData['o:name'],
+            'o:description'        => $postData['o:description'],
+            'o:team_users'         => $postData['o:team_users'] ?? [],
+            'o:team_sites'         => $postData['team_sites'] ?? [],
+            'o:item_sets'          => $postData['item_sets'] ?? [],
+            'o:recursive_item_sets' => $postData['recursive_item_sets'] ?? false,
+            'o:resource_templates' => $postData['resource_templates'] ?? [],
         ]);
-
-        // Remove users no longer in the submitted list, then add or update the rest.
-        $teamUsers = $request->getPost('o:team_users', []);
-        $formTeamUserIds = array_column(array_column($teamUsers, 'o:user'), 'o:id');
-
-        $oldTeamUserIds = $this->api()->search('team-user', ['team' => $teamId], ['returnScalar' => 'user'])->getContent();
-        foreach ($oldTeamUserIds as $oldUserId) {
-            if (! in_array($oldUserId, $formTeamUserIds)) {
-                $this->api()->delete('team-user', ['team' => $teamId, 'user' => $oldUserId]);
-            }
-        }
-        foreach ($teamUsers as $teamUser) {
-            $userId = $teamUser['o:user']['o:id'];
-            $roleId = $teamUser['o:team_role']['o:id'];
-            $exists = $this->api()->search('team-user', ['team' => $teamId, 'user' => $userId])->getContent();
-            if ($exists) {
-                $this->api()->update('team-user', ['team' => $teamId, 'user' => $userId], ['role' => $roleId]);
-            } else {
-                $this->api()->create('team-user', ['team' => $teamId, 'user' => $userId, 'role' => $roleId]);
-            }
-        }
 
         // Dispatch a background job for item assignment if an action was requested.
         parse_str($postData['item_pool'] ?? '', $itemPool);
@@ -110,40 +93,6 @@ class UpdateController extends AbstractActionController
                 'action' => $postData['item_assignment_action'],
             ]);
             $this->messenger()->addSuccess('Item assignment in progress. To see the new item count, refresh the page.'); // @translate
-        }
-
-        // Add or remove item sets and resource templates.
-        $recursive = $postData['recursive_item_sets'] ?? false;
-        foreach ($postData['remove_item_sets'] ?? [] as $itemSetId) {
-            $this->api()->delete('team-resource', [], ['team' => $teamId, 'resource' => $itemSetId], ['recursive' => $recursive, 'syncSites' => true]);
-        }
-        foreach ($postData['item_sets'] ?? [] as $itemSetId) {
-            if (count($this->api()->search('team-resource', ['team' => $teamId, 'resource' => $itemSetId])->getContent()) < 1) {
-                $this->api()->create('team-resource', ['team' => $teamId, 'resource' => $itemSetId], [], ['recursive' => $recursive, 'syncSites' => true]);
-            }
-        }
-
-        // Process resource templates.
-        foreach ($postData['remove_resource_templates'] ?? [] as $templateId) {
-            $this->api()->delete('team-resource-template', [], ['team' => $teamId, 'resource-template' => $templateId]);
-        }
-        foreach ($postData['resource_templates'] ?? [] as $templateId) {
-            if (count($this->api()->search('team-resource-template', ['team' => $teamId, 'resource-template' => $templateId])->getContent()) < 1) {
-                $this->api()->create('team-resource-template', ['team' => $teamId, 'resource-template' => $templateId]);
-            }
-        }
-
-        // Add or remove site associations.
-        $postSites = $postData['team_sites'] ?? [];
-        foreach ($postSites as $siteId) {
-            if (! in_array($siteId, $currentSites)) {
-                $this->api()->create('team-site', ['team' => $teamId, 'site' => $siteId]);
-            }
-        }
-        foreach ($currentSites as $siteId) {
-            if (! in_array($siteId, $postSites)) {
-                $this->api()->delete('team-site', ['team' => $teamId, 'site' => $siteId]);
-            }
         }
 
         $this->sitePermissionManager->syncAllSitePermissions();

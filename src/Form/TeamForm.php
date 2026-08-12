@@ -2,7 +2,6 @@
 namespace Teams\Form;
 
 use Laminas\Authentication\AuthenticationService;
-use Laminas\Form\Element\Select;
 use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Form\Element as OmekaElement;
@@ -183,36 +182,6 @@ class TeamForm extends Form
         ]);
 
         $this->add([
-            'name' => 'remove_item_sets',
-            'type' => Select::class,
-            'options' => [
-                'label' => 'Item Sets to be removed', // @translate
-            ],
-            'attributes' => [
-                'id' => 'o-modules-team-remove-item-sets',
-                'class' => 'chosen-select',
-                'multiple' => true,
-                'data-placeholder' => 'None', // @translate
-            ],
-        ]);
-
-        $this->add([
-            'name' => 'remove_resource_templates',
-            'type' => Select::class,
-            'options' => [
-                'label' => 'Resource Templates to be removed', // @translate
-            ],
-            'attributes' => [
-                'id' => 'o-modules-team-remove-resource-templates',
-                'class' => 'chosen-select',
-                'multiple' => true,
-                'data-placeholder' => 'None', // @translate
-            ],
-        ]);
-
-        // --- Sites ---
-
-        $this->add([
             'name' => 'team_sites',
             'type' => AllSiteSelect::class,
             'options' => [
@@ -234,8 +203,6 @@ class TeamForm extends Form
         $inputFilter = $this->getInputFilter();
         $inputFilter->add(['name' => 'item_assignment_action', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'save_search', 'allow_empty' => true]);
-        $inputFilter->add(['name' => 'remove_resource_templates', 'allow_empty' => true]);
-        $inputFilter->add(['name' => 'remove_item_sets', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'team_sites', 'allow_empty' => true, 'required' => false]);
 
 
