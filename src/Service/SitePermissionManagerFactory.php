@@ -16,6 +16,7 @@ class SitePermissionManagerFactory implements FactoryInterface
     public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         return new SitePermissionManager(
+            $container->get('Omeka\ApiManager'),
             $container->get('Omeka\EntityManager'),
             $container->get('Omeka\Settings\User'),
             $container->get('Omeka\Logger')

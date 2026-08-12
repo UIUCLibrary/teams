@@ -7,13 +7,12 @@
  * (application/view/omeka/site-admin/index/users.phtml) and modified to inject
  * Teams module data.
  *
- * The teamSiteUsers view helper is used instead of an inline getServiceLocator()
- * call to avoid the Laminas v3 deprecation warning.
- *
- * The "Managed by Teams" cell is populated by inline JavaScript after
- * Omeka.initializeSelector() creates the rows, because initializeSelector reads
- * cell content from sidebar DOM attributes — not from data-existing-rows — so the
- * teams-managed value must be injected in a separate pass.
+ * Existing permissions are rendered server-side so user names are always visible,
+ * even for users filtered out of the team-scoped sidebar selector. The row template
+ * (data-row-template) is retained for new users added via the sidebar. Omeka's
+ * initializeSelector skips rows whose .resource-id value already exists in the table,
+ * so the PHP-rendered rows are not duplicated. site-users.js iterates data-existing-rows
+ * to replace __index__ placeholders with real indices and confirm role selections.
  */
 $translate = $this->plugin('translate');
 $this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
@@ -32,6 +31,7 @@ $roles = [
 $teamManagedUsers = $this->teamSiteUsers($site->id());
 $hasTeamData = !empty($teamManagedUsers);
 
+// Row template used by initializeSelector for *new* users added from the sidebar.
 $userRowTemplate = '
 <tr class="resource-row">
     <td class="data-value" data-row-key="child-search"></td>
@@ -53,21 +53,18 @@ $userRowTemplate .= '
     </td>
 </tr>
 ';
+
 $sitePermissions = $site->sitePermissions();
-$users = [];
+
+// data-existing-rows is consumed by site-users.js to assign indices and confirm
+// role selections on the PHP-rendered rows. Names and team data are rendered
+// directly in PHP, so they are not needed here.
+$existingRowsData = [];
 foreach ($sitePermissions as $sitePermission) {
-    $user = $sitePermission->user();
-    $entry = [
-        'id' => $user->id(),
-        'name' => $user->name(),
+    $existingRowsData[] = [
+        'id'   => $sitePermission->user()->id(),
         'role' => $sitePermission->role(),
     ];
-    if ($hasTeamData) {
-        $entry['teams-managed'] = !empty($teamManagedUsers[$user->id()])
-            ? implode(', ', array_unique($teamManagedUsers[$user->id()]))
-            : '';
-    }
-    $users[] = $entry;
 }
 ?>
 
@@ -89,7 +86,7 @@ foreach ($sitePermissions as $sitePermission) {
     <button><?php echo $translate('Save'); ?></button>
 </div>
 
-<table id="site-user-permissions"  data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($users)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($sitePermissions) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+<table id="site-user-permissions" data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($existingRowsData)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($sitePermissions) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
     <thead>
         <tr>
             <th scope="col"><?php echo $translate('User'); ?></th>
@@ -100,7 +97,36 @@ foreach ($sitePermissions as $sitePermission) {
             <th></th>
         </tr>
     </thead>
-    <tbody class="resource-rows"></tbody>
+    <tbody class="resource-rows">
+    <?php foreach ($sitePermissions as $sitePermission):
+        $user = $sitePermission->user();
+        $teamsManaged = $hasTeamData
+            ? (!empty($teamManagedUsers[$user->id()])
+                ? implode(', ', array_unique($teamManagedUsers[$user->id()]))
+                : '')
+            : '';
+    ?>
+        <tr class="resource-row">
+            <td class="data-value" data-row-key="child-search"><?php echo $escape($user->name()); ?></td>
+            <td>
+                <select name="o:site_permission[__index__][o:role]">
+                    <?php foreach ($roles as $roleKey => $roleLabel): ?>
+                    <option value="<?php echo $roleKey; ?>"<?php echo $sitePermission->role() === $roleKey ? ' selected' : ''; ?>><?php echo $roleLabel; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </td>
+            <?php if ($hasTeamData): ?>
+            <td class="teams-managed-cell"><?php echo $escape($teamsManaged); ?></td>
+            <?php endif; ?>
+            <td>
+                <ul class="actions">
+                    <li><?php echo $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $delete]); ?></li>
+                </ul>
+                <input type="hidden" class="resource-id" name="o:site_permission[__index__][o:user][o:id]" value="<?php echo $user->id(); ?>">
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
 </table>
 <div class="no-resources">
     <p><?php echo $translate('This site has no users. Add users using the interface to the right.'); ?></p>
@@ -112,22 +138,6 @@ foreach ($sitePermissions as $sitePermission) {
 
 <script>
   Omeka.initializeSelector('#site-user-permissions', '#user-selector');
-  // Inject user names for any users not returned by the team-filtered selector.
-  // Also inject team-managed values added by the Teams module.
-  (function() {
-      var table = $('#site-user-permissions');
-      var existingRows = table.data('existing-rows');
-      $.each(existingRows, function() {
-          var row = table.find('.resource-id[value="' + this.id + '"]').parents('.resource-row');
-          if (this.name) {
-              row.find('.data-value[data-row-key="child-search"]').text(this.name);
-          }
-          <?php if ($hasTeamData): ?>
-          var teamsManaged = this['teams-managed'];
-          if (teamsManaged !== undefined && teamsManaged !== '') {
-              row.find('.teams-managed-cell').text(teamsManaged);
-          }
-          <?php endif; ?>
-      });
-  }());
 </script>
+
+
