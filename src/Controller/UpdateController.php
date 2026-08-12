@@ -4,10 +4,7 @@ namespace Teams\Controller;
 use Doctrine\ORM\EntityManager;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
-use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamForm;
-use Teams\Form\TeamResourcesForm;
-use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Service\SitePermissionManager;
 
 
@@ -48,16 +45,12 @@ class UpdateController extends AbstractActionController
         $currentSites = $this->api()->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])->getContent();
 
         /** @var TeamForm $form */
-        $form = $this->getForm(TeamForm::class);
+        $form = $this->getForm(TeamForm::class, ['team_id' => $teamId]);
         $form->setAttribute('id', 'team-update-form');
         $form->setAttribute('action', $this->url()->fromRoute('admin/teams/detail/update', ['id' => $teamId]));
 
-        // Pre-populate the form with the current team data.
+        // Pre-populate the form with the current team name and description.
         $form->setData($teamRepresentation->getJsonLd());
-
-        $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
-        $secondaryResourcesForm = $this->getForm(SecondaryResourcesForm::class, ['team_id' => $teamId]);
-        $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class, ['team_id' => $teamId]);
 
         $bypassTeamFilterRoles = $this->settings()->get('teams_filter_bypass_roles');
 
@@ -65,9 +58,6 @@ class UpdateController extends AbstractActionController
             'team' => $team,
             'teamRepresentation' => $teamRepresentation,
             'form' => $form,
-            'resourceForm' => $resourceForm,
-            'secondaryResourcesForm' => $secondaryResourcesForm,
-            'sitesForm' => $sitesForm,
             'bypassTeamFilterRoles' => $bypassTeamFilterRoles,
             'id' => $teamId,
             'user' => $this->identity(),
@@ -113,7 +103,6 @@ class UpdateController extends AbstractActionController
         }
 
         // Dispatch a background job for item assignment if an action was requested.
-        $resourceForm->setData($postData);
         parse_str($postData['item_pool'] ?? '', $itemPool);
         if (! empty($postData['item_assignment_action']) && $postData['item_assignment_action'] !== 'no_action') {
             $this->jobDispatcher()->dispatch('Teams\Job\UpdateTeamResources', [
@@ -124,7 +113,6 @@ class UpdateController extends AbstractActionController
         }
 
         // Add or remove item sets and resource templates.
-        $secondaryResourcesForm->setData($postData);
         $recursive = $postData['recursive_item_sets'] ?? false;
         foreach ($postData['remove_item_sets'] ?? [] as $itemSetId) {
             $this->api()->delete('team-resource', [], ['team' => $teamId, 'resource' => $itemSetId], ['recursive' => $recursive, 'syncSites' => true]);

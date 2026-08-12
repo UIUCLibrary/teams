@@ -15,12 +15,9 @@ $this->htmlElement('body')->appendAttribute('class', 'teams add');
 
 <?php echo $this->partial('teams/team/edit-form', [
     'form'                    => $this->form,
-    'resourceForm'            => $this->resourceForm,
-    'secondaryResourcesForm'  => $this->secondaryResourcesForm,
-    'sitesForm'               => $this->sitesForm,
-    'team'                    => [],
-    'bypassTeamFilterRoles'   => [],
-    'user'                    => $this->identity(),
+    'team'                    => $this->team,
+    'bypassTeamFilterRoles'   => $this->bypassTeamFilterRoles,
+    'user'                    => $this->user,
     'isAdd'                   => true,
     'sectionNavEvent'         => 'view.add.section_nav',
     'action'                  => 'add',

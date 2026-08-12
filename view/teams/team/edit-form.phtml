@@ -4,10 +4,7 @@
  * Follows the Omeka S form.phtml pattern: one form tag, CSRF at bottom.
  *
  * Expected variables:
- * @var \Teams\Form\TeamForm $form
- * @var \Teams\Form\TeamResourcesForm $resourceForm
- * @var \Teams\Form\SecondaryResourcesForm $secondaryResourcesForm
- * @var \Teams\Form\TeamSitesAddRemoveForm $sitesForm
+ * @var \Teams\Form\TeamForm $form  The consolidated team form (all sections).
  * @var \Teams\Entity\Team|array|null $team  Null / empty array on the add page.
  * @var array|null $bypassTeamFilterRoles
  * @var \Omeka\Entity\User $user
@@ -60,13 +57,13 @@ echo $this->form()->openTag($form);
 </div>
 <?php else: ?>
 <div id="team-resources" class="manual-assignment section">
-    <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
+    <?php echo $this->formRow($form->get('item_assignment_action')); ?>
     <div id="item-pool-container" style="display: none;">
-        <?php echo $this->formRow($resourceForm->get('item_pool')); ?>
+        <?php echo $this->formRow($form->get('item_pool')); ?>
         <div id="save-search">
             <label>
                 <?php echo $translate('Keep this query'); ?>
-                <?php echo $formElement($resourceForm->get('save_search')); ?>
+                <?php echo $formElement($form->get('save_search')); ?>
             </label>
         </div>
     </div>
@@ -90,14 +87,17 @@ echo $this->form()->openTag($form);
         </ul>
     <?php endif; ?>
     <?php
-    $secondaryResourcesForm->setLabel($translate('Add and Remove Templates and Item Sets'));
     if (!$isAdd) {
-        $secondaryResourcesForm->get('recursive_item_sets')
+        $form->get('recursive_item_sets')
             ->setOptions(['label' => $translate('Recursively manage items from item sets?')]);
-        $secondaryResourcesForm->get('recursive_item_sets')
+        $form->get('recursive_item_sets')
             ->setOptions(['info' => $translate('Add/remove all of the items from the item sets when you add/remove them')]);
     }
-    echo $this->formCollection($secondaryResourcesForm);
+    echo $this->formRow($form->get('recursive_item_sets'));
+    echo $this->formRow($form->get('item_sets'));
+    echo $this->formRow($form->get('resource_templates'));
+    echo $this->formRow($form->get('remove_item_sets'));
+    echo $this->formRow($form->get('remove_resource_templates'));
     ?>
 </div>
 <?php endif; ?>
@@ -111,8 +111,8 @@ echo $this->form()->openTag($form);
     <div class="selection-criteria">
         <div class="select-by-item-set-content">
             <?php
-            $sitesForm->get('teamSites')->setLabel($translate('Add or Remove Sites'));
-            echo $this->formCollection($sitesForm);
+            $form->get('teamSites')->setLabel($translate('Add or Remove Sites'));
+            echo $this->formCollection($form->get('teamSites'));
             ?>
         </div>
     </div>

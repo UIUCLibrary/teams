@@ -13,9 +13,6 @@ $this->htmlElement('body')->appendAttribute('class', 'teams edit');
 
 <?php echo $this->partial('teams/team/edit-form', [
     'form'                   => $this->form,
-    'resourceForm'           => $this->resourceForm,
-    'secondaryResourcesForm' => $this->secondaryResourcesForm,
-    'sitesForm'              => $this->sitesForm,
     'team'                   => $this->team,
     'bypassTeamFilterRoles'  => $this->bypassTeamFilterRoles,
     'user'                   => $this->user,

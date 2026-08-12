@@ -83,9 +83,10 @@ return [
     ],
     'form_elements' => [
         'invokables' => [
-            Form\TeamForm::class => Form\TeamForm::class,
+            Form\TeamSitesFieldset::class => Form\TeamSitesFieldset::class,
         ],
         'factories' => [
+            Form\TeamForm::class => Service\Form\TeamFormFactory::class,
             Form\Element\TeamSelect::class => Service\Form\Element\TeamSelectFactory::class,
             Form\Element\AllTeamSelect::class => Service\Form\Element\AllTeamSelectFactory::class,
             Form\Element\BlankTeamSelect::class => Service\Form\Element\BlankTeamSelectFactory::class,
@@ -114,7 +115,7 @@ return [
         'factories' => [
             'roleAuth' => Service\ViewHelper\RoleAuthFactory::class,
             'allUserSelect'  => Service\ViewHelper\AllUserSelectFactory::class,
-
+            'teamSiteUsers' => Service\ViewHelper\TeamSiteUsersFactory::class,
         ]
     ],
     'controllers' => [

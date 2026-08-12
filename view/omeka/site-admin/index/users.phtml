@@ -6,6 +6,14 @@
  * Copied from omeka/omeka-s at commit e107b1c1d993ea93f10b587330b1f3e1b88aebcc
  * (application/view/omeka/site-admin/index/users.phtml) and modified to inject
  * Teams module data.
+ *
+ * The teamSiteUsers view helper is used instead of an inline getServiceLocator()
+ * call to avoid the Laminas v3 deprecation warning.
+ *
+ * The "Managed by Teams" cell is populated by inline JavaScript after
+ * Omeka.initializeSelector() creates the rows, because initializeSelector reads
+ * cell content from sidebar DOM attributes — not from data-existing-rows — so the
+ * teams-managed value must be injected in a separate pass.
  */
 $translate = $this->plugin('translate');
 $this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
@@ -20,26 +28,9 @@ $roles = [
     'admin' => $translate('Manager'),
 ];
 
-// Build userId => [teamName, ...] map for the teams column.
-$teamManagedUsers = [];
-try {
-    $services = $this->getHelperPluginManager()->getServiceLocator();
-    $entityManager = $services->get('Omeka\EntityManager');
-    $teamSites = $entityManager->getRepository('Teams\Entity\TeamSite')
-        ->findBy(['site' => $site->id()]);
-    foreach ($teamSites as $teamSite) {
-        $team = $teamSite->getTeam();
-        $teamUsers = $entityManager->getRepository('Teams\Entity\TeamUser')
-            ->findBy(['team' => $team->getId()]);
-        foreach ($teamUsers as $teamUser) {
-            $userId = $teamUser->getUser()->getId();
-            $teamManagedUsers[$userId][] = $team->getName();
-        }
-    }
-} catch (\Exception $e) {
-    // If Teams module data is unavailable, silently omit the column.
-    $teamManagedUsers = null;
-}
+// Build userId => [teamName, ...] map via the injected view helper (no getServiceLocator).
+$teamManagedUsers = $this->teamSiteUsers($site->id());
+$hasTeamData = !empty($teamManagedUsers);
 
 $userRowTemplate = '
 <tr class="resource-row">
@@ -49,9 +40,9 @@ foreach ($roles as $key => $value) {
     $userRowTemplate .= '<option value="' . $key . '">' . $value . '</option>';
 }
 $userRowTemplate .= '</select></td>';
-if ($teamManagedUsers !== null) {
+if ($hasTeamData) {
     $userRowTemplate .= '
-    <td class="teams-managed-cell" data-row-key="teams-managed"></td>';
+    <td class="teams-managed-cell"></td>';
 }
 $userRowTemplate .= '
     <td>
@@ -70,7 +61,7 @@ foreach ($sitePermissions as $sitePermission) {
         'id' => $user->id(),
         'role' => $sitePermission->role(),
     ];
-    if ($teamManagedUsers !== null) {
+    if ($hasTeamData) {
         $entry['teams-managed'] = !empty($teamManagedUsers[$user->id()])
             ? implode(', ', array_unique($teamManagedUsers[$user->id()]))
             : '';
@@ -81,7 +72,7 @@ foreach ($sitePermissions as $sitePermission) {
 
 <?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
 
-<?php if (!empty($teamManagedUsers)): ?>
+<?php if ($hasTeamData): ?>
 <div class="messages">
     <div class="warning"><?php echo $escape($translate(
         'User roles on this site are managed by the Teams module. Manual changes made here may be overwritten when team memberships or roles are next updated.'
@@ -102,7 +93,7 @@ foreach ($sitePermissions as $sitePermission) {
         <tr>
             <th scope="col"><?php echo $translate('User'); ?></th>
             <th scope="col"><?php echo $translate('Role'); ?></th>
-            <?php if ($teamManagedUsers !== null): ?>
+            <?php if ($hasTeamData): ?>
             <th scope="col"><?php echo $translate('Managed by Team(s)'); ?></th>
             <?php endif; ?>
             <th></th>
@@ -120,4 +111,21 @@ foreach ($sitePermissions as $sitePermission) {
 
 <script>
   Omeka.initializeSelector('#site-user-permissions', '#user-selector');
+  <?php if ($hasTeamData): ?>
+  // Omeka.initializeSelector reads cell content from sidebar DOM data-* attributes,
+  // not from data-existing-rows. Populate the teams-managed cells ourselves.
+  (function() {
+      var table = $('#site-user-permissions');
+      var existingRows = table.data('existing-rows');
+      $.each(existingRows, function() {
+          var teamsManaged = this['teams-managed'];
+          if (teamsManaged !== undefined && teamsManaged !== '') {
+              table.find('.resource-id[value="' + this.id + '"]')
+                  .parents('.resource-row')
+                  .find('.teams-managed-cell')
+                  .text(teamsManaged);
+          }
+      });
+  }());
+  <?php endif; ?>
 </script>
