@@ -3,116 +3,26 @@ $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.
 $this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/inject-removal-util-element.js', 'Teams'));
 $this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
+$this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 
 $translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
-$this->htmlElement('body')->appendAttribute('class', 'items edit');
-
-$form = $this->form;
-$form->setAttribute('id', 'team-update-form');
-$form->prepare();
-
-$sectionNavs = [
-    'team-info' => $translate('Info'),
-    'team-members' => $translate('Users'),
-    'team-resources' => $translate('Resources'),
-    'team-secondary-resources' => $translate('Other Resources'),
-    'team-sites' => $translate('Sites'),
-];
+$this->htmlElement('body')->appendAttribute('class', 'teams edit');
 ?>
 <?php echo $this->pageTitle($this->teamRepresentation->name(), 1, $translate('Teams'), $translate('Edit')); ?>
 <?php $this->trigger('view.edit.before'); ?>
 
-<?php echo $this->sectionNav($sectionNavs, 'view.edit.section_nav'); ?>
-
-<div id="page-actions">
-    <?php echo $this->cancelButton(); ?>
-    <button type="submit" form="team-update-form" value="Submit"><?php echo $translate('Save Edits'); ?></button>
-</div>
-
-<?php echo $this->form()->openTag($form); ?>
-
-<fieldset id="team-info" class="active section">
-    <div class="meta-group">
-        <?php echo $this->formCollection($form); ?>
-    </div>
-</fieldset>
-
-<?php if ($this->roleAuth()->teamAuthorized('update', 'team_user')): ?>
-    <fieldset id="team-members" class="section">
-        <?php echo $this->partial('teams/team/manage-users', [
-            'team' => $this->team,
-            'bypass_teams_filter' => true,
-        ]); ?>
-    </fieldset>
-<?php else: ?>
-    <fieldset id="team-members" class="section">
-        <p><?php echo $translate('You are only authorized to Manage Team Users'); ?></p>
-    </fieldset>
-<?php endif; ?>
-
-<?php if ($this->roleAuth()->teamAuthorized('update', 'resource')): ?>
-    <div id="team-resources" class="manual-assignment section">
-        <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
-        <div id="item-pool-container" style="display: none;">
-            <?php echo $this->formRow($resourceForm->get('item_pool')); ?>
-            <div id="save-search">
-                <label><?php echo $translate('Keep this query'); ?><?php echo $this->formElement($resourceForm->get('save_search')); ?></label>
-            </div>
-        </div>
-    </div>
-<?php else: ?>
-    <div id="team-resources" class="section">
-        <p><?php echo $translate('You are only authorized to Manage Team Users'); ?></p>
-    </div>
-<?php endif; ?>
-
-<?php if ($this->roleAuth()->teamAuthorized('update', 'resource')): ?>
-    <div id="team-secondary-resources" class="manual-assignment section">
-        <h2><?php echo $translate('Select resource templates for this team'); ?></h2>
-        <?php if (! in_array($user->getRole(), $bypassTeamFilterRoles)): ?>
-            <p><?php echo $translate('You can only add resources from other teams where your team role has resource edit privileges.'); ?></p>
-            <p><?php echo $translate('Users with these roles have broader privileges:'); ?></p>
-            <ul>
-                <?php foreach ($bypassTeamFilterRoles as $role): ?>
-                    <li><?php echo str_replace('_', ' ', $role); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-        <?php
-        $secondaryResourcesForm->setLabel($translate('Add and Remove Templates and Item Sets'));
-        $secondaryResourcesForm->get('recursive_item_sets')->setOptions(['label' => $translate('Recursively manage items from item sets?')]);
-        $secondaryResourcesForm->get('recursive_item_sets')->setOptions(['info' => $translate('Add/remove all of the items from the item sets when you add/remove them')]);
-        echo $this->formCollection($secondaryResourcesForm);
-        ?>
-    </div>
-<?php else: ?>
-    <div id="team-secondary-resources" class="section">
-        <p><?php echo $translate('You are only authorized to Manage Team Users'); ?></p>
-    </div>
-<?php endif; ?>
-
-<?php if ($this->roleAuth()->teamAuthorized('update', 'site')): ?>
-    <div id="team-sites" class="section">
-        <div class="selection-criteria">
-            <div class="select-by-item-set-content">
-                <?php
-                $sitesForm = $this->sitesForm;
-                $fs = $sitesForm->getFieldsets();
-                $fs['teamSites']->setLabel($translate('Add or Remove Sites'));
-                $sitesForm->prepare();
-                echo $this->formCollection($sitesForm);
-                ?>
-            </div>
-        </div>
-    </div>
-<?php else: ?>
-    <div id="team-sites" class="section">
-        <p><?php echo $translate('You are only authorized to Manage Team Users'); ?></p>
-    </div>
-<?php endif; ?>
-
-<?php echo $this->form()->closeTag(); ?>
+<?php echo $this->partial('teams/team/edit-form', [
+    'form'                   => $this->form,
+    'resourceForm'           => $this->resourceForm,
+    'secondaryResourcesForm' => $this->secondaryResourcesForm,
+    'sitesForm'              => $this->sitesForm,
+    'team'                   => $this->team,
+    'bypassTeamFilterRoles'  => $this->bypassTeamFilterRoles,
+    'user'                   => $this->user,
+    'isAdd'                  => false,
+    'sectionNavEvent'        => 'view.edit.section_nav',
+    'action'                 => 'edit',
+]); ?>
 
 <?php echo $this->deleteConfirm($this->teamRepresentation, 'team'); ?>
 

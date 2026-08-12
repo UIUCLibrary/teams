@@ -1,6 +1,7 @@
 <?php
 /**
  * Shared form partial for both team add and team edit pages.
+ * Follows the Omeka S form.phtml pattern: one form tag, CSRF at bottom.
  *
  * Expected variables:
  * @var \Teams\Form\TeamForm $form
@@ -11,31 +12,32 @@
  * @var array|null $bypassTeamFilterRoles
  * @var \Omeka\Entity\User $user
  * @var bool $isAdd  True on the add page; controls per-section auth checks.
+ * @var string $sectionNavEvent  e.g. 'view.edit.section_nav' or 'view.add.section_nav'
+ * @var string $action  'edit' or 'add'
  */
-$translate = $this->plugin('translate');
-$escape    = $this->plugin('escapeHtml');
+$translate   = $this->plugin('translate');
+$escape      = $this->plugin('escapeHtml');
+$formElement = $this->plugin('formElement');
 
 $sectionNavs = [
-    'team-info'                  => $translate('Info'),
-    'team-members'               => $translate('Users'),
-    'team-resources'             => $translate('Resources'),
-    'team-secondary-resources'   => $translate('Other Resources'),
-    'team-sites'                 => $translate('Sites'),
+    'team-info'                => $translate('Info'),
+    'team-members'             => $translate('Users'),
+    'team-resources'           => $translate('Resources'),
+    'team-secondary-resources' => $translate('Other Resources'),
+    'team-sites'               => $translate('Sites'),
 ];
-echo $this->sectionNav($sectionNavs, $isAdd ? 'view.add.section_nav' : 'view.edit.section_nav');
+echo $this->sectionNav($sectionNavs, $sectionNavEvent ?? ($isAdd ? 'view.add.section_nav' : 'view.edit.section_nav'));
 
 $form->prepare();
 echo $this->form()->openTag($form);
 ?>
 
-<div id="page-actions">
-    <?php if (!$isAdd): echo $this->cancelButton(); endif; ?>
-    <button type="submit"><?php echo $isAdd ? $translate('Add team') : $translate('Save Edits'); ?></button>
-</div>
+<?php $this->trigger("view.{$action}.form.before", ['form' => $form]); ?>
 
 <fieldset id="team-info" class="section active">
     <div class="meta-group">
-        <?php echo $this->formCollection($form); ?>
+        <?php echo $this->formRow($form->get('o:name')); ?>
+        <?php echo $this->formRow($form->get('o:description')); ?>
     </div>
 </fieldset>
 
@@ -46,8 +48,8 @@ echo $this->form()->openTag($form);
 <?php else: ?>
 <fieldset id="team-members" class="section">
     <?php echo $this->partial('teams/team/manage-users', [
-        'team'                 => $team,
-        'bypass_teams_filter'  => true,
+        'team'                => $team,
+        'bypass_teams_filter' => true,
     ]); ?>
 </fieldset>
 <?php endif; ?>
@@ -64,7 +66,7 @@ echo $this->form()->openTag($form);
         <div id="save-search">
             <label>
                 <?php echo $translate('Keep this query'); ?>
-                <?php echo $this->formElement($resourceForm->get('save_search')); ?>
+                <?php echo $formElement($resourceForm->get('save_search')); ?>
             </label>
         </div>
     </div>
@@ -116,5 +118,14 @@ echo $this->form()->openTag($form);
     </div>
 </div>
 <?php endif; ?>
+
+<?php $this->trigger("view.{$action}.form.after", ['form' => $form]); ?>
+
+<div id="page-actions">
+    <?php if (!$isAdd): echo $this->cancelButton(); endif; ?>
+    <button type="submit"><?php echo $isAdd ? $translate('Add team') : $translate('Save Edits'); ?></button>
+</div>
+
+<?php echo $formElement($form->get('csrf')); ?>
 
 <?php echo $this->form()->closeTag(); ?>

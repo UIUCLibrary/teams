@@ -10,12 +10,12 @@ use Omeka\Stdlib\Message;
 use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
 use Teams\Entity\TeamResourceTemplate;
-use Teams\Entity\TeamSite;
 use Teams\Form\SecondaryResourcesForm;
 use Teams\Form\TeamItemSetForm;
 use Teams\Form\TeamResourcesForm;
 use Teams\Form\TeamRoleForm;
 use Teams\Form\TeamForm;
+use Teams\Form\TeamSitesAddRemoveForm;
 use Teams\Form\TeamUserForm;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
@@ -44,15 +44,14 @@ class AddController extends AbstractActionController
         $userForm = $this->getForm(TeamUserForm::class);
         $itemsetForm = $this->getForm(TeamItemSetForm::class);
         $resourceForm = $this->getForm(TeamResourcesForm::class)->setAttribute('id', 'team-resources-form');
-        $secondaryResourcesForm = $this->getForm(SecondaryResourcesForm::class,
-            ['team_id'=>0]
-        );
+        $secondaryResourcesForm = $this->getForm(SecondaryResourcesForm::class, ['team_id' => 0]);
+        $sitesForm = $this->getForm(TeamSitesAddRemoveForm::class, ['team_id' => 0]);
         $view = new ViewModel(
             [
-                'form' => $form,
-                'itemsetForm' => $itemsetForm,
-                'resourceForm' => $resourceForm,
+                'form'                   => $form,
+                'resourceForm'           => $resourceForm,
                 'secondaryResourcesForm' => $secondaryResourcesForm,
+                'sitesForm'              => $sitesForm,
             ]
         );
 
@@ -96,16 +95,12 @@ class AddController extends AbstractActionController
                 }
             }
 
-            //persist the sites (no possibility of duplicates, so don't need to save to associative array)
-            if (isset($request->getPost('site')['site']['o:site'])) {
-                foreach ($request->getPost('site')['site']['o:site'] as $site_id):
-                    $site_id = (int)$site_id;
-                    $site = $this->entityManager->getRepository('Omeka\Entity\Site')
-                        ->findOneBy(['id' => $site_id]);
-                    $team_site = new TeamSite($teamEntity, $site);
-                    $this->entityManager->persist($team_site);
-                endforeach;
-                $this->entityManager->flush();
+            // Persist site associations via the API, matching the teamSites[o:site] form field.
+            foreach ($data['teamSites']['o:site'] ?? [] as $siteId) {
+                $this->api()->create('team-site', [
+                    'team' => $newTeam->getContent()->id(),
+                    'site' => (int) $siteId,
+                ]);
             }
             $asset_array = array();
             $formData = $this->params()->fromPost();
