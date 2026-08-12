@@ -237,6 +237,9 @@ class TeamForm extends Form
         $inputFilter = $this->getInputFilter();
         $inputFilter->add(['name' => 'item_assignment_action', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'save_search', 'allow_empty' => true]);
+        $inputFilter->add(['name' => 'remove_resource_templates', 'allow_empty' => true]);
+        $inputFilter->add(['name' => 'remove_item_sets', 'allow_empty' => true]);
+
 
         parent::init();
     }
