@@ -124,7 +124,6 @@ class UpdateController extends AbstractActionController
         }
 
         // Add or remove item sets and resource templates.
-        $secondaryResourcesForm->setData($postData);
         $recursive = $postData['recursive_item_sets'] ?? false;
         foreach ($postData['remove_item_sets'] ?? [] as $itemSetId) {
             $this->api()->delete('team-resource', [], ['team' => $teamId, 'resource' => $itemSetId], ['recursive' => $recursive, 'syncSites' => true]);
