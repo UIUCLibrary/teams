@@ -7,6 +7,7 @@ use Laminas\Form\Form;
 use Omeka\Api\Manager as ApiManager;
 use Omeka\Form\Element as OmekaElement;
 use Omeka\Settings\Settings;
+use Teams\Form\Element\AllSiteSelect;
 use Teams\Form\Element\ItemSetTeamSelect;
 use Teams\Form\Element\ResourceTemplateTeamsSelect;
 
@@ -67,7 +68,7 @@ class TeamForm extends Form
             ],
         ]);
 
-        // --- Item management (originally TeamResourcesForm / SiteResourcesForm) ---
+        // --- Item management ---
 
         $this->add([
             'type' => 'radio',
@@ -105,7 +106,7 @@ class TeamForm extends Form
             ],
         ]);
 
-        // --- Secondary resources (originally SecondaryResourcesForm) ---
+        // --- Secondary resources ---
 
         $bypassRoles = $this->settings->get('teams_filter_bypass_roles');
         $showAllOptions = is_array($bypassRoles)
@@ -213,27 +214,28 @@ class TeamForm extends Form
 
         $this->add([
             'name' => 'team_sites',
-            'type' => TeamSitesFieldset::class,
+            'type' => AllSiteSelect::class,
+            'options' => [
+                'label' => 'Sites', // @translate
+                'info' => 'The sites that should belong to this team', // @translate
+            ],
+            'attributes' => [
+                'id' => 'sites',
+                'multiple' => true,
+                'value' => $isNewTeam
+                    ? []
+                    : array_values($this->apiManager
+                        ->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])
+                        ->getContent()),
+            ],
         ]);
-
-        $siteSelect = $this->get('team_sites')->get('o:site');
-        $siteSelect->setName('team_sites[o:site]');
-        $siteSelect->setAttribute('multiple', true);
-        $siteSelect->setAttribute('id', 'sites');
-        $siteSelect->setEmptyOption('None');
-        if (!$isNewTeam) {
-            $currentSiteIds = $this->apiManager
-                ->search('team-site', ['team' => $teamId], ['returnScalar' => 'site'])
-                ->getContent();
-            $siteSelect->setValue(array_values($currentSiteIds));
-        }
 
         $inputFilter = $this->getInputFilter();
         $inputFilter->add(['name' => 'item_assignment_action', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'save_search', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'remove_resource_templates', 'allow_empty' => true]);
         $inputFilter->add(['name' => 'remove_item_sets', 'allow_empty' => true]);
-        $inputFilter->get('team_sites')->add(['name' => 'o:site', 'allow_empty' => true, 'required' => false]);
+        $inputFilter->add(['name' => 'team_sites', 'allow_empty' => true, 'required' => false]);
 
 
         parent::init();

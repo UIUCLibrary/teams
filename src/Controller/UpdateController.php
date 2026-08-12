@@ -134,7 +134,7 @@ class UpdateController extends AbstractActionController
         }
 
         // Add or remove site associations.
-        $postSites = $postData['team_sites']['o:site'] ?? [];
+        $postSites = $postData['team_sites'] ?? [];
         foreach ($postSites as $siteId) {
             if (! in_array($siteId, $currentSites)) {
                 $this->api()->create('team-site', ['team' => $teamId, 'site' => $siteId]);

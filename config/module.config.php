@@ -83,7 +83,6 @@ return [
     ],
     'form_elements' => [
         'invokables' => [
-            Form\TeamSitesFieldset::class => Form\TeamSitesFieldset::class,
         ],
         'factories' => [
             Form\TeamForm::class => Service\Form\TeamFormFactory::class,
@@ -96,8 +95,6 @@ return [
             Form\Element\AllSiteSelect::class => Service\Form\Element\AllSiteSelectFactory::class,
             Form\Element\AllSiteSelectOrdered::class => Service\Form\Element\AllSiteSelectOrderedFactory::class,
             Form\ConfigForm::class => Service\Form\ConfigFormFactory::class,
-            Form\SecondaryResourcesForm::class => Service\Form\SecondaryResourceFormFactory::class,
-            Form\TeamSitesAddRemoveForm::class => Service\Form\TeamSitesAddRemoveFormFactory::class,
             Form\Element\TeamName::class => Service\Form\Element\TeamNameFactory::class,
             Form\Element\RoleName::class => Service\Form\Element\RoleNameFactory::class,
             Form\Element\ItemSetTeamSelect::class => Service\Form\Element\ItemSetTeamSelectFactory::class,

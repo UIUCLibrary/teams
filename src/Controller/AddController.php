@@ -79,7 +79,7 @@ class AddController extends AbstractActionController
             }
 
             // Sites
-            foreach ($postData['team_sites']['o:site'] ?? [] as $siteId) {
+            foreach ($postData['team_sites'] ?? [] as $siteId) {
                 $this->api()->create('team-site', [
                     'team' => $teamId,
                     'site' => (int) $siteId,
