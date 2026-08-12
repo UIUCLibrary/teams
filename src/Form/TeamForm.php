@@ -221,6 +221,7 @@ class TeamForm extends Form
             ],
             'attributes' => [
                 'id' => 'sites',
+                'class' => 'chosen-select',
                 'multiple' => true,
                 'value' => $isNewTeam
                     ? []
