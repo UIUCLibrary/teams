@@ -340,6 +340,7 @@ class TeamResourceAdapter extends AbstractTeamEntityAdapter
             }
         }
 
+        $entity = null;
         $exists = $this->getServiceLocator()->get('Omeka\ApiManager')
             ->search('team-resource', ['team' => $request->getValue('team'), 'resource' => $request->getValue('resource')])
             ->getContent();

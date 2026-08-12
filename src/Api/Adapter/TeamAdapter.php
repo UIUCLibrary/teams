@@ -141,75 +141,129 @@ class TeamAdapter extends AbstractEntityAdapter
 
         // Hydrate item-set associations: accepts o:item_sets as an array of
         // resource IDs and o:recursive_item_sets as a boolean flag.
+        // Direct EntityManager operations are used here (not the API manager)
+        // to avoid nested API calls from within hydrate(), which would trigger
+        // Omeka's response-validation and cause a BadResponseException.
         if ($this->shouldHydrate($request, 'o:item_sets')) {
             $submittedItemSetIds = array_map('intval', (array) $request->getValue('o:item_sets', []));
             $recursive = (bool) $request->getValue('o:recursive_item_sets', false);
             $teamId = $entity->getId();
 
-            $apiManager = $this->getServiceLocator()->get('Omeka\ApiManager');
+            $existingTeamResources = $em->getRepository(TeamResource::class)
+                ->findBy(['team' => $teamId]);
 
-            $existingItemSetIds = $apiManager
-                ->search('team-resource', ['team' => $teamId], ['returnScalar' => 'resource'])
-                ->getContent();
+            $existingItemSetIds = array_map(
+                fn(TeamResource $tr) => $tr->getResource()->getId(),
+                $existingTeamResources
+            );
+
+            // Build a lookup of existing TeamResource entities by resource id.
+            $existingByResourceId = [];
+            foreach ($existingTeamResources as $tr) {
+                $existingByResourceId[$tr->getResource()->getId()] = $tr;
+            }
+
+            // Collect team sites once if syncSites is needed.
+            $teamSiteEntities = $em->getRepository(TeamSite::class)->findBy(['team' => $teamId]);
 
             // Remove item sets no longer in submitted list.
             foreach ($existingItemSetIds as $existingId) {
-                if (!in_array((int) $existingId, $submittedItemSetIds)) {
-                    $apiManager->delete(
-                        'team-resource',
-                        [],
-                        ['team' => $teamId, 'resource' => $existingId],
-                        ['recursive' => $recursive, 'syncSites' => true, 'flushEntityManager' => false]
-                    );
+                if (!in_array($existingId, $submittedItemSetIds)) {
+                    $resourceEntity = $em->find('Omeka\Entity\Resource', $existingId);
+                    if ($resourceEntity) {
+                        // Recursively remove child resources when requested.
+                        if ($recursive && $resourceEntity->getResourceName() === 'item_sets') {
+                            $childResources = $em->getRepository('Omeka\Entity\Resource')
+                                ->createQueryBuilder('r')
+                                ->join('Omeka\Entity\Item', 'i', 'WITH', 'i.id = r.id')
+                                ->join('i.itemSets', 'is')
+                                ->where('is.id = :itemSetId')
+                                ->setParameter('itemSetId', $existingId)
+                                ->getQuery()
+                                ->getResult();
+                            foreach ($childResources as $childResource) {
+                                $childTeamResource = $em->getRepository(TeamResource::class)
+                                    ->findOneBy(['team' => $teamId, 'resource' => $childResource->getId()]);
+                                if ($childTeamResource) {
+                                    $this->removeSiteAssociations($childResource, $teamSiteEntities);
+                                    $em->remove($childTeamResource);
+                                }
+                            }
+                        }
+                        // Sync site associations.
+                        $this->removeSiteAssociations($resourceEntity, $teamSiteEntities);
+                        $em->remove($existingByResourceId[$existingId]);
+                    }
                 }
             }
 
             // Add new item sets.
             foreach ($submittedItemSetIds as $itemSetId) {
-                if (!in_array($itemSetId, array_map('intval', $existingItemSetIds))) {
-                    $apiManager->create(
-                        'team-resource',
-                        ['team' => $teamId, 'resource' => $itemSetId],
-                        [],
-                        ['recursive' => $recursive, 'syncSites' => true, 'flushEntityManager' => false]
-                    );
+                if (!in_array($itemSetId, $existingItemSetIds)) {
+                    $resourceEntity = $em->find('Omeka\Entity\Resource', $itemSetId);
+                    if (!$resourceEntity) {
+                        continue;
+                    }
+                    $em->persist(new TeamResource($entity, $resourceEntity));
+                    // Sync site associations.
+                    $this->addSiteAssociations($resourceEntity, $teamSiteEntities);
+                    // Recursively add child resources when requested.
+                    if ($recursive && $resourceEntity->getResourceName() === 'item_sets') {
+                        $childResources = $em->getRepository('Omeka\Entity\Resource')
+                            ->createQueryBuilder('r')
+                            ->join('Omeka\Entity\Item', 'i', 'WITH', 'i.id = r.id')
+                            ->join('i.itemSets', 'is')
+                            ->where('is.id = :itemSetId')
+                            ->setParameter('itemSetId', $itemSetId)
+                            ->getQuery()
+                            ->getResult();
+                        foreach ($childResources as $childResource) {
+                            $alreadyExists = $em->getRepository(TeamResource::class)
+                                ->findOneBy(['team' => $teamId, 'resource' => $childResource->getId()]);
+                            if (!$alreadyExists) {
+                                $em->persist(new TeamResource($entity, $childResource));
+                                $this->addSiteAssociations($childResource, $teamSiteEntities);
+                            }
+                        }
+                    }
                 }
             }
         }
 
         // Hydrate resource-template associations: accepts o:resource_templates
-        // as an array of resource-template IDs.
+        // as an array of resource-template IDs. Direct EM ops for same reason
+        // as item sets above.
         if ($this->shouldHydrate($request, 'o:resource_templates')) {
             $submittedTemplateIds = array_map('intval', (array) $request->getValue('o:resource_templates', []));
             $teamId = $entity->getId();
 
-            $apiManager = $this->getServiceLocator()->get('Omeka\ApiManager');
+            $existingTeamTemplates = $em->getRepository(TeamResourceTemplate::class)
+                ->findBy(['team' => $teamId]);
 
-            $existingTemplateIds = $apiManager
-                ->search('team-resource-template', ['team' => $teamId], ['returnScalar' => 'resource_template'])
-                ->getContent();
+            $existingTemplateIds = array_map(
+                fn(TeamResourceTemplate $trt) => $trt->getResourceTemplate()->getId(),
+                $existingTeamTemplates
+            );
+
+            $existingByTemplateId = [];
+            foreach ($existingTeamTemplates as $trt) {
+                $existingByTemplateId[$trt->getResourceTemplate()->getId()] = $trt;
+            }
 
             // Remove templates no longer in submitted list.
             foreach ($existingTemplateIds as $existingId) {
-                if (!in_array((int) $existingId, $submittedTemplateIds)) {
-                    $apiManager->delete(
-                        'team-resource-template',
-                        [],
-                        ['team' => $teamId, 'resource-template' => $existingId],
-                        ['flushEntityManager' => false]
-                    );
+                if (!in_array($existingId, $submittedTemplateIds)) {
+                    $em->remove($existingByTemplateId[$existingId]);
                 }
             }
 
             // Add new templates.
             foreach ($submittedTemplateIds as $templateId) {
-                if (!in_array($templateId, array_map('intval', $existingTemplateIds))) {
-                    $apiManager->create(
-                        'team-resource-template',
-                        ['team' => $teamId, 'resource-template' => $templateId],
-                        [],
-                        ['flushEntityManager' => false]
-                    );
+                if (!in_array($templateId, $existingTemplateIds)) {
+                    $templateEntity = $em->find('Omeka\Entity\ResourceTemplate', $templateId);
+                    if ($templateEntity) {
+                        $em->persist(new TeamResourceTemplate($entity, $templateEntity));
+                    }
                 }
             }
         }
@@ -359,5 +413,53 @@ class TeamAdapter extends AbstractEntityAdapter
     public function batchDelete(Request $request)
     {
         AbstractAdapter::batchDelete($request);
+    }
+
+    /**
+     * Adds team-site site memberships to a resource entity.
+     *
+     * Called when an item set or child item is added to a team so that the
+     * resource is also associated with every site the team belongs to.
+     *
+     * @param \Omeka\Entity\Resource $resource
+     * @param TeamSite[] $teamSites
+     */
+    private function addSiteAssociations($resource, array $teamSites): void
+    {
+        if (!method_exists($resource, 'getSites') || empty($teamSites)) {
+            return;
+        }
+        $itemSites = $resource->getSites();
+        $em = $this->getEntityManager();
+        foreach ($teamSites as $teamSite) {
+            $siteEntity = $em->find('Omeka\Entity\Site', $teamSite->getSite()->getId());
+            if ($siteEntity && !$itemSites->contains($siteEntity)) {
+                $itemSites->add($siteEntity);
+            }
+        }
+    }
+
+    /**
+     * Removes team-site memberships from a resource entity.
+     *
+     * Called when an item set or child item is removed from a team so that
+     * the resource is disassociated from the team's sites.
+     *
+     * @param \Omeka\Entity\Resource $resource
+     * @param TeamSite[] $teamSites
+     */
+    private function removeSiteAssociations($resource, array $teamSites): void
+    {
+        if (!method_exists($resource, 'getSites') || empty($teamSites)) {
+            return;
+        }
+        $itemSites = $resource->getSites();
+        $em = $this->getEntityManager();
+        foreach ($teamSites as $teamSite) {
+            $siteEntity = $em->find('Omeka\Entity\Site', $teamSite->getSite()->getId());
+            if ($siteEntity) {
+                $itemSites->removeElement($siteEntity);
+            }
+        }
     }
 }
