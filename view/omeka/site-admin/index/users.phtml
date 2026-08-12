@@ -59,6 +59,7 @@ foreach ($sitePermissions as $sitePermission) {
     $user = $sitePermission->user();
     $entry = [
         'id' => $user->id(),
+        'name' => $user->name(),
         'role' => $sitePermission->role(),
     ];
     if ($hasTeamData) {
@@ -111,21 +112,22 @@ foreach ($sitePermissions as $sitePermission) {
 
 <script>
   Omeka.initializeSelector('#site-user-permissions', '#user-selector');
-  <?php if ($hasTeamData): ?>
-  // Omeka.initializeSelector reads cell content from sidebar DOM data-* attributes,
-  // not from data-existing-rows. Populate the teams-managed cells ourselves.
+  // Inject user names for any users not returned by the team-filtered selector.
+  // Also inject team-managed values added by the Teams module.
   (function() {
       var table = $('#site-user-permissions');
       var existingRows = table.data('existing-rows');
       $.each(existingRows, function() {
+          var row = table.find('.resource-id[value="' + this.id + '"]').parents('.resource-row');
+          if (this.name) {
+              row.find('.data-value[data-row-key="child-search"]').text(this.name);
+          }
+          <?php if ($hasTeamData): ?>
           var teamsManaged = this['teams-managed'];
           if (teamsManaged !== undefined && teamsManaged !== '') {
-              table.find('.resource-id[value="' + this.id + '"]')
-                  .parents('.resource-row')
-                  .find('.teams-managed-cell')
-                  .text(teamsManaged);
+              row.find('.teams-managed-cell').text(teamsManaged);
           }
+          <?php endif; ?>
       });
   }());
-  <?php endif; ?>
 </script>

@@ -96,6 +96,13 @@ class SitePermissionManager
 
         foreach ($teamSites as $teamSite) {
             $site = $teamSite->getSite();
+
+            // Compute the highest role this user should hold on this site
+            // across ALL of their team memberships, not just the current team.
+            // This prevents a role downgrade in one team from overwriting a
+            // higher role granted by another team.
+            $finalRole = $this->getHighestRoleFromTeams($userId, $site->getId()) ?? $omekaSiteRole;
+
             $sitePermissions = $site->getSitePermissions();
 
             $criteria = Criteria::create()->where(Criteria::expr()->eq('user', $user));
@@ -106,21 +113,21 @@ class SitePermissionManager
                     '[SitePermissionManager] siteId=%d: updating existing SitePermission from "%s" to "%s" for userId=%d',
                     $site->getId(),
                     $existingPermission->getRole(),
-                    $omekaSiteRole,
+                    $finalRole,
                     $userId
                 ));
-                $existingPermission->setRole($omekaSiteRole);
+                $existingPermission->setRole($finalRole);
             } else {
                 $this->logger->info(sprintf(
                     '[SitePermissionManager] siteId=%d: creating new SitePermission with role "%s" for userId=%d',
                     $site->getId(),
-                    $omekaSiteRole,
+                    $finalRole,
                     $userId
                 ));
                 $sitePermission = new SitePermission();
                 $sitePermission->setSite($site);
                 $sitePermission->setUser($user);
-                $sitePermission->setRole($omekaSiteRole);
+                $sitePermission->setRole($finalRole);
                 $em->persist($sitePermission);
                 $sitePermissions->add($sitePermission);
             }
@@ -142,7 +149,10 @@ class SitePermissionManager
      * @param int      $userId
      * @param int      $teamId       The team the user is being removed from.
      * @param int|null $siteId       If set, only process this one site (used when a
-     *                               single site is removed from a team).
+     *                               single site is removed from a team). When the
+     *                               TeamSite row has already been deleted, pass the
+     *                               site ID here so the site entity is fetched
+     *                               directly rather than through TeamSite.
      * @param bool     $flush        Whether to flush the entity manager after syncing.
      */
     public function removeSitePermissionsForUser(int $userId, int $teamId, ?int $siteId = null, bool $flush = true): void
@@ -154,14 +164,24 @@ class SitePermissionManager
             return;
         }
 
-        $criteria = ['team' => $teamId];
+        // When a specific site is being removed from the team, the TeamSite row
+        // has already been deleted by the time this method is called. Look up the
+        // site entity directly so we still process the permission cleanup.
         if ($siteId !== null) {
-            $criteria['site'] = $siteId;
+            $site = $em->find('Omeka\Entity\Site', $siteId);
+            if (!$site) {
+                if ($flush) {
+                    $em->flush();
+                }
+                return;
+            }
+            $sites = [$site];
+        } else {
+            $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy(['team' => $teamId]);
+            $sites = array_map(fn($ts) => $ts->getSite(), $teamSites);
         }
-        $teamSites = $em->getRepository('Teams\Entity\TeamSite')->findBy($criteria);
 
-        foreach ($teamSites as $teamSite) {
-            $site = $teamSite->getSite();
+        foreach ($sites as $site) {
             $sitePermissions = $site->getSitePermissions();
 
             $userCriteria = Criteria::create()->where(Criteria::expr()->eq('user', $user));

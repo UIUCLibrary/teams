@@ -26,15 +26,19 @@ class TeamSiteUsers extends AbstractHelper
 
     /**
      * @param  int $siteId
-     * @return array<int, string[]>  userId => list of team names, or empty array on error
+     * @return array<int, string[]>  userId => list of team names granting the highest role, or empty array on error
      */
     public function __invoke(int $siteId): array
     {
         try {
-            $teamManagedUsers = [];
             $teamSites = $this->entityManager
                 ->getRepository('Teams\Entity\TeamSite')
                 ->findBy(['site' => $siteId]);
+
+            // Collect per-user: highest role flag and which team(s) grant it.
+            // Role priority: admin (can_add_site_pages=true) > viewer.
+            $userHighestCanManage = []; // userId => bool
+            $userTeamsByRole = []; // userId => ['admin' => [], 'viewer' => []]
 
             foreach ($teamSites as $teamSite) {
                 $team = $teamSite->getTeam();
@@ -44,8 +48,28 @@ class TeamSiteUsers extends AbstractHelper
 
                 foreach ($teamUsers as $teamUser) {
                     $userId = $teamUser->getUser()->getId();
-                    $teamManagedUsers[$userId][] = $team->getName();
+                    $canManage = (bool) $teamUser->getRole()->getCanAddSitePages();
+
+                    if (!isset($userHighestCanManage[$userId])) {
+                        $userHighestCanManage[$userId] = false;
+                        $userTeamsByRole[$userId] = ['admin' => [], 'viewer' => []];
+                    }
+
+                    if ($canManage) {
+                        $userHighestCanManage[$userId] = true;
+                        $userTeamsByRole[$userId]['admin'][] = $team->getName();
+                    } else {
+                        $userTeamsByRole[$userId]['viewer'][] = $team->getName();
+                    }
                 }
+            }
+
+            // Return only the team(s) that grant the user's highest role.
+            $teamManagedUsers = [];
+            foreach ($userHighestCanManage as $userId => $canManage) {
+                $teamManagedUsers[$userId] = $canManage
+                    ? $userTeamsByRole[$userId]['admin']
+                    : $userTeamsByRole[$userId]['viewer'];
             }
 
             return $teamManagedUsers;
