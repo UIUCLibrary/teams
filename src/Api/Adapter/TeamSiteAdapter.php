@@ -12,6 +12,7 @@ use Omeka\Entity\Site;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Entity\TeamSite;
 use Teams\Api\Representation\TeamSiteRepresentation;
+use Teams\Service\SitePermissionManager;
 
 class TeamSiteAdapter extends AbstractTeamEntityAdapter
 {
@@ -134,6 +135,15 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
             $this->getEntityManager()->flush();
             $this->getEntityManager()->refresh($teamSite);
         }
+
+        // Sync Omeka site permissions for all users in the team now that
+        // this site has been added to it.
+        $this->getServiceLocator()->get(SitePermissionManager::class)
+            ->syncSitePermissionsForTeamOnSiteAdded(
+                $teamEntity->getId(),
+                $siteEntity->getId()
+            );
+
         return new Response($teamSite);
     }
 
@@ -170,6 +180,15 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
         if ($request->getOption('flushEntityManager', true)) {
             $this->getEntityManager()->flush();
         }
+
+        // Remove Omeka site permissions for all users in the team now that
+        // this site has been removed from it.
+        $this->getServiceLocator()->get(SitePermissionManager::class)
+            ->removeSitePermissionsForTeamOnSiteRemoved(
+                $id['team'],
+                $id['site']
+            );
+
         return new Response($entity);
     }
 

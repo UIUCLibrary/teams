@@ -14,6 +14,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
+use Teams\Service\SitePermissionManager;
 
 class TeamAdapter extends AbstractEntityAdapter
 {
@@ -407,7 +408,66 @@ class TeamAdapter extends AbstractEntityAdapter
 
     public function update(Request $request)
     {
-        return parent::update($request);
+        $teamId = $request->getId();
+        $em = $this->getEntityManager();
+
+        // Snapshot pre-update state so we can compute targeted sync diffs.
+        $team = $em->find(Team::class, $teamId);
+        $beforeUserRoles = [];
+        foreach ($team->getTeamUsers() as $teamUser) {
+            $beforeUserRoles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
+        }
+        $beforeSiteIds = array_map(
+            fn(TeamSite $ts) => $ts->getSite()->getId(),
+            $team->getTeamSites()->toArray()
+        );
+
+        $response = parent::update($request);
+
+        // Sync site permissions based on the user and site diffs.
+        $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
+
+        $team = $em->find(Team::class, $teamId);
+        $afterUserRoles = [];
+        foreach ($team->getTeamUsers() as $teamUser) {
+            $afterUserRoles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
+        }
+
+        $addedUserIds   = array_diff_key($afterUserRoles, $beforeUserRoles);
+        $removedUserIds = array_diff_key($beforeUserRoles, $afterUserRoles);
+        $keptUserIds    = array_intersect_key($beforeUserRoles, $afterUserRoles);
+
+        foreach (array_keys($addedUserIds) as $userId) {
+            $sitePermissionManager->syncSitePermissionsForUser($userId, $teamId, false);
+        }
+        foreach (array_keys($removedUserIds) as $userId) {
+            $sitePermissionManager->removeSitePermissionsForUser($userId, $teamId, null, false);
+        }
+        foreach (array_keys($keptUserIds) as $userId) {
+            if ($beforeUserRoles[$userId] !== $afterUserRoles[$userId]) {
+                $sitePermissionManager->syncSitePermissionsForUser($userId, $teamId, false);
+            }
+        }
+
+        $afterSiteIds   = array_map(
+            fn(TeamSite $ts) => $ts->getSite()->getId(),
+            $team->getTeamSites()->toArray()
+        );
+        $addedSiteIds   = array_diff($afterSiteIds, $beforeSiteIds);
+        $removedSiteIds = array_diff($beforeSiteIds, $afterSiteIds);
+
+        foreach ($addedSiteIds as $siteId) {
+            $sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded($teamId, $siteId, false);
+        }
+        foreach ($removedSiteIds as $siteId) {
+            $sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved($teamId, $siteId, false);
+        }
+
+        if ($addedUserIds || $removedUserIds || $keptUserIds || $addedSiteIds || $removedSiteIds) {
+            $em->flush();
+        }
+
+        return $response;
     }
 
     public function batchUpdate(Request $request)

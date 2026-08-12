@@ -10,6 +10,7 @@ use Omeka\Api\Exception;
 use Omeka\Entity\User;
 use Teams\Api\Representation\TeamUserRepresentation;
 use Teams\Entity\TeamRole;
+use Teams\Service\SitePermissionManager;
 use Teams\Entity\TeamUser;
 use Omeka\Api\Adapter\AbstractEntityAdapter;
 use Omeka\Api\Request;
@@ -181,6 +182,14 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
             // that have not been loaded.
             $this->getEntityManager()->refresh($teamResource);
         }
+
+        // Sync Omeka site permissions for the user now that the TeamUser row exists.
+        $this->getServiceLocator()->get(SitePermissionManager::class)
+            ->syncSitePermissionsForUser(
+                $teamResource->getUser()->getId(),
+                $teamResource->getTeam()->getId()
+            );
+
         return new Response($teamResource);
     }
 
@@ -191,7 +200,19 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
 
     public function update(Request $request)
     {
-        return parent::update($request);
+        $response = parent::update($request);
+
+        // Re-sync site permissions in case the role changed.
+        $teamUser = $response->getContent();
+        if ($teamUser instanceof TeamUser) {
+            $this->getServiceLocator()->get(SitePermissionManager::class)
+                ->syncSitePermissionsForUser(
+                    $teamUser->getUser()->getId(),
+                    $teamUser->getTeam()->getId()
+                );
+        }
+
+        return $response;
     }
 
     public function batchUpdate(Request $request)

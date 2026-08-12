@@ -57,10 +57,12 @@ class SitePermissionManager
      * for every site associated with the team. The role is set unconditionally so that
      * any change to a team role is immediately reflected in the site permission.
      *
-     * @param int $userId
-     * @param int $teamId
+     * @param int  $userId
+     * @param int  $teamId
+     * @param bool $flush Whether to flush the entity manager after syncing. Pass
+     *                    false when calling in a loop and flush once afterward.
      */
-    public function syncSitePermissionsForUser(int $userId, int $teamId): void
+    public function syncSitePermissionsForUser(int $userId, int $teamId, bool $flush = true): void
     {
         $em = $this->entityManager;
 
@@ -124,7 +126,9 @@ class SitePermissionManager
             }
         }
 
-        $em->flush();
+        if ($flush) {
+            $em->flush();
+        }
     }
 
     /**
@@ -139,8 +143,9 @@ class SitePermissionManager
      * @param int      $teamId       The team the user is being removed from.
      * @param int|null $siteId       If set, only process this one site (used when a
      *                               single site is removed from a team).
+     * @param bool     $flush        Whether to flush the entity manager after syncing.
      */
-    public function removeSitePermissionsForUser(int $userId, int $teamId, ?int $siteId = null): void
+    public function removeSitePermissionsForUser(int $userId, int $teamId, ?int $siteId = null, bool $flush = true): void
     {
         $em = $this->entityManager;
 
@@ -179,40 +184,52 @@ class SitePermissionManager
             }
         }
 
-        $em->flush();
+        if ($flush) {
+            $em->flush();
+        }
     }
 
     /**
      * Sync Omeka site permissions for all users in a team when a site is added.
      *
-     * @param int $teamId
-     * @param int $siteId
+     * @param int  $teamId
+     * @param int  $siteId
+     * @param bool $flush  Whether to flush the entity manager after syncing.
      */
-    public function syncSitePermissionsForTeamOnSiteAdded(int $teamId, int $siteId): void
+    public function syncSitePermissionsForTeamOnSiteAdded(int $teamId, int $siteId, bool $flush = true): void
     {
         $teamUsers = $this->entityManager
             ->getRepository('Teams\Entity\TeamUser')
             ->findBy(['team' => $teamId]);
 
         foreach ($teamUsers as $teamUser) {
-            $this->syncSitePermissionsForUser($teamUser->getUser()->getId(), $teamId);
+            $this->syncSitePermissionsForUser($teamUser->getUser()->getId(), $teamId, false);
+        }
+
+        if ($flush) {
+            $this->entityManager->flush();
         }
     }
 
     /**
      * Remove Omeka site permissions for all users in a team when a site is removed.
      *
-     * @param int $teamId
-     * @param int $siteId
+     * @param int  $teamId
+     * @param int  $siteId
+     * @param bool $flush  Whether to flush the entity manager after syncing.
      */
-    public function removeSitePermissionsForTeamOnSiteRemoved(int $teamId, int $siteId): void
+    public function removeSitePermissionsForTeamOnSiteRemoved(int $teamId, int $siteId, bool $flush = true): void
     {
         $teamUsers = $this->entityManager
             ->getRepository('Teams\Entity\TeamUser')
             ->findBy(['team' => $teamId]);
 
         foreach ($teamUsers as $teamUser) {
-            $this->removeSitePermissionsForUser($teamUser->getUser()->getId(), $teamId, $siteId);
+            $this->removeSitePermissionsForUser($teamUser->getUser()->getId(), $teamId, $siteId, false);
+        }
+
+        if ($flush) {
+            $this->entityManager->flush();
         }
     }
 
@@ -275,9 +292,11 @@ class SitePermissionManager
         foreach ($teamUsers as $teamUser) {
             $this->syncSitePermissionsForUser(
                 $teamUser->getUser()->getId(),
-                $teamUser->getTeam()->getId()
+                $teamUser->getTeam()->getId(),
+                false
             );
         }
+        $this->entityManager->flush();
     }
 
     /**

@@ -959,16 +959,18 @@ SQL;
                     }
                 }
                 $role_id = $team_role_ids[$team_id];
-                $role = $em->getRepository('Teams\Entity\TeamRole')
-                    ->findOneBy(['id' => $role_id]);
                 $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
                     ->findOneBy(['team' => $team->getId(), 'user' => $user_id]);
                 if (!$team_user_exists) {
-                    $team_user = new TeamUser($team, $user, $role);
-                    $em->persist($team_user);
+                    // Create through the adapter so site-permission syncing is
+                    // handled automatically.
+                    $this->getServiceLocator()->get('Omeka\ApiManager')->create('team-user', [
+                        'team' => $team->getId(),
+                        'user' => $user_id,
+                        'role' => (int) $role_id,
+                    ]);
                 }
             }
-            $em->flush();
             if ($default_team) {
                 $em->getRepository('Teams\Entity\TeamUser')
                     ->findOneBy(['team' => $default_team, 'user' => $user_id])
@@ -1138,39 +1140,17 @@ SQL;
 
             $team_ids = $request->getContent()['team'];
 
-            $all_teams_users = [];
             $all_team_resources = [];
 
-            //add team sites
+            // Create team-site associations through the adapter so that
+            // site-permission syncing is handled automatically.
+            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
             foreach ($team_ids as $team_id):
                 $team = $teams->findOneBy(['id' => $team_id]);
-                $team_site = new TeamSite($team, $site);
-                $em->persist($team_site);
-
-                //get team users
-                $all_teams_users[] = $team->getTeamUsers();
+                $api->create('team-site', ['team' => $team_id, 'site' => $site_id]);
 
                 //get team items
                 $all_team_resources[] = $team->getTeamResources();
-
-            endforeach;
-            $em->flush();
-
-            //update current team users to include new site in their default sites
-            foreach ($all_teams_users as $team_users):
-                foreach ($team_users as $team_user):
-                    if ($team_user->getCurrent()) {
-                        $user_id = $team_user->getUser()->getId();
-                        $this->updateUserSites($user_id);
-                    }
-
-                endforeach;
-            endforeach;
-
-            // Sync Omeka site permissions for all users in each new team-site relationship.
-            $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
-            foreach ($team_ids as $team_id):
-                $sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded((int)$team_id, $site_id);
             endforeach;
 
             //update all item-site to include all items from the site's teams
@@ -1255,8 +1235,6 @@ SQL;
 
                         //get it this way because the roles are added dynamically as js and not part of pre-baked form
                         $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
-                        $role = $em->getRepository('Teams\Entity\TeamRole')
-                                ->findOneBy(['id' => $role_id]);
 
                         $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
                                 ->findOneBy(['team' => $team->getId(), 'user' => $user_id]);
@@ -1264,21 +1242,21 @@ SQL;
                         if ($team_user_exists) {
                             echo $team_user_exists->getId();
                         } else {
-                            $team_user = new TeamUser($team, $user, $role);
-                            $em->persist($team_user);
+                            // Create through the adapter so site-permission syncing is
+                            // handled automatically.
+                            $teamUserResponse = $this->getServiceLocator()->get('Omeka\ApiManager')->create('team-user', [
+                                'team' => $team->getId(),
+                                'user' => $user_id,
+                                'role' => (int) $role_id,
+                            ]);
+                            $teamUserEntity = $teamUserResponse->getContent();
                             if ($team_id == $current_team_id) {
-                                $team_user->setCurrent(true);
+                                $teamUserEntity->setCurrent(true);
+                                $em->flush();
                             }
-                            $em->persist($team_user);
-
-                            //this is not ideal to flush each iteration, but it is how to check to make sure they didn't
-                            //TODO: catch this in chosen-trigger.js instead
-                            $em->flush();
                         }
 
                     endforeach;
-
-                    $em->flush();
                 }
                 if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
                     if ($current_user->getRole() == 'global_admin' or $current_user->getId() == $target_user) {
@@ -1393,56 +1371,31 @@ SQL;
                 $added_teams = array_diff($form_teams, $existing_teams);
                 $removed_teams = array_diff($existing_teams, $form_teams);
 
-                foreach ($team_sites as $team_site):
-                    if (in_array($team_site->getTeam()->getId(), $removed_teams)) {
-                        $em->remove($team_site);
-                    }
-                endforeach;
-                $em->flush();
+                // Delete removed team-site associations through the adapter so that
+                // site-permission cleanup is handled automatically.
+                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                foreach ($removed_teams as $team_id) {
+                    $api->delete('team-site', ['team' => $team_id, 'site' => $site_id]);
+                }
 
-                //add teams to the site for each new team listed in the form
-                foreach ($added_teams as $team):
-                    $team_site = new TeamSite(
-                        $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team]),
-                        $em->getRepository('Omeka\Entity\Site')->findOneBy(['id' => $site_id])
-                    );
-                    $em->persist($team_site);
-                endforeach;
-                $em->flush();
+                // Add new team-site associations through the adapter so that
+                // site-permission syncing is handled automatically.
+                foreach ($added_teams as $team_id) {
+                    $api->create('team-site', ['team' => $team_id, 'site' => $site_id]);
+                }
 
-                //get any items or users that need to be updated
-                //by either removing or adding item-sits or user default site
+                //get any items that need their site membership updated
                 $delta_item_site = [];
-                $delta_user_site = [];
                 foreach (array_merge($added_teams, $removed_teams) as $team_id) {
                     $delta_item_site[] = $em->getRepository('Teams\Entity\Team')
                         ->findOneBy(['id' => $team_id])
                         ->getTeamResources();
-                    $delta_user_site[] = $em->getRepository('Teams\Entity\Team')
-                        ->findOneBy(['id' => $team_id])
-                        ->getTeamUsers();
                 }
 
-                //update current team users to include new site in their default sites
-                foreach ($delta_user_site as $team_users) {
-                    foreach ($team_users as $team_user) {
-                        $user_id = $team_user->getUser()->getId();
-                        $this->updateUserSites($user_id);
-                    }
-                }
                 foreach ($delta_item_site as $team_item_collection) {
                     foreach ($team_item_collection as $team_item) {
                         $this->updateItemSites($team_item->getResource()->getId());
                     }
-                }
-
-                // Sync Omeka site permissions for teams that gained or lost this site.
-                $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
-                foreach ($added_teams as $team_id) {
-                    $sitePermissionManager->syncSitePermissionsForTeamOnSiteAdded((int)$team_id, $site_id);
-                }
-                foreach ($removed_teams as $team_id) {
-                    $sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved((int)$team_id, $site_id);
                 }
             }
         }
