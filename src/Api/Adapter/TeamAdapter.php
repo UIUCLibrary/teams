@@ -149,8 +149,13 @@ class TeamAdapter extends AbstractEntityAdapter
             $recursive = (bool) $request->getValue('o:recursive_item_sets', false);
             $teamId = $entity->getId();
 
-            $existingTeamResources = $em->getRepository(TeamResource::class)
-                ->findBy(['team' => $teamId]);
+            // Fetch only TeamResource entries whose resource is an item set,
+            // so that plain-item associations are not accidentally removed.
+            $existingTeamResources = $em->createQuery(
+                'SELECT tr FROM Teams\Entity\TeamResource tr'
+                . ' JOIN Omeka\Entity\ItemSet iset WITH iset.id = tr.resource'
+                . ' WHERE tr.team = :teamId'
+            )->setParameter('teamId', $teamId)->getResult();
 
             $existingItemSetIds = array_map(
                 fn(TeamResource $tr) => $tr->getResource()->getId(),
@@ -176,8 +181,8 @@ class TeamAdapter extends AbstractEntityAdapter
                             $childResources = $em->getRepository('Omeka\Entity\Resource')
                                 ->createQueryBuilder('r')
                                 ->join('Omeka\Entity\Item', 'i', 'WITH', 'i.id = r.id')
-                                ->join('i.itemSets', 'is')
-                                ->where('is.id = :itemSetId')
+                                ->join('i.itemSets', 'iset')
+                                ->where('iset.id = :itemSetId')
                                 ->setParameter('itemSetId', $existingId)
                                 ->getQuery()
                                 ->getResult();
@@ -212,8 +217,8 @@ class TeamAdapter extends AbstractEntityAdapter
                         $childResources = $em->getRepository('Omeka\Entity\Resource')
                             ->createQueryBuilder('r')
                             ->join('Omeka\Entity\Item', 'i', 'WITH', 'i.id = r.id')
-                            ->join('i.itemSets', 'is')
-                            ->where('is.id = :itemSetId')
+                            ->join('i.itemSets', 'iset')
+                            ->where('iset.id = :itemSetId')
                             ->setParameter('itemSetId', $itemSetId)
                             ->getQuery()
                             ->getResult();
