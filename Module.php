@@ -12,6 +12,11 @@ use Doctrine\ORM\Query\Expr;
 use Omeka\Api\Adapter\ResourceTemplateAdapter;
 use Omeka\Api\Adapter\SiteAdapter;
 use Omeka\Entity\EntityInterface;
+use Omeka\Permissions\Acl;
+use Omeka\Permissions\Assertion\AssertionNegation;
+use Omeka\Permissions\Assertion\IsSelfAssertion;
+use Omeka\Permissions\Assertion\OwnsEntityAssertion;
+use Teams\Acl\TeamRolePermissionAssertion;
 use Teams\Entity\Team;
 use Teams\Entity\TeamAsset;
 use Teams\Entity\TeamResource;
@@ -1127,42 +1132,38 @@ SQL;
         $current_user = $this->getUser();
 
         $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
 
         if ($operation == 'update') {
             $user_id = $request->getId();
+            $response = $event->getParam('response');
 
             //stop if teams aren't part of the update
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
                 //array of team ids
 
-                if ($current_user->getRole() == 'global_admin') {
-                    $api = $this->getServiceLocator()->get('Omeka\ApiManager');
+                if ($current_user->getRole() == 'global_admin') {//remove the user's teams
+                    $user = $em->getRepository('Omeka\Entity\User')->findOneBy(['id' => $user_id]);
 
-                    // Snapshot each existing team membership (team id, role
-                    // id, whether it is the user's current/default team)
-                    // before applying the form's submitted team list.
                     $pre_teams = $em->getRepository('Teams\Entity\TeamUser')->findBy(['user' => $user_id]);
-                    $existing_team_ids = [];
-                    $existing_role_ids = [];
-                    foreach ($pre_teams as $pre_team):
-                        $pre_team_id = $pre_team->getTeam()->getId();
-                        $existing_team_ids[] = $pre_team_id;
-                        $existing_role_ids[$pre_team_id] = $pre_team->getRole() ? $pre_team->getRole()->getId() : null;
-                    endforeach;
 
-                    // Resolve each submitted team id to a real team id,
-                    // creating a new personal team for the '-1' sentinel
-                    // (lets a global admin create a brand-new team on the
-                    // fly from the user form). $role_id_by_team maps the
-                    // *resolved* team id back to the role submitted for it,
-                    // since roles are keyed in the request by the
-                    // originally-submitted id (which may be '-1').
+                    foreach ($pre_teams as $pre_team):
+                        if ($pre_team->getCurrent()) {
+                            $current_team_id = $pre_team->getTeam()->getId();
+                        }
+                        $em->remove($pre_team);
+                    endforeach;
+                    $em->flush();
+                    $current_team_id ??= 0;
+
+                    //add the teams from the form
                     $teams = $em->getRepository('Teams\Entity\Team');
-                    $form_team_ids = [];
-                    $role_id_by_team = [];
-                    foreach ($request->getContent()['o-module-teams:Team'] as $submitted_team_id):
-                        //adding new team from the user form, indicated by an id of -1
-                        if ($submitted_team_id == -1) {
+                    $team_ids = [];
+                    foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                        $team_ids[] = (int) $team_id;
+
+                        //adding new team from the user form, indicated by an id of 0
+                        if ($team_id == -1) {
                             $u_name = $request->getContent()['o:name'];
                             $team_name = sprintf("%s's team", $u_name);
                             $team_exists = $em->getRepository('Teams\Entity\Team')->findOneBy(['name' => $team_name]);
@@ -1178,43 +1179,33 @@ SQL;
                                 $em->flush();
                             }
                         } else {
-                            $team = $teams->findOneBy(['id' => $submitted_team_id]);
+                            $team = $teams->findOneBy(['id' => $team_id]);
                         }
 
-                        $team_id = $team->getId();
-                        $form_team_ids[] = $team_id;
                         //get it this way because the roles are added dynamically as js and not part of pre-baked form
-                        $role_id_by_team[$team_id] = (int) $request->getContent()['o-module-teams:TeamRole'][$submitted_team_id];
-                    endforeach;
+                        $role_id = $request->getContent()['o-module-teams:TeamRole'][$team_id];
 
-                    [$added_team_ids, $removed_team_ids] = $this->diffTeamIds($existing_team_ids, $form_team_ids);
-                    $kept_team_ids = array_intersect($existing_team_ids, $form_team_ids);
-
-                    // Remove departed team memberships through the adapter,
-                    // which cleans up the site permissions they granted.
-                    foreach ($removed_team_ids as $team_id) {
-                        $api->delete('team-user', ['team' => $team_id, 'user' => $user_id]);
-                    }
-
-                    // Add new team memberships through the adapter, which
-                    // grants site permissions for the team's existing sites.
-                    foreach ($added_team_ids as $team_id) {
-                        $api->create('team-user', [
-                            'team' => $team_id,
-                            'user' => $user_id,
-                            'role' => $role_id_by_team[$team_id],
-                        ]);
-                    }
-
-                    // For teams the user remains a member of, only touch
-                    // the role (and re-sync site permissions) if it
-                    // actually changed; leave the row (and its current/
-                    // default-team flag) untouched otherwise.
-                    foreach ($kept_team_ids as $team_id) {
-                        if ($role_id_by_team[$team_id] !== (int) $existing_role_ids[$team_id]) {
-                            $api->update('team-user', ['team' => $team_id, 'user' => $user_id], ['role' => $role_id_by_team[$team_id]]);
+                        $team_user_exists = $em->getRepository('Teams\Entity\TeamUser')
+                                ->findOneBy(['team' => $team->getId(), 'user' => $user_id]);
+                        //TODO: review this section
+                        if ($team_user_exists) {
+                            echo $team_user_exists->getId();
+                        } else {
+                            // Create through the adapter so site-permission syncing is
+                            // handled automatically.
+                            $teamUserResponse = $this->getServiceLocator()->get('Omeka\ApiManager')->create('team-user', [
+                                'team' => $team->getId(),
+                                'user' => $user_id,
+                                'role' => (int) $role_id,
+                            ]);
+                            $teamUserEntity = $teamUserResponse->getContent();
+                            if ($team_id == $current_team_id) {
+                                $teamUserEntity->setCurrent(true);
+                                $em->flush();
+                            }
                         }
-                    }
+
+                    endforeach;
                 }
                 if (array_key_exists('o-module-teams:DefaultTeam', $request->getContent())) {
                     if ($current_user->getRole() == 'global_admin' or $current_user->getId() == $target_user) {
@@ -1392,14 +1383,12 @@ SQL;
 
             $resource = $response->getContent();
 
-            $teams = $request->getContent()['add_team'] ?? [];
+            $teams = $request->getContent()['add_team'];
 
             foreach ($teams as $team_id):
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                if ($team) {
-                    $tr = new TeamResource($team, $resource);
-                    $em->persist($tr);
-                }
+                $tr = new TeamResource($team, $resource);
+                $em->persist($tr);
             endforeach;
             $em->flush();
         }
@@ -1407,52 +1396,48 @@ SQL;
 
     //TODO: add validation and report errors
     /**
-     * On Item Set update, adds/removes TeamResources based on the add_team/remove_team
-     * arrays submitted by the team-selection form widget.
+     * On Item Set update, deletes all TeamResources with item set id and creates new TeamResources based on form data
      *
      * @param Event $event
      */
     public function itemSetUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
         $logger = $this->getServiceLocator()->get('Omeka\Logger');
 
         $teamAuth = new TeamAuth($em, $logger);
 
         if ($operation == 'update') {
             $resource_id = $request->getId();
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
-            $remove_team = $request->getContent()['remove_team'] ?? [];
-            if (!is_array($remove_team)) {
-                $remove_team = [$remove_team];
-            }
-            $add_team = $request->getContent()['add_team'] ?? [];
-            if (!is_array($add_team)) {
-                $add_team = [$add_team];
-            }
-
-            foreach ($remove_team as $team_id) {
+            foreach ($request->getContent()['remove_team'] as $team_id) {
                 if ($teamAuth->teamAuthorized($this->getUser(), 'delete', 'resource', $team_id)) {
-                    // Route through the team-resource API so the same
-                    // permission/validation logic is enforced everywhere
-                    // teams are attached to or detached from a resource.
-                    $api->delete('team-resource', [], ['team' => $team_id, 'resource' => $resource_id], ['flushEntityManager' => false]);
-                }
-            }
-            foreach ($add_team as $team_id) {
-                //if the user is authorized to add items to that team
-                if ($teamAuth->teamAuthorized($this->getUser(), 'add', 'resource', $team_id)) {
-                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
-                    $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
-                    if ($team && $resource) {
-                        $api->create('team-resource', ['team' => $team_id, 'resource' => $resource_id], [], ['flushEntityManager' => false]);
+                    $team_resource = $em->getRepository('Teams\Entity\TeamResource')
+                        ->findOneBy(['team' => $team_id, 'resource' => $resource_id]);
+                    if ($team_resource) {
+                        $em->remove($team_resource);
                     }
                 }
             }
             $em->flush();
+            foreach ($request->getContent()['add_team'] as $team_id) {
+                //if the user is authorized to add items to that team
+                if ($teamAuth->teamAuthorized($this->getUser(), 'add', 'resource', $team_id)) {
+                    $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $team_id]);
+                    if ($team) {
+                        $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
+                        if ($resource) {
+                            $team_resource = new TeamResource($team, $resource);
+                            $em->persist($team_resource);
+                        }
+                    }
+                }
+            }
+            $em->flush();
+
         }
     }
 
@@ -1476,69 +1461,56 @@ SQL;
             if (array_key_exists('o-module-teams:Team', $request->getContent())) {
                 foreach ($request->getContent()['o-module-teams:Team'] as $team_id) {
                     $team = $teams->findOneBy(['id' => $team_id]);
-                    if ($team) {
-                        $trt = new TeamResourceTemplate($team, $resource_template);
-                        $em->persist($trt);
-                        //note: don't flush here or the validation is bypassed, which can cause duplicate name icv, see #146
-                    }
+                    $trt = new TeamResourceTemplate($team, $resource_template);
+                    $em->persist($trt);
+                    //note: don't flush here or the validation is bypassed, which can cause duplicate name icv, see #146
                 }
             } else { # for imports where there is no event triggered, use the users current team
                 $team = $em->getRepository('Teams\Entity\Team')->findOneBy(['id' => $this->currentTeam()]);
-                // A user may not have a current team (e.g. a global admin
-                // who isn't a member of any team), in which case there is
-                // no team to associate the imported resource template with.
-                if ($team) {
-                    $trt = new TeamResourceTemplate($team, $resource_template);
-                    $em->persist($trt);
-                    $em->flush();
+                $trt = new TeamResourceTemplate($team, $resource_template);
+                $em->persist($trt);
+                $em->flush();
 
-                    $messenger = new Messenger();
-                    $messenger->addSuccess("Resource Template Imported for your current team");
-                }
+                $messenger = new Messenger();
+                $messenger->addSuccess("Resource Template Imported for your current team");
             }
         }
     }
 
     /**
-     * On update, computes the added/removed teams for the resource template
-     * and syncs TeamResourceTemplate associations through the team-resource-template
-     * API, which enforces team-authorization checks.
+     * On update, remove all TeamResourceTemplate entities with ResourceTemplate id and generate new entities based on
+     * form data
      *
      * @param Event $event
      */
     public function resourceTemplateUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
+        $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
+        $error_store = $event->getParam('errorStore');
 
         if ($operation == 'update') {
             $resource_template_id = $request->getId();
+            $resource_template = $em->getRepository('Omeka\Entity\ResourceTemplate')
+                ->findOneBy(['id' => $resource_template_id]);
 
             $pre_teams = $em->getRepository('Teams\Entity\TeamResourceTemplate')
                 ->findBy(['resource_template' => $resource_template_id]);
-            $existing_team_ids = array_map(function ($pre_team) {
-                return $pre_team->getTeam()->getId();
-            }, $pre_teams);
 
-            $form_team_ids = $request->getContent()['o-module-teams:Team'] ?? [];
-            [$added_team_ids, $removed_team_ids] = $this->diffTeamIds($existing_team_ids, $form_team_ids);
+            foreach ($pre_teams as $pre_team):
+                $em->remove($pre_team);
+            endforeach;
+            $em->flush();
 
-            $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
-            foreach ($removed_team_ids as $team_id) {
-                $api->delete('team-resource-template', [], [
-                    'team' => $team_id,
-                    'resource-template' => $resource_template_id,
-                ]);
-            }
-
-            foreach ($added_team_ids as $team_id) {
-                $api->create('team-resource-template', [
-                    'team' => $team_id,
-                    'resource-template' => $resource_template_id,
-                ]);
-            }
+            $teams = $em->getRepository('Teams\Entity\Team');
+            foreach ($request->getContent()['o-module-teams:Team'] as $team_id):
+                $team = $teams->findOneBy(['id' => $team_id]);
+                $trt = new TeamResourceTemplate($team, $resource_template);
+                $em->persist($trt);
+            endforeach;
+            $em->flush();
         }
     }
 
@@ -1632,8 +1604,6 @@ SQL;
             if (array_key_exists('remove_team', $request->getContent()) ||
                 array_key_exists('add_team', $request->getContent())) {
 
-                $api = $this->getServiceLocator()->get('Omeka\ApiManager');
-
                 //get ids for the item and all of its media
                 $resource_ids = [];
                 $resource_ids[$request->getId()] = true;
@@ -1648,25 +1618,27 @@ SQL;
                             foreach (array_keys($resource_ids) as $resource_id) {
                                 $resource = $em->getRepository('Omeka\Entity\Resource')->findOneBy(['id' => $resource_id]);
                                 if ($resource) {
-                                    // Route through the team-resource API so the
-                                    // same permission/validation logic is enforced
-                                    // everywhere teams are attached to a resource.
-                                    $api->create('team-resource', ['team' => $team_id, 'resource' => $resource_id], [], ['flushEntityManager' => false]);
+                                    $team_resource = new TeamResource($team, $resource);
+                                    $em->persist($team_resource);
                                 }
                             }
                         }
                     }
                 }
+                $em->flush();
 
                 foreach ($remove as $team_id) {
                     if ($teamAuth->teamAuthorized($this->getUser(), 'delete', 'resource', $team_id)) {
                         foreach (array_keys($resource_ids) as $resource_id) {
-                            $api->delete('team-resource', [], ['team' => $team_id, 'resource' => $resource_id], ['flushEntityManager' => false]);
+                            $team_resource = $em->getRepository('Teams\Entity\TeamResource')
+                                    ->findOneBy(['team' => $team_id, 'resource' => $resource_id]);
+                            if ($team_resource) {
+                                $em->remove($team_resource);
+                            }
                         }
                     }
+                    $em->flush();
                 }
-                $em->flush();
-
                 //once teams are updated, sync item-site
                 $this->updateItemSites($request->getId());
             }

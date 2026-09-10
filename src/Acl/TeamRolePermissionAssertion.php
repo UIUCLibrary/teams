@@ -20,12 +20,8 @@ use Teams\Entity\TeamUser;
  * and that their role within that team permits the requested action. It handles various resource
  * types including Items, Sites, Media, and Team-specific entities.
  * 
- * Teams\Service\AclRuleManager uses this assertion directly with allow() (not negated with a
- * deny() rule) for every non-global-admin role, replacing that role's unconditional core Omeka
- * allow rule for these resources with one gated by this assertion. Laminas\Permissions\Acl
- * treats a rule whose assertion returns false as absent rather than as a denial, so a deny()
- * rule built from a negated version of this assertion could only ever deny access or silently
- * defer to a default deny -- it could never restore the access the replaced allow rule granted.
+ * The assertion is used with AssertionNegation in ACL deny rules, creating a pattern where
+ * access is denied unless the assertion grants permission (double-negative pattern).
  */
 class TeamRolePermissionAssertion implements AssertionInterface
 {
