@@ -616,6 +616,378 @@ $assertSame(0, $connection->fetchOne(
     [$siteH->id(), $teamH->id()]
 ), 'A null "team" value removes all of a site\'s existing team associations');
 
+// Module::resourceTemplateUpdate() uses the shared diffTeamIds() helper
+// (also used by assetUpdate()/siteUpdate()) to only add/remove the
+// team_resource_template rows that actually changed, leaving unchanged
+// rows in place.
+$teamRTX = $api->create('team', [
+    'o:name' => $runId . ' Team RT-X',
+    'o:description' => 'Fixture team for the resource template diff regression test',
+])->getContent();
+$teamRTY = $api->create('team', [
+    'o:name' => $runId . ' Team RT-Y',
+    'o:description' => 'Fixture team for the resource template diff regression test',
+])->getContent();
+$resourceTemplateX = $api->create('resource_templates', [
+    'o:label' => $runId . ' Resource Template X',
+    'o-module-teams:Team' => [$teamRTX->id()],
+])->getContent();
+
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_resource_template WHERE resource_template_id = ? AND team_id = ?',
+    [$resourceTemplateX->id(), $teamRTX->id()]
+), 'Resource template X is associated with team RT-X after creation');
+
+$api->update('resource_templates', $resourceTemplateX->id(), [
+    'o:label' => $resourceTemplateX->label(),
+    'o-module-teams:Team' => [$teamRTX->id(), $teamRTY->id()],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_resource_template WHERE resource_template_id = ? AND team_id = ?',
+    [$resourceTemplateX->id(), $teamRTY->id()]
+), 'Adding team RT-Y via the resource template update form creates a new team_resource_template row');
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_resource_template WHERE resource_template_id = ? AND team_id = ?',
+    [$resourceTemplateX->id(), $teamRTX->id()]
+), 'Team RT-X\'s team_resource_template row is left in place (not deleted/recreated) when only RT-Y is added');
+
+$api->update('resource_templates', $resourceTemplateX->id(), [
+    'o:label' => $resourceTemplateX->label(),
+    'o-module-teams:Team' => [$teamRTY->id()],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(0, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_resource_template WHERE resource_template_id = ? AND team_id = ?',
+    [$resourceTemplateX->id(), $teamRTX->id()]
+), 'Removing team RT-X via the resource template update form removes only its team_resource_template row');
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_resource_template WHERE resource_template_id = ? AND team_id = ?',
+    [$resourceTemplateX->id(), $teamRTY->id()]
+), 'Team RT-Y\'s team_resource_template row remains after removing RT-X');
+
+// Module::userUpdate() uses diffTeamIds() to only add/remove the team_user
+// rows that actually changed, and updates (rather than recreates) a kept
+// team's role when it differs.
+$teamUX = $api->create('team', [
+    'o:name' => $runId . ' Team U-X',
+    'o:description' => 'Fixture team for the user update diff regression test',
+])->getContent();
+$teamUY = $api->create('team', [
+    'o:name' => $runId . ' Team U-Y',
+    'o:description' => 'Fixture team for the user update diff regression test',
+])->getContent();
+$siteUX = $api->create('sites', [
+    'o:title' => $runId . ' Site U-X',
+    'o:slug' => $runId . '-site-ux',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [$teamUX->id()],
+])->getContent();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$userU = createFixtureUser($entityManager, $runId . '-u@example.com', $runId . '-u', 'site_admin');
+$teamUserU = $api->create('team-user', [
+    'team' => $teamUX->id(),
+    'user' => $userU->getId(),
+    'role' => $managerRole->id(),
+])->getContent();
+$entityManager->getRepository(TeamUser::class)
+    ->findOneBy(['team' => $teamUX->id(), 'user' => $userU->getId()])
+    ->setCurrent(true);
+$entityManager->flush();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$teamUXRowBefore = $connection->fetchAssociative(
+    'SELECT id, role_id FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUX->id(), $userU->getId()]
+);
+$assertSame($managerRole->id(), $teamUXRowBefore['role_id'], 'User U starts as a manager of team U-X');
+$assertSame('admin', $connection->fetchOne(
+    'SELECT role FROM site_permission WHERE site_id = ? AND user_id = ?',
+    [$siteUX->id(), $userU->getId()]
+), 'User U starts with the admin site permission on site U-X (granted by the manager role)');
+
+// Add team U-Y while keeping team U-X, with team U-X's role unchanged.
+$api->update('users', $userU->getId(), [
+    'o-module-teams:Team' => [$teamUX->id(), $teamUY->id()],
+    'o-module-teams:TeamRole' => [
+        $teamUX->id() => $managerRole->id(),
+        $teamUY->id() => $viewerRole->id(),
+    ],
+], [], ['isPartial' => true]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$teamUXRowAfterAdd = $connection->fetchAssociative(
+    'SELECT id, role_id, is_current FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUX->id(), $userU->getId()]
+);
+$assertSame(
+    $teamUXRowBefore['id'],
+    $teamUXRowAfterAdd['id'],
+    'Team U-X\'s existing team_user row is left in place (not deleted/recreated) when only U-Y is added'
+);
+$assertSame(1, (int) $teamUXRowAfterAdd['is_current'], 'Team U-X remains the user\'s current team after U-Y is added');
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUY->id(), $userU->getId()]
+), 'Adding team U-Y via the user update form creates a new team_user row');
+
+// Change team U-X's role (manager -> viewer) while keeping both teams.
+$api->update('users', $userU->getId(), [
+    'o-module-teams:Team' => [$teamUX->id(), $teamUY->id()],
+    'o-module-teams:TeamRole' => [
+        $teamUX->id() => $viewerRole->id(),
+        $teamUY->id() => $viewerRole->id(),
+    ],
+], [], ['isPartial' => true]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$teamUXRowAfterRoleChange = $connection->fetchAssociative(
+    'SELECT id, role_id FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUX->id(), $userU->getId()]
+);
+$assertSame(
+    $teamUXRowBefore['id'],
+    $teamUXRowAfterRoleChange['id'],
+    'Team U-X\'s team_user row is updated in place (not deleted/recreated) when its role changes'
+);
+$assertSame($viewerRole->id(), $teamUXRowAfterRoleChange['role_id'], 'Team U-X\'s role is updated to viewer');
+$assertSame('viewer', $connection->fetchOne(
+    'SELECT role FROM site_permission WHERE site_id = ? AND user_id = ?',
+    [$siteUX->id(), $userU->getId()]
+), 'User U\'s site permission on site U-X is re-synced to viewer after the role change');
+
+// Remove team U-X entirely.
+$api->update('users', $userU->getId(), [
+    'o-module-teams:Team' => [$teamUY->id()],
+    'o-module-teams:TeamRole' => [
+        $teamUY->id() => $viewerRole->id(),
+    ],
+], [], ['isPartial' => true]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(0, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUX->id(), $userU->getId()]
+), 'Removing team U-X via the user update form deletes its team_user row');
+$assertSame(0, $connection->fetchOne(
+    'SELECT COUNT(*) FROM site_permission WHERE site_id = ? AND user_id = ?',
+    [$siteUX->id(), $userU->getId()]
+), 'Removing team U-X via the user update form also removes the site permission it granted');
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_user WHERE team_id = ? AND user_id = ?',
+    [$teamUY->id(), $userU->getId()]
+), 'Team U-Y\'s team_user row remains after removing U-X');
+
+// ACL: team-granted create/update/delete permissions must be honored for
+// every core Omeka role that can otherwise perform those actions at all
+// (e.g. editor, site_admin), and denied when the team role or team
+// membership does not grant them, regardless of which of those core roles
+// the user holds.
+$teamAcl = $api->create('team', [
+    'o:name' => $runId . ' Team ACL',
+    'o:description' => 'Fixture team for the ACL allow/deny regression test',
+])->getContent();
+$teamAclOther = $api->create('team', [
+    'o:name' => $runId . ' Team ACL Other',
+    'o:description' => 'Fixture team unrelated to the item set under test',
+])->getContent();
+$itemSetAcl = $api->create('item_sets', ['add_team' => [$teamAcl->id()]])->getContent();
+
+// Module::itemSetUpdate() must tolerate an update request that carries no
+// add_team/remove_team keys at all (e.g. an update that only changes
+// o:is_public), since those keys are only present when the item set edit
+// form actually submits team changes.
+set_error_handler(static function (int $errno, string $errstr) {
+    throw new \ErrorException($errstr, 0, $errno);
+}, E_WARNING);
+try {
+    $api->update('item_sets', $itemSetAcl->id(), ['o:is_public' => true], [], ['isPartial' => true]);
+    $noWarningOnTeamlessItemSetUpdate = true;
+} catch (\ErrorException $e) {
+    $noWarningOnTeamlessItemSetUpdate = false;
+} finally {
+    restore_error_handler();
+}
+$assert(
+    $noWarningOnTeamlessItemSetUpdate,
+    'Updating an item set without add_team/remove_team keys in the request does not raise a warning'
+);
+
+
+$makeCurrentTeamMember = static function (
+    EntityManager $entityManager,
+    \Omeka\Api\Manager $api,
+    string $email,
+    string $coreRole,
+    $team,
+    $teamRole
+): User {
+    $user = createFixtureUser($entityManager, $email, $email, $coreRole);
+    $api->create('team-user', [
+        'team' => $team->id(),
+        'user' => $user->getId(),
+        'role' => $teamRole->id(),
+    ]);
+    $entityManager->getRepository(TeamUser::class)
+        ->findOneBy(['team' => $team->id(), 'user' => $user->getId()])
+        ->setCurrent(true);
+    $entityManager->flush();
+    $entityManager->clear();
+    return $user;
+};
+
+foreach (['editor', 'site_admin'] as $coreRoleForAclTest) {
+    $managerOnTeamAcl = $makeCurrentTeamMember(
+        $entityManager,
+        $api,
+        $runId . '-acl-' . $coreRoleForAclTest . '-manager@example.com',
+        $coreRoleForAclTest,
+        $teamAcl,
+        $managerRole
+    );
+    authenticateAdmin($entityManager, $auth, $managerOnTeamAcl->getEmail(), 'FixtureUserPass123!');
+    $updateAllowed = true;
+    try {
+        $api->update('item_sets', $itemSetAcl->id(), ['o:is_public' => true], [], ['isPartial' => true]);
+    } catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+        $updateAllowed = false;
+    }
+    $entityManager->clear();
+    authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+    $assert(
+        $updateAllowed,
+        "A {$coreRoleForAclTest} who is the current manager of the item set's own team can update it"
+    );
+
+    $viewerOnTeamAcl = $makeCurrentTeamMember(
+        $entityManager,
+        $api,
+        $runId . '-acl-' . $coreRoleForAclTest . '-viewer@example.com',
+        $coreRoleForAclTest,
+        $teamAcl,
+        $viewerRole
+    );
+    authenticateAdmin($entityManager, $auth, $viewerOnTeamAcl->getEmail(), 'FixtureUserPass123!');
+    $updateDenied = false;
+    try {
+        $api->update('item_sets', $itemSetAcl->id(), ['o:is_public' => true], [], ['isPartial' => true]);
+    } catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+        $updateDenied = true;
+    }
+    $entityManager->clear();
+    authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+    $assert(
+        $updateDenied,
+        "A {$coreRoleForAclTest} whose team role lacks modify permission cannot update the item set"
+    );
+
+    $managerOnOtherTeam = $makeCurrentTeamMember(
+        $entityManager,
+        $api,
+        $runId . '-acl-' . $coreRoleForAclTest . '-otherteam@example.com',
+        $coreRoleForAclTest,
+        $teamAclOther,
+        $managerRole
+    );
+    authenticateAdmin($entityManager, $auth, $managerOnOtherTeam->getEmail(), 'FixtureUserPass123!');
+    $updateDeniedOtherTeam = false;
+    try {
+        $api->update('item_sets', $itemSetAcl->id(), ['o:is_public' => true], [], ['isPartial' => true]);
+    } catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+        $updateDeniedOtherTeam = true;
+    }
+    $entityManager->clear();
+    authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+    $assert(
+        $updateDeniedOtherTeam,
+        "A {$coreRoleForAclTest} who manages an unrelated team cannot update another team's item set"
+    );
+
+    $noTeamUser = createFixtureUser(
+        $entityManager,
+        $runId . '-acl-' . $coreRoleForAclTest . '-noteam@example.com',
+        $runId . '-acl-' . $coreRoleForAclTest . '-noteam',
+        $coreRoleForAclTest
+    );
+    authenticateAdmin($entityManager, $auth, $noTeamUser->getEmail(), 'FixtureUserPass123!');
+    $updateDeniedNoTeam = false;
+    try {
+        $api->update('item_sets', $itemSetAcl->id(), ['o:is_public' => true], [], ['isPartial' => true]);
+    } catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+        $updateDeniedNoTeam = true;
+    }
+    $entityManager->clear();
+    authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+    $assert(
+        $updateDeniedNoTeam,
+        "A {$coreRoleForAclTest} with no current team cannot update the item set"
+    );
+}
+
+// Teams is a gate in front of core, not a source of new grants: a user must
+// have the ability both in their team (via team role permissions) and in
+// core (via their core Omeka role) to perform an action. A researcher can
+// never create item sets in core, regardless of team permissions, so team
+// membership with full item permissions must not override that.
+$researcherOnTeamAcl = $makeCurrentTeamMember(
+    $entityManager,
+    $api,
+    $runId . '-acl-researcher-manager@example.com',
+    'researcher',
+    $teamAcl,
+    $managerRole
+);
+authenticateAdmin($entityManager, $auth, $researcherOnTeamAcl->getEmail(), 'FixtureUserPass123!');
+$researcherCreateDenied = false;
+try {
+    $api->create('item_sets', ['add_team' => [$teamAcl->id()]]);
+} catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+    $researcherCreateDenied = true;
+}
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+$assert(
+    $researcherCreateDenied,
+    'A researcher who is a team manager with full item permissions still cannot create an item set, '
+        . 'because core never permits researchers to create item sets at all'
+);
+
+// The counterpart case: an editor who is a team manager with full item
+// permissions, and whose core role can create item sets, is allowed to.
+$editorOnTeamAcl = $makeCurrentTeamMember(
+    $entityManager,
+    $api,
+    $runId . '-acl-editor-manager-create@example.com',
+    'editor',
+    $teamAcl,
+    $managerRole
+);
+authenticateAdmin($entityManager, $auth, $editorOnTeamAcl->getEmail(), 'FixtureUserPass123!');
+$editorCreateAllowed = true;
+try {
+    $api->create('item_sets', ['add_team' => [$teamAcl->id()]]);
+} catch (\Omeka\Api\Exception\PermissionDeniedException $e) {
+    $editorCreateAllowed = false;
+}
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+$assert(
+    $editorCreateAllowed,
+    'An editor who is a team manager with full item permissions can create an item set, '
+        . 'because both team and core permit it'
+);
+
 if ($failures > 0) {
     fwrite(STDERR, sprintf("\nIntegration test failed with %d assertion(s).\n", $failures));
     exit(1);
