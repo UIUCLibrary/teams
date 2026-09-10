@@ -1104,7 +1104,9 @@ SQL;
         if ($operation === 'create') {
             $response = $event->getParam('response');
             $site_id = $response->getContent()->getId();
-            $team_ids = $request->getContent()['team'];
+            // Null when a site is created with no teams selected, which is
+            // a valid, non-required selection.
+            $team_ids = $request->getContent()['team'] ?? [];
 
             // Create team-site associations through the adapter, which
             // syncs site permissions and item-site membership for every one
@@ -1238,13 +1240,38 @@ SQL;
 
         return;
     }
+
+    /**
+     * Computes which team ids were added and removed on a team-selection
+     * form field, by comparing the ids a resource is currently associated
+     * with against the ids submitted in the request.
+     *
+     * Args:
+     *     existingTeamIds: Team ids the resource is currently associated
+     *         with.
+     *     formTeamIds: Team ids submitted by the form. `null` is treated as
+     *         an empty selection, since a resource is not required to be
+     *         associated with any team and unchecking every option in a
+     *         multi-select submits no value at all.
+     *
+     * Returns:
+     *     array{0: array, 1: array} A [addedTeamIds, removedTeamIds] tuple.
+     */
+    private function diffTeamIds(array $existingTeamIds, ?array $formTeamIds): array
+    {
+        $formTeamIds = $formTeamIds ?? [];
+
+        return [
+            array_diff($formTeamIds, $existingTeamIds),
+            array_diff($existingTeamIds, $formTeamIds),
+        ];
+    }
+
     public function assetUpdate(Event $event)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
-        $entity = $event->getParam('entity');
         $request = $event->getParam('request');
         $operation = $request->getOperation();
-        $error_store = $event->getParam('errorStore');
 
         if ($operation === 'update' && array_key_exists('o-module-teams:Team', $request->getContent())) {
 
@@ -1260,8 +1287,7 @@ SQL;
                 return $team_assets->getTeam()->getId();
             }, $team_assets);
 
-            $added_teams = array_diff($form_teams, $existing_teams);
-            $removed_teams = array_diff($existing_teams, $form_teams);
+            [$added_teams, $removed_teams] = $this->diffTeamIds($existing_teams, $form_teams);
 
             foreach ($team_assets as $team_asset):
                 if (in_array($team_asset->getTeam()->getId(), $removed_teams)) {
@@ -1315,8 +1341,10 @@ SQL;
                     return $team_site->getTeam()->getId();
                 }, $team_sites);
 
-                $added_teams = array_diff($form_teams, $existing_teams);
-                $removed_teams = array_diff($existing_teams, $form_teams);
+                // $form_teams is null when the "Teams" field on the site
+                // form is submitted with no teams selected (removing a site
+                // from all of its teams is a valid, non-required operation).
+                [$added_teams, $removed_teams] = $this->diffTeamIds($existing_teams, $form_teams);
 
                 // Delete removed team-site associations through the adapter,
                 // which syncs site-permission cleanup and item-site

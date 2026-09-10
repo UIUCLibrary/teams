@@ -572,6 +572,50 @@ $siteForm = $formElementManager->get(\Omeka\Form\SiteForm::class);
 $teamFormInput = $siteForm->getInputFilter()->get('team');
 $assertSame(false, $teamFormInput->isRequired(), 'The site edit form\'s "Teams" field is not required');
 
+// Regression test: submitting the site edit form with every team checkbox
+// unchecked sends a 'team' key whose value is null (not an empty array),
+// since an HTML multi-select with nothing selected submits no value at all.
+// This previously crashed with "array_diff(): Argument #1 ($array) must be
+// of type array, null given" in Module::siteUpdate().
+$teamH = $api->create('team', [
+    'o:name' => $runId . ' Team H',
+    'o:description' => 'Fixture team for the site update null-teams regression test',
+])->getContent();
+$siteH = $api->create('sites', [
+    'o:title' => $runId . ' Site H',
+    'o:slug' => $runId . '-site-h',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [$teamH->id()],
+])->getContent();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(1, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_site WHERE site_id = ? AND team_id = ?',
+    [$siteH->id(), $teamH->id()]
+), 'Site H is associated with team H before the null-teams update');
+
+try {
+    $api->update('sites', $siteH->id(), [
+        'o:title' => $siteH->title(),
+        'o:slug' => $siteH->slug(),
+        'o:theme' => 'default',
+        'o:is_public' => false,
+        'team' => null,
+    ]);
+    $entityManager->clear();
+    authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+    $assert(true, 'Updating a site with a null "team" value (all checkboxes unchecked) does not throw');
+} catch (\Throwable $e) {
+    $assert(false, sprintf('Updating a site with a null "team" value does not throw (threw %s: %s)', get_class($e), $e->getMessage()));
+}
+
+$assertSame(0, $connection->fetchOne(
+    'SELECT COUNT(*) FROM team_site WHERE site_id = ? AND team_id = ?',
+    [$siteH->id(), $teamH->id()]
+), 'A null "team" value removes all of a site\'s existing team associations');
+
 if ($failures > 0) {
     fwrite(STDERR, sprintf("\nIntegration test failed with %d assertion(s).\n", $failures));
     exit(1);
