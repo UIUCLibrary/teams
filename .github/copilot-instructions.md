@@ -65,11 +65,11 @@ Omeka S Module (PHP-based)
 **Always seek improvement over existing code.** Follow these principles:
 
 1. **Refactor and Clean**: Remove code smells, improve structure, prefer clean idiomatic Omeka S code—even if not strictly required for the task
-2. **Follow Omeka S Patterns**: Emulate best practices from:
+2. **Upstream Omeka S is canonical**: The upstream Omeka S implementation and coding style are the canonical reference for how this module should be written. Emulate best practices from:
    - Main Omeka S repository: [omeka/omeka-s](https://github.com/omeka/omeka-s)
    - Official Omeka S modules: [omeka-s-modules](https://github.com/omeka-s-modules/)
    - Official Omeka S themes: [omeka-s-themes](https://github.com/omeka-s-themes/)
-3. **Treat Local Examples as Non-Authoritative**: While this repository contains working code, it should not be considered a canonical reference for best practices. Always prefer official Omeka S patterns.
+3. **Treat Existing Local Code as Suspect**: Code already in this repository is not a reference for best practices and must not be copied just because it is the existing pattern. Much of it predates the effort to align with upstream conventions (for example, reaching for `Doctrine\ORM\EntityManager` directly in view helpers and services instead of going through the Omeka API, as `SitePermissionManager` now does). When existing code conflicts with upstream Omeka S patterns, the existing code is wrong and should be corrected, not emulated.
 4. **Follow the Boy Scout Rule**: Leave code better than you found it
 
 ### PHP Standards
