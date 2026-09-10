@@ -79,6 +79,7 @@ return [
             \Teams\Acl\TeamRolePermissionAssertion::class => \Teams\Service\Acl\TeamRolePermissionAssertionFactory::class,
             \Teams\Service\AclRuleManager::class => \Teams\Service\AclRuleManagerFactory::class,
             \Teams\Service\SitePermissionManager::class => \Teams\Service\SitePermissionManagerFactory::class,
+            \Teams\Service\ItemSiteSyncManager::class => \Teams\Service\ItemSiteSyncManagerFactory::class,
         ],
     ],
     'form_elements' => [

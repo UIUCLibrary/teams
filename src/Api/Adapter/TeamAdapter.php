@@ -14,6 +14,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
+use Teams\Service\ItemSiteSyncManager;
 use Teams\Service\SitePermissionManager;
 
 class TeamAdapter extends AbstractEntityAdapter
@@ -455,6 +456,16 @@ class TeamAdapter extends AbstractEntityAdapter
         }
         foreach ($removedSiteIds as $siteId) {
             $sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved($teamId, $siteId, false);
+        }
+
+        // Sync item-site membership: whenever the team's site set changes,
+        // every item belonging to the team must gain or lose membership on
+        // the affected site(s) accordingly. Recomputed once for the whole
+        // team rather than once per site, since it's a full recompute of
+        // each item's site membership based on the team's current sites.
+        if ($addedSiteIds || $removedSiteIds) {
+            $this->getServiceLocator()->get(ItemSiteSyncManager::class)
+                ->syncItemSitesForTeam($teamId, false);
         }
 
         if ($addedUserIds || $removedUserIds || $keptUserIds || $addedSiteIds || $removedSiteIds) {

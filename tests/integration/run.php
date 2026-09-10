@@ -422,6 +422,156 @@ authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
 $afterItemSiteRemove = $itemSiteCount($connection, $teamDItemIds, $siteD->id());
 $assertSame(0, $afterItemSiteRemove, 'Removing a team from a site via the site update form removes the team\'s items from the site');
 
+// Reproduce the "add a site to a team" path via the TEAM update form
+// (Teams\Api\Adapter\TeamAdapter::update(), triggered by PUT /api/teams/{id}
+// with an 'o:team_sites' key). Until this fix, this path only synced Omeka
+// site permissions and never touched item_site membership at all, so an
+// item belonging to a team never actually appeared on a site added to that
+// team via this form.
+$teamE = $api->create('team', [
+    'o:name' => $runId . '-team-e',
+    'o:description' => 'Integration team E (team-update-form item-sync scenario)',
+])->getContent();
+$siteE = $api->create('sites', [
+    'o:title' => $runId . ' Site E',
+    'o:slug' => $runId . '-site-e',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+])->getContent();
+$itemE = $api->create('items', [])->getContent();
+$teamEEntity = $entityManager->getRepository(Team::class)->find($teamE->id());
+$itemEResource = $entityManager->getRepository(Resource::class)->find($itemE->id());
+$entityManager->persist(new TeamResource($teamEEntity, $itemEResource));
+$entityManager->flush();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(0, $itemSiteCount($connection, [$itemE->id()], $siteE->id()), 'No item_site row exists for team E\'s item on site E before the site is added to the team');
+
+$api->update('team', $teamE->id(), [
+    'o:name' => $teamE->name(),
+    'o:description' => $teamE->description(),
+    'o:team_sites' => [$siteE->id()],
+    'o:team_users' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(1, $itemSiteCount($connection, [$itemE->id()], $siteE->id()), 'Adding a site to a team via the team update form adds the team\'s item to the site');
+
+$api->update('team', $teamE->id(), [
+    'o:name' => $teamE->name(),
+    'o:description' => $teamE->description(),
+    'o:team_sites' => [],
+    'o:team_users' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(0, $itemSiteCount($connection, [$itemE->id()], $siteE->id()), 'Removing a site from a team via the team update form removes the team\'s item from the site');
+
+// Overlap scenario: an item shared by two teams that both grant the same
+// site must keep its site membership as long as ANY of its teams still
+// grants that site, whether the site is removed from one team via the team
+// update form or via the site update form.
+$teamF = $api->create('team', [
+    'o:name' => $runId . '-team-f',
+    'o:description' => 'Integration team F (overlap scenario)',
+])->getContent();
+$teamG = $api->create('team', [
+    'o:name' => $runId . '-team-g',
+    'o:description' => 'Integration team G (overlap scenario)',
+])->getContent();
+$siteFG = $api->create('sites', [
+    'o:title' => $runId . ' Site FG',
+    'o:slug' => $runId . '-site-fg',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+])->getContent();
+$sharedItem = $api->create('items', [])->getContent();
+
+$teamFEntity = $entityManager->getRepository(Team::class)->find($teamF->id());
+$teamGEntity = $entityManager->getRepository(Team::class)->find($teamG->id());
+$sharedItemResource = $entityManager->getRepository(Resource::class)->find($sharedItem->id());
+$entityManager->persist(new TeamResource($teamFEntity, $sharedItemResource));
+$entityManager->persist(new TeamResource($teamGEntity, $sharedItemResource));
+$entityManager->flush();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+// Add the site to both teams via the team update form.
+$api->update('team', $teamF->id(), [
+    'o:name' => $teamF->name(),
+    'o:description' => $teamF->description(),
+    'o:team_sites' => [$siteFG->id()],
+    'o:team_users' => [],
+]);
+$api->update('team', $teamG->id(), [
+    'o:name' => $teamG->name(),
+    'o:description' => $teamG->description(),
+    'o:team_sites' => [$siteFG->id()],
+    'o:team_users' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(1, $itemSiteCount($connection, [$sharedItem->id()], $siteFG->id()), 'A shared item gains site membership once either of its two teams grants the site');
+
+// Remove the site from team F only (via the team update form). Team G still
+// grants the site, so the shared item must keep its membership.
+$api->update('team', $teamF->id(), [
+    'o:name' => $teamF->name(),
+    'o:description' => $teamF->description(),
+    'o:team_sites' => [],
+    'o:team_users' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(1, $itemSiteCount($connection, [$sharedItem->id()], $siteFG->id()), 'Removing the site from one of two overlapping teams (via the team update form) does not strip the shared item\'s site membership while the other team still grants it');
+
+// Now remove the site from team G as well (via the site update form this
+// time, to exercise that path too). No team grants the site any more, so
+// the shared item must finally lose its membership.
+$api->update('sites', $siteFG->id(), [
+    'o:title' => $siteFG->title(),
+    'o:slug' => $siteFG->slug(),
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$assertSame(0, $itemSiteCount($connection, [$sharedItem->id()], $siteFG->id()), 'Removing the site from the last remaining team (via the site update form) finally strips the shared item\'s site membership');
+
+// Regression test: browsing items scoped to a site that has no team at all
+// must not crash (Module::filterByTeam() previously read an undefined
+// $team_id variable in this case, causing "count(): Argument #1 ($value)
+// must be of type Countable|array, null given").
+$siteWithNoTeam = $api->create('sites', [
+    'o:title' => $runId . ' Site With No Team',
+    'o:slug' => $runId . '-site-no-team',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+])->getContent();
+try {
+    $noTeamSiteItems = $api->search('items', ['site_id' => $siteWithNoTeam->id()])->getContent();
+    $assert(is_array($noTeamSiteItems), 'Browsing items scoped to a site with no associated team does not throw and returns a result set');
+} catch (\Throwable $e) {
+    $assert(false, sprintf('Browsing items scoped to a site with no associated team does not throw (threw %s: %s)', get_class($e), $e->getMessage()));
+}
+
+// Regression test: the site edit form's "Teams" field must not be required,
+// since a site is not required to be associated with any team.
+$formElementManager = $services->get('FormElementManager');
+$siteForm = $formElementManager->get(\Omeka\Form\SiteForm::class);
+$teamFormInput = $siteForm->getInputFilter()->get('team');
+$assertSame(false, $teamFormInput->isRequired(), 'The site edit form\'s "Teams" field is not required');
+
 if ($failures > 0) {
     fwrite(STDERR, sprintf("\nIntegration test failed with %d assertion(s).\n", $failures));
     exit(1);
