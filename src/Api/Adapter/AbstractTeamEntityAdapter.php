@@ -312,6 +312,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
     {
         $searchFields = array();
         $group_by = 'team'; //default order by
+        $additionalGroupBy = null;
         $query = $request->getContent();
         $mappedEntityDBName = $this->getMappedEntityDBName();
         $mappedEntityName = $this->getMappedEntityName();
@@ -324,10 +325,13 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         } elseif (array_key_exists($mappedEntityName, $query)){
             $searchFields[$mappedEntityDBName] = $query[$mappedEntityName];
         } else {
-            throw new Exception\BadRequestException(sprintf(
-                $this->getTranslator()->translate('%1$s entity requires team or resource search criteria'),
-                $this->getEntityClass()
-            ));
+            // No team or resource criteria was given: search across every
+            // row of this entity. $entityClass has a composite primary key
+            // made up of "team" and $mappedEntityDBName, so both halves of
+            // that key must be grouped on together, or GROUP BY would
+            // collapse rows that share only a team (or only a resource)
+            // into a single, arbitrarily-chosen row.
+            $additionalGroupBy = $mappedEntityDBName;
         }
 
         // Set default query parameters
@@ -375,6 +379,9 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $this->buildBaseQuery($qb, $query);
         $this->buildQuery($qb, $query);
         $qb->groupBy("omeka_root." . $group_by);
+        if ($additionalGroupBy !== null) {
+            $qb->addGroupBy("omeka_root." . $additionalGroupBy);
+        }
 
         // Trigger the search.query event.
         $event = new Event('api.search.query', $this, [
