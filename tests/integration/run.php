@@ -8,8 +8,11 @@ use Laminas\Authentication\AuthenticationService;
 use Laminas\Uri\Http;
 use Omeka\Api\Response;
 use Omeka\Entity\Module as ModuleEntity;
+use Omeka\Entity\Resource;
 use Omeka\Entity\User;
 use Omeka\Mvc\Application;
+use Teams\Entity\Team;
+use Teams\Entity\TeamResource;
 use Teams\Entity\TeamUser;
 use Teams\Service\SitePermissionManager;
 
@@ -343,6 +346,81 @@ authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
 
 $afterUserRemove = $permissionsForSite($connection, [$teamCUserFixture->getId()], $siteC->id());
 $assertSame(0, count($afterUserRemove), 'Removing a user from a team via the team update form removes the site_permission row it granted');
+
+// Reproduce the "add a team to a site" path via the site edit form
+// (Teams\Module::siteUpdate(), triggered by PUT /api/sites/{id} with a
+// 'team' key), which is responsible for syncing every item belonging to the
+// team's TeamResource associations into the site's item_site membership.
+// This previously flushed the entity manager once per item inside the sync
+// loop (Module::updateItemSites()), and Doctrine recomputes change sets for
+// every managed entity on every flush(), so the cost grew quadratically with
+// the team's item count and could exceed PHP's execution time limit for
+// teams with a few hundred items or more.
+$teamD = $api->create('team', [
+    'o:name' => $runId . '-team-d',
+    'o:description' => 'Integration team D (site-update-form item-sync scenario)',
+])->getContent();
+$siteD = $api->create('sites', [
+    'o:title' => $runId . ' Site D',
+    'o:slug' => $runId . '-site-d',
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+])->getContent();
+
+$teamDItemCount = 20;
+$teamDItemIds = [];
+for ($i = 0; $i < $teamDItemCount; $i++) {
+    $teamDItemIds[] = $api->create('items', [])->getContent()->id();
+}
+$teamDEntity = $entityManager->getRepository(Team::class)->find($teamD->id());
+foreach ($teamDItemIds as $itemId) {
+    $resource = $entityManager->getRepository(Resource::class)->find($itemId);
+    $entityManager->persist(new TeamResource($teamDEntity, $resource));
+}
+$entityManager->flush();
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$itemSiteCount = static function (Connection $connection, array $itemIds, int $siteId): int {
+    return (int) $connection->fetchOne(sprintf(
+        'SELECT COUNT(*) FROM item_site WHERE item_id IN (%s) AND site_id = %d',
+        implode(',', array_map('intval', $itemIds)),
+        $siteId
+    ));
+};
+
+$beforeItemSiteAdd = $itemSiteCount($connection, $teamDItemIds, $siteD->id());
+$assertSame(0, $beforeItemSiteAdd, 'No item_site rows exist for team D\'s items on site D before the team is added to the site');
+
+$start = microtime(true);
+$api->update('sites', $siteD->id(), [
+    'o:title' => $siteD->title(),
+    'o:slug' => $siteD->slug(),
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [$teamD->id()],
+]);
+$elapsed = microtime(true) - $start;
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$afterItemSiteAdd = $itemSiteCount($connection, $teamDItemIds, $siteD->id());
+$assertSame($teamDItemCount, $afterItemSiteAdd, 'Adding a team to a site via the site update form adds every one of the team\'s items to the site');
+$assert($elapsed < 15.0, sprintf('Adding a team with %d items to a site via the site update form completes well within the default PHP execution time limit (took %.2fs)', $teamDItemCount, $elapsed));
+
+$api->update('sites', $siteD->id(), [
+    'o:title' => $siteD->title(),
+    'o:slug' => $siteD->slug(),
+    'o:theme' => 'default',
+    'o:is_public' => false,
+    'team' => [],
+]);
+$entityManager->clear();
+authenticateAdmin($entityManager, $auth, $adminEmail, $adminPassword);
+
+$afterItemSiteRemove = $itemSiteCount($connection, $teamDItemIds, $siteD->id());
+$assertSame(0, $afterItemSiteRemove, 'Removing a team from a site via the site update form removes the team\'s items from the site');
 
 if ($failures > 0) {
     fwrite(STDERR, sprintf("\nIntegration test failed with %d assertion(s).\n", $failures));

@@ -988,7 +988,20 @@ SQL;
         }
     }
 
-    public function updateItemSites($item_id)
+    /**
+     * Synchronizes an item's site membership with its teams' site associations.
+     *
+     * Args:
+     *     item_id: The Omeka item's id.
+     *     flush: Whether to flush the entity manager immediately. Callers that
+     *         invoke this repeatedly in a loop (for example, when a team's
+     *         site associations change and every one of the team's items
+     *         needs to be re-synced) should pass false and flush once after
+     *         the loop instead, since Doctrine recomputes change sets for
+     *         every managed entity on each flush() call, making a flush per
+     *         item prohibitively slow for teams with many items.
+     */
+    public function updateItemSites($item_id, bool $flush = true)
     {
         $em = $this->getServiceLocator()->get('Omeka\EntityManager');
 
@@ -1039,7 +1052,9 @@ SQL;
                 $add_site = $siteAdapter->findEntity($site);
                 $item_sites->set($add_site->getId(), $add_site);
             }
-            $em->flush();
+            if ($flush) {
+                $em->flush();
+            }
         }
     }
 
@@ -1392,10 +1407,24 @@ SQL;
                         ->getTeamResources();
                 }
 
+                // Collect the affected resource ids first (a resource shared by
+                // more than one changed team would otherwise be processed more
+                // than once) and sync each item's site membership without
+                // flushing per item: Doctrine recomputes change sets for every
+                // managed entity on each flush() call, so flushing once per
+                // item in this loop scales quadratically with the team's item
+                // count and can time out for teams with hundreds of items.
+                $resource_ids = [];
                 foreach ($delta_item_site as $team_item_collection) {
                     foreach ($team_item_collection as $team_item) {
-                        $this->updateItemSites($team_item->getResource()->getId());
+                        $resource_ids[$team_item->getResource()->getId()] = true;
                     }
+                }
+                foreach (array_keys($resource_ids) as $resource_id) {
+                    $this->updateItemSites($resource_id, false);
+                }
+                if ($resource_ids) {
+                    $em->flush();
                 }
             }
         }
