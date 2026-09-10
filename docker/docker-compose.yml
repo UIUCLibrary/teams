@@ -1,0 +1,51 @@
+services:
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: omeka
+      MYSQL_USER: omeka
+      MYSQL_PASSWORD: omeka
+      MYSQL_ROOT_PASSWORD: root
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD --silent",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    ports:
+      - "3307:3306"
+    volumes:
+      - omeka-db:/var/lib/mysql
+
+  omeka:
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      args:
+        OMEKA_VERSION: v4.2.1
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      OMEKA_DB_HOST: db
+      OMEKA_DB_PORT: 3306
+      OMEKA_DB_NAME: omeka
+      OMEKA_DB_USER: omeka
+      OMEKA_DB_PASSWORD: omeka
+      OMEKA_SERVER_URL: http://localhost:8080
+      TEAMS_ADMIN_NAME: Admin
+      TEAMS_ADMIN_EMAIL: admin@example.com
+      TEAMS_ADMIN_PASSWORD: TeamsTestPass123!
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../:/var/www/omeka-s/modules/Teams
+    working_dir: /var/www/omeka-s
+
+volumes:
+  omeka-db:

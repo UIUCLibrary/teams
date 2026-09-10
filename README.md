@@ -123,3 +123,7 @@ When contributing to the Teams module, please include tests for new functionalit
 - Service classes should have corresponding test classes in `tests/Service/`
 - Follow existing test patterns for consistency
 - Use PHPUnit mocking for dependencies
+
+### Dockerized Omeka integration environment
+
+For a committed, reproducible Omeka S + MySQL environment that installs and activates this module for manual or CI integration testing, see [`docker/README.md`](docker/README.md).
