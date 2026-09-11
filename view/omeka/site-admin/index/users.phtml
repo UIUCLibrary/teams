@@ -70,13 +70,11 @@ foreach ($sitePermissions as $sitePermission) {
 
 <?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
 
-<?php if ($hasTeamData): ?>
 <div class="messages">
     <div class="warning"><?php echo $escape($translate(
         'User roles on this site are managed by the Teams module. Manual changes made here may be overwritten when team memberships or roles are next updated.'
     )); ?></div>
 </div>
-<?php endif; ?>
 
 <?php echo $this->form()->openTag($form); ?>
 <?php echo $this->formCollection($form, false); ?>

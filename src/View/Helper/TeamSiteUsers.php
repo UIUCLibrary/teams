@@ -1,27 +1,30 @@
 <?php
 namespace Teams\View\Helper;
 
-use Doctrine\ORM\EntityManager;
 use Laminas\View\Helper\AbstractHelper;
+use Omeka\Api\Manager as ApiManager;
 
 /**
  * Returns a map of userId => string[] (team names) for users whose site role
  * on the given site is managed through a Teams assignment.
  *
  * Extracted from the inline service-locator call in
- * view/omeka/site-admin/index/users.phtml so that the entity manager is
+ * view/omeka/site-admin/index/users.phtml so that the API manager is
  * properly injected (avoiding the deprecated getServiceLocator() call).
+ * All reads go through the Omeka API, with bypass_team_filter set so that
+ * this admin-only report is never restricted by the current user's active
+ * team, matching the pattern used by Teams\Service\SitePermissionManager.
  */
 class TeamSiteUsers extends AbstractHelper
 {
     /**
-     * @var EntityManager
+     * @var ApiManager
      */
-    private EntityManager $entityManager;
+    private ApiManager $api;
 
-    public function __construct(EntityManager $entityManager)
+    public function __construct(ApiManager $api)
     {
-        $this->entityManager = $entityManager;
+        $this->api = $api;
     }
 
     /**
@@ -31,24 +34,33 @@ class TeamSiteUsers extends AbstractHelper
     public function __invoke(int $siteId): array
     {
         try {
-            $teamSites = $this->entityManager
-                ->getRepository('Teams\Entity\TeamSite')
-                ->findBy(['site' => $siteId]);
+            $teamSiteReps = $this->api->search('team-site', [
+                'site' => $siteId,
+                'bypass_team_filter' => true,
+            ])->getContent();
+
+            $teamNamesById = [];
 
             // Collect per-user: highest role flag and which team(s) grant it.
             // Role priority: admin (can_add_site_pages=true) > viewer.
             $userHighestCanManage = []; // userId => bool
             $userTeamsByRole = []; // userId => ['admin' => [], 'viewer' => []]
 
-            foreach ($teamSites as $teamSite) {
-                $team = $teamSite->getTeam();
-                $teamUsers = $this->entityManager
-                    ->getRepository('Teams\Entity\TeamUser')
-                    ->findBy(['team' => $team->getId()]);
+            foreach ($teamSiteReps as $teamSiteRep) {
+                $teamId = $teamSiteRep->team();
+                if (!isset($teamNamesById[$teamId])) {
+                    $teamNamesById[$teamId] = $this->api->read('team', $teamId)->getContent()->name();
+                }
+                $teamName = $teamNamesById[$teamId];
 
-                foreach ($teamUsers as $teamUser) {
-                    $userId = $teamUser->getUser()->getId();
-                    $canManage = (bool) $teamUser->getRole()->getCanAddSitePages();
+                $teamUserReps = $this->api->search('team-user', [
+                    'team' => $teamId,
+                    'bypass_team_filter' => true,
+                ])->getContent();
+
+                foreach ($teamUserReps as $teamUserRep) {
+                    $userId = $teamUserRep->user()->getId();
+                    $canManage = (bool) $teamUserRep->role()->getCanAddSitePages();
 
                     if (!isset($userHighestCanManage[$userId])) {
                         $userHighestCanManage[$userId] = false;
@@ -57,9 +69,9 @@ class TeamSiteUsers extends AbstractHelper
 
                     if ($canManage) {
                         $userHighestCanManage[$userId] = true;
-                        $userTeamsByRole[$userId]['admin'][] = $team->getName();
+                        $userTeamsByRole[$userId]['admin'][] = $teamName;
                     } else {
-                        $userTeamsByRole[$userId]['viewer'][] = $team->getName();
+                        $userTeamsByRole[$userId]['viewer'][] = $teamName;
                     }
                 }
             }

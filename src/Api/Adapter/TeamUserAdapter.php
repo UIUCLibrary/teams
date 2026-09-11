@@ -220,6 +220,31 @@ class TeamUserAdapter extends AbstractTeamEntityAdapter
         AbstractAdapter::batchUpdate($request);
     }
 
+    public function delete(Request $request)
+    {
+        $id = $request->getId();
+        $entity = $this->getEntityManager()
+            ->getRepository(TeamUser::class)
+            ->findOneBy(['team' => $id['team'], 'user' => $id['user']]);
+
+        if (!$entity instanceof TeamUser) {
+            throw new Exception\NotFoundException(sprintf(
+                $this->getTranslator()->translate('TeamUser with team=%1$s user=%2$s not found'),
+                $id['team'], $id['user']
+            ));
+        }
+        $userId = $entity->getUser()->getId();
+        $teamId = $entity->getTeam()->getId();
+
+        $response = parent::delete($request);
+
+        // Remove Omeka site permissions for the user now that they are no
+        // longer a member of this team.
+        $this->getServiceLocator()->get(SitePermissionManager::class)
+            ->removeSitePermissionsForUser($userId, $teamId);
+
+        return $response;
+    }
 
     public function batchDelete(Request $request)
     {

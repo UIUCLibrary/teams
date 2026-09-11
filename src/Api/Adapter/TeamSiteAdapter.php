@@ -12,6 +12,7 @@ use Omeka\Entity\Site;
 use Omeka\Stdlib\ErrorStore;
 use Teams\Entity\TeamSite;
 use Teams\Api\Representation\TeamSiteRepresentation;
+use Teams\Service\ItemSiteSyncManager;
 use Teams\Service\SitePermissionManager;
 
 class TeamSiteAdapter extends AbstractTeamEntityAdapter
@@ -144,6 +145,11 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
                 $siteEntity->getId()
             );
 
+        // Sync item-site membership: every item belonging to this team
+        // must now include this site in its own site membership.
+        $this->getServiceLocator()->get(ItemSiteSyncManager::class)
+            ->syncItemSitesForTeam($teamEntity->getId());
+
         return new Response($teamSite);
     }
 
@@ -188,6 +194,12 @@ class TeamSiteAdapter extends AbstractTeamEntityAdapter
                 $id['team'],
                 $id['site']
             );
+
+        // Sync item-site membership: every item belonging to this team
+        // must lose this site's membership, unless another one of the
+        // item's teams still grants it.
+        $this->getServiceLocator()->get(ItemSiteSyncManager::class)
+            ->syncItemSitesForTeam($id['team']);
 
         return new Response($entity);
     }

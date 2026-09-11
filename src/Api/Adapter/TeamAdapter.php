@@ -14,6 +14,7 @@ use Omeka\Api\Request;
 use Omeka\Entity\EntityInterface;
 use Omeka\Stdlib\ErrorStore;
 use Omeka\Stdlib\Message;
+use Teams\Service\ItemSiteSyncManager;
 use Teams\Service\SitePermissionManager;
 
 class TeamAdapter extends AbstractEntityAdapter
@@ -412,26 +413,23 @@ class TeamAdapter extends AbstractEntityAdapter
         $em = $this->getEntityManager();
 
         // Snapshot pre-update state so we can compute targeted sync diffs.
-        $team = $em->find(Team::class, $teamId);
-        $beforeUserRoles = [];
-        foreach ($team->getTeamUsers() as $teamUser) {
-            $beforeUserRoles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
-        }
-        $beforeSiteIds = array_map(
-            fn(TeamSite $ts) => $ts->getSite()->getId(),
-            $team->getTeamSites()->toArray()
-        );
+        // Queried directly from the repositories rather than through the
+        // Team entity's o:team_users/o:team_sites collections: hydrate()
+        // below persists and removes TeamUser/TeamSite entities directly via
+        // the EntityManager (not via those inverse-side collections), so an
+        // already-loaded collection on $team would never reflect the change,
+        // making an "after" diff computed from it always empty. Repository
+        // queries always hit the database, so they see the true state both
+        // before and after hydration.
+        $beforeUserRoles = $this->getTeamUserRolesByUserId($teamId);
+        $beforeSiteIds = $this->getTeamSiteIds($teamId);
 
         $response = parent::update($request);
 
         // Sync site permissions based on the user and site diffs.
         $sitePermissionManager = $this->getServiceLocator()->get(SitePermissionManager::class);
 
-        $team = $em->find(Team::class, $teamId);
-        $afterUserRoles = [];
-        foreach ($team->getTeamUsers() as $teamUser) {
-            $afterUserRoles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
-        }
+        $afterUserRoles = $this->getTeamUserRolesByUserId($teamId);
 
         $addedUserIds   = array_diff_key($afterUserRoles, $beforeUserRoles);
         $removedUserIds = array_diff_key($beforeUserRoles, $afterUserRoles);
@@ -449,10 +447,7 @@ class TeamAdapter extends AbstractEntityAdapter
             }
         }
 
-        $afterSiteIds   = array_map(
-            fn(TeamSite $ts) => $ts->getSite()->getId(),
-            $team->getTeamSites()->toArray()
-        );
+        $afterSiteIds   = $this->getTeamSiteIds($teamId);
         $addedSiteIds   = array_diff($afterSiteIds, $beforeSiteIds);
         $removedSiteIds = array_diff($beforeSiteIds, $afterSiteIds);
 
@@ -463,11 +458,55 @@ class TeamAdapter extends AbstractEntityAdapter
             $sitePermissionManager->removeSitePermissionsForTeamOnSiteRemoved($teamId, $siteId, false);
         }
 
+        // Sync item-site membership: whenever the team's site set changes,
+        // every item belonging to the team must gain or lose membership on
+        // the affected site(s) accordingly. Recomputed once for the whole
+        // team rather than once per site, since it's a full recompute of
+        // each item's site membership based on the team's current sites.
+        if ($addedSiteIds || $removedSiteIds) {
+            $this->getServiceLocator()->get(ItemSiteSyncManager::class)
+                ->syncItemSitesForTeam($teamId, false);
+        }
+
         if ($addedUserIds || $removedUserIds || $keptUserIds || $addedSiteIds || $removedSiteIds) {
             $em->flush();
         }
 
         return $response;
+    }
+
+    /**
+     * Gets a team's current team-role ID for each of its users, freshly
+     * queried from the database.
+     *
+     * @param int $teamId
+     * @return array Team-role ID keyed by user ID.
+     */
+    private function getTeamUserRolesByUserId(int $teamId): array
+    {
+        $roles = [];
+        $teamUsers = $this->getEntityManager()
+            ->getRepository(TeamUser::class)
+            ->findBy(['team' => $teamId]);
+        foreach ($teamUsers as $teamUser) {
+            $roles[$teamUser->getUser()->getId()] = $teamUser->getRole()->getId();
+        }
+        return $roles;
+    }
+
+    /**
+     * Gets the IDs of the sites currently associated with a team, freshly
+     * queried from the database.
+     *
+     * @param int $teamId
+     * @return int[]
+     */
+    private function getTeamSiteIds(int $teamId): array
+    {
+        $teamSites = $this->getEntityManager()
+            ->getRepository(TeamSite::class)
+            ->findBy(['team' => $teamId]);
+        return array_map(fn(TeamSite $ts) => $ts->getSite()->getId(), $teamSites);
     }
 
     public function batchUpdate(Request $request)

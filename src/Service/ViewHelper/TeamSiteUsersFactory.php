@@ -8,6 +8,6 @@ class TeamSiteUsersFactory
 {
     public function __invoke(ContainerInterface $services, $requestedName, array $options = null): TeamSiteUsers
     {
-        return new TeamSiteUsers($services->get('Omeka\EntityManager'));
+        return new TeamSiteUsers($services->get('Omeka\ApiManager'));
     }
 }

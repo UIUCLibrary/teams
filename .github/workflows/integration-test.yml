@@ -1,0 +1,30 @@
+name: Integration test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  omeka-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build stack
+        run: docker compose -f docker/docker-compose.yml up -d --build
+
+      - name: Install Omeka and Teams
+        run: docker compose -f docker/docker-compose.yml exec -T omeka bash modules/Teams/docker/install.sh
+
+      - name: Run integration test
+        run: docker compose -f docker/docker-compose.yml exec -T omeka php -d xdebug.mode=off modules/Teams/tests/integration/run.php
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f docker/docker-compose.yml down -v
