@@ -1,0 +1,143 @@
+<?php
+/**
+ * Overrides the Omeka S core site-admin users template to add a "Managed by Teams"
+ * column to the permissions table, showing which team(s) grant each user their role.
+ *
+ * Copied from omeka/omeka-s at commit e107b1c1d993ea93f10b587330b1f3e1b88aebcc
+ * (application/view/omeka/site-admin/index/users.phtml) and modified to inject
+ * Teams module data.
+ *
+ * Existing permissions are rendered server-side so user names are always visible,
+ * even for users filtered out of the team-scoped sidebar selector. The row template
+ * (data-row-template) is retained for new users added via the sidebar. Omeka's
+ * initializeSelector skips rows whose .resource-id value already exists in the table,
+ * so the PHP-rendered rows are not duplicated. site-users.js iterates data-existing-rows
+ * to replace __index__ placeholders with real indices and confirm role selections.
+ */
+$translate = $this->plugin('translate');
+$this->headScript()->appendFile($this->assetUrl('js/site-users.js', 'Omeka'));
+$this->htmlElement('body')->appendAttribute('class', 'sites users');
+$form->prepare();
+$escape = $this->plugin('escapeHtml');
+$delete = $translate('Delete');
+$restore = $translate('Restore');
+$roles = [
+    'viewer' => $translate('Viewer'),
+    'editor' => $translate('Creator'),
+    'admin' => $translate('Manager'),
+];
+
+// Build userId => [teamName, ...] map via the injected view helper (no getServiceLocator).
+$teamManagedUsers = $this->teamSiteUsers($site->id());
+$hasTeamData = !empty($teamManagedUsers);
+
+// Row template used by initializeSelector for *new* users added from the sidebar.
+$userRowTemplate = '
+<tr class="resource-row">
+    <td class="data-value" data-row-key="child-search"></td>
+    <td><select name="o:site_permission[__index__][o:role]">';
+foreach ($roles as $key => $value) {
+    $userRowTemplate .= '<option value="' . $key . '">' . $value . '</option>';
+}
+$userRowTemplate .= '</select></td>';
+if ($hasTeamData) {
+    $userRowTemplate .= '
+    <td class="teams-managed-cell"></td>';
+}
+$userRowTemplate .= '
+    <td>
+        <ul class="actions">
+            <li>' . $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $delete]) . '</li>
+        </ul>
+        <input type="hidden" class="resource-id" name="o:site_permission[__index__][o:user][o:id]">
+    </td>
+</tr>
+';
+
+$sitePermissions = $site->sitePermissions();
+
+// data-existing-rows is consumed by site-users.js to assign indices and confirm
+// role selections on the PHP-rendered rows. Names and team data are rendered
+// directly in PHP, so they are not needed here.
+$existingRowsData = [];
+foreach ($sitePermissions as $sitePermission) {
+    $existingRowsData[] = [
+        'id'   => $sitePermission->user()->id(),
+        'role' => $sitePermission->role(),
+    ];
+}
+?>
+
+<?php echo $this->pageTitle($translate('User permissions'), 1, $translate('Sites')); ?>
+
+<?php if ($hasTeamData): ?>
+<div class="messages">
+    <div class="warning"><?php echo $escape($translate(
+        'User roles on this site are managed by the Teams module. Manual changes made here may be overwritten when team memberships or roles are next updated.'
+    )); ?></div>
+</div>
+<?php endif; ?>
+
+<?php echo $this->form()->openTag($form); ?>
+<?php echo $this->formCollection($form, false); ?>
+
+<div id="page-actions">
+    <?php echo $this->cancelButton(); ?>
+    <button><?php echo $translate('Save'); ?></button>
+</div>
+
+<table id="site-user-permissions" data-row-template="<?php echo $escape($userRowTemplate); ?>" data-existing-rows="<?php echo $this->escapeHtml(json_encode($existingRowsData)); ?>" class="selector-table tablesaw tablesaw-stack <?php echo (count($sitePermissions) > 0) ? '' : 'empty'; ?>" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th scope="col"><?php echo $translate('User'); ?></th>
+            <th scope="col"><?php echo $translate('Role'); ?></th>
+            <?php if ($hasTeamData): ?>
+            <th scope="col"><?php echo $translate('Managed by Team(s)'); ?></th>
+            <?php endif; ?>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody class="resource-rows">
+    <?php foreach ($sitePermissions as $permIndex => $sitePermission):
+        $user = $sitePermission->user();
+        $teamsManaged = $hasTeamData
+            ? (!empty($teamManagedUsers[$user->id()])
+                ? implode(', ', array_unique($teamManagedUsers[$user->id()]))
+                : '')
+            : '';
+    ?>
+        <tr class="resource-row">
+            <td class="data-value" data-row-key="child-search"><?php echo $escape($user->name()); ?></td>
+            <td>
+                <select name="o:site_permission[<?php echo $permIndex; ?>][o:role]">
+                    <?php foreach ($roles as $roleKey => $roleLabel): ?>
+                    <option value="<?php echo $roleKey; ?>"<?php echo $sitePermission->role() === $roleKey ? ' selected' : ''; ?>><?php echo $roleLabel; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </td>
+            <?php if ($hasTeamData): ?>
+            <td class="teams-managed-cell"><?php echo $escape($teamsManaged); ?></td>
+            <?php endif; ?>
+            <td>
+                <ul class="actions">
+                    <li><?php echo $this->hyperlink('', '#', ['class' => 'o-icon-delete', 'title' => $delete]); ?></li>
+                </ul>
+                <input type="hidden" class="resource-id" name="o:site_permission[<?php echo $permIndex; ?>][o:user][o:id]" value="<?php echo $user->id(); ?>">
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+<div class="no-resources">
+    <p><?php echo $translate('This site has no users. Add users using the interface to the right.'); ?></p>
+</div>
+<button id="site-user-selector-button" class="mobile-only"><?php echo $translate('Add new user'); ?></button>
+<?php echo $this->userSelector($translate('Click on a user to add them to the site.')); ?>
+
+<?php echo $this->form()->closeTag(); ?>
+
+<script>
+  Omeka.initializeSelector('#site-user-permissions', '#user-selector');
+</script>
+
+

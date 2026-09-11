@@ -2,7 +2,6 @@
 namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Omeka\Api\Request;
 use Omeka\Form\ConfirmForm;
 use Laminas\EventManager\Event;
 use Laminas\Form\Form;
@@ -160,58 +159,19 @@ class IndexController extends AbstractActionController
             $form = $this->getForm(ConfirmForm::class);
             $form->setData($this->getRequest()->getPost());
             if ($form->isValid()) {
-                $entityManager = $this->entityManager;
                 $user_id = $this->identity()->getId();
-                $team_id = $entityManager
+                $team_id = $this->entityManager
                     ->getRepository('Teams\Entity\TeamUser')
-                    ->findOneBy(['is_current'=>true, 'user'=>$user_id])
+                    ->findOneBy(['is_current' => true, 'user' => $user_id])
                     ->getTeam()->getId();
 
-                //array of media ids
-                $media_ids = [];
-
-                //date to update last modified
-                $datetime = new \DateTime('now');
-                foreach ($this->api()->read('items', $this->params('id'))->getContent()->media() as $media):
-                    $media_ids[] = $media->id();
-                endforeach;
-
-                $entity = $entityManager
-                    ->getRepository('Teams\Entity\TeamResource')
-                    ->findOneBy(['team'=>$team_id, 'resource'=> $this->params('id')]);
-
-                $request = new Request('delete', 'team_resource');
-                $event = new Event('api.hydrate.pre', $this, [
-                    'entity' => $entity,
-                    'request' => $request,
-                ]);
-                $this->getEventManager()->triggerEvent($event);
-                if ($entity) {
-                    $entity->getResource()->setModified($datetime);
-                    $entityManager->remove($entity);
-
-                    //remove associated media from the team
-                    foreach ($media_ids as $media_id):
-                        $tr = $entityManager->getRepository('Teams\Entity\TeamResource')
-                            ->findOneBy(['team' => $team_id, 'resource' => $media_id]);
-                    if ($tr) {
-                        $entityManager->remove($tr);
-                        $this->messenger()->addSuccess('Associated Media successfully removed from your team.'); // @translate
-                        $entityManager->getRepository('Omeka\Entity\Resource')
-                                ->findOneBy(['id'=>$media_id])->setModified($datetime);
-                    }
-                    endforeach;
-                    $entityManager->flush();
-                    $this->messenger()->addSuccess('Item successfully removed from your team. Item remains available to other teams if they are linked to it.'); // @translate
-                } else {
-                    $this->messenger()->addError('something went wrong'); // @translate
-                }
-                $event = new Event('api.execute.post', $this, [
-                    'entity' => $entity,
-                    'request' => $request,
-                ]);
-                $this->getEventManager()->triggerEvent($event);
-
+                $this->api()->delete(
+                    'team-resource',
+                    [],
+                    ['team' => $team_id, 'resource' => $this->params('id')],
+                    ['recursive' => true]
+                );
+                $this->messenger()->addSuccess('Item successfully removed from your team. Item remains available to other teams if they are linked to it.'); // @translate
             } else {
                 $this->messenger()->addFormErrors($form);
             }

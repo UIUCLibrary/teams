@@ -2,10 +2,7 @@
 namespace Teams\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\QueryBuilder;
 use Omeka\Api\Exception\InvalidArgumentException;
-use Omeka\Api\Request;
-use Laminas\EventManager\Event;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 
@@ -22,17 +19,6 @@ class DeleteController extends AbstractActionController
     public function __construct(EntityManager $entityManager)
     {
         $this->entityManager = $entityManager;
-    }
-    public function createNamedParameter(
-        QueryBuilder $qb,
-        $value,
-        $prefix = 'omeka_'
-    ) {
-        $index = 0;
-        $placeholder = $prefix . $index;
-        $index++;
-        $qb->setParameter($placeholder, $value);
-        return ":$placeholder";
     }
     public function teamDeleteAction()
     {
@@ -75,13 +61,10 @@ class DeleteController extends AbstractActionController
     {
         $user = $this->identity()->getRole();
         $id = $this->params()->fromRoute('id');
-        $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
-            ->findOneBy(['id'=> $id]);
         $request = $this->getRequest();
 
-        //test to see if anyone has this role. If they do, don't delete it.
         $role_users = $this->entityManager->getRepository('Teams\Entity\TeamUser')
-            ->findBy(['role'=>$id]);
+            ->findBy(['role' => $id]);
         $view = new ViewModel(
             [
                 'role_users' => $role_users,
@@ -96,17 +79,17 @@ class DeleteController extends AbstractActionController
             $this->messenger()->addError('You are not authorized to delete roles');
             return $view;
         }
-        if ($role_users){
+        if ($role_users) {
             $this->messenger()->addError('This role can not be deleted while users are assigned to it');
             return $view;
         }
         if ($request->getPost('confirm') == 'Delete') {
-            $this->entityManager->remove($role);
-            $this->entityManager->flush();
-            $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $role->getName()));
+            $role = $this->entityManager->getRepository('Teams\Entity\TeamRole')
+                ->findOneBy(['id' => $id]);
+            $roleName = $role ? $role->getName() : $id;
+            $this->api()->delete('team-role', $id);
+            $this->messenger()->addSuccess(sprintf('Successfully deleted role "%s"', $roleName));
         }
         return $this->redirect()->toRoute('admin/teams/roles');
-
-
     }
 }

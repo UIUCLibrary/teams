@@ -167,29 +167,28 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
         $data = [];
         if (Request::CREATE === $request->getOperation()){
             $data = $request->getContent();
-        } elseif (Request::DELETE === $request->getOperation()) {
+        } elseif (Request::UPDATE === $request->getOperation() || Request::DELETE === $request->getOperation()) {
             $data = $request->getId();
         }
         if (!is_array($data)){
             $errorStore->addError('o:id', new Message('The %s id must be an array.', $this->getResourceName())); // @translate
             return;
         }
-        if (!array_key_exists('o:team',$data)){
-            $errorStore->addError('o:team', 'The request lacks a team id.'); // @translate
 
-        }
-        if (!array_key_exists($entity_index,$data)){
-            $errorStore->addError($entity_index, new Message('The request lacks a %s id.',$this->getMappedEntityName())); // @translate
-        }
-
-
-        //is that id a team
-        if ($data['team']){
+        // Normalise plain keys (team/user) to their JSON-LD equivalents (o:team/o:user)
+        // before validating, so callers using either convention are accepted.
+        if (!array_key_exists('o:team', $data) && array_key_exists('team', $data)) {
             $data['o:team'] = $data['team'];
         }
-
-        if ($data[$this->getMappedEntityName()]){
+        if (!array_key_exists($entity_index, $data) && array_key_exists($this->getMappedEntityName(), $data)) {
             $data[$entity_index] = $data[$this->getMappedEntityName()];
+        }
+
+        if (!array_key_exists('o:team', $data)){
+            $errorStore->addError('o:team', 'The request lacks a team id.'); // @translate
+        }
+        if (!array_key_exists($entity_index, $data)){
+            $errorStore->addError($entity_index, new Message('The request lacks a %s id.', $this->getMappedEntityName())); // @translate
         }
 
         $team = $this->getEntityManager()
@@ -301,7 +300,7 @@ abstract class AbstractTeamEntityAdapter extends \Omeka\Api\Adapter\AbstractEnti
 
     public function update(Request $request)
     {
-        AbstractAdapter::update($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)

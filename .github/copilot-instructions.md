@@ -75,7 +75,8 @@ Omeka S Module (PHP-based)
 ### PHP Standards
 - Follow PSR-12 coding standards where applicable
 - Use proper type hints and return types
-- Document complex logic with clear comments
+- Document complex logic with inline comments only where strictly needed; comments must describe the current code, never reference previous versions or prior fixes
+- Class and method docblocks follow Python/Google style: a single summary sentence, followed by an optional blank line and longer description, `Args:`/`Returns:`/`Throws:` sections where appropriate, and `@param`/`@return` PHPDoc tags for type information
 - Prefer dependency injection over global state
 - Use Omeka S service manager patterns
 
@@ -93,13 +94,36 @@ Omeka S Module (PHP-based)
 
 ## Build, Validation, and Testing
 
+### Linting — Always Run
+
+**Always run `php -l` on every PHP file you create or modify before committing.** This catches parse errors immediately:
+
+```bash
+php -l path/to/File.php
+# or check all files at once:
+find . -name "*.php" -print0 | xargs -0 php -l | grep -v "No syntax errors"
+```
+
+### Omeka S Coding Standards
+
+Omeka S ships a PHP_CodeSniffer ruleset. When the Omeka S codebase is present, run it against changed files:
+
+```bash
+vendor/bin/phpcs --standard=vendor/omeka/omeka-s/coding-standards/Omeka/ruleset.xml src/Path/To/ChangedFile.php
+```
+
+Even without the full Omeka environment, apply these standards manually:
+- No `addCsrf()` calls — Omeka S adds CSRF to **all** forms automatically via its `Omeka\Form\Initializer\Csrf` initializer. Never call `addCsrf()` manually.
+- Forms extend `Laminas\Form\Form` (or an Omeka subclass); the initializer handles CSRF.
+- Verify every `use` import is spelled correctly (case-sensitive on Linux) and actually resolves.
+- Remove all unused `use` statements.
+
 ### Current State
-**No explicit build steps, CI/CD pipelines, or automated validation are currently present** in this repository.
+**No CI/CD pipelines or automated test suites are currently present** in this repository beyond `php -l`.
 
 ### What This Means for Agents
-- **Skip automatic build/validate steps** unless explicitly directed by task requirements
-- **No linting, testing, or compilation** commands to run by default
-- **Manual validation** may be performed by viewing files and inspecting code
+- **Always run `php -l`** on every changed PHP file — this is mandatory, not optional
+- **Manual validation** should also check method existence against Omeka S source (search GitHub omeka/omeka-s if needed)
 - **Future improvements**: Agents may recommend or prototype build/test infrastructure as part of code quality improvements
 
 ### Testing in Omeka Context

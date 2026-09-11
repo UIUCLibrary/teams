@@ -59,8 +59,13 @@ class TeamAuth extends AbstractPlugin
             $action = 'add';
         }
         $resourceDomains = ['team_resource','team_resource_template','team_asset','team-resource','team-resource-template','team-asset'];
-        if (in_array($domain,$resourceDomains)) {
+        if (in_array($domain, $resourceDomains)) {
             $domain = 'resource';
+        }
+
+        $siteDomains = ['team_site', 'team-site'];
+        if (in_array($domain, $siteDomains)) {
+            $domain = 'site';
         }
 
         //validate inputs

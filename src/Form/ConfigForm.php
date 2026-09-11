@@ -70,6 +70,15 @@ class ConfigForm extends Form
                 ],
             ]);
 
+        $this->add([
+            'name' => 'teams_sync_site_permissions',
+            'type' => 'submit',
+            'attributes' => [
+                'value' => 'Sync Site Permissions', // @translate
+                'id' => 'teams_sync_site_permissions',
+            ],
+        ]);
+
     }
     public function setGlobalSettings($globalSettings)
     {

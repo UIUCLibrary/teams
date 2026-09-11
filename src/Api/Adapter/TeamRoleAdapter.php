@@ -224,7 +224,7 @@ class TeamRoleAdapter extends AbstractEntityAdapter
 
     public function update(Request $request)
     {
-        AbstractAdapter::batchCreate($request);
+        return parent::update($request);
     }
 
     public function batchUpdate(Request $request)
@@ -234,7 +234,7 @@ class TeamRoleAdapter extends AbstractEntityAdapter
 
     public function delete(Request $request)
     {
-        AbstractAdapter::delete($request);
+        return parent::delete($request);
     }
 
     public function batchDelete(Request $request)

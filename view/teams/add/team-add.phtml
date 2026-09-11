@@ -2,108 +2,40 @@
 $this->headScript()->appendFile($this->assetUrl('vendor/sortablejs/Sortable.min.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/site-resources.js', 'Omeka'));
 $this->headScript()->appendFile($this->assetUrl('js/inject-removal-util-element.js', 'Teams'));
-
-echo $this->pageTitle("Add new team");
-if ($this->roleAuth()->teamAuthorized('add', 'team')):
-
-$this->htmlElement('body')->appendAttribute('class', 'add');
 $this->headLink()->prependStylesheet($this->assetUrl('css/teams.css', 'Teams'));
 $this->headScript()->appendFile($this->assetUrl('js/team-users.js', 'Teams'));
-$formElement = $this->plugin('formElement');
-?>
-<div id="page-actions">
-    <button type="submit" form="new_team" value="Submit">Add team</button>
-</div>
-<?php
 
 $translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
-
-$sectionNavs = [
-    'team-info' => $translate('Info'),
-    'team-members' => $translate('Users'),
-    'team-resources' => $translate('Resources'),
-    'team-secondary-resources' => $translate('Other Resources'),
-    'team-sites' => $translate('Sites'),
-];
-echo $this->sectionNav($sectionNavs, 'view.add.section_nav');
-    $form = $this->form;
-    $form->setAttribute('id', 'new_team');
-    $form->prepare();
-    echo $this->form()->openTag($form);
+$this->htmlElement('body')->appendAttribute('class', 'teams add');
 ?>
-    <fieldset id="team-info" class="section active">
-        <?php echo $this->formCollection($form); ?>
-    </fieldset>
+<?php echo $this->pageTitle($translate('Add new team')); ?>
+<?php $this->trigger('view.add.before'); ?>
 
-<fieldset id="team-members" class="section">
-    <?php echo $this->partial('teams/team/manage-users', [
-        'team' => [],
-        'bypass_teams_filter' => true,
+<?php if ($this->roleAuth()->teamAuthorized('add', 'team')): ?>
 
-    ]);
-    ?>
-</fieldset>
+<?php echo $this->partial('teams/team/edit-form', [
+    'form'                    => $this->form,
+    'team'                    => $this->team,
+    'bypassTeamFilterRoles'   => $this->bypassTeamFilterRoles,
+    'user'                    => $this->user,
+    'isAdd'                   => true,
+    'sectionNavEvent'         => 'view.add.section_nav',
+    'action'                  => 'add',
+]); ?>
 
-<?php
-$itemsetForm = $this->itemsetForm;
-$itemsetForm->prepare();
-$formElement = $this->plugin('formElement');
-echo $this->form()->openTag($itemsetForm);
-$resourceForm->get('item_assignment_action')
-    ->setValueOptions(
-        [
-            'no_action' => 'Do nothing', // @translate
-            'add' => 'Add - assign items from a search query', // @translate
-        ]
-    )->setOptions(['label' => 'Add items to the team'])
-?>
-    <div id="team-resources" class="manual-assignment section">
-        <?php echo $this->formRow($resourceForm->get('item_assignment_action')); ?>
-        <div id="item-pool-container" style="display: none;">
-            <?php echo $this->formRow($resourceForm->get('item_pool')); ?>
-            <div id="save-search">
-                <label><?php echo $this->translate('Keep this query'); ?><?php echo $this->formElement($resourceForm->get('save_search')); ?></label>
-            </div>
-        </div>
-    </div>
-    <div id="team-secondary-resources" class="manual-assignment section">
+<?php else: ?>
+<?php $glob_admin_url = $this->hyperlink(
+    $translate('global admins'),
+    $this->url(
+        'admin/default',
+        ['controller' => 'user', 'action' => 'browse'],
+        ['query' => ['role' => 'global_admin', 'active' => '1']]
+    )
+); ?>
+<div class="breadcrumbs">
+    <?php echo sprintf($translate('Only the %s can add new teams.'), $glob_admin_url); ?>
+</div>
+<?php endif; ?>
 
-        <h2>Select resource templates for this team</h2>
-        <?php
-        $secondaryResourcesForm->setLabel("Add and Remove Templates and Item Sets");
-        echo $this->formCollection($secondaryResourcesForm);
-        ?>
-    </div>
+<?php $this->trigger('view.add.after'); ?>
 
-
-<fieldset id="team-sites" class="section">
-    <div class="selection-criteria">
-        <p>
-            Attach sites to team.
-        </p>
-        <div class="select-by-item-set-content">
-            <?php echo $this->formCollection($itemsetForm->get('site')); ?>
-        </div>
-    </div>
-</fieldset>
-<?php
-echo $this->form()->closeTag();
-else: ?>
-    <?php $glob_admin_url = $this->hyperlink(
-        'global admins',
-        $this->url(
-            'admin/default',
-            [ 'controller' => 'user', 'action' => 'browse'],
-            [
-                'query' => [
-                    'role' => 'global_admin',
-                    'active' => '1',
-                ],
-            ]
-        )
-    ); ?>
-    <div class="breadcrumbs">
-    Only the <?php echo $glob_admin_url ?> can add new teams.
-    </div>
-<?php endif;
